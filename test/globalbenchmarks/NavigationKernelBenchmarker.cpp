@@ -22,7 +22,7 @@
 #ifdef VECGEOM_EMBREE
 #include "VecGeom/navigation/EmbreeNavigator.h"
 #endif
-//#define BENCH_GENERATED_NAVIGATOR
+// #define BENCH_GENERATED_NAVIGATOR
 #ifdef BENCH_GENERATED_NAVIGATOR
 #include "VecGeom/navigation/GeneratedNavigator.h"
 #endif
@@ -50,7 +50,7 @@
 #undef NDEBUG
 #include <cassert>
 
-//#define CALLGRIND_ENABLED
+// #define CALLGRIND_ENABLED
 #ifdef CALLGRIND_ENABLED
 #include <valgrind/callgrind.h>
 #endif
@@ -67,10 +67,10 @@
 
 using namespace vecgeom;
 
-bool gAnalyseOutStates  = false;
-bool gBenchWithSafety   = false;
-bool gSpecializedLib    = false;
-Precision gMAXSTEP      = vecgeom::kInfLength; // global variable to configure max step asked in ComputeStep
+bool gAnalyseOutStates = false;
+bool gBenchWithSafety  = false;
+bool gSpecializedLib   = false;
+Precision gMAXSTEP     = vecgeom::kInfLength; // global variable to configure max step asked in ComputeStep
 
 std::string gSpecLibName;
 VNavigator const *gSpecializedNavigator;
@@ -157,7 +157,7 @@ void analyseOutStates(NavStatePool &inpool, NavStatePool const &outpool)
     navstate->TopMatrix(g2);
     g.SetProperties();
     g2.SetProperties();
-    g2.Inverse(invg2);
+    invg2 = g2.Inverse();
     invg2.MultiplyFromRight(g);
     invg2.FixZeroes();
     std::stringstream matrixstream;

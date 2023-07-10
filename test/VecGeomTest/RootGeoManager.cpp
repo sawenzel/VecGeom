@@ -148,7 +148,7 @@ void FlattenAssemblies(TGeoNode *node, std::list<TGeoNode *> &nodeaccumulator, T
   } else {
     if (currentdepth == 0) // can keep original node ( it was not an assembly )
       nodeaccumulator.push_back(node);
-    else { // need a new flattened node with a different transformation
+    else {                 // need a new flattened node with a different transformation
       TGeoMatrix *newmatrix   = new TGeoHMatrix(*globalmatrix);
       TGeoNodeMatrix *newnode = new TGeoNodeMatrix(node->GetVolume(), newmatrix);
       newnode->SetNumber(node->GetNumber());
@@ -235,8 +235,7 @@ VPlacedVolume *RootGeoManager::Convert(TGeoNode const *const node)
 
     // fixup placements in case the mother was shifted
     if (adjusted) {
-      Transformation3D inv;
-      adjustmentTr.Inverse(inv);
+      Transformation3D inv = adjustmentTr.Inverse();
       inv.SetProperties();
       Transformation3D *placedtr = const_cast<Transformation3D *>(placed->GetTransformation());
       inv.MultiplyFromRight(*placedtr);

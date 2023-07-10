@@ -29,6 +29,15 @@ Transformation3D::Transformation3D(const Precision tx, const Precision ty, const
 }
 
 VECCORE_ATT_HOST_DEVICE
+Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz,
+                                   Transformation3D const &trot)
+    : Transformation3D(trot)
+{
+  SetTranslation(tx, ty, tz);
+  SetProperties();
+}
+
+VECCORE_ATT_HOST_DEVICE
 Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz, const Precision phi,
                                    const Precision theta, const Precision psi, Precision sx, Precision sy, Precision sz)
     : fIdentity(false), fHasRotation(true), fHasTranslation(true)
@@ -40,25 +49,25 @@ Transformation3D::Transformation3D(const Precision tx, const Precision ty, const
 }
 
 VECCORE_ATT_HOST_DEVICE
-Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz, const Precision r0,
-                                   const Precision r1, const Precision r2, const Precision r3, const Precision r4,
-                                   const Precision r5, const Precision r6, const Precision r7, const Precision r8)
+Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz, const Precision rxx,
+                                   const Precision ryx, const Precision rzx, const Precision rxy, const Precision ryy,
+                                   const Precision rzy, const Precision rxz, const Precision ryz, const Precision rzz)
     : fIdentity(false), fHasRotation(true), fHasTranslation(true)
 {
   SetTranslation(tx, ty, tz);
-  SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+  SetRotation(rxx, ryx, rzx, rxy, ryy, rzy, rxz, ryz, rzz);
   SetProperties();
 }
 
 VECCORE_ATT_HOST_DEVICE
-Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz, const Precision r0,
-                                   const Precision r1, const Precision r2, const Precision r3, const Precision r4,
-                                   const Precision r5, const Precision r6, const Precision r7, const Precision r8,
+Transformation3D::Transformation3D(const Precision tx, const Precision ty, const Precision tz, const Precision rxx,
+                                   const Precision ryx, const Precision rzx, const Precision rxy, const Precision ryy,
+                                   const Precision rzy, const Precision rxz, const Precision ryz, const Precision rzz,
                                    const Precision sx, const Precision sy, const Precision sz)
     : fIdentity(false), fHasRotation(true), fHasTranslation(true)
 {
   SetTranslation(tx, ty, tz);
-  SetRotation(r0, r1, r2, r3, r4, r5, r6, r7, r8);
+  SetRotation(rxx, ryx, rzx, rxy, ryy, rzy, rxz, ryz, rzz);
   ApplyScale(sx, sy, sz);
   SetProperties();
 }
@@ -74,27 +83,178 @@ Transformation3D::Transformation3D(const Vector3D<Precision> &axis, bool inverse
   SetProperties();
 }
 
+VECCORE_ATT_HOST_DEVICE
+Vector3D<double> Transformation3D::Axis() const
+{
+  // Determine rotation axis. Taken from clhep/src/RotationA.cc
+  const double eps = 1e-15;
+
+  double Ux = rzy_ - ryz_;
+  double Uy = rxz_ - rzx_;
+  double Uz = ryx_ - rxy_;
+  if (std::abs(Ux) < eps && std::abs(Uy) < eps && std::abs(Uz) < eps) {
+
+    double cosdelta = (rxx_ + ryy_ + rzz_ - 1.0) / 2.0;
+    if (cosdelta > 0.0) return Vector3D<double>(0, 0, 1); // angle = 0, any axis is good
+
+    double mxx = (rxx_ + 1) / 2;
+    double myy = (ryy_ + 1) / 2;
+    double mzz = (rzz_ + 1) / 2;
+    double mxy = (rxy_ + ryx_) / 4;
+    double mxz = (rxz_ + rzx_) / 4;
+    double myz = (ryz_ + rzy_) / 4;
+
+    double x, y, z;
+    if (mxx > ryy_ && mxx > rzz_) {
+      x = sqrt(mxx);
+      if (rzy_ - ryz_ < 0) x = -x;
+      y = mxy / x;
+      z = mxz / x;
+      return Vector3D<double>(x, y, z).Unit();
+    } else if (myy > mzz) {
+      y = sqrt(myy);
+      if (rxz_ - rzx_ < 0) y = -y;
+      x = mxy / y;
+      z = myz / y;
+      return Vector3D(x, y, z).Unit();
+    } else {
+      z = std::sqrt(mzz);
+      if (ryx_ - rxy_ < 0) z = -z;
+      x = mxz / z;
+      y = myz / z;
+      return Vector3D<double>(x, y, z).Unit();
+    }
+  } else {
+    return Vector3D(Ux, Uy, Uz).Unit();
+  }
+}
+
 void Transformation3D::Print(std::ostream &s) const
 {
-  s << "Transformation3D {{" << fTranslation[0] << "," << fTranslation[1] << "," << fTranslation[2] << "}";
-  s << "{" << fRotation[0] << "," << fRotation[1] << "," << fRotation[2] << "," << fRotation[3] << "," << fRotation[4]
-    << "," << fRotation[5] << "," << fRotation[6] << "," << fRotation[7] << "," << fRotation[8] << "}}\n";
+  s << "Transformation3D {{" << tx_ << "," << ty_ << "," << tz_ << "}";
+  s << "{" << rxx_ << "," << ryx_ << "," << rzx_ << "," << rxy_ << "," << ryy_ << "," << rzy_ << "," << rxz_ << ","
+    << ryz_ << "," << rzz_ << "}}\n";
 }
 
 VECCORE_ATT_HOST_DEVICE
 void Transformation3D::Print() const
 {
-  printf("Transformation3D {{%.2f, %.2f, %.2f}, ", fTranslation[0], fTranslation[1], fTranslation[2]);
-  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", fRotation[0], fRotation[1], fRotation[2],
-         fRotation[3], fRotation[4], fRotation[5], fRotation[6], fRotation[7], fRotation[8]);
+  printf("Transformation3D {{%.2f, %.2f, %.2f}, ", tx_, ty_, tz_);
+  printf("{%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f}}", rxx_, ryx_, rzx_, rxy_, ryy_, rzy_, rxz_, ryz_,
+         rzz_);
+}
+
+VECCORE_ATT_HOST_DEVICE
+void Transformation3D::PrintG4() const
+{
+  using vecCore::math::Abs;
+  using vecCore::math::Max;
+  constexpr double deviationTolerance = 1.0e-05;
+  printf("  Transformation: \n");
+
+  bool hasRotation = (GenerateRotationCode() == rotation::kIdentity) ? false : true;
+
+  bool UnitTr            = !hasRotation;
+  double diagDeviation   = Max(Abs(rxx_ - 1.0), Abs(ryy_ - 1.0), Abs(rzz_ - 1.0));
+  double offdDeviationUL = Max(Abs(rxy_), Abs(rxz_), Abs(ryx_));
+  double offdDeviationDR = Max(Abs(ryz_), Abs(rzx_), Abs(rzy_));
+  double offdDeviation   = Max(offdDeviationUL, offdDeviationDR);
+
+  if (UnitTr || Max(diagDeviation, offdDeviation) < deviationTolerance) {
+    printf("    UNIT  Rotation \n");
+  } else {
+    printf("rx/x,y,z: %.6g %.6g %.6g\nry/x,y,z: %.6g %.6g %.6g\nrz/x,y,z: %.6g %.6g %.6g\n", rxx_, rxy_, rxz_, ryx_,
+           ryy_, ryz_, rzx_, rzy_, rzz_);
+  }
+
+  printf("tr/x,y,z: %.6g %.6g %.6g\n", tx_, ty_, tz_);
+}
+
+VECCORE_ATT_HOST_DEVICE
+Transformation3D &Transformation3D::Rectify()
+{
+  double xx = rxx_, xy = rxy_, xz = rxz_;
+  double yx = ryx_, yy = ryy_, yz = ryz_;
+  double zx = rzx_, zy = rzy_, zz = rzz_;
+  double det = xx * yy * zz + xy * yz * zx + xz * yx * zy - xx * yz * zy - xy * yx * zz - xz * yy * zx;
+
+  if (det <= 0) {
+    printf("Transformation3D::rectify() : Attempt to rectify a Rotation with determinant <= 0\n");
+    return *this;
+  }
+  double di = 1.0 / det;
+
+  // xx, xy, ... are components of inverse matrix:
+  double xx1 = (yy * zz - yz * zy) * di;
+  double xy1 = (zy * xz - zz * xy) * di;
+  double xz1 = (xy * yz - xz * yy) * di;
+  double yx1 = (yz * zx - yx * zz) * di;
+  double yy1 = (zz * xx - zx * xz) * di;
+  double yz1 = (xz * yx - xx * yz) * di;
+  double zx1 = (yx * zy - yy * zx) * di;
+  double zy1 = (zx * xy - zy * xx) * di;
+  double zz1 = (xx * yy - xy * yx) * di;
+
+  // Now average with the TRANSPOSE of that:
+  rxx_ = .5 * (xx + xx1);
+  rxy_ = .5 * (xy + yx1);
+  rxz_ = .5 * (xz + zx1);
+  ryx_ = .5 * (yx + xy1);
+  ryy_ = .5 * (yy + yy1);
+  ryz_ = .5 * (yz + zy1);
+  rzx_ = .5 * (zx + xz1);
+  rzy_ = .5 * (zy + yz1);
+  rzz_ = .5 * (zz + zz1);
+
+  // Now force feed this improved rotation
+  double delta    = 0;
+  double cosdelta = (rxx_ + ryy_ + rzz_ - 1.0) / 2.0;
+  if (cosdelta > 1.0) {
+    delta = 0;
+  } else if (cosdelta < -1.0) {
+    delta = kPi;
+  } else {
+    delta = acos(cosdelta);
+  }
+  Vector3D<double> u = Axis();
+  u                  = u.Unit(); // Because if the rotation is inexact, then the
+                                 // axis() returned will not have length 1!
+  Set(u, delta);
+  return *this;
+}
+
+VECCORE_ATT_HOST_DEVICE
+void Transformation3D::Set(Vector3D<double> const &aaxis, double ddelta)
+{
+  double sinDelta         = sin(ddelta);
+  double cosDelta         = cos(ddelta);
+  double oneMinusCosDelta = 1.0 - cosDelta;
+
+  Vector3D<double> u = aaxis.Unit();
+
+  double uX = u[0];
+  double uY = u[1];
+  double uZ = u[2];
+
+  rxx_ = oneMinusCosDelta * uX * uX + cosDelta;
+  rxy_ = oneMinusCosDelta * uX * uY - sinDelta * uZ;
+  rxz_ = oneMinusCosDelta * uX * uZ + sinDelta * uY;
+
+  ryx_ = oneMinusCosDelta * uY * uX + sinDelta * uZ;
+  ryy_ = oneMinusCosDelta * uY * uY + cosDelta;
+  ryz_ = oneMinusCosDelta * uY * uZ - sinDelta * uX;
+
+  rzx_ = oneMinusCosDelta * uZ * uX - sinDelta * uY;
+  rzy_ = oneMinusCosDelta * uZ * uY + sinDelta * uX;
+  rzz_ = oneMinusCosDelta * uZ * uZ + cosDelta;
 }
 
 VECCORE_ATT_HOST_DEVICE
 void Transformation3D::SetTranslation(const Precision tx, const Precision ty, const Precision tz)
 {
-  fTranslation[0] = tx;
-  fTranslation[1] = ty;
-  fTranslation[2] = tz;
+  tx_ = tx;
+  ty_ = ty;
+  tz_ = tz;
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -106,12 +266,9 @@ void Transformation3D::SetTranslation(Vector3D<Precision> const &vec)
 VECCORE_ATT_HOST_DEVICE
 void Transformation3D::SetProperties()
 {
-  fHasTranslation =
-      (fabs(fTranslation[0]) > kTolerance || fabs(fTranslation[1]) > kTolerance || fabs(fTranslation[2]) > kTolerance)
-          ? true
-          : false;
-  fHasRotation = (GenerateRotationCode() == rotation::kIdentity) ? false : true;
-  fIdentity    = !fHasTranslation && !fHasRotation;
+  fHasTranslation = (fabs(tx_) > kTolerance || fabs(ty_) > kTolerance || fabs(tz_) > kTolerance) ? true : false;
+  fHasRotation    = (GenerateRotationCode() == rotation::kIdentity) ? false : true;
+  fIdentity       = !fHasTranslation && !fHasRotation;
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -125,15 +282,15 @@ void Transformation3D::SetRotation(const Precision phi, const Precision theta, c
   const Precision sinpsi = sin(kDegToRad * psi);
   const Precision cospsi = cos(kDegToRad * psi);
 
-  fRotation[0] = cospsi * cosphi - costhe * sinphi * sinpsi;
-  fRotation[1] = -sinpsi * cosphi - costhe * sinphi * cospsi;
-  fRotation[2] = sinthe * sinphi;
-  fRotation[3] = cospsi * sinphi + costhe * cosphi * sinpsi;
-  fRotation[4] = -sinpsi * sinphi + costhe * cosphi * cospsi;
-  fRotation[5] = -sinthe * cosphi;
-  fRotation[6] = sinpsi * sinthe;
-  fRotation[7] = cospsi * sinthe;
-  fRotation[8] = costhe;
+  rxx_ = cospsi * cosphi - costhe * sinphi * sinpsi;
+  ryx_ = -sinpsi * cosphi - costhe * sinphi * cospsi;
+  rzx_ = sinthe * sinphi;
+  rxy_ = cospsi * sinphi + costhe * cosphi * sinpsi;
+  ryy_ = -sinpsi * sinphi + costhe * cosphi * cospsi;
+  rzy_ = -sinthe * cosphi;
+  rxz_ = sinpsi * sinthe;
+  ryz_ = cospsi * sinthe;
+  rzz_ = costhe;
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -143,31 +300,36 @@ void Transformation3D::SetRotation(Vector3D<Precision> const &vec)
 }
 
 VECCORE_ATT_HOST_DEVICE
-void Transformation3D::SetRotation(const Precision rot0, const Precision rot1, const Precision rot2,
-                                   const Precision rot3, const Precision rot4, const Precision rot5,
-                                   const Precision rot6, const Precision rot7, const Precision rot8)
+void Transformation3D::SetRotation(const Precision xx, const Precision yx, const Precision zx, const Precision xy,
+                                   const Precision yy, const Precision zy, const Precision xz, const Precision yz,
+                                   const Precision zz)
 {
 
-  fRotation[0] = rot0;
-  fRotation[1] = rot1;
-  fRotation[2] = rot2;
-  fRotation[3] = rot3;
-  fRotation[4] = rot4;
-  fRotation[5] = rot5;
-  fRotation[6] = rot6;
-  fRotation[7] = rot7;
-  fRotation[8] = rot8;
+  rxx_ = xx;
+  ryx_ = yx;
+  rzx_ = zx;
+  rxy_ = xy;
+  ryy_ = yy;
+  rzy_ = zy;
+  rxz_ = xz;
+  ryz_ = yz;
+  rzz_ = zz;
 }
 
 VECCORE_ATT_HOST_DEVICE
 RotationCode Transformation3D::GenerateRotationCode() const
 {
   int code = 0;
-  for (int i = 0; i < 9; ++i) {
-    // Assign each bit
-    code |= (1 << i) * (fabs(fRotation[i]) > kTolerance);
-  }
-  if (code == rotation::kDiagonal && (fRotation[0] == 1. && fRotation[4] == 1. && fRotation[8] == 1.)) {
+  code |= (1 << 0) * (fabs(rxx_) > kTolerance);
+  code |= (1 << 1) * (fabs(ryx_) > kTolerance);
+  code |= (1 << 2) * (fabs(rzx_) > kTolerance);
+  code |= (1 << 3) * (fabs(rxy_) > kTolerance);
+  code |= (1 << 4) * (fabs(ryy_) > kTolerance);
+  code |= (1 << 5) * (fabs(rzy_) > kTolerance);
+  code |= (1 << 6) * (fabs(rxz_) > kTolerance);
+  code |= (1 << 7) * (fabs(ryz_) > kTolerance);
+  code |= (1 << 8) * (fabs(rzz_) > kTolerance);
+  if (code == rotation::kDiagonal && (rxx_ == 1. && ryy_ == 1. && rzz_ == 1.)) {
     code = rotation::kIdentity;
   }
   return code;
@@ -185,10 +347,73 @@ TranslationCode Transformation3D::GenerateTranslationCode() const
   return (fHasTranslation) ? translation::kGeneric : translation::kIdentity;
 }
 
+VECCORE_ATT_HOST_DEVICE
+Transformation3D &Transformation3D::RotateX(double a)
+{
+  double c  = cos(a);
+  double s  = sin(a);
+  double x1 = ryx_, y1 = ryy_, z1 = ryz_;
+  ryx_ = c * x1 - s * rzx_;
+  ryy_ = c * y1 - s * rzy_;
+  ryz_ = c * z1 - s * rzz_;
+  rzx_ = s * x1 + c * rzx_;
+  rzy_ = s * y1 + c * rzy_;
+  rzz_ = s * z1 + c * rzz_;
+
+  double tx = tx_;
+  double ty = c * ty_ - s * tz_;
+  double tz = s * ty_ + c * tz_;
+  SetTranslation(tx, ty, tz);
+  SetProperties();
+  return *this;
+}
+
+VECCORE_ATT_HOST_DEVICE
+Transformation3D &Transformation3D::RotateY(double a)
+{
+  double c  = cos(a);
+  double s  = sin(a);
+  double x1 = rzx_, y1 = rzy_, z1 = rzz_;
+  rzx_ = c * x1 - s * rxx_;
+  rzy_ = c * y1 - s * rxy_;
+  rzz_ = c * z1 - s * rxz_;
+  rxx_ = s * x1 + c * rxx_;
+  rxy_ = s * y1 + c * rxy_;
+  rxz_ = s * z1 + c * rxz_;
+
+  double tx = c * tx_ + s * tz_;
+  double ty = ty_;
+  double tz = -s * tx_ + c * tz_;
+  SetTranslation(tx, ty, tz);
+  SetProperties();
+  return *this;
+}
+
+VECCORE_ATT_HOST_DEVICE
+Transformation3D &Transformation3D::RotateZ(double a)
+{
+  double c  = cos(a);
+  double s  = sin(a);
+  double x1 = rxx_, y1 = rxy_, z1 = rxz_;
+  rxx_ = c * x1 - s * ryx_;
+  rxy_ = c * y1 - s * ryy_;
+  rxz_ = c * z1 - s * ryz_;
+  ryx_ = s * x1 + c * ryx_;
+  ryy_ = s * y1 + c * ryy_;
+  ryz_ = s * z1 + c * ryz_;
+
+  double tx = c * tx_ - s * ty_;
+  double ty = s * tx_ + c * ty_;
+  double tz = tz_;
+  SetTranslation(tx, ty, tz);
+  SetProperties();
+  return *this;
+}
+
 #ifdef VECGEOM_ROOT
 // function to convert this transformation to a TGeo transformation
 // mainly used for the benchmark comparisons with ROOT
-TGeoMatrix *Transformation3D::ConvertToTGeoMatrix(Transformation3D const& ttd)
+TGeoMatrix *Transformation3D::ConvertToTGeoMatrix(Transformation3D const &ttd)
 {
   double rotd[9];
   if (ttd.HasRotation()) {
@@ -232,8 +457,7 @@ std::ostream &operator<<(std::ostream &os, Transformation3D const &transformatio
 DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const
 {
 
-  gpu_ptr.Construct(fTranslation[0], fTranslation[1], fTranslation[2], fRotation[0], fRotation[1], fRotation[2],
-                    fRotation[3], fRotation[4], fRotation[5], fRotation[6], fRotation[7], fRotation[8]);
+  gpu_ptr.Construct(tx_, ty_, tz_, rxx_, ryx_, rzx_, rxy_, ryy_, rzy_, rxz_, ryz_, rzz_);
   CudaAssertError();
   return gpu_ptr;
 }

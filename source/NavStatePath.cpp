@@ -42,7 +42,7 @@ void NavStatePath::DeltaTransformation(NavStatePath const &other, Transformation
   Transformation3D g1;
   other.TopMatrix(g2);
   this->TopMatrix(g1);
-  g1.Inverse(delta);
+  delta = g1.Inverse();
   g2.SetProperties();
   delta.SetProperties();
   delta.FixZeroes();

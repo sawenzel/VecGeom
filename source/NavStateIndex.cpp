@@ -21,7 +21,7 @@ void NavStateIndex::DeltaTransformation(NavStateIndex const &other, Transformati
   Transformation3D g1;
   other.TopMatrix(g2);
   this->TopMatrix(g1);
-  g1.Inverse(delta);
+  delta = g1.Inverse();
   // Trans/rot properties already correctly set
   // g2.SetProperties();
   // delta.SetProperties();

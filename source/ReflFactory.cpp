@@ -97,7 +97,7 @@ vecgeom::Transformation3D ReflFactory::ConvertScaledToPureTransformation(Transfo
 {
   Transformation3D scale3D(0, 0, 0, 0, 0, 0, scale[0], scale[1], scale[2]);
   Transformation3D scale3Dinv;
-  scale3D.Inverse(scale3Dinv);
+  scale3Dinv = scale3D.Inverse();
   // long-cut for scale * pureTransfore * scale.Inverse()
   Transformation3D newTransform3D = scale3D;
   newTransform3D.MultiplyFromRight(pureTransform3D);

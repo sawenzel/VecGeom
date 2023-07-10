@@ -708,10 +708,10 @@ void FillBoxPolyhedron(Vec_t const &box, Polyhedron &polyh)
   vector_t<Polygon> &polys = polyh.fPolys;
 
   vert          = {{-box[0], -box[1], -box[2]}, {-box[0], box[1], -box[2]}, {box[0], box[1], -box[2]},
-          {box[0], -box[1], -box[2]},  {-box[0], -box[1], box[2]}, {-box[0], box[1], box[2]},
-          {box[0], box[1], box[2]},    {box[0], -box[1], box[2]}};
+                   {box[0], -box[1], -box[2]},  {-box[0], -box[1], box[2]}, {-box[0], box[1], box[2]},
+                   {box[0], box[1], box[2]},    {box[0], -box[1], box[2]}};
   polys         = {{4, vert, {0., 0., -1.}}, {4, vert, {0., 0., 1.}}, {4, vert, {-1., 0., 0.}},
-           {4, vert, {0., 1., 0.}},  {4, vert, {1., 0., 0.}}, {4, vert, {0., -1., 0.}}};
+                   {4, vert, {0., 1., 0.}},  {4, vert, {1., 0., 0.}}, {4, vert, {0., -1., 0.}}};
   polys[0].fInd = {0, 1, 2, 3};
   polys[1].fInd = {4, 7, 6, 5};
   polys[2].fInd = {0, 4, 5, 1};
@@ -872,7 +872,7 @@ EBodyXing_t BoxCollision(Vector3D<Precision> const &box1, Transformation3D const
   // A lambda computing min for the i component
   // compute matrix to go from 2 to 1
   Transformation3D tr12;
-  tr1.Inverse(tr12);
+  tr12 = tr1.Inverse();
   tr12.MultiplyFromRight(tr2); // Relative transformation of 2 in local coordinates of 1
   // Fill mesh of points for 2
   const Vec_t mesh2[8] = {{-box2[0], -box2[1], -box2[2]}, {-box2[0], box2[1], -box2[2]}, {box2[0], box2[1], -box2[2]},
@@ -910,7 +910,7 @@ EBodyXing_t BoxCollision(Vector3D<Precision> const &box1, Transformation3D const
                           {box1[0], box1[1], box1[2]},    {box1[0], -box1[1], box1[2]}};
 
   Transformation3D tr21;
-  tr2.Inverse(tr21);
+  tr21 = tr2.Inverse();
   tr21.MultiplyFromRight(tr1); // Relative transformation of 2 in local coordinates of 1
   for (auto i = 0; i < 8; ++i)
     tr21.InverseTransform(mesh1[i], mesh[i]);

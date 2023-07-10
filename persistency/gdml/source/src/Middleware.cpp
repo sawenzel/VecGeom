@@ -113,27 +113,16 @@ T GetAttribute(std::string const &attrName, XERCES_CPP_NAMESPACE_QUALIFIER DOMNa
   return vgdml::Helper::GetAttribute<T>(attrName, theAttributes);
 }
 
-std::array<double, 9> makeRotationMatrixFromCartesianAngles(double x, double y, double z)
+vecgeom::Transformation3D makeRotationMatrixFromCartesianAngles(double x, double y, double z)
 {
-  // besides being faster, omitting this special case returns an "identity" matrix with r[2] = -0
-  if (x == 0 && y == 0 && z == 0) return {{1, 0, 0, 0, 1, 0, 0, 0, 1}};
-
-  auto const s1 = -std::sin(x);
-  auto const c1 = std::cos(x);
-  auto const s2 = -std::sin(y);
-  auto const c2 = std::cos(y);
-  auto const s3 = -std::sin(z);
-  auto const c3 = std::cos(z);
-  auto const xx = c2 * c3;
-  auto const xy = -c2 * s3;
-  auto const xz = s2;
-  auto const yx = c1 * s3 + c3 * s1 * s2;
-  auto const yy = c1 * c3 - s1 * s2 * s3;
-  auto const yz = -c2 * s1;
-  auto const zx = s1 * s3 - c1 * c3 * s2;
-  auto const zy = c3 * s1 + c1 * s2 * s3;
-  auto const zz = c1 * c2;
-  return {{xx, xy, xz, yx, yy, yz, zx, zy, zz}};
+  // Similar to the way Geant4 constructs this
+  vecgeom::Transformation3D rotxyz;
+  if (x == 0 && y == 0 && z == 0) return rotxyz;
+  rotxyz.RotateX(x);
+  rotxyz.RotateY(y);
+  rotxyz.RotateZ(z);
+  rotxyz.Rectify();
+  return rotxyz;
 }
 } // namespace
 
@@ -496,9 +485,9 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processBoole
     std::cout << "Middleware::processBoolean: one of the requested soilds not found" << std::endl;
     return nullptr;
   }
-  auto const r              = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
-  auto const transformation = vecgeom::VECGEOM_IMPL_NAMESPACE::Transformation3D(
-      position.x(), position.y(), position.z(), r[0], r[3], r[6], r[1], r[4], r[7], r[2], r[5], r[8]);
+  auto const rotxyz         = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
+  auto const transformation = vecgeom::Transformation3D(position.x(), position.y(), position.z(), rotxyz.Inverse());
+
   auto const logicFirstVolume  = new vecgeom::VECGEOM_IMPL_NAMESPACE::LogicalVolume(name1st.c_str(), firstSolid);
   auto const logicSecondVolume = new vecgeom::VECGEOM_IMPL_NAMESPACE::LogicalVolume(name2nd.c_str(), secondSolid);
   auto *placedFirstSolidPtr    = logicFirstVolume->Place();
@@ -580,9 +569,9 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VPlacedVolume const *Middleware::processMultiUn
     std::cout << "Middleware::processUnion: one of the requested soilds not found" << std::endl;
     return nullptr;
   }
-  auto const r              = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
-  auto const transformation = vecgeom::VECGEOM_IMPL_NAMESPACE::Transformation3D(
-      position.x(), position.y(), position.z(), r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+  auto const rotxyz         = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
+  auto const transformation = vecgeom::Transformation3D(position.x(), position.y(), position.z(), rotxyz);
+  // vecgeom::Transformation3D transformation(position.x(), position.y(), position.z(), rotation);
   auto const logicVolume = new vecgeom::VECGEOM_IMPL_NAMESPACE::LogicalVolume(name.c_str(), solid);
   auto *placedSolidPtr   = logicVolume->Place(name.c_str(), &transformation);
   return placedSolidPtr;
@@ -1490,9 +1479,8 @@ bool Middleware::processPhysicalVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode co
     }
   }
   if (!logicalVolume) return false;
-  auto const r = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
-  vecgeom::Transformation3D transformation(position.x(), position.y(), position.z(), r[0], r[1], r[2], r[3], r[4], r[5],
-                                           r[6], r[7], r[8]);
+  auto const rotxyz = makeRotationMatrixFromCartesianAngles(rotation.x(), rotation.y(), rotation.z());
+  vecgeom::Transformation3D transformation(position.x(), position.y(), position.z(), rotxyz);
 
   // make sure PVname is not empty
   if (PVname == "") {
