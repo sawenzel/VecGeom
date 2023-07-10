@@ -16,7 +16,7 @@ code_checks:
   stage: build
   before_script:
     - apt update -y && apt-get upgrade -y
-    - apt install -y software-properties-common wget clang-14 libclang-14-dev clang-tidy-14 python3 python-is-python3 cmake
+    - apt install -y software-properties-common wget clang-14 libclang-14-dev clang-tidy-14 python3 python-is-python3 cmake git
   script:
     - mkdir build && cd build
     - CXX=clang++-14 cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_ROOT=OFF -DVECGEOM_GDML=OFF -DVECGEOM_TEST_STATIC_ANALYSIS=ON -DVECGEOM_BACKEND=Scalar
@@ -32,7 +32,7 @@ with_ROOT:
    stage: build
    before_script:
      - yum install environment-modules -y
-     - yum install -y unzip autoconf automake make gcc
+     - yum install -y unzip autoconf automake make gcc git
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-18-04-8)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
@@ -50,7 +50,7 @@ with_NAVINDEX:
    stage: build
    before_script:
      - yum install environment-modules -y
-     - yum install -y unzip autoconf automake make gcc
+     - yum install -y unzip autoconf automake make gcc git
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-18-04-8)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"

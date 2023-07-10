@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "VecGeom/base/Config.h"
+#include "VecGeom/base/Version.h"
 #ifdef VECGEOM_CUDA_INTERFACE
 #include "VecGeom/management/CudaManager.h"
 #endif
@@ -13,6 +14,8 @@ using namespace vecgeom;
 
 int main()
 {
+  std::cout << "VecGeom version " << vecgeom_version << std::endl;
+  static_assert(VECGEOM_VERSION >= 0x020000, "Version is too old");
 
   // Vector3D<Precision> vec1(5, 3, 1);
   // Vector3D<Precision> vec2(2, 8, 0);

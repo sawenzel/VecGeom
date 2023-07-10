@@ -1,7 +1,7 @@
 # - Enforce an out-of-source builds before anything else
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   # The odd formatting of the string is needed to comply with CMake's display rules!
-  message(FATAL_ERROR 
+  message(FATAL_ERROR
 "VecGeom in-source build detected
  Please remove these files from ${CMAKE_CURRENT_BINARY_DIR}:
   \n  CMakeCache.txt
@@ -15,17 +15,16 @@ cmake_minimum_required(VERSION 3.16...3.26)
 include(cmake/modules/RecordCmdLine.cmake)
 include(ExternalProject)
 
+# Set VecGeom_VERSION using git tags or release metadata
+set(CGV_TAG_REGEX "v([0-9.]+)(-dev|-rc.?[0-9]+)?")
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/CgvFindVersion.cmake")
+cgv_find_version(VecGeom)
+
 project(VecGeom
-  VERSION 2.0.0
+  VERSION ${VecGeom_VERSION}
   DESCRIPTION "Vectorized geometry library for particle-detector simulation"
   HOMEPAGE_URL "https://gitlab.cern.ch/VecGeom/VecGeom"
   LANGUAGES C CXX)
-
-# Comment the line below when not an RC!
-set(VecGeom_VERSION_RC 1)
-if(DEFINED VecGeom_VERSION_RC)
- string(APPEND VecGeom_VERSION "-rc${VecGeom_VERSION_RC}")
-endif()
 
 ################################################################################
 # - Core CMake settings
@@ -590,11 +589,21 @@ if(NOT APPLE)
   set(VECGEOM_LIBRARIES_EXTERNAL ${VECGEOM_LIBRARIES_EXTERNAL} rt pthread)
 endif()
 
-# - Configure settings header
+# Set up hex version: add an extra 1 up front and strip it to zero-pad
+math(EXPR _temp_version
+  "((256 + ${PROJECT_VERSION_MAJOR}) * 256 + ${PROJECT_VERSION_MINOR}) * 256 + ${PROJECT_VERSION_PATCH}"
+  OUTPUT_FORMAT HEXADECIMAL
+)
+string(SUBSTRING "${_temp_version}" 3 -1 _temp_version)
+set(VECGEOM_HEX_VERSION "0x${_temp_version}")
+
+# - Configure settings and version headers
 configure_file(VecGeom/base/Config.h.in ${PROJECT_BINARY_DIR}/VecGeom/base/Config.h @ONLY)
+configure_file(VecGeom/base/Version.h.in ${PROJECT_BINARY_DIR}/VecGeom/base/Version.h @ONLY)
 
 add_library(vecgeom
   ${PROJECT_BINARY_DIR}/VecGeom/base/Config.h
+  ${PROJECT_BINARY_DIR}/VecGeom/base/Version.h
   ${VECGEOM_COMMON_SRCS}
   ${VECGEOM_CPPONLY_SRCS})
 target_compile_features(vecgeom PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
@@ -713,7 +722,9 @@ endif()
 install(DIRECTORY VecGeom DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   PATTERN "*.h.in" EXCLUDE)
 
-install(FILES ${PROJECT_BINARY_DIR}/VecGeom/base/Config.h
+install(FILES
+    ${PROJECT_BINARY_DIR}/VecGeom/base/Config.h
+    ${PROJECT_BINARY_DIR}/VecGeom/base/Version.h
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/VecGeom/base")
 
 install(TARGETS vecgeom EXPORT VecGeomTargets DESTINATION "${CMAKE_INSTALL_LIBDIR}")

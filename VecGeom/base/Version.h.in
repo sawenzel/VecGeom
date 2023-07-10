@@ -1,0 +1,19 @@
+/*!
+ * \file Version.h
+ *
+ * Version metadata for VecGeom.
+ */
+
+#ifndef VECGEOM_BASE_VERSION_H_
+#define VECGEOM_BASE_VERSION_H_
+
+/*! VecGeom version. Encoded as a big-endian hexidecimal with one byte per
+ * component: (major * 256 + minor) * 256 + patch. */
+#define VECGEOM_VERSION @VECGEOM_HEX_VERSION@
+
+static const char vecgeom_version[]    = "@VecGeom_VERSION_STRING@";
+static const int vecgeom_version_major = @PROJECT_VERSION_MAJOR@;
+static const int vecgeom_version_minor = @PROJECT_VERSION_MINOR@;
+static const int vecgeom_version_patch = @PROJECT_VERSION_PATCH@;
+
+#endif /* VECGEOM_VERSION_H_ */
