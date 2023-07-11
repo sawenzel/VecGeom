@@ -214,15 +214,6 @@ struct SphereImplementation {
     }
 
     distance = Min(distThetaMin, distance);
-
-    Vector3D<Real_v> directDir = (Vector3D<Real_v>(0., 0., 0.) - point);
-    Real_v newDist             = directDir.Mag();
-    vecCore__MaskedAssignFunc(distance,
-                              Bool_v(sphere.fSTheta > kHalfTolerance || sphere.eTheta < (kPi - kHalfTolerance)) &&
-                                  (Abs(directDir.Unit().x() - direction.x()) < kHalfTolerance) &&
-                                  (Abs(directDir.Unit().y() - direction.y()) < kHalfTolerance) &&
-                                  (Abs(directDir.Unit().z() - direction.z()) < kHalfTolerance),
-                              Min(distance, newDist));
   }
 
   template <typename Real_v>

@@ -104,8 +104,7 @@ public:
    * @output : Vector3D : calculated normal at the input point.
    */
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<Real_v> GetNormal1(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<Real_v> GetNormal1(Vector3D<Real_v> const &point) const
   {
 
     Vector3D<Real_v> normal(2. * point.x(), 2. * point.y(), -2. * tanSTheta2 * point.z());
@@ -125,8 +124,7 @@ public:
    */
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<Real_v> GetNormal2(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<Real_v> GetNormal2(Vector3D<Real_v> const &point) const
   {
 
     Vector3D<Real_v> normal(2 * point.x(), 2 * point.y(), -2 * tanETheta2 * point.z());
@@ -148,8 +146,7 @@ public:
    * functions, but this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function
    */
   template <typename Real_v, bool ForStartTheta>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<Real_v> GetNormal(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<Real_v> GetNormal(Vector3D<Real_v> const &point) const
   {
 
     if (ForStartTheta) {
@@ -181,8 +178,7 @@ public:
    * this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function.
    */
   template <typename Real_v, bool ForStartTheta>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> IsOnSurfaceGeneric(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> IsOnSurfaceGeneric(Vector3D<Real_v> const &point) const
   {
     Real_v rhs(0.);
     if (ForStartTheta) {
@@ -191,8 +187,7 @@ public:
       rhs = Abs(tanETheta * point.z());
     }
     Real_v rho2 = point.Perp2();
-    return rho2 >= MakeMinusTolerantSquare<true>(rhs) &&
-           rho2 <= MakePlusTolerantSquare<true>(rhs);
+    return rho2 >= MakeMinusTolerantSquare<true>(rhs) && rho2 <= MakePlusTolerantSquare<true>(rhs);
   }
 
   /* Function Name : IsPointOnSurfaceAndMovingOut<Real_v, ForStartTheta, MovingOut>
@@ -214,9 +209,8 @@ public:
    * Very useful for DistanceToIn and DistanceToOut.
    */
   template <typename Real_v, bool ForStartTheta, bool MovingOut>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> IsPointOnSurfaceAndMovingOut(Vector3D<Real_v> const &point,
-                                                                Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> IsPointOnSurfaceAndMovingOut(
+      Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
 
     if (MovingOut) {
@@ -229,8 +223,7 @@ public:
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> Contains(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Contains(Vector3D<Real_v> const &point) const
   {
 
     using Bool_v = vecCore::Mask_v<Real_v>;
@@ -241,8 +234,8 @@ public:
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> ContainsWithBoundary(Vector3D<Real_v> const & /*point*/) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> ContainsWithBoundary(
+      Vector3D<Real_v> const & /*point*/) const
   {
   }
   /*
@@ -262,8 +255,7 @@ public:
     }
   */
   template <typename Real_v, typename Inside_t>
-  VECCORE_ATT_HOST_DEVICE
-  Inside_t Inside(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Inside_t Inside(Vector3D<Real_v> const &point) const
   {
     using Bool_v       = vecCore::Mask_v<Real_v>;
     using InsideBool_v = vecCore::Mask_v<Inside_t>;
@@ -280,8 +272,7 @@ public:
    * the point is located outside the ThetaCone
    */
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v SafetyToIn(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Real_v SafetyToIn(Vector3D<Real_v> const &point) const
   {
 
     using Bool_v = vecCore::Mask_v<Real_v>;
@@ -330,8 +321,7 @@ public:
    * the point is located inside the ThetaCone ( within the defining phi angle )
    */
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v SafetyToOut(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Real_v SafetyToOut(Vector3D<Real_v> const &point) const
   {
 
     Real_v pointRad    = Sqrt(point.x() * point.x() + point.y() * point.y());
@@ -370,8 +360,7 @@ public:
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToLine(Precision const &slope, Real_v const &x, Real_v const &y) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToLine(Precision const &slope, Real_v const &x, Real_v const &y) const
   {
 
     Real_v dist = (y - slope * x) / Sqrt(Real_v(1.) + slope * slope);
@@ -382,126 +371,102 @@ public:
    * estimate of the distance to the ThetaCone boundary with given direction
    */
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir, Real_v &distThetaCone1,
-                    Real_v &distThetaCone2, typename vecCore::Mask_v<Real_v> &intsect1,
-                    typename vecCore::Mask_v<Real_v> &intsect2) const
+  VECCORE_ATT_HOST_DEVICE void DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
+                                            Real_v &distThetaCone1, Real_v &distThetaCone2,
+                                            typename vecCore::Mask_v<Real_v> &intsect1,
+                                            typename vecCore::Mask_v<Real_v> &intsect2) const
   {
 
-    {
-      using Bool_v = vecCore::Mask_v<Real_v>;
+    using Bool_v = vecCore::Mask_v<Real_v>;
+    Bool_v done(false);
+    Bool_v fal(false);
 
-      Bool_v done(false);
-      Bool_v fal(false);
+    distThetaCone1 = Real_v(kInfLength);
+    distThetaCone2 = Real_v(kInfLength);
+    intsect1       = fal;
+    intsect2       = fal;
+    if (fSTheta >= fETheta) return;
 
-      Real_v firstRoot(kInfLength), secondRoot(kInfLength);
+    Real_v firstRoot(kInfLength), secondRoot(kInfLength);
 
-      Real_v pDotV2d = point.x() * dir.x() + point.y() * dir.y();
-      Real_v rho2    = point.x() * point.x() + point.y() * point.y();
-      Real_v dirRho2 = dir.Perp2();
+    Real_v pDotV2d = point.x() * dir.x() + point.y() * dir.y();
+    Real_v rho2    = point.x() * point.x() + point.y() * point.y();
+    Real_v dirRho2 = dir.Perp2();
 
+    if (fSTheta > 0) {
       Real_v b = pDotV2d - point.z() * dir.z() * tanSTheta2;
       // Real_v a = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanSTheta2;
-      Real_v a    = dirRho2 - dir.z() * dir.z() * tanSTheta2;
-      Real_v c    = rho2 - point.z() * point.z() * tanSTheta2;
-      Real_v d2   = b * b - a * c;
+      Real_v a  = dirRho2 - dir.z() * dir.z() * tanSTheta2;
+      Real_v c  = rho2 - point.z() * point.z() * tanSTheta2;
+      Real_v d2 = b * b - a * c;
+      // Catch intersection with the tip of the cone even if rounded off
+      vecCore__MaskedAssignFunc(d2, ((Abs(d2) < kTolerance)), Real_v(0.));
       Real_v aInv = Real_v(1.) / NonZero(a);
 
-      vecCore__MaskedAssignFunc(firstRoot, (d2 > Real_v(0.)), (-b + Sqrt(Abs(d2))) * aInv);
+      if (fSTheta < kHalfPi - halfAngTolerance) {
+        vecCore__MaskedAssignFunc(firstRoot, (d2 > Real_v(-kTolerance)), (-b + Sqrt(Abs(d2))) * aInv);
+      } else if (fSTheta > kHalfPi + halfAngTolerance) {
+        vecCore__MaskedAssignFunc(firstRoot, (d2 > Real_v(-kTolerance)), (-b - Sqrt(Abs(d2))) * aInv);
+      }
       done |= (Abs(firstRoot) < Real_v(3.) * kTolerance);
       vecCore__MaskedAssignFunc(firstRoot, ((Abs(firstRoot) < Real_v(3.) * kTolerance)), Real_v(0.));
       vecCore__MaskedAssignFunc(firstRoot, (!done && (firstRoot < Real_v(0.))), InfinityLength<Real_v>());
+    }
 
-      Real_v b2 = pDotV2d - point.z() * dir.z() * tanETheta2;
+    if (fETheta < kPi) {
+      Real_v b = pDotV2d - point.z() * dir.z() * tanETheta2;
       // Real_v a2 = dir.x() * dir.x() + dir.y() * dir.y() - dir.z() * dir.z() * tanETheta2;
-      Real_v a2    = dirRho2 - dir.z() * dir.z() * tanETheta2;
-      Real_v c2    = rho2 - point.z() * point.z() * tanETheta2;
-      Real_v d22   = b2 * b2 - a2 * c2;
-      Real_v a2Inv = Real_v(1.) / NonZero(a2);
+      Real_v a  = dirRho2 - dir.z() * dir.z() * tanETheta2;
+      Real_v c  = rho2 - point.z() * point.z() * tanETheta2;
+      Real_v d2 = b * b - a * c;
+      // Catch intersection with the tip of the cone even if rounded off
+      vecCore__MaskedAssignFunc(d2, ((Abs(d2) < kTolerance)), Real_v(0.));
+      Real_v aInv = Real_v(1.) / NonZero(a);
 
-      vecCore__MaskedAssignFunc(secondRoot, (d22 > Real_v(0.)), (-b2 - Sqrt(Abs(d22))) * a2Inv);
+      if (fETheta < kHalfPi - halfAngTolerance) {
+        vecCore__MaskedAssignFunc(secondRoot, (d2 > Real_v(-kTolerance)), (-b - Sqrt(Abs(d2))) * aInv);
+      } else if (fETheta > kHalfPi + halfAngTolerance) {
+        vecCore__MaskedAssignFunc(secondRoot, (d2 > Real_v(-kTolerance)), (-b + Sqrt(Abs(d2))) * aInv);
+      }
       vecCore__MaskedAssignFunc(secondRoot, (!done && (Abs(secondRoot) < Real_v(3.) * kTolerance)), Real_v(0.));
       done |= (Abs(secondRoot) < Real_v(3.) * kTolerance);
       vecCore__MaskedAssignFunc(secondRoot, !done && (secondRoot < Real_v(0.)), InfinityLength<Real_v>());
+    }
 
-      if (fSTheta < kHalfPi + halfAngTolerance) {
-        if (fETheta < kHalfPi + halfAngTolerance) {
-          if (fSTheta < fETheta) {
-            distThetaCone1          = firstRoot;
-            distThetaCone2          = secondRoot;
-            Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
-            Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
+    distThetaCone1 = firstRoot;
+    distThetaCone2 = secondRoot;
+    intsect1       = distThetaCone1 != kInfLength;
+    intsect2       = distThetaCone2 != kInfLength;
 
-            intsect1 = ((d2 > Real_v(0.)) && (zOfIntSecPtCone1 > Real_v(0.)));
-            intsect2 = ((d22 > Real_v(0.)) && (zOfIntSecPtCone2 > Real_v(0.)));
-          }
-        }
+    Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
+    Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
 
-        if (fETheta >= kHalfPi - halfAngTolerance && fETheta <= kHalfPi + halfAngTolerance) {
-          vecCore__MaskedAssignFunc(distThetaCone2, (dir.z() > Real_v(0.)), -point.z() / dir.z());
-          Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
-          intsect2                = ((distThetaCone2 != kInfLength) && (Abs(zOfIntSecPtCone2) < halfAngTolerance));
-        }
+    if (fSTheta < kHalfPi - halfAngTolerance)
+      intsect1 &= zOfIntSecPtCone1 > Real_v(-kTolerance);
+    else if (fSTheta > kHalfPi + halfAngTolerance)
+      intsect1 &= zOfIntSecPtCone1 < Real_v(kTolerance);
+    else {
+      vecCore__MaskedAssignFunc(distThetaCone1, (dir.z() < Real_v(0.)), -point.z() / dir.z());
+      Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
+      intsect1                = Abs(zOfIntSecPtCone1) < kTolerance;
+    }
 
-        if (fETheta > kHalfPi + halfAngTolerance) {
-          if (fSTheta < fETheta) {
-            distThetaCone1 = firstRoot;
-            vecCore__MaskedAssignFunc(secondRoot, (d22 > Real_v(0.)), (-b2 + Sqrt(Abs(d22))) * a2Inv);
-
-            done = fal;
-            done |= (Abs(secondRoot) < Real_v(3.) * kTolerance);
-            vecCore__MaskedAssignFunc(secondRoot, ((Abs(secondRoot) < Real_v(3.) * kTolerance)), Real_v(0.));
-            vecCore__MaskedAssignFunc(secondRoot, !done && (secondRoot < Real_v(0.)), InfinityLength<Real_v>());
-            distThetaCone2 = secondRoot;
-
-            Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
-            Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
-
-            intsect1 = ((d2 > 0) && (distThetaCone1 != kInfLength) && (zOfIntSecPtCone1 > Real_v(0.)));
-            intsect2 = ((d22 > 0) && (distThetaCone2 != kInfLength) && (zOfIntSecPtCone2 < Real_v(0.)));
-          }
-        }
-      }
-
-      if (fSTheta >= kHalfPi - halfAngTolerance) {
-        if (fETheta > kHalfPi + halfAngTolerance) {
-          if (fSTheta < fETheta) {
-            vecCore__MaskedAssignFunc(firstRoot, (d2 > Real_v(0.)), (-b - Sqrt(Abs(d2))) * aInv);
-            done = fal;
-            done |= (Abs(firstRoot) < Real_v(3.) * kTolerance);
-            vecCore__MaskedAssignFunc(firstRoot, ((Abs(firstRoot) < Real_v(3.) * kTolerance)), Real_v(0.));
-            vecCore__MaskedAssignFunc(firstRoot, !done && (firstRoot < Real_v(0.)), InfinityLength<Real_v>());
-            distThetaCone1 = firstRoot;
-
-            vecCore__MaskedAssignFunc(secondRoot, (d22 > Real_v(0.)), (-b2 + Sqrt(Abs(d22))) * a2Inv);
-            done = fal;
-            done |= (Abs(secondRoot) < Real_v(3.) * kTolerance);
-            vecCore__MaskedAssignFunc(secondRoot, ((Abs(secondRoot) < Real_v(3.) * kTolerance)), Real_v(0.));
-            vecCore__MaskedAssignFunc(secondRoot, !done && (secondRoot < Real_v(0.)), InfinityLength<Real_v>());
-            distThetaCone2 = secondRoot;
-
-            Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
-            Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
-
-            intsect1 = ((d2 > 0) && (distThetaCone1 != kInfLength) && (zOfIntSecPtCone1 < Real_v(0.)));
-            intsect2 = ((d22 > 0) && (distThetaCone2 != kInfLength) && (zOfIntSecPtCone2 < Real_v(0.)));
-          }
-        }
-      }
-
-      if (fSTheta >= kHalfPi - halfAngTolerance && fSTheta <= kHalfPi + halfAngTolerance) {
-        vecCore__MaskedAssignFunc(distThetaCone1, (dir.z() < Real_v(0.)), -point.z() / dir.z());
-        Real_v zOfIntSecPtCone1 = (point.z() + distThetaCone1 * dir.z());
-        intsect1                = ((distThetaCone1 != kInfLength) && (Abs(zOfIntSecPtCone1) < halfAngTolerance));
-      }
+    if (fETheta < kHalfPi - halfAngTolerance)
+      intsect2 &= zOfIntSecPtCone2 > Real_v(-kTolerance);
+    else if (fETheta > kHalfPi + halfAngTolerance)
+      intsect2 &= zOfIntSecPtCone2 < Real_v(kTolerance);
+    else {
+      vecCore__MaskedAssignFunc(distThetaCone2, (dir.z() > Real_v(0.)), -point.z() / dir.z());
+      Real_v zOfIntSecPtCone2 = (point.z() + distThetaCone2 * dir.z());
+      intsect2                = Abs(zOfIntSecPtCone2) < kTolerance;
     }
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir, Real_v &distThetaCone1,
-                     Real_v &distThetaCone2, typename vecCore::Mask_v<Real_v> &intsect1,
-                     typename vecCore::Mask_v<Real_v> &intsect2) const
+  VECCORE_ATT_HOST_DEVICE void DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
+                                             Real_v &distThetaCone1, Real_v &distThetaCone2,
+                                             typename vecCore::Mask_v<Real_v> &intsect1,
+                                             typename vecCore::Mask_v<Real_v> &intsect2) const
   {
 
     using Bool_v = vecCore::Mask_v<Real_v>;
@@ -651,8 +616,7 @@ public:
 
   // This could be useful in case somebody just want to check whether point is completely inside ThetaRange
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> IsCompletelyInside(Vector3D<Real_v> const &localPoint) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> IsCompletelyInside(Vector3D<Real_v> const &localPoint) const
   {
 
     using Bool_v       = vecCore::Mask_v<Real_v>;
@@ -729,8 +693,7 @@ public:
 
   // This could be useful in case somebody just want to check whether point is completely outside ThetaRange
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  typename vecCore::Mask_v<Real_v> IsCompletelyOutside(Vector3D<Real_v> const &localPoint) const
+  VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> IsCompletelyOutside(Vector3D<Real_v> const &localPoint) const
   {
 
     using Bool_v       = vecCore::Mask_v<Real_v>;
@@ -807,10 +770,9 @@ public:
   }
 
   template <typename Real_v, bool ForInside>
-  VECCORE_ATT_HOST_DEVICE
-  void GenericKernelForContainsAndInside(Vector3D<Real_v> const &localPoint,
-                                         typename vecCore::Mask_v<Real_v> &completelyinside,
-                                         typename vecCore::Mask_v<Real_v> &completelyoutside) const
+  VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(
+      Vector3D<Real_v> const &localPoint, typename vecCore::Mask_v<Real_v> &completelyinside,
+      typename vecCore::Mask_v<Real_v> &completelyoutside) const
   {
     if (ForInside) completelyinside = IsCompletelyInside<Real_v>(localPoint);
 
