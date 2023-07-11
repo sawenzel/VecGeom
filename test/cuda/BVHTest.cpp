@@ -36,6 +36,7 @@ int main(int argc, char **argv)
   if (!filename || !vgdml::Frontend::Load(filename, validate, mm_unit, verbose))
     errx(EBADF, "Cannot open file '%s'", filename);
 
+  CudaAssertError(CudaDeviceSetStackLimit(8192));
   auto &geoManager  = GeoManager::Instance();
   auto &cudaManager = CudaManager::Instance();
 
