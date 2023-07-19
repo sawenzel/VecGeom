@@ -33,9 +33,9 @@ struct CoaxialConesStruct {
   {
 
     for (unsigned int i = 0; i < fConeStructVector.size(); i++) {
-      std::cout << std::endl << "====== Index of cone struct : " << i << " ======" << std::endl;
+      std::cerr << std::endl << "====== Index of cone struct : " << i << " ======" << std::endl;
       fConeStructVector[i]->Print();
-      std::cout << std::endl;
+      std::cerr << std::endl;
     }
   }
 

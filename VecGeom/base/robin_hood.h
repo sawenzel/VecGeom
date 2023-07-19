@@ -51,7 +51,7 @@
 // #define ROBIN_HOOD_LOG_ENABLED
 #ifdef ROBIN_HOOD_LOG_ENABLED
 #include <iostream>
-#define ROBIN_HOOD_LOG(x) std::cout << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
+#define ROBIN_HOOD_LOG(x) std::cerr << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
 #else
 #define ROBIN_HOOD_LOG(x)
 #endif
@@ -59,7 +59,7 @@
 // #define ROBIN_HOOD_TRACE_ENABLED
 #ifdef ROBIN_HOOD_TRACE_ENABLED
 #include <iostream>
-#define ROBIN_HOOD_TRACE(x) std::cout << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
+#define ROBIN_HOOD_TRACE(x) std::cerr << __FUNCTION__ << "@" << __LINE__ << ": " << x << std::endl
 #else
 #define ROBIN_HOOD_TRACE(x)
 #endif
@@ -474,7 +474,7 @@ private:
     size_t const numElementsToAlloc = calcNumElementsToAlloc();
 
     // alloc new memory: [prev |T, T, ... T]
-    // std::cout << (sizeof(T*) + ALIGNED_SIZE * numElementsToAlloc) << " bytes" << std::endl;
+    // std::cerr << (sizeof(T*) + ALIGNED_SIZE * numElementsToAlloc) << " bytes" << std::endl;
     size_t const bytes = ALIGNMENT + ALIGNED_SIZE * numElementsToAlloc;
     add(assertNotNull<std::bad_alloc>(malloc(bytes)), bytes);
     return mHead;

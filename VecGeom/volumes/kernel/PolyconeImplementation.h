@@ -57,7 +57,7 @@ struct PolyconeImplementation {
     PolyconeSection const &sec    = unplaced.GetSection(isect);
     Vector3D<Precision> secLocalp = polyconePoint - Vector3D<Precision>(0, 0, sec.fShift);
 #ifdef POLYCONEDEBUG
-    std::cout << " isect=" << isect << "/" << unplaced.GetNSections() << " secLocalP=" << secLocalp
+    std::cerr << " isect=" << isect << "/" << unplaced.GetNSections() << " secLocalP=" << secLocalp
               << ", secShift=" << sec.fShift << " sec.fSolid=" << sec.fSolid << std::endl;
     if (sec.fSolid) sec.fSolid->Print();
 #endif
@@ -164,7 +164,7 @@ struct PolyconeImplementation {
     Vector3D<Real_v> v = direction;
 
 #ifdef POLYCONEDEBUG
-    std::cout << "Polycone::DistToIn() (spot 1): point=" << point << ", dir=" << direction << ", localPoint=" << p
+    std::cerr << "Polycone::DistToIn() (spot 1): point=" << point << ", dir=" << direction << ", localPoint=" << p
               << ", localDir=" << v << "\n";
 #endif
 
@@ -182,7 +182,7 @@ struct PolyconeImplementation {
       PolyconeSection const &sec = polycone.GetSection(index);
 
 #ifdef POLYCONEDEBUG
-      std::cout << "Polycone::DistToIn() (spot 2):"
+      std::cerr << "Polycone::DistToIn() (spot 2):"
                 << " index=" << index << " NSec=" << polycone.GetNSections() << " &sec=" << &sec << " - secPars:"
                 << " secOffset=" << sec.fShift << " Dz=" << sec.fSolid->GetDz() << " Rmin1=" << sec.fSolid->GetRmin1()
                 << " Rmin2=" << sec.fSolid->GetRmin2() << " Rmax1=" << sec.fSolid->GetRmax1()
@@ -193,7 +193,7 @@ struct PolyconeImplementation {
           *sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), v, stepMax, distance);
 
 #ifdef POLYCONEDEBUG
-      std::cout << "Polycone::DistToIn() (spot 3):"
+      std::cerr << "Polycone::DistToIn() (spot 3):"
                 << " distToIn() = " << distance << "\n";
 #endif
 

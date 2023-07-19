@@ -137,7 +137,7 @@ TGeoShape const *UnplacedPolycone::ConvertToRoot(char const *label) const
 
   TGeoPcon *rootshape = new TGeoPcon(fPolycone.fStartPhi * kRadToDeg, fPolycone.fDeltaPhi * kRadToDeg, z.size());
 
-  if (fPolycone.fNz != z.size()) std::cout << "WARNING: Inconsistency in number of polycone sections\n";
+  if (fPolycone.fNz != z.size()) std::cerr << "WARNING: Inconsistency in number of polycone sections\n";
 
   for (unsigned int i = 0; i < fPolycone.fNz; ++i)
     rootshape->DefineSection(i, z[i], rmin[i], rmax[i]);

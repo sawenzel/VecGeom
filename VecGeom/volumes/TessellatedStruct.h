@@ -308,7 +308,7 @@ public:
     int ind[3];
     fInvExtSize = fMaxExtent - fMinExtent;
     if (fInvExtSize[0] * fInvExtSize[1] * fInvExtSize[2] < kTolerance) {
-      std::cout << "Tessellated structure is flat - not allowed\n";
+      std::cerr << "Tessellated structure is flat - not allowed\n";
       return;
     }
     fInvExtSize          = 1. / fInvExtSize;
@@ -321,7 +321,7 @@ public:
     // timer.Start();
     fHelper->CreateCells(ngrid);
     // auto time = timer.Stop();
-    // std::cout << "CreateCells: " << time << " sec\n";
+    // std::cerr << "CreateCells: " << time << " sec\n";
 
     // Loop over facets and their vertices, fill list of vertices free of
     // duplications.
@@ -332,7 +332,7 @@ public:
       }
     }
     // time = timer.Stop();
-    // std::cout << "Remove duplicates: " << time << " sec\n";
+    // std::cerr << "Remove duplicates: " << time << " sec\n";
 
     // Clear vertices and store facet indices in the grid helper
     // timer.Start();
@@ -346,11 +346,11 @@ public:
       ifacet++;
     }
     // time = timer.Stop();
-    // std::cout << "Store facets into grid: " << time << " sec\n";
+    // std::cerr << "Store facets into grid: " << time << " sec\n";
 
     // Make clusters
     // timer.Start();
-    //    std::cout << "=== Using dummy clusters\n";
+    //    std::cerr << "=== Using dummy clusters\n";
     //    CreateDummyClusters();
 
     const int nfacets = fFacets.size();
@@ -376,13 +376,13 @@ public:
     }
 
     // time = timer.Stop();
-    // std::cout << "Clusterizer: " << time << " sec\n";
+    // std::cerr << "Clusterizer: " << time << " sec\n";
 
     // Create navigation helper to be used in TessellatedImplementation
     // timer.Start();
     CreateABBoxes(); // to navigate, see: TestHybridBVH.cpp/HybridNavigator2.h/HybridSafetyEstimator.h
     // time = timer.Stop();
-    // std::cout << "Create AABoxes: " << time << " sec\n";
+    // std::cerr << "Create AABoxes: " << time << " sec\n";
     // Generate random direction non-parallel to any of the surfaces
     constexpr T tolerance(1.e-8);
     while (1) {

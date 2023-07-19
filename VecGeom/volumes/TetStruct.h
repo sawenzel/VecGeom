@@ -76,7 +76,7 @@ struct TetStruct {
     fVertex[2] = p2;
     fVertex[3] = p3;
 
-    // if (CheckDegeneracy()) std::cout << "DeGenerate Tetrahedron not allowed" << std::endl;
+    // if (CheckDegeneracy()) std::cerr << "DeGenerate Tetrahedron not allowed" << std::endl;
     CheckDegeneracy();
 
     Vector3D<Precision> n0 = (fVertex[1] - fVertex[0]).Cross(fVertex[2] - fVertex[0]).Unit();
@@ -106,7 +106,7 @@ struct TetStruct {
     // fPlane[3].d = n3.Dot(fVertex[3]);
 
     for (int i = 0; i < 4; i++) {
-      // std::cout << "Plane[" << i << "] = " << fPlane[i].n << "  " << fPlane[i].d << std::endl;
+      // std::cerr << "Plane[" << i << "] = " << fPlane[i].n << "  " << fPlane[i].d << std::endl;
     }
   }
 

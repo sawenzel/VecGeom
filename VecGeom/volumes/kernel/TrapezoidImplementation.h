@@ -295,14 +295,14 @@ struct TrapezoidImplementation {
     // vecCore::MaskedAssign(dist1, done, Real_v(-1.0));
     // if (vecCore::EarlyReturnMaxLength(done,1) && vecCore::MaskFull(done)) return;
 
-    // std::cout<<"=== point="<< point <<", dir="<< dir <<", distance="<< distance <<"\n";
+    // std::cerr<<"=== point="<< point <<", dir="<< dir <<", distance="<< distance <<"\n";
     for (unsigned int i = 0; i < 4; ++i) {
       // if track is pointing towards plane and vdist<distance, then distance=vdist
       // vecCore__MaskedAssignFunc(dist1, !done && proj[i] > 0.0 && vdist[i] < dist1, vdist[i]);
       vecCore__MaskedAssignFunc(distance, pdist[i] > MakePlusTolerant<true>(0.), Real_v(-1.0));
       vecCore__MaskedAssignFunc(distance, proj[i] > 0.0 && -Sign(pdist[i]) * vdist[i] < distance,
                                 -Sign(pdist[i]) * vdist[i]);
-      // std::cout<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" --> dist="<<
+      // std::cerr<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" --> dist="<<
       // dist1 <<", "<< distance <<"\n";
     }
 #endif
@@ -402,7 +402,7 @@ struct TrapezoidImplementation {
       // this one is farther than our previous one -- update safety and normal
       vecCore__MaskedAssignFunc(normal, saf_i > 0.0, unplaced.normals[i]);
       vecCore__MaskedAssignFunc(safety, saf_i > 0.0, dist[i]);
-      // std::cout<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
+      // std::cerr<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
       // <<"\n";
     }
 #endif
@@ -417,7 +417,7 @@ struct TrapezoidImplementation {
                               Vector3D<Real_v>(0, 0, Sign(point.z())));
     vecCore::MaskedAssign(safety, safz > safety, safz);
     valid = Abs(safety) <= delta;
-    // std::cout<<"safz="<< safz <<", safety="<< safety <<", normal="<< normal <<", valid="<< valid <<"\n";
+    // std::cerr<<"safz="<< safz <<", safety="<< safety <<", normal="<< normal <<", valid="<< valid <<"\n";
 
     // returned vector must be normalized
     if (normal.Mag2() > 1.0) normal.Normalize(); //??? check use of MaskedAssignFunc here!!!

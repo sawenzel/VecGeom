@@ -107,7 +107,7 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
 {
   Stopwatch timer, overalltimer;
   overalltimer.Start();
-  if (verbose_ > 0) std::cout << "Starting synchronization to GPU.\n";
+  if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
 
 #ifdef VECGEOM_USE_NAVINDEX
   if (NavIndexTable::Instance()->GetTableSize() == 0)
@@ -126,9 +126,9 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
   // Create new objects with pointers adjusted to point to GPU memory, then
   // copy them to the allocated memory locations on the GPU.
 
-  if (verbose_ > 1) std::cout << "Copying geometry to GPU..." << std::endl;
+  if (verbose_ > 1) std::cerr << "Copying geometry to GPU..." << std::endl;
 
-  if (verbose_ > 2) std::cout << "\nCopying logical volumes...";
+  if (verbose_ > 2) std::cerr << "\nCopying logical volumes...";
   timer.Start();
   for (std::set<LogicalVolume const *>::const_iterator i = logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
 
@@ -136,9 +136,9 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
                     LookupLogical(*i));
   }
   timer.Stop();
-  if (verbose_ > 2) std::cout << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
-  if (verbose_ > 2) std::cout << "Copying unplaced volumes...";
+  if (verbose_ > 2) std::cerr << "Copying unplaced volumes...";
   timer.Start();
   {
     std::vector<VUnplacedVolume const *> volumesToCopy;
@@ -150,9 +150,9 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     CopyUnplacedVolumes(std::move(volumesToCopy), std::move(devPtrs));
   }
   timer.Stop();
-  if (verbose_ > 2) std::cout << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
-  if (verbose_ > 2) std::cout << "Copying transformations_...";
+  if (verbose_ > 2) std::cerr << "Copying transformations_...";
   timer.Start();
   {
     std::vector<Transformation3D const *> trafos;
@@ -165,17 +165,17 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     Transformation3D::CopyManyToGpu(trafos, devPtrs);
   }
   timer.Stop();
-  if (verbose_ > 2) std::cout << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
-  if (verbose_ > 2) std::cout << "Copying placed volumes...";
+  if (verbose_ > 2) std::cerr << "Copying placed volumes...";
   timer.Start();
 
   CopyPlacedVolumes();
 
   timer.Stop();
-  if (verbose_ > 2) std::cout << (verbose_ > 3 ? "\n\t" : " ") << "OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << (verbose_ > 3 ? "\n\t" : " ") << "OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
-  if (verbose_ > 2) std::cout << "Copying daughter arrays...";
+  if (verbose_ > 2) std::cerr << "Copying daughter arrays...";
   timer.Start();
   std::vector<CudaDaughter_t> daughter_array;
   for (std::set<Vector<Daughter_t> *>::const_iterator i = daughters_.begin(); i != daughters_.end(); ++i) {
@@ -199,9 +199,9 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     (*i)->CopyToGpu(LookupDaughterArray(*i), LookupDaughters(*i));
   }
   timer.Stop();
-  if (verbose_ > 2) std::cout << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
-  if (verbose_ > 2) std::cout << "Copying bounding boxes...";
+  if (verbose_ > 2) std::cerr << "Copying bounding boxes...";
   timer.Start();
   {
     std::vector<VUnplacedVolume const *> volumes;
@@ -214,14 +214,14 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
     VUnplacedVolume::CopyBBoxesToGpu(volumes, devPtrs);
   }
   timer.Stop();
-  if (verbose_ > 2) std::cout << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
+  if (verbose_ > 2) std::cerr << " OK;\tTIME NEEDED " << timer.Elapsed() << "s \n";
 
   synchronized_ = true;
 
   world_gpu_ = LookupPlaced(world_);
 
   overalltimer.Stop();
-  if (verbose_ > 0) std::cout << "Geometry synchronized to GPU in " << overalltimer.Elapsed() << " s.\n";
+  if (verbose_ > 0) std::cerr << "Geometry synchronized to GPU in " << overalltimer.Elapsed() << " s.\n";
 
   return world_gpu_;
 }
@@ -256,7 +256,7 @@ void CudaManager::CleanGpu()
 
   if (memory_map_.size() == 0 && world_gpu_ == NULL) return;
 
-  if (verbose_ > 1) std::cout << "Cleaning GPU...";
+  if (verbose_ > 1) std::cerr << "Cleaning GPU...";
 
   for (auto i = allocated_memory_.begin(), i_end = allocated_memory_.end(); i != i_end; ++i) {
     i->Deallocate();
@@ -268,7 +268,7 @@ void CudaManager::CleanGpu()
   world_gpu_    = vecgeom::DevicePtr<vecgeom::cuda::VPlacedVolume>();
   synchronized_ = false;
 
-  if (verbose_ > 1) std::cout << " OK\n";
+  if (verbose_ > 1) std::cerr << " OK\n";
 }
 
 void CudaManager::Clear()
@@ -293,7 +293,7 @@ bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title, const Co
 {
   // NOTE: Code need to be enhanced to propage the error correctly.
 
-  if (verbose_ > 2) std::cout << "Allocating " << verbose_title << "...";
+  if (verbose_ > 2) std::cerr << "Allocating " << verbose_title << "...";
 
   size_t totalSize = 0;
   // calculate total size of buffer on GPU to hold the GPU copies of the collection
@@ -313,7 +313,7 @@ bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title, const Co
   }
 
   if (verbose_ > 2) {
-    std::cout << " OK: #elems in alloc_mem=" << allocated_memory_.size() << ", mem_map=" << memory_map_.size() << "\n";
+    std::cerr << " OK: #elems in alloc_mem=" << allocated_memory_.size() << ", mem_map=" << memory_map_.size() << "\n";
   }
 
   return true;
@@ -326,7 +326,7 @@ bool CudaManager::AllocateNavIndexOnCoproc()
   auto table_size = NavIndexTable::Instance()->GetTableSize();
   auto table      = NavIndexTable::Instance()->GetTable();
 
-  if (verbose_ > 2) std::cout << "Allocating navigation index table...";
+  if (verbose_ > 2) std::cerr << "Allocating navigation index table...";
 
   GpuAddress gpu_address;
   gpu_address.Allocate(table_size);
@@ -341,7 +341,7 @@ bool CudaManager::AllocateNavIndexOnCoproc()
   // Copy the table
   CopyToGpu((char *)table, gpu_address.GetPtr(), table_size);
 
-  if (verbose_ > 2) std::cout << " OK\n";
+  if (verbose_ > 2) std::cerr << " OK\n";
   return true;
 }
 
@@ -357,7 +357,7 @@ bool CudaManager::AllocatePlacedVolumesOnCoproc()
   // Allocate one past the highest maximum reachable element ID
   unsigned int size = SizeFromHighestId(placed_volumes_);
 
-  if (verbose_ > 2) std::cout << "Allocating " << size << " placed volumes...";
+  if (verbose_ > 2) std::cerr << "Allocating " << size << " placed volumes...";
 
   size_t totalSize = 0;
   // calculate total size of buffer on GPU to hold the GPU copies of the collection
@@ -388,7 +388,7 @@ bool CudaManager::AllocatePlacedVolumesOnCoproc()
     gpu_address += ptr->DeviceSizeOf();
   }
 
-  if (verbose_ > 2) std::cout << " OK\n";
+  if (verbose_ > 2) std::cerr << " OK\n";
 
   return true;
 }
@@ -396,10 +396,10 @@ bool CudaManager::AllocatePlacedVolumesOnCoproc()
 void CudaManager::AllocateGeometry()
 {
 
-  if (verbose_ > 1) std::cout << "Allocating geometry on GPU...";
+  if (verbose_ > 1) std::cerr << "Allocating geometry on GPU...";
 
   {
-    if (verbose_ > 2) std::cout << "Allocating logical volumes...";
+    if (verbose_ > 2) std::cerr << "Allocating logical volumes...";
 
     // Allocate one past the highest maximum reachable element ID
     unsigned int size = SizeFromHighestId(logical_volumes_);
@@ -415,7 +415,7 @@ void CudaManager::AllocateGeometry()
       ++gpu_array;
     }
 
-    if (verbose_ > 2) std::cout << " OK\n";
+    if (verbose_ > 2) std::cerr << " OK\n";
   }
 
   AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_);
@@ -435,7 +435,7 @@ void CudaManager::AllocateGeometry()
   CudaAssertError();
 
   {
-    if (verbose_ > 2) std::cout << "Allocating daughter lists...";
+    if (verbose_ > 2) std::cerr << "Allocating daughter lists...";
 
     DevicePtr<cuda::Vector<CudaDaughter_t>> daughter_gpu_array;
     daughter_gpu_array.Allocate(daughters_.size());
@@ -454,19 +454,19 @@ void CudaManager::AllocateGeometry()
       daughter_gpu_c_array += (*i)->size();
     }
 
-    if (verbose_ > 2) std::cout << " OK\n";
+    if (verbose_ > 2) std::cerr << " OK\n";
   }
 
   CudaAssertError();
 
   if (verbose_ > 2) {
-    std::cout << " geometry OK: #elems in alloc_mem=" << allocated_memory_.size() << ", mem_map=" << memory_map_.size()
+    std::cerr << " geometry OK: #elems in alloc_mem=" << allocated_memory_.size() << ", mem_map=" << memory_map_.size()
               << ", dau_gpu_c_array=" << gpu_memory_map_.size() << "\n";
   }
 
   if (verbose_ > 0) {
-    std::cout << "NUMBER OF PLACED VOLUMES: " << placed_volumes_.size() << '\n';
-    std::cout << "NUMBER OF UNPLACED VOLUMES: " << unplaced_volumes_.size() << '\n';
+    std::cerr << "NUMBER OF PLACED VOLUMES: " << placed_volumes_.size() << '\n';
+    std::cerr << "NUMBER OF UNPLACED VOLUMES: " << unplaced_volumes_.size() << '\n';
   }
 }
 
@@ -594,7 +594,7 @@ void CudaManager::CopyPlacedVolumes() const
     const auto &volInfo                 = type_volInfo.second;
     const VPlacedVolume *const firstVol = volInfo.hostVol.front();
     if (verbose_ > 3) {
-      std::cout << "\n\t" << volInfo.hostVol.size() << "\t" << type_volInfo.first.name();
+      std::cerr << "\n\t" << volInfo.hostVol.size() << "\t" << type_volInfo.first.name();
     }
     firstVol->CopyManyToGpu(volInfo.hostVol, volInfo.logical, volInfo.trafo, volInfo.gpuVol);
   }

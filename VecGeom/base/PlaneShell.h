@@ -245,11 +245,11 @@ public:
     // vecCore__MaskedAssignFunc(distOut, done, Real_v(-1.0));
     // // if (vecCore::EarlyReturnMaxLength(done,1) && vecCore::MaskFull(done)) return distOut;
 
-    // std::cout<<"=== point="<< point <<", dir="<< dir <<"\n";
+    // std::cerr<<"=== point="<< point <<", dir="<< dir <<"\n";
     for (int i = 0; i < N; ++i) {
       vecCore__MaskedAssignFunc(distOut, pdist[i] > kHalfTolerance, Real_v(-1.));
       vecCore__MaskedAssignFunc(distOut, proj[i] > Real_v(0.) && vdist[i] < distOut, vdist[i]);
-      // std::cout<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" "<< vdist1[i] <<"
+      // std::cerr<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" "<< vdist1[i] <<"
       // --> dist="<< distOut <<", "<< distOut1 <<"\n";
     }
 
@@ -348,12 +348,12 @@ public:
       // this one is farther than our previous one -- update safety and normal
       vecCore__MaskedAssignFunc(normal, saf_i > Real_v(0.), Vector3D<Real_v>(this->fA[i], this->fB[i], this->fC[i]));
       vecCore__MaskedAssignFunc(safety, saf_i > Real_v(0.), dist[i]);
-      // std::cout<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
+      // std::cerr<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
       // <<"\n";
     }
 
     // Note: this could be (rarely) a non-normalized normal vector (when point is close to 2 planes)
-    // std::cout<<"Return from PlaneShell::Normal: safety="<< safety <<", normal="<< normal <<"\n";
+    // std::cerr<<"Return from PlaneShell::Normal: safety="<< safety <<", normal="<< normal <<"\n";
     return safety;
   }
 };

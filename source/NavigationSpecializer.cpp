@@ -418,13 +418,13 @@ void TabulatedTransData::EmitVectorGlobalTransformationCode(std::ostream &outstr
 //                                PathLevelIndexMap_t &map)
 //{
 //   // declare return variable
-//   std::cout << "size_t finalindex=0;\n";
+//   std::cerr << "size_t finalindex=0;\n";
 //   int sizeaccum = 1;
 //   for( auto levelsetpair : pathclassification ){
-//      WriteSwitchStatement(levelsetpair, sizeaccum, std::cout, map );
+//      WriteSwitchStatement(levelsetpair, sizeaccum, std::cerr, map );
 //   }
 //   // return finalindex;
-//   std::cout << "return finalindex;\n";
+//   std::cerr << "return finalindex;\n";
 //}
 
 void NavigationSpecializer::DumpDisclaimer(std::ostream &outstream)
@@ -657,7 +657,7 @@ void NavigationSpecializer::AnalyseLogicalVolume()
     std::cerr << "Error reading state files ... aborting\n";
     std::exit(1);
   }
-  std::cout << "Read " << npointsin << " states to analyse\n";
+  std::cerr << "Read " << npointsin << " states to analyse\n";
   AnalyseTargetPaths(inpool, outpool);
 }
 
@@ -982,7 +982,7 @@ void NavigationSpecializer::AnalysePaths(std::list<NavigationState *> const &pat
   fGlobalTransData.EmitTableDefinition(fClassName, fStaticArraysDefinitions);
   std::stringstream ss;
   fGlobalTransData.EmitScalarGlobalTransformationCode(ss);
-  std::cout << ss.str() << "\n";
+  std::cerr << ss.str() << "\n";
 }
 
 template <typename T>

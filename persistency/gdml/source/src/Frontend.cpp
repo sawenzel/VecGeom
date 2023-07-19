@@ -30,7 +30,7 @@ std::unique_ptr<Middleware> Parser::Load(std::string const &aFilename, bool vali
   }
 
   vecgeom::GeoManager::SetMillimeterUnit((vecgeom::Precision)mm_unit);
-  if (verbose == 1) std::cout << "(II) vgdml::Frontend::Load: VecGeom millimeter is " << mm_unit << "\n";
+  if (verbose == 1) std::cerr << "(II) vgdml::Frontend::Load: VecGeom millimeter is " << mm_unit << "\n";
 
   auto aMiddleware = std::unique_ptr<Middleware>(new Middleware());
   if (!aMiddleware->Load(aDOMDoc)) {

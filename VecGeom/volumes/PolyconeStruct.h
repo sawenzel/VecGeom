@@ -381,7 +381,7 @@ struct PolyconeStruct {
         //        std::ostringstream message;
         //        message << "Invalid dphi.\n"
         //                << "Negative or zero delta-Phi (" << dPhi << ")\n";
-        //        std::cout<<"UnplacedTube::CheckDPhiAngle(): Fatal error: "<< message.str().c_str() <<"\n";
+        //        std::cerr<<"UnplacedTube::CheckDPhiAngle(): Fatal error: "<< message.str().c_str() <<"\n";
       }
     }
     // Update Wedge

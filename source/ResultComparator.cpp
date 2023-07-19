@@ -75,29 +75,29 @@ void CompareUnplacedContains(VPlacedVolume const *vol, bool vecgeomresult, Vecto
 #endif
 
   if (mismatch) {
-    std::cout << "## WARNING (  " << callcounter << " ) ## UnplacedContains VecGeom  " << vecgeomresult;
+    std::cerr << "## WARNING (  " << callcounter << " ) ## UnplacedContains VecGeom  " << vecgeomresult;
 #ifdef VECGEOM_ROOT
-    std::cout << " ROOT: " << rootresult;
+    std::cerr << " ROOT: " << rootresult;
 #endif
 #ifdef VECGEOM_GEANT4
-    std::cout << " G4: " << g4inside;
+    std::cerr << " G4: " << g4inside;
 #endif
-    std::cout << "\n";
+    std::cerr << "\n";
   }
 }
 
 void PrintPointInformation(VPlacedVolume const *vol, Vector3D<Precision> const &point)
 {
-  std::cout << " INFORMATION FOR POINT " << point << "\n";
-  std::cout << " RELATIVE TO VOLUME " << vol << "\n";
-  std::cout << " Volume Name " << vol->GetLabel() << "\n";
-  std::cout << " Volume Type ";
+  std::cerr << " INFORMATION FOR POINT " << point << "\n";
+  std::cerr << " RELATIVE TO VOLUME " << vol << "\n";
+  std::cerr << " Volume Name " << vol->GetLabel() << "\n";
+  std::cerr << " Volume Type ";
   vol->PrintType();
-  std::cout << "\n";
-  std::cout << " CONTAINS " << vol->Contains(point) << "\n";
-  std::cout << " INSIDE " << vol->Inside(point) << "\n";
-  std::cout << " SafetyToIn " << vol->SafetyToIn(point) << "\n";
-  std::cout << " SafetyToOut " << vol->SafetyToOut(point) << "\n";
+  std::cerr << "\n";
+  std::cerr << " CONTAINS " << vol->Contains(point) << "\n";
+  std::cerr << " INSIDE " << vol->Inside(point) << "\n";
+  std::cerr << " SafetyToIn " << vol->SafetyToIn(point) << "\n";
+  std::cerr << " SafetyToOut " << vol->SafetyToOut(point) << "\n";
 }
 
 void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vector3D<Precision> const &point,
@@ -119,8 +119,8 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
     rootresult = rootshape->DistFromOutside((double *)&tpoint[0], (double *)&tdirection[0], 3, stepMax);
 
     if (Abs(rootresult - vecgeomresult) > kTolerance * rootresult && Abs(rootresult - vecgeomresult) < 1e30) {
-      std::cout << "## WARNING ## DI VecGeom  " << vecgeomresult;
-      std::cout << " ROOT: " << rootresult << "Delta(" << rootresult - vecgeomresult << ")\n";
+      std::cerr << "## WARNING ## DI VecGeom  " << vecgeomresult;
+      std::cerr << " ROOT: " << rootresult << "Delta(" << rootresult - vecgeomresult << ")\n";
     }
   }
 #endif
@@ -132,8 +132,8 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
     Precision g4result = g4shape->DistanceToIn(G4ThreeVector(tpoint[0], tpoint[1], tpoint[2]),
                                                G4ThreeVector(tdirection[0], tdirection[1], tdirection[2]));
     if (Abs(g4result - vecgeomresult) > kTolerance * g4result && Abs(rootresult - vecgeomresult) < 1e30) {
-      std::cout << "## WARNING ## DI VecGeom  " << vecgeomresult;
-      std::cout << " G4: " << g4result << "Delta(" << g4result - vecgeomresult << ")\n";
+      std::cerr << "## WARNING ## DI VecGeom  " << vecgeomresult;
+      std::cerr << " G4: " << g4result << "Delta(" << g4result - vecgeomresult << ")\n";
     }
   }
 #endif
@@ -145,10 +145,10 @@ void CompareDistanceToOut(VPlacedVolume const *vol, Precision vecgeomresult, Vec
 #ifdef VECGEOM_ROOT
   auto rootshape       = LookupROOT(vol);
   Precision rootresult = rootshape->DistFromInside((double *)&point[0], (double *)&direction[0], 3, stepMax);
-  if (vecgeomresult < 0) std::cout << "## WARNING ## DO VecGeom negative (ROOT = " << rootresult << ")\n";
+  if (vecgeomresult < 0) std::cerr << "## WARNING ## DO VecGeom negative (ROOT = " << rootresult << ")\n";
   if (Abs(rootresult - vecgeomresult) > kTolerance * rootresult) {
-    std::cout << "## WARNING ## DO VecGeom  " << vecgeomresult;
-    std::cout << " ROOT: " << rootresult << "\n";
+    std::cerr << "## WARNING ## DO VecGeom  " << vecgeomresult;
+    std::cerr << " ROOT: " << rootresult << "\n";
     PrintPointInformation(vol, point);
   }
 #endif
@@ -158,8 +158,8 @@ void CompareDistanceToOut(VPlacedVolume const *vol, Precision vecgeomresult, Vec
   Precision g4result = g4shape->DistanceToOut(G4ThreeVector(point[0], point[1], point[2]),
                                               G4ThreeVector(direction[0], direction[1], direction[2]), false);
   if (Abs(g4result - vecgeomresult) > kTolerance * g4result) {
-    std::cout << "## WARNING ## DO VecGeom  " << vecgeomresult;
-    std::cout << " G4: " << g4result << "\n";
+    std::cerr << "## WARNING ## DO VecGeom  " << vecgeomresult;
+    std::cerr << " G4: " << g4result << "\n";
   }
 #endif
 }

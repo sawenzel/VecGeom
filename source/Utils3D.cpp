@@ -128,7 +128,7 @@ bool Polygon::isPointInsideTriangle(const Vec_t &p, size_t i0, size_t i1, size_t
 
   double t = uCrossW.Length() / denom;
 
-  // std::cout << p << ' ' << A << ' ' << B << ' ' << C << ' ' << r << ' ' << t << '\n';
+  // std::cerr << p << ' ' << A << ' ' << B << ' ' << C << ' ' << r << ' ' << t << '\n';
 
   return (r + t <= 1);
 }
@@ -302,7 +302,7 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
         // store just the start and end point (2 boundaries) of all intersections on the plane
         double d = (fVert[fInd[0]] - clipper.fVert[clipper.fInd[i]]).Dot(fNorm) / (fNorm.Dot(clipper.fSides[i]));
         Vec_t intersection_pt = d * clipper.fSides[i] + clipper.fVert[clipper.fInd[i]];
-        // std::cout << intersection_pt << '\n';
+        // std::cerr << intersection_pt << '\n';
         if (intersection_pt.x() < startPoint.x() ||
             (intersection_pt.x() == startPoint.x() && intersection_pt.y() < startPoint.y()) ||
             ((intersection_pt.x() == startPoint.x() && intersection_pt.y() == startPoint.y() &&
@@ -319,7 +319,7 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
       }
     }
 
-    // std::cout << startPoint << ' ' << endPoint;
+    // std::cerr << startPoint << ' ' << endPoint;
     vector_t<double> as;
 
     Line l1{{startPoint, endPoint}}; // clipper line

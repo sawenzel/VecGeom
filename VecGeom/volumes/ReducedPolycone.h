@@ -53,8 +53,8 @@ struct Line2D {
 #ifndef VECCORE_CUDA
   void Print()
   {
-    std::cout << p1 << " : ";
-    std::cout << p2 << std::endl;
+    std::cerr << p1 << " : ";
+    std::cerr << p2 << std::endl;
   }
 #endif
   VECCORE_ATT_HOST_DEVICE
@@ -98,7 +98,7 @@ struct Section {
   void Print()
   {
 
-    std::cout << "Rmin1 : " << rMin1 << " :: Rmax1 : " << rMax1 << " :: Z1 : " << z1 << std::endl
+    std::cerr << "Rmin1 : " << rMin1 << " :: Rmax1 : " << rMax1 << " :: Z1 : " << z1 << std::endl
               << "Rmin2 : " << rMin2 << " :: Rmax2 : " << rMax2 << " :: Z2 : " << z2 << std::endl;
   }
 #endif

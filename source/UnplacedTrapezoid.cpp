@@ -14,6 +14,7 @@
 #include "VecGeom/base/RNG.h"
 #include "VecGeom/volumes/kernel/shapetypes/TrdTypes.h"
 #include <cstdio>
+#include <iostream>
 
 #ifdef VECGEOM_ROOT
 #include "TGeoArb8.h"
@@ -177,11 +178,13 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision xbox, Precision ybox, Precision z
 {
   // validity check
   // TODO: this needs a proper logger treatment as per geantv conventions
+#ifndef VECCORE_CUDA
   if (xbox <= 0 || ybox <= 0 || zbox <= 0) {
-    printf("UnplacedTrapezoid(xbox,...) - GeomSolids0002, Fatal Exception: Invalid input length parameters for Solid: "
-           "UnplacedTrapezoid\n");
-    printf("\t X=%f, Y=%f, Z=%f", xbox, ybox, zbox);
+    std::cerr << "UnplacedTrapezoid(xbox,...) - GeomSolids0002, Warning: Invalid input length parameters for Solid: "
+                 "UnplacedTrapezoid\n\t X="
+              << xbox << ", Y=" << ybox << ", Z=" << zbox << "\n";
   }
+#endif
 
   MakePlanes();
   fGlobalConvexity = true;
@@ -513,10 +516,12 @@ void UnplacedTrapezoid::fromCornersToParameters(TrapCorners const pt)
   fTrap.fTheta = atan(sqrt(fTrap.fTthetaSphi * fTrap.fTthetaSphi + fTrap.fTthetaCphi * fTrap.fTthetaCphi));
   fTrap.fPhi   = atan2(fTrap.fTthetaSphi, fTrap.fTthetaCphi);
 
+#ifndef VECCORE_CUDA
   // check planarity of all four sides
   // TODO: this needs a proper logger treatment as per geantv conventions
   bool good = MakePlanes(pt);
-  if (!good) printf("***** WARNING in Trapezoid constructor: corners provided fail coplanarity tests.");
+  if (!good) std::cerr << "***** WARNING in Trapezoid constructor: corners provided fail coplanarity tests.\n";
+#endif
 
   fGlobalConvexity = true;
 }
@@ -590,11 +595,19 @@ bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D
   Precision resid4 = normalVector.Dot(p4 - centr);
   Precision resid  = Max(Max(fabs(resid1), fabs(resid2)), Max(fabs(resid3), fabs(resid4)));
   if (resid > 1000 * kTolerance) {
-    printf("*** WARNING (UnplacedTrapezoid): coplanarity test fails by residual = %e.\n", resid);
-    printf("\tcorner 1: (%f; %f; %f)\n", p1.x(), p1.y(), p1.z());
-    printf("\tcorner 2: (%f; %f; %f)\n", p2.x(), p2.y(), p2.z());
-    printf("\tcorner 3: (%f; %f; %f)\n", p3.x(), p3.y(), p3.z());
-    printf("\tcorner 4: (%f; %f; %f)\n", p4.x(), p4.y(), p4.z());
+    std::cerr << "*** WARNING (UnplacedTrapezoid): coplanarity test fails by residual = " << resid
+              << ".\n"
+                 "\tcorner 1: ("
+              << p1.x() << ", " << p1.y() << ", " << p1.z()
+              << ")\n"
+                 "\tcorner 2: ("
+              << p2.x() << ", " << p2.y() << ", " << p2.z()
+              << ")\n"
+                 "\tcorner 3: ("
+              << p3.x() << ", " << p3.y() << ", " << p3.z()
+              << ")\n"
+                 "\tcorner 4: ("
+              << p4.x() << ", " << p4.y() << ", " << p4.z() << ")\n";
 
     // We can be very loose here, because we will take a real plane, to replace
     // a non-planar face suggested by input points, up to a maximum residual below
@@ -638,7 +651,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #else
   good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
 #endif
-  if (!good) printf("***** GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n");
+  if (!good) std::cerr << "***** GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n";
 
 // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -646,7 +659,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #else
   good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
 #endif
-  if (!good) printf("***** GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n");
+  if (!good) std::cerr << "***** GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n";
 
 // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -654,7 +667,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #else
   good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
 #endif
-  if (!good) printf("***** GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n");
+  if (!good) std::cerr << "***** GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n";
 
 // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
@@ -662,7 +675,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #else
   good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);
 #endif
-  if (!good) printf("***** GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n");
+  if (!good) std::cerr << "***** GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n";
 
   // include areas for -Z,+Z surfaces
   fTrap.sideAreas[4] = 2 * (fTrap.fDx1 + fTrap.fDx2) * fTrap.fDy1;

@@ -147,7 +147,7 @@ public:
                     << structure->fVoxelToCandidate->getKey(lp.x(), lp.y(), lp.z()) << " ";
           std::cerr << "{ ";
           for (int i = 0; i < length; ++i) {
-            std::cout << safetycandidates[i] << " , ";
+            std::cerr << safetycandidates[i] << " , ";
           }
           std::cerr << " }\n";
           printProcedure(safetycandidates, length, lvol, localpoint);

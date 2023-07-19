@@ -89,7 +89,7 @@ EmbreeManager::EmbreeAccelerationStructure *EmbreeManager::BuildStructureFromBou
   rtcCommitScene(scene);
 
   auto elapsed = timer.Stop();
-  std::cout << "EMBREE SETUP TOOK " << elapsed << "s \n";
+  std::cerr << "EMBREE SETUP TOOK " << elapsed << "s \n";
   return structure;
 }
 
@@ -123,7 +123,7 @@ EmbreeManager::EmbreeAccelerationStructure *EmbreeManager::BuildStructureFromBou
   rtcCommitScene(scene);
 
   auto elapsed = timer.Stop();
-  std::cout << "EMBREE SETUP TOOK " << elapsed << "s \n";
+  std::cerr << "EMBREE SETUP TOOK " << elapsed << "s \n";
   return structure;
 }
 

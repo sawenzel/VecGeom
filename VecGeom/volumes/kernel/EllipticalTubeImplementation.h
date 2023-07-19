@@ -135,7 +135,7 @@ struct EllipticalTubeImplementation {
     vecCore__MaskedAssignFunc(distance, !leaving && parallelToZ, tzmin + offset);   // 1)
     Bool_v done = (leaving || parallelToZ || D <= A * A * ellipticaltube.fScratch); // 2)
 
-    // if (D <= A * A * ellipticaltube.fScratch) std::cout << "=== SCRATCH D = " << D << std::endl;
+    // if (D <= A * A * ellipticaltube.fScratch) std::cerr << "=== SCRATCH D = " << D << std::endl;
 
     // Find roots of the quadratic
     Real_v tmp(0.), t1(0.), t2(0.);

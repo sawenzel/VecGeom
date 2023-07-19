@@ -237,8 +237,8 @@ struct TorusImplementation2 {
       // ToBoundary<Backend, true, true>(torus, point, dir, torus.rmin());
     }
     distance = Min(dout, din);
-    // std::cout << "dout, din: " << dout << ", " << din << '\n';
-    // std::cout << "distance = Min(dout, din): " << distance << '\n';
+    // std::cerr << "dout, din: " << dout << ", " << din << '\n';
+    // std::cerr << "distance = Min(dout, din): " << distance << '\n';
 
     if (hasphi) {
       Real_v distPhi1;

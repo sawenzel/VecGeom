@@ -232,7 +232,7 @@ void GeoManager::CloseGeometry()
   //   std::string sbytes = buf;
   //   return sbytes;
   // };
-  // std::cout << "\n============================================================================\n"
+  // std::cerr << "\n============================================================================\n"
   //           << "  Geometry closed in navigation index mode. The table size is "
   //           << pretty_bytes(NavIndexTable::Instance()->GetTableSize()) << "\n  Transformation caching depth is "
   //           << fCacheDepth << "\n"
@@ -292,17 +292,17 @@ VPlacedVolume *GeoManager::FindPlacedVolume(char const *const label)
       } else {
         if (!multiple) {
           multiple = true;
-          printf("GeoManager::FindPlacedVolume: Multiple placed volumes with "
-                 "identifier \"%s\" found: [%i], ",
-                 label, output->id());
+          std::cerr << "GeoManager::FindPlacedVolume: Multiple logical volumes with identifier \""
+                    << label << "\" found: [" << output->id() << "], ";
         } else {
-          printf(", ");
+          std::cerr << ", ";
         }
-        printf("[%i]", v->second->id());
+        std::cerr << "[" << (v->second)->id() << "]";
       }
     }
   }
-  if (multiple) printf(". Returning first occurrence.\n");
+  if (multiple) std::cerr << ". Returning first occurrence.\n";
+
   return output;
 }
 
@@ -326,17 +326,16 @@ LogicalVolume *GeoManager::FindLogicalVolume(char const *const label)
       } else {
         if (!multiple) {
           multiple = true;
-          printf("GeoManager::FindLogicalVolume: Multiple logical volumes with "
-                 "identifier \"%s\" found: [%i], ",
-                 label, output->id());
+          std::cerr << "GeoManager::FindLogicalVolume: Multiple logical volumes with identifier \""
+                    << label << "\" found: [" << output->id() << "], ";
         } else {
-          printf(", ");
+          std::cerr << ", ";
         }
-        printf("[%i]", (v.second)->id());
+        std::cerr << "[" << (v.second)->id() << "]";
       }
     }
   }
-  if (multiple) printf(". Returning first occurrence.\n");
+  if (multiple) std::cerr << ". Returning first occurrence.\n";
   return output;
 }
 

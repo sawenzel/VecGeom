@@ -106,7 +106,7 @@ struct GenericPolyconeStruct {
 
   /*
     void Print(){
-      std::cout << "TotalNum Of Sections : " << fCoaxialConesStructVector.size() << std::endl;
+      std::cerr << "TotalNum Of Sections : " << fCoaxialConesStructVector.size() << std::endl;
       for(int i = 0 ; i < fCoaxialConesStructVector.size() ; i++){
         fCoaxialConesStructVector[i].Print();
       }

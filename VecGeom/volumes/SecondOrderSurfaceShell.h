@@ -443,9 +443,9 @@ public:
 
     // Not fully planar - use mixed case
     safetyface = SafetyCurved<Real_v>(point, Bool_v(true));
-    //  std::cout << "safetycurved = " << safetyface << std::endl;
+    //  std::cerr << "safetycurved = " << safetyface << std::endl;
     vecCore::MaskedAssign(safety, (safetyface < safety) && (!done), safetyface);
-    //  std::cout << "safety = " << safety << std::endl;
+    //  std::cerr << "safety = " << safety << std::endl;
     vecCore__MaskedAssignFunc(safety, safety > Real_v(0.) && safety < eps, Real_v(0.));
     return safety;
 
@@ -490,9 +490,9 @@ public:
 
     // Not fully planar - use mixed case
     safetyface = SafetyCurved<Real_v>(point, Bool_v(false));
-    //  std::cout << "safetycurved = " << safetyface << std::endl;
+    //  std::cerr << "safetycurved = " << safetyface << std::endl;
     vecCore::MaskedAssign(safety, (safetyface > safety) && (!done), safetyface);
-    //  std::cout << "safety = " << safety << std::endl;
+    //  std::cerr << "safety = " << safety << std::endl;
     vecCore__MaskedAssignFunc(safety, safety > Real_v(0.) && safety < eps, Real_v(0.));
     return (safety);
 

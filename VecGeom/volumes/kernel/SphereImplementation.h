@@ -168,7 +168,7 @@ struct SphereImplementation {
       if (sphere.fFullSphere) {
         vecCore::MaskedAssign(innerDist, !done && (sd2 >= Real_v(0.)), sd2);
       } else {
-        //   std::cout<<" ---- Called by InnerRad ---- " << std::endl;
+        //   std::cerr<<" ---- Called by InnerRad ---- " << std::endl;
         tmpPt = point + sd2 * direction;
         vecCore::MaskedAssign(innerDist,
                               !done && (sd2 >= Real_v(0.)) && sphere.fPhiWedge.Contains<Real_v>(tmpPt) &&

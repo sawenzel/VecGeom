@@ -348,11 +348,11 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Tra
   static double lastUncontCap = 0.0;
   double uncontainedCapacity  = UncontainedCapacity(volume);
   if (uncontainedCapacity != lastUncontCap) {
-    std::cout << "Uncontained capacity for " << volume.GetLabel() << ":" << uncontainedCapacity << " units\n";
+    std::cerr << "Uncontained capacity for " << volume.GetLabel() << ":" << uncontainedCapacity << " units\n";
     lastUncontCap = uncontainedCapacity;
   }
   if (uncontainedCapacity <= 1000 * kTolerance) {
-    std::cout << "\nVolUtil: FillUncontPts: WARNING: Volume provided <" << volume.GetLabel()
+    std::cerr << "\nVolUtil: FillUncontPts: WARNING: Volume provided <" << volume.GetLabel()
               << "> does not have uncontained capacity!  Method returns false.\n";
     return false;
   }
@@ -439,12 +439,12 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
   }
   double totalcapacity = const_cast<VPlacedVolume &>(volume).Capacity();
 
-  std::cout << "\nVolUtil: FillUncontPts: Volume <" << volume.GetLabel() << "  capacities: total =  " << totalcapacity
+  std::cerr << "\nVolUtil: FillUncontPts: Volume <" << volume.GetLabel() << "  capacities: total =  " << totalcapacity
             << " uncontained = " << uncontainedCapacity << "\n";
 
   if (uncontainedCapacity <= 1000 * kTolerance) {
     // double checkUC= UncontainedCapacity(volume); // Rerun - for debugging ...
-    std::cout << "\nVolUtil: FillUncontPts: ERROR: Volume provided <" << volume.GetLabel()
+    std::cerr << "\nVolUtil: FillUncontPts: ERROR: Volume provided <" << volume.GetLabel()
               << "> does not have uncontained capacity!  "
               << "    Value = " << uncontainedCapacity << " \n"
               << "      contained = " << totalcapacity
@@ -504,7 +504,7 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
 
     if (tries >= maxtries) break;
   }
-  std::cout << " FillUncontained:  trials " << tries << " for num points = " << i << " ( out of " << size
+  std::cerr << " FillUncontained:  trials " << tries << " for num points = " << i << " ( out of " << size
             << " requested - "
             << " success ratio = " << (i * 1.0) / tries << "\n";
   return (i > 0);
@@ -1119,7 +1119,7 @@ bool IntersectionExist(Vector3D<Precision> const lowercornerFirstBox, Vector3D<P
 
   // Case 1:
   // L = Ax
-  // std::cout<<" 1 : "<<std::fabs(T.Dot(Ax))<<" :: 2 : "<<(halfAx + std::fabs(halfBx*Ax.Dot(Bx)) +
+  // std::cerr<<" 1 : "<<std::fabs(T.Dot(Ax))<<" :: 2 : "<<(halfAx + std::fabs(halfBx*Ax.Dot(Bx)) +
   // std::fabs(halfBy*Ax.Dot(By)) + std::fabs(halfBz*Ax.Dot(Bz)) )<<std::endl;
   if (std::fabs(T.Dot(Ax)) >
       (halfAx + std::fabs(halfBx * Ax.Dot(Bx)) + std::fabs(halfBy * Ax.Dot(By)) + std::fabs(halfBz * Ax.Dot(Bz)))) {

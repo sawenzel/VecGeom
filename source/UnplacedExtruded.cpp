@@ -117,20 +117,20 @@ UnplacedExtruded *Maker<UnplacedExtruded>::MakeInstance(const size_t nvertices, 
 
 void UnplacedExtruded::Print() const
 {
-  std::cout << "UnplacedExtruded: vertices {";
+  std::cerr << "UnplacedExtruded: vertices {";
   int nvert = GetNVertices();
   Precision x, y;
   for (int i = 0; i < nvert - 1; ++i) {
     GetVertex(i, x, y);
-    std::cout << "(" << x << ", " << y << "), ";
+    std::cerr << "(" << x << ", " << y << "), ";
   }
   GetVertex(nvert - 1, x, y);
-  std::cout << "(" << x << ", " << y << ")}\n";
-  std::cout << "sections:\n";
+  std::cerr << "(" << x << ", " << y << ")}\n";
+  std::cerr << "sections:\n";
   int nsect = GetNSections();
   for (int i = 0; i < nsect; ++i) {
     XtruSection sect = GetSection(i);
-    std::cout << "orig: (" << sect.fOrigin.x() << ", " << sect.fOrigin.y() << ", " << sect.fOrigin.z()
+    std::cerr << "orig: (" << sect.fOrigin.x() << ", " << sect.fOrigin.y() << ", " << sect.fOrigin.z()
               << ") scl = " << sect.fScale << std::endl;
   }
 }

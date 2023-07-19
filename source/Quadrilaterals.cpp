@@ -68,7 +68,7 @@ void Quadrilaterals::Set(int index, Vector3D<Precision> const &corner0, Vector3D
     ++cornerstested;
   }
 #ifndef VECCORE_CUDA
-  if (cornersassigned < 3) std::cout << "Quadrilaterals::Set: could not find three non degenerated points" << std::endl;
+  if (cornersassigned < 3) std::cerr << "Quadrilaterals::Set: could not find three non degenerated points" << std::endl;
 #endif
 
   Precision a, b, c, d;

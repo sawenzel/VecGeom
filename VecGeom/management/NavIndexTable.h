@@ -96,7 +96,7 @@ public:
       fNavInd[0] = 0;
       fTableSize = bytes;
     } else {
-      std::cout << "=== EEE === AlocateTable bad_alloc intercepted while trying to allocate " << bytes << " bytes\n";
+      std::cerr << "=== EEE === AlocateTable bad_alloc intercepted while trying to allocate " << bytes << " bytes\n";
     }
     return buffer != nullptr;
   }

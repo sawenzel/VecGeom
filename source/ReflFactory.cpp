@@ -23,7 +23,7 @@ bool ReflFactory::Place(Transformation3D const &pureTransform3D, Vector3 const &
 {
   std::string name_refl = name + "_refl";
   if (fVerboseLevel > 0) {
-    std::cout << "Place " << name << " lv " << LV << " " << LV->GetName() << " inside " << motherLV->GetName()
+    std::cerr << "Place " << name << " lv " << LV << " " << LV->GetName() << " inside " << motherLV->GetName()
               << std::endl;
   }
 
@@ -184,7 +184,7 @@ void ReflFactory::ReflectPlacedVolume(vecgeom::VPlacedVolume const *dPV, vecgeom
       // create new daughter solid and logical volume
       //
       if (fVerboseLevel > 0) {
-        std::cout << "Daughter: " << dPV << "  " << dLV->GetName() << "_" << dPV->GetCopyNo() << " will be reflected."
+        std::cerr << "Daughter: " << dPV << "  " << dLV->GetName() << "_" << dPV->GetCopyNo() << " will be reflected."
                   << std::endl;
       }
       refDLV = CreateReflectedLV(dLV, scale);
@@ -196,7 +196,7 @@ void ReflFactory::ReflectPlacedVolume(vecgeom::VPlacedVolume const *dPV, vecgeom
 
   } else {
     if (fVerboseLevel > 0) {
-      std::cout << "Daughter: " << dPV << "  " << dLV->GetName() << "_" << dPV->GetCopyNo()
+      std::cerr << "Daughter: " << dPV << "  " << dLV->GetName() << "_" << dPV->GetCopyNo()
                 << " will be reconstitued.\n";
     }
 

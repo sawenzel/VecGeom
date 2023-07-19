@@ -262,14 +262,14 @@ public:
   //      g_geomIDs[id] = true;
   //
   //      const auto ray = (RTCRay *)args->ray;
-  //      std::cout << id << " "
+  //      std::cerr << id << " "
   //                << " " << hit->primID << " " << ray->tfar << " (" << hit->Ng_x << "," << hit->Ng_y << "," <<
   //                hit->Ng_z
   //                << ") ";
   //      const auto normalID = id * 12 + hit->primID;
   //      const auto normal   = g_normals[normalID];
   //      const bool backface = ray->dir_x * normal.x() + ray->dir_y * normal.y() + ray->dir_z * normal.z() < 0;
-  //      std::cout << "backface " << backface << "\n";
+  //      std::cerr << "backface " << backface << "\n";
   //
   //      // this is assuming we get the hits in increasing distance order which somehow is not true???
   //      //if (!backface && g_step < ray->tfar) {

@@ -516,7 +516,7 @@ struct TubeImplementation {
     vecCore::MaskedAssign(distance, !done, Real_v(kInfLength));
 
     distz /= NonZeroAbs(dir.z());
-    // std::cout << "Dist : " << distz << std::endl;
+    // std::cerr << "Dist : " << distz << std::endl;
 
     Real_v hitx = point.x() + distz * dir.x();
     Real_v hity = point.y() + distz * dir.y();
@@ -554,7 +554,7 @@ struct TubeImplementation {
       if (vecCore::MaskFull(done)) return;
     }
 
-    // std::cout << "distance : " << distance << std::endl;
+    // std::cerr << "distance : " << distance << std::endl;
     // if(vecCore::EarlyReturnAllowed() && vecCore::MaskFull(done) ) return;
 
     //=== Next step: intersection of the trajectories with the two circles

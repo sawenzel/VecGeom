@@ -150,7 +150,7 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
   cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
 
   if (!dvolume) {
-    std::cout << "Failed for lv " << fLV.GetLabel() << " (id = " << fLV.id() << ")" << std::endl;
+    std::cerr << "Failed for lv " << fLV.GetLabel() << " (id = " << fLV.id() << ")" << std::endl;
     throw std::logic_error("Cannot copy BVH because logical volume does not exist on the device.");
   }
 

@@ -224,15 +224,15 @@ public:
       auto props = getPropertiesGivenKey(key, number);
       pcount += number;
       count++;
-      std::cout << " voxel at key " << key << " : " << keyToCell(key) << " pos " << keyToPos(key) << " filled with "
+      std::cerr << " voxel at key " << key << " : " << keyToCell(key) << " pos " << keyToPos(key) << " filled with "
                 << number << " properties \n";
-      std::cout << "{ ";
+      std::cerr << "{ ";
       for (int i = 0; i < number; ++i) {
-        std::cout << props[i] << " , ";
+        std::cerr << props[i] << " , ";
       }
-      std::cout << " }\n";
+      std::cerr << " }\n";
     }
-    std::cout << "NUM VOXELS OCCUPIED " << count << " SUM PROPERTIES " << pcount << "\n";
+    std::cerr << "NUM VOXELS OCCUPIED " << count << " SUM PROPERTIES " << pcount << "\n";
   }
 
   /// clear the container

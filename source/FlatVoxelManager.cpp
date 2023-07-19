@@ -82,7 +82,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
   auto elapsed = timer.Stop();
-  std::cout << "Sampling points and keys took " << elapsed << "s \n";
+  std::cerr << "Sampling points and keys took " << elapsed << "s \n";
 
   timer.Start();
   // merge all keys
@@ -107,8 +107,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       sortedkeys.push_back(k);
     }
   }
-  std::cout << "Generating unique keys took " << timer.Stop() << "s \n";
-  std::cout << "We have " << sortedkeys.size() << " sorted unique keys; fraction "
+  std::cerr << "Generating unique keys took " << timer.Stop() << "s \n";
+  std::cerr << "We have " << sortedkeys.size() << " sorted unique keys; fraction "
             << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
             << sortedkeys.size() * safetyvoxels->getVoxelVolume() << "\n";
 
@@ -143,7 +143,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     safetyfutures.push_back(std::move(fut));
   }
   std::for_each(safetyfutures.begin(), safetyfutures.end(), [](std::future<void> &fut) { fut.wait(); });
-  std::cout << "Generating safeties took " << timer.Stop() << "s \n";
+  std::cerr << "Generating safeties took " << timer.Stop() << "s \n";
 
   auto filename = createName(vol, Nx, Ny, Nz);
   dumpToTFile(filename.c_str(), *points[0], sortedkeys, safeties);
@@ -154,7 +154,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     auto safety = safeties[i];
     voxels->addPropertyForKey(k, safety);
   }
-  std::cout << " done \n";
+  std::cerr << " done \n";
 
   auto structure     = new VoxelStructure();
   structure->fVoxels = voxels;
@@ -170,7 +170,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  std::cout << " Setting up safety voxels for " << vol->GetName() << " with " << ndaughters << " daughters \n";
+  std::cerr << " Setting up safety voxels for " << vol->GetName() << " with " << ndaughters << " daughters \n";
 
   int Nx = std::max(4., 2 * std::sqrt(1. * ndaughters));
   int Ny = std::max(4., 2 * std::sqrt(1. * ndaughters));
@@ -215,7 +215,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
   auto elapsed = timer.Stop();
-  std::cout << "Sampling points and keys took " << elapsed << "s \n";
+  std::cerr << "Sampling points and keys took " << elapsed << "s \n";
 
   timer.Start();
   // merge all keys
@@ -240,9 +240,9 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       sortedkeys.push_back(k);
     }
   }
-  std::cout << "Generating unique keys took " << timer.Stop() << " s \n";
+  std::cerr << "Generating unique keys took " << timer.Stop() << " s \n";
 
-  std::cout << " We have " << sortedkeys.size() << " sorted unique keys; fraction "
+  std::cerr << " We have " << sortedkeys.size() << " sorted unique keys; fraction "
             << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
             << sortedkeys.size() * safetyvoxels->getVoxelVolume() << "\n";
   size_t minSize = 50;
@@ -438,17 +438,17 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     safetyfutures.push_back(std::move(fut));
   }
   std::for_each(safetyfutures.begin(), safetyfutures.end(), [](std::future<void> &fut) { fut.wait(); });
-  std::cout << "Generating safeties took " << timer.Stop() << "s \n";
+  std::cerr << "Generating safeties took " << timer.Stop() << "s \n";
   // bool verboseAdd= false;
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {
     auto key = sortedkeys[i];
     for (const auto &cand : safetycandidates[i]) {
-      // if( verboseAdd ) { std::cout << "Adding cand " << cand << " to key " << key << "\n"; }
+      // if( verboseAdd ) { std::cerr << "Adding cand " << cand << " to key " << key << "\n"; }
       safetyvoxels->addPropertyForKey(key, cand);
     }
   }
-  std::cout << " done \n";
+  std::cerr << " done \n";
   return safetyvoxels;
 #endif // extreme lookup
 }
@@ -462,7 +462,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  std::cout << "Setting up locate voxels for " << vol->GetName() << " with " << ndaughters << " daughters \n";
+  std::cerr << "Setting up locate voxels for " << vol->GetName() << " with " << ndaughters << " daughters \n";
 
   int Nx            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Ny            = 10; // std::max(4., std::sqrt(1.*ndaughters));
@@ -480,7 +480,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   for (size_t i = 0; i < numkeys; ++i) {
     sortedkeys.push_back(i);
   }
-  std::cout << "Generating unique keys took " << timer.Stop() << "s \n";
+  std::cerr << "Generating unique keys took " << timer.Stop() << "s \n";
 
   //
   timer.Start();
@@ -488,7 +488,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   std::vector<std::vector<int>> locatecandidates(sortedkeys.size());
   std::vector<std::future<void>> futures;
 
-  std::cout << " Calculating locate candidates ... in parallel ";
+  std::cerr << " Calculating locate candidates ... in parallel ";
   for (int t = 0; t < numtasks; ++t) {
     auto fut = std::async([t, numtasks, &locatecandidates, locatevoxels, &sortedkeys, vol] {
       // define start and end to work on
@@ -523,7 +523,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
     futures.push_back(std::move(fut));
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
-  std::cout << "Generating locate voxels took " << timer.Stop() << "s \n";
+  std::cerr << "Generating locate voxels took " << timer.Stop() << "s \n";
 
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {

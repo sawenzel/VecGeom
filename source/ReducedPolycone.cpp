@@ -8,7 +8,7 @@
 #include "VecGeom/volumes/ReducedPolycone.h"
 #include <iostream>
 #include "VecGeom/base/Vector.h"
-//#include "VecGeom/volumes/CoaxialConesStruct.h"
+// #include "VecGeom/volumes/CoaxialConesStruct.h"
 
 namespace vecgeom {
 
@@ -163,7 +163,6 @@ VECCORE_ATT_HOST_DEVICE
 bool ReducedPolycone::Contour(Vector<Precision> z)
 {
   bool contour = ContourCheck(z);
-  // std::cout << "Ctonour : "  << contour << std::endl;
   if (!contour) {
 #ifndef VECCORE_CUDA
     std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
@@ -511,13 +510,13 @@ Vector<Line2D> ReducedPolycone::FindLinesInASection(unsigned int secIndex)
   //============== Printing only for DEBUGGING, Must be removed later ===============
 #if (0)
   {
-    std::cout << "============ Printing lines in section : " << secIndex << " ===========" << std::endl;
+    std::cerr << "============ Printing lines in section : " << secIndex << " ===========" << std::endl;
     for (unsigned int i = 0; i < secLineVect.size(); i++) {
       secLineVect[i].Print();
       double midVal = (zVect[secIndex] + zVect[secIndex + 1]) * 0.5;
-      std::cout << "Distance of Line num : " << i << " : " << secLineVect[i].GetHorizontalDistance(midVal) << std::endl;
+      std::cerr << "Distance of Line num : " << i << " : " << secLineVect[i].GetHorizontalDistance(midVal) << std::endl;
     }
-    std::cout << "=======================================================================" << std::endl;
+    std::cerr << "=======================================================================" << std::endl;
   }
 #endif
   //=================================================================================
@@ -553,12 +552,12 @@ Vector<Line2D> ReducedPolycone::GetVectorOfSortedLinesByHorizontalDistance(unsig
   //=========Print only for DEBUGGING, Must be remove later========
 #if (0)
   {
-    std::cout << "============= Printing Sorted Lines ==============" << std::endl;
+    std::cerr << "============= Printing Sorted Lines ==============" << std::endl;
     for (unsigned int i = 0; i < indexStructVect.size(); i++) {
 
       secLineVect[indexStructVect[i].index].Print();
     }
-    std::cout << "==================================================" << std::endl;
+    std::cerr << "==================================================" << std::endl;
   }
 #endif
   //===============================================================
@@ -587,7 +586,7 @@ void ReducedPolycone::GetPolyconeParameters(Vector<Vector<ConeParam>> &sectionsP
 
     for (unsigned int i = 0; i < fCoaxialConesSectionVect.size(); i++) {
       Vector<ConeParam> coaxialCones;
-      // std::cout << "===================== Section : " << i <<" ====================" << std::endl;
+      // std::cerr << "===================== Section : " << i <<" ====================" << std::endl;
       for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
         Section sec = fCoaxialConesSectionVect[i][j];
         coaxialCones.push_back(
@@ -600,7 +599,7 @@ void ReducedPolycone::GetPolyconeParameters(Vector<Vector<ConeParam>> &sectionsP
 #if (0)
     {
       for (unsigned int i = 0; i < fCoaxialConesSectionVect.size(); i++) {
-        std::cout << "===================== Section : " << i << " ====================" << std::endl;
+        std::cerr << "===================== Section : " << i << " ====================" << std::endl;
         for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
           fCoaxialConesSectionVect[i][j].Print();
         }
@@ -642,7 +641,7 @@ void ReducedPolycone::GetPolyconeParameters(Vector<Vector<Precision>> &vectOfRmi
       Vector<Precision> rmin2Vect;
       Vector<Precision> rmax2Vect;
 
-      // std::cout << "===================== Section : " << i <<" ====================" << std::endl;
+      // std::cerr << "===================== Section : " << i <<" ====================" << std::endl;
       for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
         Section sec = fCoaxialConesSectionVect[i][j];
         rmin1Vect.push_back(sec.rMin1);

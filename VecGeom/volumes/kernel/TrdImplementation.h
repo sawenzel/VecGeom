@@ -142,14 +142,14 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Safety(TrdStruct<Precision> co
   using Bool_v = vecCore::Mask_v<Real_v>;
 
   Real_v safz = trd.fDZ - vecCore::math::Abs(pos.z());
-  // std::cout << "safz: " << safz << std::endl;
+  // std::cerr << "safz: " << safz << std::endl;
   dist = safz;
 
   Real_v distx = trd.fHalfX1plusX2 - trd.fFx * pos.z();
   Bool_v okx   = distx >= 0;
   Real_v safx  = (distx - vecCore::math::Abs(pos.x())) * trd.fCalfX;
   vecCore::MaskedAssign(dist, okx && safx < dist, safx);
-  // std::cout << "safx: " << safx << std::endl;
+  // std::cerr << "safx: " << safx << std::endl;
 
   if (checkVaryingY<trdTypeT>(trd)) {
     Real_v disty = trd.fHalfY1plusY2 - trd.fFy * pos.z();

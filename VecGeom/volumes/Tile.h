@@ -86,7 +86,7 @@ struct Tile {
     }
 
     if (nvert < 3) {
-      std::cout << "Tile degenerated: Length of sides of facet are too small." << std::endl;
+      std::cerr << "Tile degenerated: Length of sides of facet are too small." << std::endl;
       return false;
     }
 
@@ -110,7 +110,7 @@ struct Tile {
     }
 
     if (degenerated) {
-      std::cout << "Tile degenerated 2: Length of sides of facet are too small." << std::endl;
+      std::cerr << "Tile degenerated 2: Length of sides of facet are too small." << std::endl;
       return false;
     }
 

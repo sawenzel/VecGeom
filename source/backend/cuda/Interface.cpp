@@ -4,6 +4,7 @@
 #include "VecGeom/backend/cuda/Interface.h"
 
 #include <stdio.h>
+#include <iostream>
 
 #include <cuda.h>
 
@@ -25,7 +26,7 @@ inline namespace cxx {
 cudaError_t CudaCheckError(const cudaError_t err)
 {
   if (err != cudaSuccess) {
-    printf("CUDA reported error with message: \"%s\"\n", cudaGetErrorString(err));
+    std::cerr << "CUDA reported error with message: \"" << cudaGetErrorString(err) << "\"\n";
   }
   return err;
 }
