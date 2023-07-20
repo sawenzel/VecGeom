@@ -11,7 +11,7 @@ pipeline {
     choice(name: 'MODE', choices: ['experimental', 'nightly', 'continuous'], description: 'CDash mode')
     string(name: 'ExtraCMakeOptions', defaultValue: '', description: 'CMake extra configuration options')
     string(name: 'LABEL', defaultValue: 'centos7', description: 'Jenkins label for physical nodes or container image for docker')
-    choice(name: 'LABEL', choices: ['Release', 'Debug'])
+    choice(name: 'BUILDTYPE', choices: ['Release', 'Debug'])
     string(name: 'PLATFORM', defaultValue: 'x86_64+avs2+fma-centos7-gcc9-opt', description: 'The Platform of the stack to be used')
     choice(name: 'OPTION', choices: ['default', 'SPEC', 'AVX', 'GDML'])
     choice(name: 'BACKEND', choices: ['scalar', 'vc'])
