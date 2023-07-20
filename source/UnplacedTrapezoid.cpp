@@ -588,7 +588,7 @@ bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D
 
   // check coplanarity
   bool good = true;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(VECCORE_CUDA_DEVICE_COMPILATION)
   Precision resid1 = normalVector.Dot(p1 - centr);
   Precision resid2 = normalVector.Dot(p2 - centr);
   Precision resid3 = normalVector.Dot(p3 - centr);
@@ -622,6 +622,7 @@ bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D
   plane.fB = normalVector.y();
   plane.fC = normalVector.z();
   plane.fD = d;
+
   unsigned int iplane = (&plane - fTrap.fPlanes); // pointer arithmetics used here
 #endif
 
@@ -649,33 +650,45 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #ifndef VECGEOM_PLANESHELL_DISABLE
   good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], 0);
 #else
-  good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
+  good                = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
 #endif
+
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (!good) std::cerr << "***** GeomSolids0002 - Face at ~-Y not planar for Solid: UnplacedTrapezoid\n";
+#endif
 
 // Top side with normal approx. +Y
 #ifndef VECGEOM_PLANESHELL_DISABLE
   good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], 1);
 #else
-  good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
+  good                = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
 #endif
+
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (!good) std::cerr << "***** GeomSolids0002 - Face at ~+Y not planar for Solid: UnplacedTrapezoid\n";
+#endif
 
 // Front side with normal approx. -X
 #ifndef VECGEOM_PLANESHELL_DISABLE
   good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], 2);
 #else
-  good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
+  good                = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
 #endif
+
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (!good) std::cerr << "***** GeomSolids0002 - Face at ~-X not planar for Solid: UnplacedTrapezoid\n";
+#endif
 
 // Back side with normal approx. +X
 #ifndef VECGEOM_PLANESHELL_DISABLE
   good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], 3);
 #else
-  good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);
+  good                = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);
 #endif
+
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (!good) std::cerr << "***** GeomSolids0002 - Face at ~+X not planar for Solid: UnplacedTrapezoid\n";
+#endif
 
   // include areas for -Z,+Z surfaces
   fTrap.sideAreas[4] = 2 * (fTrap.fDx1 + fTrap.fDx2) * fTrap.fDy1;
