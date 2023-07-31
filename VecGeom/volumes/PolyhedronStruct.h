@@ -202,7 +202,7 @@ struct PolyhedronStruct {
     }
     if (vecCore::math::Abs(zb - znew[(i0 + inc) % verticesCount1]) < kTolerance) i0 = (i0 + inc) % verticesCount1;
 
-    if (phiDelta > kTwoPi) phiDelta = kTwoPi;
+    if (phiDelta <= 0 || phiDelta > kTwoPi - kAngTolerance) phiDelta = kTwoPi;
     Precision sidePhi         = phiDelta / sideCount;
     Precision cosHalfDeltaPhi = cos(0.5 * sidePhi);
 
@@ -317,7 +317,7 @@ struct PolyhedronStruct {
     }
 
     // Compute the cylindrical coordinate phi along which the corners are placed
-    assert(phiDelta > 0);
+    if (phiDelta <= 0 || phiDelta > kTwoPi - kAngTolerance) phiDelta = kTwoPi;
     phiStart = NormalizeAngle<kScalar>(phiStart);
     if (phiDelta > kTwoPi) phiDelta = kTwoPi;
     Precision sidePhi = phiDelta / sideCount;
