@@ -63,6 +63,9 @@
 set_and_check(VECGEOM_INCLUDE_DIR "@PACKAGE_CONF_INCLUDE_DIR@")
 set(VECGEOM_INCLUDE_DIRS ${VECGEOM_INCLUDE_DIR})
 
+# Full version string
+set(VecGeom_VERSION_STRING "@VecGeom_VERSION_STRING@")
+
 # C++ Standard used in build
 set(VecGeom_CXX_STANDARD "@CMAKE_CXX_STANDARD@")
 
