@@ -423,16 +423,10 @@ template <>
 VECCORE_ATT_HOST_DEVICE void UnplacedBooleanVolume<kSubtraction>::Extent(Vector3D<Precision> &aMin,
                                                                          Vector3D<Precision> &aMax) const
 {
-  Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
-  // ATTENTION: Extent gives coordinates in the reference frame of the callee
-  // therefore we have to calculate Extent in THIS frame using:
-  TransformedExtent(fBoolean.fLeftVolume, minLeft, maxLeft);
-  TransformedExtent(fBoolean.fRightVolume, minRight, maxRight);
-  // rather than just
-  // fLeftVolume->Extent(minLeft, maxLeft);
-  // fRightVolume->Extent(minRight,maxRight);
-  aMin = minLeft;
-  aMax = maxLeft;
+  Vector3D<Precision> minLeft, maxLeft;
+  // NOTE: VPlacedVolume::Extent returns now the placed volume extent
+  // We ignore the subtracted volume extent since we miss the extent cutoff functionality
+  fBoolean.fLeftVolume->Extent(aMin, aMax);
 }
 
 template <>
@@ -440,13 +434,9 @@ VECCORE_ATT_HOST_DEVICE void UnplacedBooleanVolume<kUnion>::Extent(Vector3D<Prec
                                                                    Vector3D<Precision> &aMax) const
 {
   Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
-  // ATTENTION: Extent gives coordinates in the reference frame of the callee
-  // therefore we have to calculate Extent in THIS frame using:
-  TransformedExtent(fBoolean.fLeftVolume, minLeft, maxLeft);
-  TransformedExtent(fBoolean.fRightVolume, minRight, maxRight);
-  // rather than just
-  // fLeftVolume->Extent(minLeft, maxLeft);
-  // fRightVolume->Extent(minRight,maxRight);
+  // NOTE: VPlacedVolume::Extent returns now the placed volume extent
+  fBoolean.fLeftVolume->Extent(minLeft, maxLeft);
+  fBoolean.fRightVolume->Extent(minRight, maxRight);
   aMin = Vector3D<Precision>(Min(minLeft.x(), minRight.x()), Min(minLeft.y(), minRight.y()),
                              Min(minLeft.z(), minRight.z()));
   aMax = Vector3D<Precision>(Max(maxLeft.x(), maxRight.x()), Max(maxLeft.y(), maxRight.y()),
@@ -458,13 +448,9 @@ VECCORE_ATT_HOST_DEVICE void UnplacedBooleanVolume<kIntersection>::Extent(Vector
                                                                           Vector3D<Precision> &aMax) const
 {
   Vector3D<Precision> minLeft, maxLeft, minRight, maxRight;
-  // ATTENTION: Extent gives coordinates in the reference frame of the callee
-  // therefore we have to calculate Extent in THIS frame using:
-  TransformedExtent(fBoolean.fLeftVolume, minLeft, maxLeft);
-  TransformedExtent(fBoolean.fRightVolume, minRight, maxRight);
-  // rather than just
-  // fLeftVolume->Extent(minLeft, maxLeft);
-  // fRightVolume->Extent(minRight,maxRight);
+  // NOTE: VPlacedVolume::Extent returns now the placed volume extent
+  fBoolean.fLeftVolume->Extent(minLeft, maxLeft);
+  fBoolean.fRightVolume->Extent(minRight, maxRight);
   aMin = Vector3D<Precision>(Max(minLeft.x(), minRight.x()), Max(minLeft.y(), minRight.y()),
                              Max(minLeft.z(), minRight.z()));
   aMax = Vector3D<Precision>(Min(maxLeft.x(), maxRight.x()), Min(maxLeft.y(), maxRight.y()),
