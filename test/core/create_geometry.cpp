@@ -14,8 +14,12 @@ using namespace vecgeom;
 
 int main()
 {
-  std::cout << "VecGeom version " << vecgeom_version << std::endl;
-  static_assert(VECGEOM_VERSION >= 0x020000, "Version is too old");
+  std::cout << "VecGeom version: " << vecgeom_version << std::endl;
+  if constexpr (!VECGEOM_VERSION >= 0x020000)
+  {
+      std::cout << "Version " << VECGEOM_VERSION << " is too old";
+      return 1;
+  }
 
   // Vector3D<Precision> vec1(5, 3, 1);
   // Vector3D<Precision> vec2(2, 8, 0);
