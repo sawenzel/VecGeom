@@ -92,8 +92,8 @@ using SphData = CylData<Real_t, Real_s>;
 /// @tparam Real_s Interface type
 template <typename Real_t, typename Real_s = Real_t>
 struct ConeData {
-  Real_t radius{0}; ///< Cone radus at Z = 0. Stored negative if flipped.
-  Real_t slope{0};  ///< Cone slope  --> for cyl extension this would be 0
+  Real_t radius{0}; ///< Cone radus at Z = 0: 0.5 * (rbottom + rup) Stored negative if flipped.
+  Real_t slope{0};  ///< Cone slope  0.5 * (rup - rbottom)/dz --> for cyl extension this would be 0
 
   ConeData() = default;
   ConeData(Real_s rad, Real_s slope, bool flip = false) : radius(flip ? -rad : rad), slope(slope) {}
