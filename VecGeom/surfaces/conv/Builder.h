@@ -107,6 +107,53 @@ void AddLogicToShell(int logical_id, LogicExpressionCPU &logic)
   crtlogic.insert(crtlogic.end(), logic.begin(), logic.end());
 }
 
+/// @brief Compute transformation (rotation + translation) for a surface defined by a set of co-planar points.
+/// @details The points must be ordered such that the cross product of any two consecutive segments has the same
+/// direction as the normal. All points must be different and not all colinear.
+/// @param points Input container holding the ordered Vector3D<Real_t> points, defined in the solid frame.
+//  The container will return the points in the local surface reference frame
+/// @return Transformation moving a surface from the (XOY) plane to the final position. The container will hold the
+/// input points transformed with the inverse transformation, lying in the (XOY) plane
+template <typename Real_t, typename Container>
+vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
+{
+  using Vector3 = vecgeom::Vector3D<Real_t>;
+
+  int npoints = points.size();
+  assert(npoints > 2 && "TransformationFromPlanarPoints takes at least three points");
+  int istart            = 0;
+  Real_t cross_mag2_max = 0.;
+  Vector3 normal;
+  Vector3 center;
+  for (int i = 0; i < npoints; ++i) {
+    center += points[i];
+    auto a = points[(i + 1) % npoints] - points[i];
+    assert(a.Mag2() > vecgeom::kTolerance && "TransformationFromPlanarPoints: degenerated points");
+    auto b          = points[(i + 2) % npoints] - points[(i + 1) % npoints];
+    auto a_cross_b  = a.Cross(b);
+    auto cross_mag2 = a_cross_b.Mag2();
+    if (cross_mag2 > cross_mag2_max) {
+      normal         = a_cross_b.Unit();
+      istart         = i;
+      cross_mag2_max = cross_mag2;
+    }
+  }
+  assert(cross_mag2_max > vecgeom::kTolerance && "TransformationFromPlanarPoints: degenerated polygon");
+  center *= 1. / npoints;
+
+  Vector3 zref = normal;
+  Vector3 xref = (points[(istart + 1) % npoints] - points[istart]).Unit();
+  Vector3 yref = zref.Cross(xref);
+  vecgeom::Transformation3D transformation(center[0], center[1], center[2], xref[0], yref[0], zref[0], xref[1], yref[1],
+                                           zref[1], xref[2], yref[2], zref[2]);
+  // Convert points to the local frame
+  for (int i = 0; i < npoints; ++i) {
+    Vector3 local = transformation.Transform(points[i]);
+    points[i]     = local;
+  }
+  return transformation;
+}
+
 } // namespace builder
 
 } // namespace vgbrep
