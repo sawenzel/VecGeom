@@ -31,7 +31,7 @@ using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
 using Vec3Dc = Precision[3];
 
 //==================================================================================
-int LoadGDML(const char *gdml_name)
+int LoadGDML(const char *gdml_name, bool ongpu)
 {
 #ifndef VECGEOM_GDML
   std::cout << "### VecGeom must be compiled with GDML support to run this.\n";
@@ -45,13 +45,15 @@ int LoadGDML(const char *gdml_name)
   if (!world) return 3;
 
   // For the moment we still need the world volume on the GPU
-  std::cout << "synchronizing VecGeom geometry to GPU ...\n";
-  auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
-  cudaManager.LoadGeometry(world);
-  if (!cudaManager.Synchronize()) return 4;
+  if (ongpu) {
+    std::cout << "synchronizing VecGeom geometry to GPU ...\n";
+    auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
+    cudaManager.LoadGeometry(world);
+    if (!cudaManager.Synchronize()) return 4;
+  }
 
   vecgeom::cxx::BVHManager::Init();
-  vecgeom::cxx::BVHManager::DeviceInit();
+  if (ongpu) vecgeom::cxx::BVHManager::DeviceInit();
 
   return 0;
 }
@@ -159,21 +161,27 @@ int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavStateIndex c
                    Precision const *safeties, Precision const *refSafeties, bool debug, int &num_better_safety,
                    int &num_worse_safety)
 {
-  int num_errors = 0;
+  int num_errors   = 0;
+  int num_warnings = 0;
   for (auto i = 0; i < nrays; ++i) {
     num_better_safety += (safeties[i] > refSafeties[i] + kTolerance);
     num_worse_safety += (safeties[i] < refSafeties[i] - kTolerance);
-    if (debug && safeties[i] < refSafeties[i] - kTolerance) {
+    if (debug && num_warnings < 10 && safeties[i] < refSafeties[i] - kTolerance) {
+      num_warnings++;
       printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g\n", i, points[i][0], points[i][1],
              points[i][2], refSafeties[i], safeties[i]);
+      if (num_warnings == 10) printf("=== only fist 10 warnings are shown\n");
       // Replay before exiting for debugging
       int exit_surf = 0;
       vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
     }
     if (debug && safeties[i] > refSafeties[i] + kTolerance) {
       bool safesafe = CheckSafety(points[i], in_states[i], safeties[i], 1000);
-      if (!safesafe) {
+      if (!safesafe && num_errors < 10) {
         num_errors++;
+        printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g NOT SAFE\n", i, points[i][0], points[i][1],
+               points[i][2], refSafeties[i], safeties[i]);
+        if (num_errors == 10) printf("=== only fist 10 errors are shown\n");
         // Replay before exiting for debugging
         int exit_surf = 0;
         vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
@@ -407,11 +415,12 @@ int main(int argc, char *argv[])
   OPTION_INT(nrays, 10000);
   OPTION_INT(debug, 0);
   OPTION_INT(verbosity, 0);
+  OPTION_INT(ongpu, 1);
 
   Stopwatch timer;
   // Load the geometry
   timer.Start();
-  bool load = LoadGDML(gdml_name.c_str());
+  bool load = LoadGDML(gdml_name.c_str(), ongpu);
   if (load > 0) return load;
   auto time_load = timer.Stop();
   std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";
@@ -451,7 +460,8 @@ int main(int argc, char *argv[])
 
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
   int errHost          = testRaytracingHost(nrays, points, dirs, debug);
-  int errCUDA          = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+  int errCUDA          = 0;
+  if (ongpu) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
 
   // Clear surface data
   BrepHelper::Instance().ClearData();
