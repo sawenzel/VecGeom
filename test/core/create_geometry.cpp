@@ -15,7 +15,7 @@ using namespace vecgeom;
 int main()
 {
   std::cout << "VecGeom version: " << vecgeom_version << std::endl;
-  if constexpr (!VECGEOM_VERSION >= 0x020000)
+  if constexpr (!(VECGEOM_VERSION >= 0x020000))
   {
       std::cout << "Version " << VECGEOM_VERSION << " is too old";
       return 1;

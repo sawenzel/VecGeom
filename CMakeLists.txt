@@ -519,7 +519,14 @@ set(VECGEOM_COMMON_SRCS
 set(VECGEOM_CPPONLY_SRCS
   source/GeoManager.cpp
   source/CppExporter.cpp
-  source/ReflFactory.cpp)
+  source/ReflFactory.cpp
+
+  source/ColorUtils.cpp
+  source/Environment.cpp
+  source/Logger.cpp
+  source/LoggerMessage.cpp
+  source/LoggerTypes.cpp
+)
 
 if(VECGEOM_EMBREE)
   list(APPEND VECGEOM_COMMON_SRCS source/EmbreeManager.cpp)
