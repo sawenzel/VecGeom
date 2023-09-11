@@ -6,6 +6,7 @@
 #include <VecGeom/surfaces/conv/BoxConverter.h>
 #include <VecGeom/surfaces/conv/TubeConverter.h>
 #include <VecGeom/surfaces/conv/ParallelepipedConverter.h>
+#include <VecGeom/surfaces/conv/ConeConverter.h>
 #include <VecGeom/surfaces/conv/TrdConverter.h>
 #include <VecGeom/surfaces/conv/PolyhedronConverter.h>
 #include <VecGeom/surfaces/conv/BooleanConverter.h>
@@ -36,6 +37,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 
     auto para = dynamic_cast<vecgeom::UnplacedParallelepiped const *>(solid);
     if (para) return conv::CreateParallelepipedSurfaces<Real_t>(*para, volId);
+
+    auto cone = dynamic_cast<vecgeom::UnplacedCone const *>(solid);
+    if (cone) return conv::CreateConeSurfaces<Real_t>(*cone, volId);
 
     auto trd = dynamic_cast<vecgeom::UnplacedTrd const *>(solid);
     if (trd) return conv::CreateTrdSurfaces<Real_t>(*trd, volId);

@@ -127,8 +127,7 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
   Vector3 center;
   for (int i = 0; i < npoints; ++i) {
     center += points[i];
-    auto a = points[(i + 1) % npoints] - points[i];
-    assert(a.Mag2() > vecgeom::kTolerance && "TransformationFromPlanarPoints: degenerated points");
+    auto a          = points[(i + 1) % npoints] - points[i];
     auto b          = points[(i + 2) % npoints] - points[(i + 1) % npoints];
     auto a_cross_b  = a.Cross(b);
     auto cross_mag2 = a_cross_b.Mag2();

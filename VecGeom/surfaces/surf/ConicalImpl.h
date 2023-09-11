@@ -46,6 +46,8 @@ struct SurfaceHelper<kConical, Real_t> {
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
+      // Exclude solutions beyond the tip of the cone. What if the tip is included? TODO
+      if (fConeData->Radius() + onsurf[2] * fConeData->Slope() < 0) continue;
       Vector3D<Real_t> normal(onsurf[0], onsurf[1],
                               -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * fConeData->Slope());
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
