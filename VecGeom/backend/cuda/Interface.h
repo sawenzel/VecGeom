@@ -300,6 +300,13 @@ public:
     return tmp;
   }
 
+  Derived operator+(const size_t& rhs)
+  {
+    Derived tmp(*(Derived *)this);
+    tmp.Increment(rhs);
+    return tmp;
+  }
+
   Derived &operator+=(long len) // prefix ++
   {
     Increment(len * Derived::SizeOf());

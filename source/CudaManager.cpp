@@ -30,7 +30,7 @@ namespace cuda {
 // forward declare a global function
 extern __global__ void InitDeviceCompactPlacedVolBufferPtr(void *gpu_ptr);
 extern __global__ void InitDeviceNavIndexPtr(void *gpu_ptr, int maxdepth);
-} // namespace cuda
+}
 
 inline namespace cxx {
 
@@ -131,7 +131,6 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
   if (verbose_ > 2) std::cerr << "\nCopying logical volumes...";
   timer.Start();
   for (std::set<LogicalVolume const *>::const_iterator i = logical_volumes_.begin(); i != logical_volumes_.end(); ++i) {
-
     (*i)->CopyToGpu(LookupUnplaced((*i)->GetUnplacedVolume()), (*i)->id(), LookupDaughters((*i)->fDaughters),
                     LookupLogical(*i));
   }
@@ -408,11 +407,13 @@ void CudaManager::AllocateGeometry()
     gpu_array.Allocate(size);
     allocated_memory_.push_back(DevicePtr<char>(gpu_array));
 
+    vecgeom::cuda::InitDeviceLogicalVolumesPtr(gpu_array);
+
     for (std::set<LogicalVolume const *>::const_iterator i = logical_volumes_.begin(); i != logical_volumes_.end();
          ++i) {
-      memory_map_[ToCpuAddress(*i)] = DevicePtr<char>(gpu_array);
-
-      ++gpu_array;
+      // Assign addresses on the gpu array based on the volume id
+      // This will make the volumes be copied in the correct order too
+      memory_map_[ToCpuAddress(*i)] = DevicePtr<char>(gpu_array + (*i)->id() * sizeof(cxx::LogicalVolume));
     }
 
     if (verbose_ > 2) std::cerr << " OK\n";

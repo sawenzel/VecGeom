@@ -46,7 +46,7 @@ enum class BVH::ConstructionAlgorithm : unsigned int {
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
 
-BVH::BVH(LogicalVolume const &volume, int depth) : fLV(volume)
+BVH::BVH(LogicalVolume const &volume, int depth) : fRootId(volume.id()), fRootNChild(volume.GetDaughters().size())
 {
   int n;
 
@@ -90,7 +90,7 @@ BVH::BVH(LogicalVolume const &volume, int depth) : fLV(volume)
 #ifdef VECGEOM_ENABLE_CUDA
 VECCORE_ATT_DEVICE
 BVH::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int *dOffset, int *dNChild, AABB *dNodes)
-    : fLV(*volume), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
+    : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
 {
 }
 #endif
@@ -98,9 +98,9 @@ BVH::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int
 VECCORE_ATT_HOST_DEVICE
 void BVH::Print(bool verbose) const
 {
-  printf("\nBVH(%u): addr: %p, depth: %d, nodes: %d, children: %zu, name: %s\n",
-         fLV.id(), this, fDepth, (2 << fDepth) - 1, fLV.GetDaughters().size(),
-         fLV.GetName() );
+  printf("\nBVH(%u): addr: %p, depth: %d, nodes: %d, children: %d, name: %s\n",
+         fRootId, this, fDepth, (2 << fDepth) - 1, fRootNChild,
+         " " );
   if (verbose) {
     constexpr auto width = 4;
     int nChildToPad = 1;
@@ -129,13 +129,11 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
 
   if (!addr) throw std::logic_error("Cannot copy BVH into a null pointer!");
 
-  int n = fLV.GetDaughters().size();
+  CudaCheckError(CudaMalloc((void **)&dPrimId, fRootNChild * sizeof(int)));
+  CudaCheckError(CudaMalloc((void **)&dAABBs, fRootNChild * sizeof(AABB)));
 
-  CudaCheckError(CudaMalloc((void **)&dPrimId, n * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dAABBs, n * sizeof(AABB)));
-
-  CudaCheckError(CudaCopyToDevice((void *)dPrimId, (void *)fPrimId, n * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dAABBs, (void *)fAABBs, n * sizeof(AABB)));
+  CudaCheckError(CudaCopyToDevice((void *)dPrimId, (void *)fPrimId, fRootNChild * sizeof(int)));
+  CudaCheckError(CudaCopyToDevice((void *)dAABBs, (void *)fAABBs, fRootNChild * sizeof(AABB)));
 
   int nodes = (2 << fDepth) - 1;
 
@@ -147,10 +145,11 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
   CudaCheckError(CudaCopyToDevice((void *)dNChild, (void *)fNChild, nodes * sizeof(int)));
   CudaCheckError(CudaCopyToDevice((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB)));
 
-  cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
+  //cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
+  cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(GeoManager::Instance().FindLogicalVolume(fRootId)).GetPtr();
 
   if (!dvolume) {
-    std::cerr << "Failed for lv " << fLV.GetLabel() << " (id = " << fLV.id() << ")" << std::endl;
+    std::cerr << "Failed for lv " << /*fLV.GetLabel()*/ " " << " (id = " << fRootId << ")" << std::endl;
     throw std::logic_error("Cannot copy BVH because logical volume does not exist on the device.");
   }
 
@@ -387,71 +386,6 @@ void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int node
   ComputeNodes(2 * id + 1, first, pivot, nodes, constructionAlgorithm);
   ComputeNodes(2 * id + 2, pivot, last,  nodes, constructionAlgorithm);
 }
-
-/*
- * BVH::ApproachNextDaughter is very similar to CheckDaughterIntersections but computes the first
- * hit daughter bounding box instead of the next hit shape. This lighter computation is used to
- * first approach the next hit solid before computing the actual distance, in the attempt to
- * reduce the numerical rounding error due to propagation to boundary.
- */
-
-VECCORE_ATT_HOST_DEVICE
-void BVH::ApproachNextDaughter(Vector3D<Precision> point, Vector3D<Precision> dir, Precision &step,
-                               VPlacedVolume const *last) const
-{
-  unsigned int stack[BVH_MAX_DEPTH] = {0}, *ptr = &stack[1];
-
-  /* Calculate and reuse inverse direction to save on divisions */
-  Vector3D<Precision> invdir(1.0 / NonZero(dir[0]), 1.0 / NonZero(dir[1]), 1.0 / NonZero(dir[2]));
-
-  do {
-    unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
-
-    if (fNChild[id] >= 0) {
-      /* For leaf nodes, loop over children */
-      for (int i = 0; i < fNChild[id]; ++i) {
-        int prim = fPrimId[fOffset[id] + i];
-        /* Check AABB first, then the volume itself if needed */
-        if (fAABBs[prim].IntersectInvDir(point, invdir, step)) {
-          auto vol  = fLV.GetDaughters()[prim];
-          // Convert point/direction to daughter frame
-          Transformation3D const *tr     = vol->GetTransformation();
-          Vector3D<Precision> localpoint = tr->Transform(point);
-          Vector3D<Precision> localdir   = tr->TransformDirection(dir);
-          Vector3D<Precision> invlocaldir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
-          auto dist = vol->GetUnplacedVolume()->ApproachSolid(localpoint, invlocaldir);
-          /* If distance to current child is smaller than current step, update step and hitcandidate */
-          if (dist < step && !(dist <= 0.0 && vol == last)) step = dist;
-        }
-      }
-    } else {
-      unsigned int childL = 2 * id + 1;
-      unsigned int childR = 2 * id + 2;
-
-      /* For internal nodes, check AABBs to know if we need to traverse left and right children */
-      Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
-
-      fNodes[childL].ComputeIntersectionInvDir(point, invdir, tminL, tmaxL);
-      fNodes[childR].ComputeIntersectionInvDir(point, invdir, tminR, tmaxR);
-
-      bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < step;
-      bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < step;
-
-      /*
-       * If both left and right nodes need to be checked, check closest one first.
-       * This ensures step gets short as fast as possible so we can skip more nodes without checking.
-       */
-      if (tminR < tminL) {
-        if (traverseR) *ptr++ = childR;
-        if (traverseL) *ptr++ = childL;
-      } else {
-        if (traverseL) *ptr++ = childL;
-        if (traverseR) *ptr++ = childR;
-      }
-    }
-  } while (ptr > stack);
-}
-
 
 } // namespace VECGEOM_IMPL_NAMESPACE
 

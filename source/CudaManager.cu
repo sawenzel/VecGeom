@@ -22,6 +22,18 @@ void InitDeviceCompactPlacedVolBufferPtr(void *gpu_ptr)
   vecgeom::cxx::CudaAssertError();
 }
 
+__global__ void InitDeviceLogicalVolumesPtrCudaKernel(void *gpu_ptr)
+{
+  // gpu_ptr is some pointer on the device that was allocated by some other means
+  globaldevicegeomdata::gDeviceLogicalVolumes = (vecgeom::cuda::LogicalVolume *)gpu_ptr;
+}
+
+void InitDeviceLogicalVolumesPtr(void *gpu_ptr)
+{
+  InitDeviceLogicalVolumesPtrCudaKernel<<<1, 1>>>(gpu_ptr);
+  vecgeom::cxx::CudaAssertError();
+}
+
 __global__ void InitDeviceNavIndexPtrCudaKernel(void *gpu_ptr, int maxdepth)
 {
   // gpu_ptr is some pointer on the device that was allocated by some other means

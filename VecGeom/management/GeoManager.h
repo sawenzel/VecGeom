@@ -42,6 +42,7 @@ private:
   std::map<unsigned int, VPlacedVolume *> fPlacedVolumesMap;
   std::map<unsigned int, LogicalVolume *> fLogicalVolumesMap;
   std::map<VPlacedVolume const *, unsigned int> fVolumeToIndexMap;
+  std::vector<LogicalVolume*> fLogicalVolumesArray;
   int fMaxDepth   = 0;     // maximum geometry depth
   int fCacheDepth = 0;     // caching level for global transformations (0 = cache all)_
   bool fIsClosed  = false; // geometry closed flag
@@ -201,6 +202,11 @@ public:
    */
   VPlacedVolume *FindPlacedVolume(char const *const label);
 
+  VECGEOM_FORCE_INLINE VPlacedVolume *GetPlacedVolume(const uint id)
+  {
+    return &gCompactPlacedVolBuffer[id];
+  }
+
   /**
    * \return Volume with passed id, or NULL is the id wasn't found.
    */
@@ -211,6 +217,11 @@ public:
    *         are found, their id will be printed to standard output.
    */
   LogicalVolume *FindLogicalVolume(char const *const label);
+
+  VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id)
+  {
+    return fLogicalVolumesArray[id];
+  }
 
   /**
    * \return Id of logical volume with passed label, or -1 if not found
@@ -253,7 +264,7 @@ public:
 private:
   GeoManager()
       : fVolumeCount(0), fTotalNodeCount(0), fWorld(NULL), fPlacedVolumesMap(), fLogicalVolumesMap(),
-        fVolumeToIndexMap(), fMaxDepth(-1), fIsClosed(false)
+        fVolumeToIndexMap(), fLogicalVolumesArray(), fMaxDepth(-1), fIsClosed(false)
   {
   }
 

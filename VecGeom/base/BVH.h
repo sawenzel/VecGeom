@@ -70,13 +70,14 @@ public:
 
   /**
    * Check ray defined by <tt>localpoint + t * localdir</tt> for intersections with children
-   * of the logical volume associated with the BVH, and within a maximum distance of @p step
-   * along the ray, while ignoring the @p last volume.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[in] localdir Direction in the local coordinates of the logical volume.
+   * of the root element of the BVH, and within a maximum distance of @p step
+   * along the ray, while ignoring the @p last_exited_id volume.
+   * @param[in] localpoint Point in the local coordinates of the BVH root.
+   * @param[in] localdir Direction in the local coordinates of the BVH root.
    * @param[in,out] step Maximum step distance for which intersections should be considered.
-   * @param[in] last Last volume. This volume is ignored when reporting intersections.
-   * @param[out] hitcandidate Pointer to volume for which closest intersection was found.
+   * @param[in] last_exited_id Last exited element. This element is ignored when reporting intersections.
+   * @param[out] hitcandidate_index Index of element for which closest intersection was found. -1 if no intersection
+   * is found within the current step distance.
    */
   /*
    * BVH::ComputeDaughterIntersections() computes the intersection of a ray against all children of
@@ -92,9 +93,10 @@ public:
    * if the sum of children in both leaves is the same as in the current node, as for leaf nodes, the
    * sum of children in the left+right child nodes will be less than for the current node.
    */
-  VECCORE_ATT_HOST_DEVICE
-  void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision> localdir, Precision &step,
-                                  VPlacedVolume const *last, VPlacedVolume const *&hitcandidate) const
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision> localdir,
+                                                          Precision &step, long const last_exited_id,
+                                                          long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -109,12 +111,13 @@ public:
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
-          /* Check AABB first, then the volume itself if needed */
+          /* Check AABB first, then the element itself if needed */
           if (fAABBs[prim].IntersectInvDir(localpoint, invdir, step)) {
-            const auto vol  = fLV.GetDaughters()[prim];
-            const auto dist = vol->DistanceToIn(localpoint, localdir, step);
+            const auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint, localdir, step);
+
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && !(dist <= 0.0 && vol == last)) step = dist, hitcandidate = vol;
+            if (dist < step && !(dist <= kTolerance && Navigator::SkipItem(fRootId, prim, last_exited_id)))
+              step = dist, hitcandidate_index = prim;
           }
         }
       } else {
@@ -146,30 +149,17 @@ public:
   }
 
   /**
-   * Check ray defined by <tt>localpoint + t * localdir</tt> for intersections with bounding
-   * boxes of children of the logical volume associated with the BVH, and within a maximum
-   * distance of @p step along the ray. Returns the distance to the first crossed box.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[in] localdir Direction in the local coordinates of the logical volume.
-   * @param[in,out] step Maximum step distance for which intersections should be considered.
-   * @param[in] last Last volume. This volume is ignored when reporting intersections.
-   */
-  VECCORE_ATT_HOST_DEVICE
-  void ApproachNextDaughter(Vector3D<Precision> localpoint, Vector3D<Precision> localdir, Precision &step,
-                            VPlacedVolume const *last) const;
-
-  /**
-   * Compute safety against children of the logical volume associated with the BVH.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[in] safety Maximum safety. Volumes further than this are not checked.
-   * @returns Minimum between safety to the closest child of logical volume and input @p safety.
+   * Compute safety against children of the root element associated with the BVH.
+   * @param[in] localpoint Point in the local coordinates of the root element.
+   * @param[in] safety Maximum safety. Elements further than this are not checked.
+   * @returns Minimum between safety to the closest child of root element and input @p safety.
    */
   /*
-   * BVH::ComputeSafety is very similar to the method above regarding traversal of the tree, but it
-   * computes only the safety instead of the intersection using a ray, so the logic is a bit simpler.
+   * BVH::ComputeSafety is very similar to CheckDaughterIntersections regarding traversal of the tree, but 
+   * it computes only the safety instead of the intersection using a ray, so the logic is a bit simpler.
    */
-  VECCORE_ATT_HOST_DEVICE
-  Precision ComputeSafety(Vector3D<Precision> localpoint, Precision safety) const
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE Precision ComputeSafety(Vector3D<Precision> localpoint, Precision safety) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -181,7 +171,7 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Safety(localpoint) < safety) {
-            const Precision dist = fLV.GetDaughters()[prim]->SafetyToIn(localpoint);
+            const Precision dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
             if (dist < safety) safety = dist;
           }
         }
@@ -209,51 +199,16 @@ public:
   }
 
   /**
-   * Find child volume inside which the given point @p localpoint is located.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[out] daughterpvol Placed volume in which @p localpoint is contained
-   * @param[out] daughterlocalpoint Point in the local coordinates of @p daughterpvol
-   * @returns Whether @p localpoint falls within a child volume of @p lvol.
+   * Find child element inside which the given point @p localpoint is located.
+   * @param[in] exclude_item_id Element that should be ignored.
+   * @param[in] localpoint Point in the local coordinates of the BVH root element.
+   * @param[out] container_id Id of the element in which @p localpoint is contained
+   * @param[out] daughterlocalpoint Point in the local coordinates of the container element
+   * @returns Whether @p localpoint falls within a child element of this BVH.
    */
-  VECCORE_ATT_HOST_DEVICE
-  bool LevelLocate(Vector3D<Precision> const &localpoint, VPlacedVolume const *&pvol,
-                   Vector3D<Precision> &daughterlocalpoint) const
-  {
-    VPlacedVolume const *exclvol = nullptr;
-    return LevelLocate(exclvol, localpoint, pvol, daughterlocalpoint);
-  }
-
-  /**
-   * Find child volume inside which the given point @p localpoint is located.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[out] outstate Navigation state. Gets updated if point is relocated to another volume.
-   * @param[out] daughterlocalpoint Point in the local coordinates of newly located volume.
-   * @returns Whether @p localpoint falls within a child volume of @p lvol.
-   */
-  VECCORE_ATT_HOST_DEVICE
-  bool LevelLocate(Vector3D<Precision> const &localpoint, NavigationState &state,
-                   Vector3D<Precision> &daughterlocalpoint) const
-  {
-    VPlacedVolume const *exclvol = nullptr;
-    VPlacedVolume const *pvol    = nullptr;
-    bool Result                  = LevelLocate(exclvol, localpoint, pvol, daughterlocalpoint);
-    if (Result) {
-      state.Push(pvol);
-    }
-    return Result;
-  }
-
-  /**
-   * Find child volume inside which the given point @p localpoint is located.
-   * @param[in] exclvol Placed volume that should be ignored.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[out] pvol Placed volume in which @p localpoint is contained
-   * @param[out] daughterlocalpoint Point in the local coordinates of @p daughterpvol
-   * @returns Whether @p localpoint falls within a child volume of @p lvol.
-   */
-  VECCORE_ATT_HOST_DEVICE
-  bool LevelLocate(VPlacedVolume const *exclvol, Vector3D<Precision> const &localpoint, VPlacedVolume const *&pvol,
-                   Vector3D<Precision> &daughterlocalpoint) const
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE bool LevelLocate(long const exclude_item_id, Vector3D<Precision> const &localpoint,
+                                           long &container_id, Vector3D<Precision> &daughterlocalpoint) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -265,9 +220,9 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Contains(localpoint)) {
-            const auto vol = fLV.GetDaughters()[prim];
-            if (vol != exclvol && vol->Contains(localpoint, daughterlocalpoint)) {
-              pvol = vol;
+            if (!Navigator::SkipItem(fRootId, prim, exclude_item_id) &&
+                Navigator::CandidateContains(fRootId, prim, localpoint, daughterlocalpoint)) {
+              container_id = Navigator::ItemId(fRootId, prim);
               return true;
             }
           }
@@ -285,62 +240,69 @@ public:
   }
 
   /**
-   * Find child volume inside which the given point @p localpoint is located.
-   * @param[in] exclvol Placed volume that should be ignored.
-   * @param[in] localpoint Point in the local coordinates of the logical volume.
-   * @param[in] localdir Direction in the local coordinates of the logical volume.
-   * @param[out] pvol Placed volume in which @p localpoint is contained
-   * @param[out] daughterlocalpoint Point in the local coordinates of @p daughterpvol
-   * @returns Whether @p localpoint falls within a child volume of @p lvol.
+   * Check ray defined by <tt>localpoint + t * localdir</tt> for intersections with bounding
+   * boxes of children of the root element of the BVH, and within a maximum
+   * distance of @p step along the ray. Returns the distance to the first crossed box.
+   * @param[in] localpoint Point in the local coordinates of the root element.
+   * @param[in] localdir Direction in the local coordinates of the root element.
+   * @param[in,out] step Maximum step distance for which intersections should be considered.
+   * @param[in] last_exited_id Last exited element. This element is ignored when reporting intersections.
    */
-  VECCORE_ATT_HOST_DEVICE
-  bool LevelLocate(VPlacedVolume const *exclvol, Vector3D<Precision> const &localpoint,
-                   Vector3D<Precision> const &localdirection, VPlacedVolume const *&pvol,
-                   Vector3D<Precision> &daughterlocalpoint) const
+  /*
+   * BVH::ApproachNextDaughter is very similar to CheckDaughterIntersections but computes the first
+   * hit daughter bounding box instead of the next hit shape. This lighter computation is used to
+   * first approach the next hit solid before computing the actual distance, in the attempt to
+   * reduce the numerical rounding error due to propagation to boundary.
+   */
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE void ApproachNextDaughter(Vector3D<Precision> localpoint, Vector3D<Precision> localdir,
+                                                    Precision &step, long const last_exited_id) const
   {
-    unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
-    stack[0] = 0;
+    unsigned int stack[BVH_MAX_DEPTH] = {0}, *ptr = &stack[1];
+
+    /* Calculate and reuse inverse direction to save on divisions */
+    Vector3D<Precision> invlocaldir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
 
     do {
-      const unsigned int id = *--ptr;
+      unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
       if (fNChild[id] >= 0) {
+        /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
-          const int prim = fPrimId[fOffset[id] + i];
-          if (fAABBs[prim].Contains(localpoint)) {
-            const auto v = fLV.GetDaughters()[prim];
-
-            if (v == exclvol) continue;
-
-            const auto T = v->GetTransformation();
-            const auto u = v->GetUnplacedVolume();
-            const auto p = T->Transform(localpoint);
-
-            auto Entering = [&]() {
-              const Vector3D<Precision> dir = T->TransformDirection(localdirection);
-              Vector3D<Precision> normal;
-              u->Normal(p, normal);
-              return Vector3D<Precision>::Dot(normal, dir) < 0.0;
-            };
-
-            const auto inside = u->Inside(p);
-
-            if (inside == kInside || (inside == kSurface && Entering())) {
-              pvol = v, daughterlocalpoint = p;
-              return true;
-            }
+          int prim = fPrimId[fOffset[id] + i];
+          /* Check AABB first, then the element itself if needed */
+          if (fAABBs[prim].IntersectInvDir(localpoint, invlocaldir, step)) {
+            const auto dist = Navigator::CandidateApproachSolid(fRootId, prim, localpoint, localdir);
+            /* If distance to current child is smaller than current step, update step and hitcandidate */
+            if (dist < step && !(dist <= 0.0 && Navigator::SkipItem(fRootId, prim, last_exited_id))) step = dist;
           }
         }
       } else {
-        const unsigned int childL = 2 * id + 1;
-        if (fNodes[childL].Contains(localpoint)) *ptr++ = childL;
+        unsigned int childL = 2 * id + 1;
+        unsigned int childR = 2 * id + 2;
 
-        const unsigned int childR = 2 * id + 2;
-        if (fNodes[childR].Contains(localpoint)) *ptr++ = childR;
+        /* For internal nodes, check AABBs to know if we need to traverse left and right children */
+        Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
+
+        fNodes[childL].ComputeIntersectionInvDir(localpoint, invlocaldir, tminL, tmaxL);
+        fNodes[childR].ComputeIntersectionInvDir(localpoint, invlocaldir, tminR, tmaxR);
+
+        bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < step;
+        bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < step;
+
+        /*
+         * If both left and right nodes need to be checked, check closest one first.
+         * This ensures step gets short as fast as possible so we can skip more nodes without checking.
+         */
+        if (tminR < tminL) {
+          if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
+        } else {
+          if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
+        }
       }
     } while (ptr > stack);
-
-    return false;
   }
 
 private:
@@ -361,12 +323,13 @@ private:
    */
   void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, ConstructionAlgorithm);
 
-  LogicalVolume const &fLV; ///< Logical volume this BVH was constructed for
+  uint const fRootId;       ///< Id of the root element this BVH was constructed for
+  int const fRootNChild;    ///< Number of children of the root element
   int *fPrimId;             ///< Child volume ids for each BVH node
   int *fOffset;             ///< Offset in @c fPrimId for first child of each BVH node
   int *fNChild;             ///< Number of children for each BVH node
   AABB *fNodes;             ///< AABBs of BVH nodes
-  AABB *fAABBs;             ///< AABBs of children of logical volume @c fLV
+  AABB *fAABBs;             ///< AABBs of children of the BVH root element
   int fDepth;               ///< Depth of the BVH
 };
 

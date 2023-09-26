@@ -39,18 +39,30 @@ public:
   static VSafetyEstimator *Instance();
 #endif
 
+  VECCORE_ATT_HOST_DEVICE
+  static Precision CandidateSafetyToIn(int aItemIndex, int index, Vector3D<Precision> localpoint)
+  {
+#ifdef VECCORE_CUDA_DEVICE_COMPILATION
+    return vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes[aItemIndex].
+                                          GetDaughters()[index]->SafetyToIn(localpoint);
+#else
+    return GeoManager::Instance().FindLogicalVolume(aItemIndex)->GetDaughters()[index]->SafetyToIn(localpoint);
+#endif
+  };
+
   /**
    * Compute safety of a point given in the local coordinates of the placed volume @p pvol.
    * @param[in] localpoint Point in the local coordinates of the placed volume.
    * @param[in] pvol Placed volume.
    */
   VECCORE_ATT_HOST_DEVICE
-  Precision ComputeSafetyForLocalPoint(Vector3D<Precision> const &localpoint, VPlacedVolume const *pvol) const final
+  Precision ComputeSafetyForLocalPoint(Vector3D<Precision> const &localpoint, 
+                                       VPlacedVolume const *pvol) const final
   {
     Precision safety = pvol->SafetyToOut(localpoint);
 
     if (safety > 0.0 && pvol->GetDaughters().size() > 0)
-      safety = BVHManager::GetBVH(pvol->GetLogicalVolume())->ComputeSafety(localpoint, safety);
+      safety = BVHManager::GetBVH(pvol->GetLogicalVolume())->ComputeSafety<BVHSafetyEstimator>(localpoint, safety);
 
     return safety;
   }
@@ -66,7 +78,7 @@ public:
   Precision ComputeSafetyToDaughtersForLocalPoint(Vector3D<Precision> const &localpoint,
                                                   LogicalVolume const *lvol) const final
   {
-    return BVHManager::GetBVH(lvol)->ComputeSafety(localpoint, kInfLength);
+    return BVHManager::GetBVH(lvol)->ComputeSafety<BVHSafetyEstimator>(localpoint, kInfLength);
   }
 };
 

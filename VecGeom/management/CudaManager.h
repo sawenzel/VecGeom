@@ -24,11 +24,13 @@ namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE(class VPlacedVolume;);
 VECGEOM_DEVICE_FORWARD_DECLARE(void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world););
 VECGEOM_DEVICE_FORWARD_DECLARE(void InitDeviceCompactPlacedVolBufferPtr(void *););
+VECGEOM_DEVICE_FORWARD_DECLARE(void InitDeviceLogicalVolumesPtr(void *););
 
 // we put some global data into a separate namespace
 // this is done since CUDA does not support static const members in class definitions
 namespace globaldevicegeomdata {
 inline VECCORE_ATT_DEVICE VPlacedVolume *gCompactPlacedVolBuffer = nullptr;
+inline VECCORE_ATT_DEVICE LogicalVolume *gDeviceLogicalVolumes = nullptr;
 inline VECCORE_ATT_DEVICE NavIndex_t *gNavIndex = nullptr; // address of navigation index table
 inline VECCORE_ATT_DEVICE int gMaxDepth = 0;
 } // namespace globaldevicegeomdata

@@ -27,10 +27,8 @@
 
 #include "VecGeom/navigation/VNavigator.h"
 #include "VecGeom/navigation/GlobalLocator.h"
-#include "VecGeom/navigation/BVHLevelLocator.h"
 #include "VecGeom/navigation/NewSimpleNavigator.h"
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
-#include "VecGeom/navigation/SimpleABBoxLevelLocator.h"
 #include "VecGeom/navigation/HybridNavigator2.h"
 #include "VecGeom/navigation/BVHNavigator.h"
 
@@ -225,15 +223,6 @@ void InitNavigators(int use_bvh_navigator)
         lvol.second->SetNavigator(HybridNavigator<>::Instance());
         HybridManager2::Instance().InitStructure((lvol.second));
       }
-    }
-
-    if (lvol.second->ContainsAssembly()) {
-      lvol.second->SetLevelLocator(SimpleAssemblyAwareABBoxLevelLocator::GetInstance());
-    } else {
-      if (use_bvh_navigator)
-        lvol.second->SetLevelLocator(BVHLevelLocator::GetInstance());
-      else
-        lvol.second->SetLevelLocator(SimpleABBoxLevelLocator::GetInstance());
     }
   }
 }

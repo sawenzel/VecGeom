@@ -210,6 +210,13 @@ void GeoManager::CloseGeometry()
     fVolumeToIndexMap[element.second] = element.first;
   }
 
+  // Initialize the Logical Volumes array for efficient access by index
+  fLogicalVolumesArray.resize(GetRegisteredVolumesCount());
+  for(uint i=0; i<GetRegisteredVolumesCount(); i++)
+  {
+    fLogicalVolumesArray[i] = fLogicalVolumesMap[i];
+  }
+
   CompactifyMemory();
   vecgeom::ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
   fIsClosed = true;
