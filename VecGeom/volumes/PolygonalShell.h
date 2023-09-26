@@ -66,8 +66,7 @@ public:
   Precision GetUpperZ() const { return fUpperZ; }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  void Extent(Vector3D<Real_v> &aMin, Vector3D<Real_v> &aMax) const
+  VECCORE_ATT_HOST_DEVICE void Extent(Vector3D<Real_v> &aMin, Vector3D<Real_v> &aMax) const
   {
     aMin[0] = Real_v(fPolygon.GetMinX());
     aMin[1] = Real_v(fPolygon.GetMinY());
@@ -79,15 +78,13 @@ public:
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     return fPolygon.IsConvex() ? DistanceToInConvex(point, dir) : DistanceToInConcave(point, dir);
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToInConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToInConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Bool_v done(false);
@@ -135,8 +132,7 @@ public:
   }
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToInConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToInConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Real_v result(kInfLength);
@@ -184,8 +180,7 @@ public:
   // -- DistanceToOut --
 
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     return fPolygon.IsConvex() ? DistanceToOutConvex(point, dir) : DistanceToOutConcave(point, dir);
   }
@@ -194,8 +189,7 @@ public:
   // NOTE: this kernel is the same as DistanceToIn apart from the comparisons for early return
   // these could become a template parameter
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToOutConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToOutConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Bool_v done(false);
@@ -246,8 +240,7 @@ public:
   // DistanceToOut for the concave case
   // we should ideally combine this with the other kernel
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToOutConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE Real_v DistanceToOutConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Real_v result(kInfLength);
@@ -300,9 +293,8 @@ public:
 #ifdef SPECIALIZATION
 // template specialization for Distance functions
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline Precision PolygonalShell::DistanceToOutConvex(Vector3D<Precision> const &point,
-                                                     Vector3D<Precision> const &dir) const
+VECCORE_ATT_HOST_DEVICE inline Precision PolygonalShell::DistanceToOutConvex(Vector3D<Precision> const &point,
+                                                                             Vector3D<Precision> const &dir) const
 {
   Precision dz         = 0.5 * (fUpperZ - fLowerZ);
   Precision pz         = point.z() - 0.5 * (fLowerZ + fUpperZ);
@@ -310,7 +302,7 @@ inline Precision PolygonalShell::DistanceToOutConvex(Vector3D<Precision> const &
   if (safz > kTolerance) return -kTolerance;
 
   Precision vz   = dir.z();
-  Precision tmax = (vecCore::math::CopySign(dz, vz) - point.z()) / NonZero(vz);
+  Precision tmax = (vecCore::math::CopySign(dz, vz) - pz) / NonZero(vz);
   const auto S   = fPolygon.fVertices.size();
   for (size_t i = 0; i < S; ++i) { // side/rectangle index
 
@@ -328,9 +320,8 @@ inline Precision PolygonalShell::DistanceToOutConvex(Vector3D<Precision> const &
 
 // template specialization for Distance functions
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline Precision PolygonalShell::DistanceToInConvex(Vector3D<Precision> const &point,
-                                                    Vector3D<Precision> const &dir) const
+VECCORE_ATT_HOST_DEVICE inline Precision PolygonalShell::DistanceToInConvex(Vector3D<Precision> const &point,
+                                                                            Vector3D<Precision> const &dir) const
 {
   Precision dz = 0.5 * (fUpperZ - fLowerZ);
   Precision pz = point.z() - 0.5 * (fLowerZ + fUpperZ);

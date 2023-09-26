@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     y[i] = dy * std::cos(i * (2. * M_PI) / N);
   }
 
-  UnplacedSExtruVolume extru(N, x, y, -dz, dz);
+  UnplacedSExtruVolume extru(N, x, y, -dz, 3 * dz);
 
   LogicalVolume world("world", &worldUnplaced);
   LogicalVolume extrul("extrul", &extru);
