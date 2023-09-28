@@ -170,6 +170,10 @@ public:
   Transformation3D operator*(Transformation3D const &tf);
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Transformation3D const &operator*=(Transformation3D const &rhs);
+
+  VECCORE_ATT_HOST_DEVICE
   ~Transformation3D() {}
 
   VECCORE_ATT_HOST_DEVICE
@@ -184,6 +188,16 @@ public:
     rxz_ *= sx;
     ryz_ *= sy;
     rzz_ *= sz;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  bool ApproxEqual(Transformation3D const &rhs, Precision tolerance = kTolerance) const
+  {
+    auto const data1 = &tx_;
+    auto const data2 = &rhs.tx_;
+    for (int i = 0; i < 12; ++i)
+      if (vecCore::math::Abs(data1[i] - data2[i]) > tolerance) return false;
+    return true;
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -705,6 +719,49 @@ Transformation3D Transformation3D::operator*(Transformation3D const &rhs)
                           rxx_ * rhs.rxz_ + rxy_ * rhs.ryz_ + rxz_ * rhs.rzz_,        // rxz
                           ryx_ * rhs.rxz_ + ryy_ * rhs.ryz_ + ryz_ * rhs.rzz_,        // ryz
                           rzx_ * rhs.rxz_ + rzy_ * rhs.ryz_ + rzz_ * rhs.rzz_);       // rzz
+}
+
+VECCORE_ATT_HOST_DEVICE
+VECGEOM_FORCE_INLINE
+Transformation3D const &Transformation3D::operator*=(Transformation3D const &rhs)
+{
+  if (rhs.fIdentity) return *this;
+  fIdentity = false;
+
+  fHasTranslation |= rhs.HasTranslation();
+  if (fHasTranslation) {
+    auto tx = tx_ * rhs.rxx_ + ty_ * rhs.ryx_ + tz_ * rhs.rzx_ + rhs.tx_;
+    auto ty = tx_ * rhs.rxy_ + ty_ * rhs.ryy_ + tz_ * rhs.rzy_ + rhs.ty_;
+    auto tz = tx_ * rhs.rxz_ + ty_ * rhs.ryz_ + tz_ * rhs.rzz_ + rhs.tz_;
+    tx_     = tx;
+    ty_     = ty;
+    tz_     = tz;
+  }
+
+  fHasRotation |= rhs.HasRotation();
+  if (rhs.HasRotation()) {
+    auto rxx = rxx_ * rhs.rxx_ + rxy_ * rhs.ryx_ + rxz_ * rhs.rzx_;
+    auto ryx = ryx_ * rhs.rxx_ + ryy_ * rhs.ryx_ + ryz_ * rhs.rzx_;
+    auto rzx = rzx_ * rhs.rxx_ + rzy_ * rhs.ryx_ + rzz_ * rhs.rzx_;
+    auto rxy = rxx_ * rhs.rxy_ + rxy_ * rhs.ryy_ + rxz_ * rhs.rzy_;
+    auto ryy = ryx_ * rhs.rxy_ + ryy_ * rhs.ryy_ + ryz_ * rhs.rzy_;
+    auto rzy = rzx_ * rhs.rxy_ + rzy_ * rhs.ryy_ + rzz_ * rhs.rzy_;
+    auto rxz = rxx_ * rhs.rxz_ + rxy_ * rhs.ryz_ + rxz_ * rhs.rzz_;
+    auto ryz = ryx_ * rhs.rxz_ + ryy_ * rhs.ryz_ + ryz_ * rhs.rzz_;
+    auto rzz = rzx_ * rhs.rxz_ + rzy_ * rhs.ryz_ + rzz_ * rhs.rzz_;
+
+    rxx_ = rxx;
+    rxy_ = rxy;
+    rxz_ = rxz;
+    ryx_ = ryx;
+    ryy_ = ryy;
+    ryz_ = ryz;
+    rzx_ = rzx;
+    rzy_ = rzy;
+    rzz_ = rzz;
+  }
+
+  return *this;
 }
 
 VECCORE_ATT_HOST_DEVICE

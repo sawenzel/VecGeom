@@ -224,9 +224,8 @@ public:
       hasm            = *((unsigned char *)(NavIndAddr(nav_ind)) + kOffsetHasm);
       bool has_matrix = (hasm & 0x04) > 0;
       if (has_matrix) break;
-      auto t = *TopImpl(nav_ind)->GetTransformation();
-      t.MultiplyFromRight(trans);
-      trans   = t;
+      auto const &t = *TopImpl(nav_ind)->GetTransformation();
+      trans *= t;
       nav_ind = NavInd(nav_ind);
     }
 
@@ -245,8 +244,7 @@ public:
 
     Transformation3D t;
     t.Set(address, address + 3, has_trans, has_rot);
-    t.MultiplyFromRight(trans);
-    trans = t;
+    trans *= t;
   }
 
   VECCORE_ATT_HOST_DEVICE

@@ -27,8 +27,8 @@ Vector3D<Precision> NavStatePath::GlobalToLocal(Vector3D<Precision> const &globa
 VECCORE_ATT_HOST_DEVICE
 void NavStatePath::TopMatrix(int tolevel, Transformation3D &global_matrix) const
 {
-  for (int i = 1; i < tolevel; ++i) {
-    global_matrix.MultiplyFromRight(*(At(i)->GetTransformation()));
+  for (int i = tolevel - 1; i > 0; --i) {
+    global_matrix *= *(ToPlacedVolume(fPath[i])->GetTransformation());
   }
 }
 

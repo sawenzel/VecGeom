@@ -583,8 +583,8 @@ void NavStatePath::TopMatrix(Transformation3D &global_matrix) const
     return;
   }
 #endif
-  for (int i = 1; i < fCurrentLevel; ++i) {
-    global_matrix.MultiplyFromRight(*(ToPlacedVolume(fPath[i])->GetTransformation()));
+  for (int i = fCurrentLevel - 1; i > 0; --i) {
+    global_matrix *= *(ToPlacedVolume(fPath[i])->GetTransformation());
   }
 }
 
