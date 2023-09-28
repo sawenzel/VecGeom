@@ -37,7 +37,7 @@ public:
    * logical volume. This function is called automatically when the geometry is closed.
    *
    * The BVHManager assumes all volumes have an associated BVH, but only BVHs for volumes whose
-   * navigator is set to the BVHNavigator are actually accessed at runtime.
+   * navigator is set to the BVHNavigatorV are actually accessed at runtime.
    */
   static void Init();
 

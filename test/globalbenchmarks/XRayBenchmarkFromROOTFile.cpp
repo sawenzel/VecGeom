@@ -30,7 +30,7 @@
 #include "VecGeom/navigation/NewSimpleNavigator.h"
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
 #include "VecGeom/navigation/HybridNavigator2.h"
-#include "VecGeom/navigation/BVHNavigator.h"
+#include "VecGeom/navigation/BVHNavigatorV.h"
 
 //#define CALLGRIND
 #ifdef CALLGRIND
@@ -212,13 +212,13 @@ void InitNavigators(int use_bvh_navigator)
       lvol.second->SetNavigator(NewSimpleNavigator<>::Instance());
     } else if (ndaughters <= 10) {
       if (use_bvh_navigator) {
-        lvol.second->SetNavigator(BVHNavigator<>::Instance());
+        lvol.second->SetNavigator(BVHNavigatorV<>::Instance());
       } else {
         lvol.second->SetNavigator(SimpleABBoxNavigator<>::Instance());
       }
     } else { // ndaughters > 10
       if (use_bvh_navigator) {
-        lvol.second->SetNavigator(BVHNavigator<>::Instance());
+        lvol.second->SetNavigator(BVHNavigatorV<>::Instance());
       } else {
         lvol.second->SetNavigator(HybridNavigator<>::Instance());
         HybridManager2::Instance().InitStructure((lvol.second));

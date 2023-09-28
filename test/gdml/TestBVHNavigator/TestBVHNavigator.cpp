@@ -1,10 +1,9 @@
 #include "Frontend.h" // VecGeom/gdml/Frontend.h
 
 #include "VecGeom/management/GeoManager.h"
-#include "VecGeom/navigation/BVHNavigatorV.h"
-#include "VecGeom/navigation/HybridNavigator2.h"
-#include "VecGeom/navigation/NewSimpleNavigator.h"
-#include "VecGeom/navigation/SimpleABBoxNavigator.h"
+#include "VecGeom/navigation/BVHNavigator.h"
+#include "VecGeom/navigation/LoopNavigator.h"
+#include "VecGeom/navigation/GlobalLocator.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -38,38 +37,15 @@ Vector3D<Precision> random_unit_vector()
 
 bool nearly_equal(double x, double y)
 {
-  using std::abs;
-
-  if (x == y)
-    return true;
-  else if (x * y == 0.0)
-    return abs(x - y) < DBL_EPSILON * DBL_EPSILON;
-  else
-    return abs(x - y) < (abs(x) + abs(y)) * DBL_EPSILON;
+  return vecCore::Abs(x - y) < kTolerance * 0.1;
 }
 
-VNavigator const *get_navigator(const char *name)
-{
-  static VNavigator const *navigators[] = {
-      NewSimpleNavigator<>::Instance(),
-      SimpleABBoxNavigator<>::Instance(),
-      HybridNavigator<>::Instance(),
-      BVHNavigatorV<>::Instance(),
-  };
-
-  for (auto navigator : navigators)
-    if (strcmp(name, navigator->GetName()) == 0) return navigator;
-
-  return nullptr;
-}
-
-bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = true)
+bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, const BVHNavigator *navigator,
+              const LoopNavigator *ref_navigator, bool verbose = true)
 {
   auto &geoManager      = GeoManager::Instance();
   NavigationState *curr = NavigationState::MakeInstance(geoManager.getMaxDepth());
   NavigationState *next = NavigationState::MakeInstance(geoManager.getMaxDepth());
-
-  VNavigator const &ref_navigator = *NewSimpleNavigator<>::Instance();
 
   GlobalLocator::LocateGlobalPoint(geoManager.GetWorld(), p, *curr, true);
 
@@ -86,10 +62,21 @@ bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = tru
   while (!curr->IsOutside()) {
     curr_volume = curr->Top()->GetLogicalVolume();
 
-    Precision ref_step = ref_navigator.ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
-    Precision step     = curr_volume->GetNavigator()->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+    Precision ref_step = ref_navigator->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+    Precision step     = navigator->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
 
-    if (!nearly_equal(step, ref_step)) return false;
+    if (!nearly_equal(step, ref_step)) {
+      // Print info for the step that failed
+      printf("Navigation error while testing:\n");
+      printf("% 14.20f\n% 14.20f\n", step, ref_step);
+      printf("%6zu [ % 14.8f, % 14.8f, % 14.8f ] % 14.8f % 14.8f %s\n", ++steps, p.x(), p.y(), p.z(), step, ref_step,
+             curr_volume->GetLabel().c_str());
+      // Call both navigators again with the same parameters, so we can easily reproduce the error in the debugger
+      ref_navigator->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+      navigator->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+
+      return false;
+    }
     step = vecCore::math::Max(step, kTolerance);
 
     p = p + step * dir;
@@ -108,12 +95,13 @@ bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = tru
 
 int main(int argc, char **argv)
 {
-  bool verbose                = false;
-  bool validate               = false;
-  double mm_unit              = 0.1;
-  unsigned long seed          = 0;
-  unsigned long iterations    = 1;
-  VNavigator const *navigator = SimpleABBoxNavigator<>::Instance();
+  bool verbose                       = false;
+  bool validate                      = false;
+  double mm_unit                     = 0.1;
+  unsigned long seed                 = 0;
+  unsigned long iterations           = 1;
+  BVHNavigator const *navigator      = new BVHNavigator();
+  LoopNavigator const *ref_navigator = new LoopNavigator();
 
   for (;;) {
     int opt = getopt(argc, argv, "hi:n:s:v");
@@ -125,11 +113,6 @@ int main(int argc, char **argv)
       errno      = 0;
       iterations = strtoul(optarg, nullptr, 10);
       if (errno) errx(errno, "%s: %lu", strerror(errno), iterations);
-      break;
-
-    case 'n':
-      navigator = get_navigator(optarg);
-      if (!navigator) errx(EINVAL, "Invalid navigator: %s", optarg);
       break;
 
     case 's':
@@ -160,14 +143,6 @@ int main(int argc, char **argv)
 
   if (!geoManager.IsClosed()) errx(1, "Geometry not closed");
 
-  for (auto &item : geoManager.GetLogicalVolumesMap()) {
-    auto &volume   = *item.second;
-    auto nchildren = volume.GetDaughters().size();
-    volume.SetNavigator(nchildren > 0 ? navigator : NewSimpleNavigator<>::Instance());
-
-    HybridManager2::Instance().InitStructure(item.second);
-  }
-
   BVHManager::Init();
 
   rng.seed(seed ? seed : seed = rd());
@@ -176,12 +151,17 @@ int main(int argc, char **argv)
     Vector3D<Precision> p(0.0, 0.0, 0.0);
     Vector3D<Precision> dir = random_unit_vector();
 
-    if (navigate(p, dir, verbose)) continue;
+    if (navigate(p, dir, navigator, ref_navigator, verbose)) continue;
 
-    navigate(p, dir);
-    printf("\nNavigation test for %s failed! seed = %lu, iteration = %lu\n", navigator->GetName(), seed, i);
+    delete navigator;
+
+    // Call navigate with verbose=1
+    navigate(p, dir, navigator, ref_navigator);
+    printf("\nNavigation test for BVHNavigator failed! seed = %lu, iteration = %lu\n", seed, i);
     return EXIT_FAILURE;
   }
+
+  delete navigator;
 
   return EXIT_SUCCESS;
 }

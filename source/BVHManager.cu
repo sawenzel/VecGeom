@@ -3,7 +3,7 @@
 
 #include "VecGeom/management/BVHManager.h"
 #include "VecGeom/backend/cuda/Interface.h"
-#include <VecGeom/navigation/BVHNavigator.h>
+#include <VecGeom/navigation/BVHNavigatorV.h>
 #include <VecGeom/navigation/BVHSafetyEstimator.h>
 
 using vecgeom::cxx::CudaCheckError;
@@ -30,13 +30,13 @@ void FreeDeviceBVHBuffer()
 }
 
 // Temporary hack (used already in LogicalVolume.cpp) implementing the Instance functionality
-// on device for BVHSafetyEstimator and BVHNavigator in the absence of the corresponding
+// on device for BVHSafetyEstimator and BVHNavigatorV in the absence of the corresponding
 // implementation files
 VECCORE_ATT_DEVICE
 BVHSafetyEstimator *gBVHSafetyEstimator = nullptr;
 
 VECCORE_ATT_DEVICE
-VNavigator *gBVHNavigator = nullptr;
+VNavigator *gBVHNavigatorV = nullptr;
 
 VECCORE_ATT_DEVICE
 VSafetyEstimator *BVHSafetyEstimator::Instance()
@@ -47,10 +47,10 @@ VSafetyEstimator *BVHSafetyEstimator::Instance()
 
 template <>
 VECCORE_ATT_DEVICE
-VNavigator *BVHNavigator<false>::Instance()
+VNavigator *BVHNavigatorV<false>::Instance()
 {
-  if (gBVHNavigator == nullptr) gBVHNavigator = new BVHNavigator();
-  return gBVHNavigator;
+  if (gBVHNavigatorV == nullptr) gBVHNavigatorV = new BVHNavigatorV();
+  return gBVHNavigatorV;
 }
 
 } // namespace cuda
