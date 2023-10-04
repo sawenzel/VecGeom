@@ -138,6 +138,12 @@ bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
   return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
 }
 
+template <typename Real_t>
+bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
+{
+  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]);
+}
+
 } // namespace vgbrep
 
 #endif

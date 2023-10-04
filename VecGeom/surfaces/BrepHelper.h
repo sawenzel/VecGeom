@@ -277,41 +277,19 @@ public:
   void ComputeCylinderExtent(Side &side)
   {
     // Setting initial extent mask
-    constexpr Real_t kBig = 1.e30;
-    ZPhiMask_t sideext{kBig, -kBig, false};
-    side.fExtent.type = kZPhi;
+    side.fExtent.type  = kZPhi;
+    ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
 
-    bool first = true;
-    for (int i = 0; i < side.fNsurf; ++i) {
-      // convert surface frame to local coordinates
-      auto &framed_surf          = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    // loop over remaining frames on the side
+    for (int i = 1; i < side.fNsurf; ++i) {
+      // convert extent of current frame to local coordinates
+      auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+      // Transform the ZPhi mask to the local system
       ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
-      Vector3D<Real_t> local;
-
-      // The z-axis is shared and all surfaces are on the same side, so
-      // there is no flipping.
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, extLocal.rangeZ[0]});
-      sideext.rangeZ[0] = std::min(sideext.rangeZ[0], local[2]);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, extLocal.rangeZ[1]});
-      sideext.rangeZ[1] = std::max(sideext.rangeZ[1], local[2]);
-
-      // If we already had a mask that is full circle
-      if (sideext.isFullCirc) continue;
-
-      // If current frame is wider than extent:
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extLocal.vecSPhi[0], extLocal.vecSPhi[1], 0});
-      if (!sideext.Inside(local)) sideext.vecSPhi.Set(extLocal.vecSPhi[0], extLocal.vecSPhi[1]);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extLocal.vecEPhi[0], extLocal.vecEPhi[1], 0});
-      if (!sideext.Inside(local)) sideext.vecEPhi.Set(extLocal.vecEPhi[0], extLocal.vecEPhi[1]);
-
-      if (first) {
-        sideext.vecSPhi.Set(extLocal.vecSPhi[0], extLocal.vecSPhi[1]);
-        sideext.vecEPhi.Set(extLocal.vecEPhi[0], extLocal.vecEPhi[1]);
-        first = !first;
-      }
-    } // for
+      auto extFrame              = extLocal.InverseTransform(fSurfData->fGlobalTrans[framed_surf.fTrans]);
+      // Combine with current extent
+      sideext.CombineWith(extFrame);
+    }
 
     // Add new extent mask to the vector
     int id = fCPUdata.fZPhiMasks.size();
@@ -800,13 +778,13 @@ private:
         if (std::abs(fCPUdata.fCylSphData[s1.fSurface.id].Radius() - fCPUdata.fCylSphData[s2.fSurface.id].Radius()) >
             vecgeom::kTolerance)
           return false;
+        // Check if the cylynders are flipped with respect to each other
+        flip = fCPUdata.fCylSphData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fCylSphData[s2.fSurface.id].IsFlipped();
         if (same_tr) break;
         tdiff.Normalize();
         t1.TransformDirection(tdiff, ldir);
         // For connected cylinders, the connecting vector must be along the Z axis
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
-        // Check if the cylynders are flipped with respect to each other
-        flip = fCPUdata.fCylSphData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fCylSphData[s2.fSurface.id].IsFlipped();
         break;
       case kConical:
       case kSpherical:

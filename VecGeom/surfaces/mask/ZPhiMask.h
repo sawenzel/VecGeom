@@ -43,13 +43,13 @@ struct ZPhiMask {
   /// @return Point inside phi
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool InsidePhi(Vector3D<Real_t> const &local) const
+  bool InsidePhi(Real_t x, Real_t y, Real_t tolerance = vecgeom::kTolerance) const
   {
     if (isFullCirc) return true;
-    AngleVector<Real_t> localAngle{local[0], local[1]};
+    AngleVector<Real_t> localAngle{x, y};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
-    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
-    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    auto in1    = vecSPhi.CrossZ(localAngle) > -tolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -tolerance;
     return convex ? in1 && in2 : in1 || in2;
   }
 
@@ -64,7 +64,110 @@ struct ZPhiMask {
   {
     // The point must be inside z-span:
     if (local[2] < rangeZ[0] - vecgeom::kTolerance || local[2] > rangeZ[1] + vecgeom::kTolerance) return false;
-    return InsidePhi(local);
+    return InsidePhi(local[0], local[1]);
+  }
+
+  /// @brief Transform a ZPhi mask from a local reference defined by trans to the parent reference
+  /// @param trans Transformation of the ZPhi mask with respect to the parent reference
+  /// @return Transformed mask
+  ZPhiMask<Real_t> InverseTransform(Transformation const &trans) const
+  {
+    ZPhiMask<Real_t> frame;
+    // Convert rangeZ
+    Vector3D<Real_t> local;
+    local            = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[0]});
+    frame.rangeZ[0]  = local[2];
+    local            = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[1]});
+    frame.rangeZ[1]  = local[2];
+    frame.isFullCirc = isFullCirc;
+    if (!isFullCirc) {
+      // Convert phi range
+      local = trans.InverseTransformDirection(Vector3D<Real_t>{vecSPhi[0], vecSPhi[1], 0});
+      frame.vecSPhi.Set(local[0], local[1]);
+      local = trans.InverseTransformDirection(Vector3D<Real_t>{vecEPhi[0], vecEPhi[1], 0});
+      frame.vecEPhi.Set(local[0], local[1]);
+    }
+    return frame;
+  }
+
+  /// @brief Combine this mask (1,2) with another (3,4) and get the resulting extent.
+  /// @param other Another ZPhi frame mask
+  void CombineWith(ZPhiMask<Real_t> const &other)
+  {
+    rangeZ[0] = vecCore::math::Min(rangeZ[0], other.rangeZ[0]);
+    rangeZ[1] = vecCore::math::Max(rangeZ[1], other.rangeZ[1]);
+    isFullCirc |= other.isFullCirc;
+    if (!isFullCirc) {
+      // intersect the phi ranges
+      // Matching start-start (1==3)
+      if (ApproxEqualVector2(vecSPhi, other.vecSPhi)) {
+        if (!InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) vecEPhi = other.vecEPhi;
+        return;
+      }
+      // Matching end-end (2==4)
+      if (ApproxEqualVector2(vecEPhi, other.vecEPhi)) {
+        if (!InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) vecSPhi = other.vecSPhi;
+        return;
+      }
+      // Matching end-start ranges (2==3)
+      if (ApproxEqualVector2(vecEPhi, other.vecSPhi)) {
+        if (InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) {
+          vecEPhi    = vecSPhi;
+          isFullCirc = true;
+        } else {
+          vecEPhi = other.vecEPhi;
+        }
+        return;
+      }
+      // Matching start-end ranges (1==4)
+      if (ApproxEqualVector2(vecSPhi, other.vecEPhi)) {
+        if (InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) {
+          vecEPhi    = vecSPhi;
+          isFullCirc = true;
+        } else {
+          vecSPhi = vecEPhi;
+          vecEPhi = other.vecSPhi;
+        }
+        return;
+      }
+      // non-matching ends
+      bool in1 = other.InsidePhi(vecSPhi[0], vecSPhi[1]);       // 1 inside (3,4)
+      bool in2 = other.InsidePhi(vecEPhi[0], vecEPhi[1]);       // 2 inside (3,4)
+      bool in3 = InsidePhi(other.vecSPhi[0], other.vecSPhi[1]); // 3 inside (1,2)
+      bool in4 = InsidePhi(other.vecEPhi[0], other.vecEPhi[1]); // 4 inside (1,2)
+
+      if (!(in1 || in2 || in3 || in4)) {
+        if ((vecSPhi - other.vecEPhi).Mag2() > (other.vecSPhi - vecEPhi).Mag2())
+          vecEPhi = other.vecEPhi;
+        else
+          vecSPhi = other.vecSPhi;
+        return;
+      }
+
+      if (in1 && in2 && in3 && in4) {
+        vecEPhi    = vecSPhi;
+        isFullCirc = true;
+        return;
+      }
+
+      if (!(in1 || in2)) return;
+
+      if (!(in3 || in4)) {
+        vecSPhi = other.vecSPhi;
+        vecEPhi = other.vecEPhi;
+        return;
+      }
+
+      if (!in1 && in2) {
+        vecEPhi = other.vecEPhi;
+        return;
+      }
+
+      if (in1 && !in2) {
+        vecSPhi = other.vecSPhi;
+      }
+      assert(0 && "wrong logic for ZPhiMask::IntersectExtent");
+    }
   }
 
   /// @brief Computes safe distance to the frame combining surface and frame safeties
@@ -78,7 +181,7 @@ struct ZPhiMask {
   {
     valid          = true;
     Real_t safetyZ = vecCore::math::Max(local[2] - rangeZ[1], rangeZ[0] - local[2]);
-    if (InsidePhi(local)) return vecCore::math::Max(safetySurf, safetyZ);
+    if (InsidePhi(local[0], local[1])) return vecCore::math::Max(safetySurf, safetyZ);
     // If the point is not in the phi range, there are other surfaces closer than this one
     // This frame should not be part of the minimization process.
     valid = false;
