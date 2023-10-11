@@ -7,6 +7,7 @@
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
 
 #include <algorithm>
+#include <sstream>
 #include <cerrno>
 #include <climits>
 #include <cstdio>
@@ -86,19 +87,29 @@ bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = tru
   while (!curr->IsOutside()) {
     curr_volume = curr->Top()->GetLogicalVolume();
 
+    // Set the last exited volume to be the current one, to avoid wrongly skipping a valid volume entrance
+    curr->SetLastExited();
     Precision ref_step = ref_navigator.ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
     Precision step     = curr_volume->GetNavigator()->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
 
-    if (!nearly_equal(step, ref_step)) return false;
+    if (verbose)
+      printf("%6zu [ % 14.8f, % 14.8f, % 14.8f ] % 14.8f % 14.8f %s\n", ++steps, p.x(), p.y(), p.z(), step, ref_step,
+             curr_volume->GetLabel().c_str());
+
+    if (!nearly_equal(step, ref_step)) {
+      if (verbose)
+        printf("FAILED: step = %14.8f ref_step = %14.8f  step / ref_step - 1 = %14.8f\n", step, ref_step,
+               step / ref_step - 1);
+      // Replay last distance queries (for debugger sessions)
+      ref_navigator.ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+      curr_volume->GetNavigator()->ComputeStepAndPropagatedState(p, dir, kInfLength, *curr, *next);
+      return false;
+    }
     step = vecCore::math::Max(step, kTolerance);
 
     p = p + step * dir;
 
     std::swap(curr, next);
-
-    if (verbose)
-      printf("%6zu [ % 14.8f, % 14.8f, % 14.8f ] % 14.8f % 14.8f %s\n", ++steps, p.x(), p.y(), p.z(), step, ref_step,
-             curr_volume->GetLabel().c_str());
   }
 
   if (verbose) printf("\n");
@@ -170,9 +181,17 @@ int main(int argc, char **argv)
 
   BVHManager::Init();
 
+  auto getSeed = [](std::default_random_engine &rng) {
+    std::stringstream ss;
+    ss << rng;
+    return std::stoul(ss.str());
+  };
+
   rng.seed(seed ? seed : seed = rd());
 
   for (unsigned long i = 0; i < iterations; ++i) {
+    // backup last used seed
+    seed = getSeed(rng);
     Vector3D<Precision> p(0.0, 0.0, 0.0);
     Vector3D<Precision> dir = random_unit_vector();
 
