@@ -9,8 +9,6 @@
 #ifndef LOOP_NAVIGATOR_H_
 #define LOOP_NAVIGATOR_H_
 
-//#include <CopCore/Global.h>
-
 #include <VecGeom/base/Global.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavigationState.h>
@@ -21,20 +19,18 @@
 #endif
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LoopNavigator {
 
 public:
-  //using Precision          = vecgeom::Precision;
-  //using Vector3D<Precision>           = vecgeom::Vector3D<Precision><vecgeom::Precision>;
+  // using Precision          = vecgeom::Precision;
+  // using Vector3D<Precision>           = vecgeom::Vector3D<Precision><vecgeom::Precision>;
 
   static constexpr Precision kBoundaryPush = 10 * vecgeom::kTolerance;
 
   VECCORE_ATT_HOST_DEVICE
-  static Daughter LocatePointIn(Daughter vol, Vector3D<Precision> const &point,
-                                                              vecgeom::NavigationState &path, bool top,
-                                                              Daughter exclude = nullptr)
+  static Daughter LocatePointIn(Daughter vol, Vector3D<Precision> const &point, vecgeom::NavigationState &path,
+                                bool top, Daughter exclude = nullptr)
   {
     if (top) {
       assert(vol != nullptr);
@@ -73,8 +69,8 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static Daughter RelocatePoint(Vector3D<Precision> const &localpoint, vecgeom::NavigationState &path)
   {
-    Daughter currentmother = path.Top();
-    Vector3D<Precision> transformed             = localpoint;
+    Daughter currentmother          = path.Top();
+    Vector3D<Precision> transformed = localpoint;
     do {
       path.Pop();
       transformed   = currentmother->GetTransformation()->InverseTransform(transformed);
@@ -95,9 +91,8 @@ private:
   // daughter volume, or kept unchanged if the current volume is left.
   VECCORE_ATT_HOST_DEVICE
   static Precision ComputeStepAndHit(Vector3D<Precision> const &localpoint, Vector3D<Precision> const &localdir,
-                                                         Precision step_limit, vecgeom::NavigationState const &in_state,
-                                                         vecgeom::NavigationState &out_state,
-                                                         Daughter &hitcandidate)
+                                     Precision step_limit, vecgeom::NavigationState const &in_state,
+                                     vecgeom::NavigationState &out_state, Daughter &hitcandidate)
   {
     if (step_limit <= 0) {
       // We don't need to ask any solid, this step is not limited by geometry.
@@ -106,8 +101,8 @@ private:
       return 0;
     }
 
-    Precision step          = step_limit;
-    Daughter pvol = in_state.Top();
+    Precision step = step_limit;
+    Daughter pvol  = in_state.Top();
 
     // need to calc DistanceToOut first
     step = pvol->DistanceToOut(localpoint, localdir, step_limit);
@@ -118,8 +113,8 @@ private:
       double ddistance = daughter->DistanceToIn(localpoint, localdir, step);
 
       const bool valid = (ddistance < step && !vecgeom::IsInf(ddistance));
-      hitcandidate = valid ? daughter : hitcandidate;
-      step         = valid ? ddistance : step;
+      hitcandidate     = valid ? daughter : hitcandidate;
+      step             = valid ? ddistance : step;
     }
 
     // now we have the candidates and we prepare the out_state
@@ -147,7 +142,6 @@ private:
       step = 0;
     }
 
-
     return step;
   }
 
@@ -165,7 +159,7 @@ public:
 
     for (auto *daughter : pvol->GetDaughters()) {
       double dsafety = daughter->SafetyToIn(localpoint);
-      safety = dsafety < safety ? dsafety : safety;
+      safety         = dsafety < safety ? dsafety : safety;
     }
 
     return safety;
@@ -177,10 +171,9 @@ public:
   // the next volume.
   VECCORE_ATT_HOST_DEVICE
   static Precision ComputeStepAndPropagatedState(Vector3D<Precision> const &globalpoint,
-                                                                     Vector3D<Precision> const &globaldir, Precision step_limit,
-                                                                     vecgeom::NavigationState const &in_state,
-                                                                     vecgeom::NavigationState &out_state,
-                                                                     Precision push = 0)
+                                                 Vector3D<Precision> const &globaldir, Precision step_limit,
+                                                 vecgeom::NavigationState const &in_state,
+                                                 vecgeom::NavigationState &out_state, Precision push = 0)
   {
     // If we are on the boundary, push a bit more.
     if (in_state.IsOnBoundary()) {
@@ -207,7 +200,7 @@ public:
     localpoint += push * localdir;
 
     Daughter hitcandidate = nullptr;
-    Precision step = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
+    Precision step        = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
     step += push;
 
     if (out_state.IsOnBoundary()) {
@@ -242,10 +235,10 @@ public:
   // However the function does _NOT_ relocate the state to the next volume,
   // that is entering multiple volumes that share a boundary.
   VECCORE_ATT_HOST_DEVICE
-  static Precision ComputeStepAndNextVolume(Vector3D<Precision> const &globalpoint, Vector3D<Precision> const &globaldir,
-                                                                Precision step_limit,
-                                                                vecgeom::NavigationState const &in_state,
-                                                                vecgeom::NavigationState &out_state, Precision push = 0)
+  static Precision ComputeStepAndNextVolume(Vector3D<Precision> const &globalpoint,
+                                            Vector3D<Precision> const &globaldir, Precision step_limit,
+                                            vecgeom::NavigationState const &in_state,
+                                            vecgeom::NavigationState &out_state, Precision push = 0)
   {
     // If we are on the boundary, push a bit more.
     if (in_state.IsOnBoundary()) {
@@ -272,13 +265,13 @@ public:
     localpoint += push * localdir;
 
     Daughter hitcandidate = nullptr;
-    Precision step = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
+    Precision step        = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
     step += push;
 
     if (out_state.IsOnBoundary()) {
       if (!hitcandidate) {
-        Daughter currentmother = out_state.Top();
-        Vector3D<Precision> transformed             = localpoint;
+        Daughter currentmother          = out_state.Top();
+        Vector3D<Precision> transformed = localpoint;
         // Push the point inside the next volume.
         transformed += (step + kBoundaryPush) * localdir;
         do {
@@ -299,7 +292,7 @@ public:
   // recursively locates the pushed point in the containing volume.
   VECCORE_ATT_HOST_DEVICE
   static void RelocateToNextVolume(Vector3D<Precision> const &globalpoint, Vector3D<Precision> const &globaldir,
-                                                       vecgeom::NavigationState &state)
+                                   vecgeom::NavigationState &state)
   {
     // Push the point inside the next volume.
     Vector3D<Precision> pushed = globalpoint + kBoundaryPush * globaldir;
@@ -323,7 +316,6 @@ public:
   }
 };
 
-} // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
 #endif // RT_LOOP_NAVIGATOR_H_

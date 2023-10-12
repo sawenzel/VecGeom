@@ -21,7 +21,6 @@
 #endif
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class BVHNavigator {
 
@@ -36,10 +35,19 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static VECGEOM_FORCE_INLINE Daughter GetPlacedVolume(int aLVIndex, int index)
   {
-#ifdef VECCORE_CUDA
+#ifdef VECCORE_CUDA_DEVICE_COMPILATION
+    assert(vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes != nullptr && "Logical volumes not copied to device");
     return vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes[aLVIndex].GetDaughters()[index];
 #else
+#ifndef VECCORE_CUDA
     return vecgeom::GeoManager::Instance().GetLogicalVolume(aLVIndex)->GetDaughters()[index];
+#else
+    // this is the case when we compile with nvcc for host side
+    assert(false && "reached unimplement code");
+    (void)index; // avoid unused parameter warning.
+    (void)aLVIndex;
+    return nullptr;
+#endif
 #endif
   }
 
@@ -50,10 +58,18 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static VECGEOM_FORCE_INLINE vecgeom::VPlacedVolume *GetPlacedVolume(int global_index)
   {
-#ifdef VECCORE_CUDA
+#ifdef VECCORE_CUDA_DEVICE_COMPILATION
+    assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr && "Placed volumes not copied to device");
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[global_index];
 #else
+#ifndef VECCORE_CUDA
     return vecgeom::GeoManager::Instance().GetPlacedVolume(global_index);
+#else
+    // this is the case when we compile with nvcc for host side
+    assert(false && "reached unimplement code");
+    (void)global_index; // avoid unused parameter warning.
+    return nullptr;
+#endif
 #endif
   }
 
@@ -146,7 +162,8 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   static Daughter LocatePointIn(vecgeom::VPlacedVolume const *vol, Vector3D<Precision> const &point,
-                                vecgeom::NavigationState &path, bool top, vecgeom::VPlacedVolume const *exclude = nullptr)
+                                vecgeom::NavigationState &path, bool top,
+                                vecgeom::VPlacedVolume const *exclude = nullptr)
   {
     if (top) {
       assert(vol != nullptr);
@@ -402,8 +419,8 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static Precision ComputeStepAndNextVolume(Vector3D<Precision> const &globalpoint,
                                             Vector3D<Precision> const &globaldir, Precision step_limit,
-                                            vecgeom::NavigationState const &in_state, vecgeom::NavigationState &out_state,
-                                            Precision push = 0)
+                                            vecgeom::NavigationState const &in_state,
+                                            vecgeom::NavigationState &out_state, Precision push = 0)
   {
     // If we are on the boundary, push a bit more.
     if (in_state.IsOnBoundary()) {
@@ -503,7 +520,6 @@ public:
   }
 };
 
-} // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
-#endif // RT_LOOP_NAVIGATOR_H_
+#endif // BVH_NAVIGATOR_H
