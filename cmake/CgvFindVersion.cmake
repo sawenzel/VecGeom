@@ -99,7 +99,22 @@ function(_cgv_try_archive_md)
 
   string(REGEX MATCH "tag: *${CGV_TAG_REGEX}" _MATCH "${_ARCHIVE_TAG}")
   if(_MATCH)
-    _cgv_store_version("${CMAKE_MATCH_1}" "${CMAKE_MATCH_2}" "")
+    if(NOT CMAKE_MATCH_3)
+      # This is a tagged release!
+      _cgv_store_version("${CMAKE_MATCH_1}" "${CMAKE_MATCH_2}" "")
+    else()
+      if(CMAKE_MATCH_2)
+        set(_suffix ${CMAKE_MATCH_2}.${CMAKE_MATCH_4})
+      else()
+        set(_suffix -${CMAKE_MATCH_4})
+      endif()
+      # Qualify the version number and save the hash
+      _cgv_store_version(
+        "${CMAKE_MATCH_1}" # [0-9.]+
+        "${_suffix}" # (-dev[0-9.]*)? \. ([0-9]+)
+        "${CMAKE_MATCH_5}" ([0-9a-f]+)
+      )
+    endif()
   else()
     message(WARNING "Could not match a version tag for "
       "git description '${_ARCHIVE_TAG}': perhaps this archive was not "
