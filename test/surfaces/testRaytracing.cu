@@ -1,12 +1,9 @@
 #include <VecGeom/surfaces/cuda/BrepCudaManager.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/Navigator.h>
-#include <VecGeom/navigation/GlobalLocator.h>
-#include <VecGeom/navigation/NewSimpleNavigator.h>
 #include <VecGeom/management/BVHManager.h>
 #include <VecGeom/navigation/BVHNavigator.h>
-#include <VecGeom/navigation/SimpleSafetyEstimator.h>
-#include <VecGeom/navigation/BVHSafetyEstimator.h>
+#include <VecGeom/navigation/LoopNavigator.h>
 #include <VecGeom/base/Stopwatch.h>
 
 using namespace vecgeom;
@@ -23,18 +20,17 @@ __global__ void LocateSolids(int nrays, Vector3D<Precision> const *points, NavSt
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     Vector3D<Precision> const &pos = points[i];
     // Locate with solid-based model
-    GlobalLocator::LocateGlobalPoint(world, pos, in_states[i], true);
+    LoopNavigator::LocatePointIn(world, pos, in_states[i], true);
   }
 }
 //==================================================================================
 __global__ void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states,
                                 const VPlacedVolume *world)
 {
-  auto nav = static_cast<BVHNavigator<> *>(BVHNavigator<>::Instance());
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     Vector3D<Precision> const &pos = points[i];
     // Locate with solid-based model
-    nav->LocateGlobalPoint(world, pos, in_states[i], true);
+    BVHNavigator::LocatePointIn(world, pos, in_states[i], true);
   }
 }
 //==================================================================================
@@ -74,16 +70,15 @@ __global__ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *point
                                      Precision *ref_safeties)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    ref_safeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(points[i], in_states[i]);
+    ref_safeties[i] = LoopNavigator::ComputeSafety(points[i], in_states[i]);
   }
 }
 //==================================================================================
 __global__ void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
                                         Precision *ref_safeties)
 {
-  auto safety_estimator = BVHSafetyEstimator::Instance();
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    safety_estimator->ComputeSafety(points[i], in_states[i]);
+    BVHNavigator::ComputeSafety(points[i], in_states[i]);
   }
 }
 //==================================================================================
@@ -101,7 +96,7 @@ __device__
 void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                        NavStateIndex const *in_states, Precision *length_over_crossings, bool debug = false)
 {
-  auto nav = static_cast<Navigator *>(Navigator::Instance());
+  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   if (debug) {
     printf("CUDA PropagateRaysSolid debug ray %d:\n", i);
     printf("   ");
@@ -114,16 +109,15 @@ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precis
   auto const &dir = dirs[i];
   auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
   do {
-    double distance;
-    nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
-    distance += kTolerance; // compensate for the push
+    auto distance =
+        Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
     if (debug) {
       printf("     dist = %15.10f\n", distance);
       printf("   ");
       out_state.Print();
     }
     dist_tot += (num_cross + 1) * distance;
-    pt += distance * dir; // this is pushed with kTolerance beyond the boundary
+    pt += distance * dir;
     start_state = out_state;
     num_cross++;
   } while (!out_state.IsOutside());
@@ -190,7 +184,7 @@ __global__ void ValidateTraversal(int nrays, Vector3D<Precision> const *points, 
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     bool error_dist = Abs(length_over_crossings[i] - refLength_over_crossings[i]) > kTolerance;
     if (error_dist && debug && *num_errors == 0) {
-      PropagateRaySolid<NewSimpleNavigator<>>(i, points, dirs, in_states, refLength_over_crossings, debug);
+      PropagateRaySolid<LoopNavigator>(i, points, dirs, in_states, refLength_over_crossings, debug);
       PropagateRaySurf(i, points, dirs, in_states, length_over_crossings, debug);
     }
     atomicAdd(num_errors, int(error_dist));
@@ -308,14 +302,14 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
 
   // Traversal for solids model (reference)
   timer.Start();
-  PropagateRaysSolid<NewSimpleNavigator<>>
+  PropagateRaysSolid<LoopNavigator>
       <<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, refLength_over_crossings);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_traverse_solids = timer.Stop();
 
   // Traversal for solids model with BVH
   timer.Start();
-  PropagateRaysSolid<BVHNavigator<>>
+  PropagateRaysSolid<BVHNavigator>
       <<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_traverse_solids_bvh = timer.Stop();

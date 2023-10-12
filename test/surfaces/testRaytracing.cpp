@@ -7,11 +7,8 @@
 #include <VecGeom/management/CudaManager.h>
 #include <VecGeom/management/BVHManager.h>
 #include <VecGeom/base/RNG.h>
-#include <VecGeom/navigation/GlobalLocator.h>
-#include <VecGeom/navigation/NewSimpleNavigator.h>
 #include <VecGeom/navigation/BVHNavigator.h>
-#include <VecGeom/navigation/SimpleSafetyEstimator.h>
-#include <VecGeom/navigation/BVHSafetyEstimator.h>
+#include <VecGeom/navigation/LoopNavigator.h>
 #include <VecGeom/volumes/utilities/VolumeUtilities.h>
 #include <VecGeom/base/Stopwatch.h>
 
@@ -61,15 +58,14 @@ int LoadGDML(const char *gdml_name, bool ongpu)
 void LocateSolids(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
 {
   for (auto i = 0; i < nrays; ++i) {
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
   }
 }
 //==================================================================================
 void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
 {
-  auto nav = static_cast<BVHNavigator<> *>(BVHNavigator<>::Instance());
   for (auto i = 0; i < nrays; ++i) {
-    nav->LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+    BVHNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
   }
 }
 //==================================================================================
@@ -96,7 +92,7 @@ int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavStateIndex c
         out_states[i].Print();
         out_states[i].Clear();
         // This just replays the failing locate query for debugging
-        GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], out_states[i], true);
+        LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_states[i], true);
         out_states[i].Clear();
         vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_states[i], true);
       }
@@ -108,20 +104,18 @@ int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavStateIndex c
 void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
                           Precision *ref_safeties)
 {
-  auto safety_estimator = SimpleSafetyEstimator::Instance();
   for (auto i = 0; i < nrays; ++i) {
     // Compute safety using the solid-based model
-    ref_safeties[i] = safety_estimator->ComputeSafety(points[i], in_states[i]);
+    ref_safeties[i] = LoopNavigator::ComputeSafety(points[i], in_states[i]);
   }
 }
 //==================================================================================
 void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
                              Precision *safeties)
 {
-  auto safety_estimator = BVHSafetyEstimator::Instance();
   for (auto i = 0; i < nrays; ++i) {
     // Compute safety using the solid-based model with BVH
-    safeties[i] = safety_estimator->ComputeSafety(points[i], in_states[i]);
+    safeties[i] = BVHNavigator::ComputeSafety(points[i], in_states[i]);
   }
 }
 //==================================================================================
@@ -149,7 +143,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
     double the = std::acos(2 * rng.uniform() - 1);
     Vector3D<Precision> ranpoint(std::sin(the) * std::cos(phi), std::sin(the) * std::sin(phi), std::cos(the));
     safepoint += safety * ranpoint;
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, new_state, true);
+    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), point, new_state, true);
 
     is_safe = new_state.GetNavIndex() == navind;
     if (!is_safe) break;
@@ -195,8 +189,7 @@ template <typename Navigator>
 void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                         NavStateIndex const *in_states, Precision *length_over_crossings, int idebug = -1)
 {
-  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<double>;
-  Navigator *nav                 = static_cast<Navigator *>(Navigator::Instance());
+  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   int ilast                      = nrays;
   int istart                     = 0;
   if (idebug >= 0) {
@@ -213,18 +206,17 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
     int num_cross   = 0;
     double dist_tot = 0;
     auto const &dir = dirs[i];
-    auto pt         = points[i] + kPushDistance * dir; // push the start and subsequent crossing points
+    auto pt         = points[i];
     do {
-      double distance;
-      nav->FindNextBoundaryAndStep(pt, dir, start_state, out_state, kInfLength, distance);
-      distance += kPushDistance; // compensate for the push
+      auto distance =
+          Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
       if (idebug >= 0) {
         printf("     dist = %15.10f\n", distance);
         printf("   ");
         out_state.Print();
       }
       dist_tot += (num_cross + 1) * distance;
-      pt += distance * dir; // this is pushed with kTolerance beyond the boundary
+      pt += distance * dir;
       start_state = out_state;
       num_cross++;
     } while (!out_state.IsOutside());
@@ -282,7 +274,7 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
     if (debug && error_dist && (num_errors_dist == 1)) {
       // replay first error
       printf("point %d: dist_ref = %g  dist = %g\n", i, refLength_over_crossings[i], length_over_crossings[i]);
-      PropagateRaysSolid<NewSimpleNavigator<>>(nrays, points, dirs, in_states, refLength_over_crossings, i);
+      PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, refLength_over_crossings, i);
       PropagateRaysSurf(nrays, points, dirs, in_states, length_over_crossings, i);
     }
   }
@@ -369,12 +361,12 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Distance computation + relocation for solid model
   timer.Start();
-  PropagateRaysSolid<NewSimpleNavigator<>>(nrays, points, dirs, origStates, refLength_over_crossings);
+  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, refLength_over_crossings);
   auto time_traverse_solids = timer.Stop();
 
   // Distance computation + relocation for solid model + BVH
   timer.Start();
-  PropagateRaysSolid<BVHNavigator<>>(nrays, points, dirs, origStates, length_over_crossings);
+  PropagateRaysSolid<BVHNavigator>(nrays, points, dirs, origStates, length_over_crossings);
   auto time_traverse_solids_bvh = timer.Stop();
 
   // Distance computation + relocation for surface model
