@@ -609,8 +609,10 @@ public:
   void CreateCandidateLists()
   {
     int numNodes = vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1; // count also outside state
-    fCPUdata.fCandidates.reserve(numNodes);
-    fCPUdata.fFrameInd.reserve(numNodes);
+    fCPUdata.fCandidatesEntering.reserve(numNodes);
+    fCPUdata.fCandidatesExiting.reserve(numNodes);
+    fCPUdata.fFrameIndEntering.reserve(numNodes);
+    fCPUdata.fFrameIndExiting.reserve(numNodes);
 
     // Lambda adding the surface id as candidate to all states from a side
     auto addSurfToSideStates = [&](int isurf, int iside) {
@@ -622,17 +624,20 @@ public:
         vecgeom::NavStateIndex state(framedsurf.fState);
         int state_id     = state.GetId();
         auto isignedsurf = iside * isurf;
-        if (!fCPUdata.fCandidates[state_id].size() || fCPUdata.fCandidates[state_id].back() != isignedsurf) {
-          fCPUdata.fCandidates[state_id].push_back(isignedsurf);
-          fCPUdata.fFrameInd[state_id].push_back(i);
+        if (!fCPUdata.fCandidatesExiting[state_id].size() ||
+            fCPUdata.fCandidatesExiting[state_id].back() != isignedsurf) {
+          fCPUdata.fCandidatesExiting[state_id].push_back(isignedsurf);
+          fCPUdata.fFrameIndExiting[state_id].push_back(i);
         }
       }
     };
 
     // prepare all lists
     for (int i = 0; i < numNodes; ++i) {
-      fCPUdata.fCandidates.push_back({});
-      fCPUdata.fFrameInd.push_back({});
+      fCPUdata.fCandidatesEntering.push_back({});
+      fCPUdata.fCandidatesExiting.push_back({});
+      fCPUdata.fFrameIndEntering.push_back({});
+      fCPUdata.fFrameIndExiting.push_back({});
     }
 
     // loop over all common surfaces and add their index in the appropriate list
@@ -640,13 +645,14 @@ public:
       auto const &surf = fCPUdata.fCommonSurfaces[isurf];
       // Add to default surface state
       vecgeom::NavStateIndex state(surf.fDefaultState);
-      fCPUdata.fCandidates[state.GetId()].push_back(-isurf);
-      fCPUdata.fFrameInd[state.GetId()].push_back(-1); // means this state is the default for isurf
+      fCPUdata.fCandidatesEntering[state.GetId()].push_back(-isurf);
+      fCPUdata.fFrameIndEntering[state.GetId()].push_back(-1); // means this state is the default for isurf
       // Add to side states
       addSurfToSideStates(isurf, 1);
       addSurfToSideStates(isurf, -1);
     }
   }
+
 
   void PrintCandidateLists()
   {
@@ -709,9 +715,9 @@ public:
     size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface) + fSurfData->fNsides * sizeof(int)) / megabyte;
     total += size;
     std::cout << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
-    size = float(fSurfData->fNcandList * sizeof(int)) / megabyte;
+    size = float(fSurfData->fSizeCandList * sizeof(int)) / megabyte;
     total += size;
-    std::cout << "    candidates             = " << fSurfData->fNcandList << " [" << size << " MB]\n";
+    std::cout << "    candidates             = " << fSurfData->fSizeCandList << " [" << size << " MB]\n";
     size = float(fSurfData->fNwindows * sizeof(WindowMask_t)) / megabyte;
     total += size;
     std::cout << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
@@ -1084,25 +1090,73 @@ private:
 
     // Copy candidates lists
     auto size_candidates = 0;
-    for (auto const &list : fCPUdata.fCandidates)
+    for (auto const &list : fCPUdata.fCandidatesEntering) {
       size_candidates += list.size();
+    }
+    for (auto const &list : fCPUdata.fCandidatesExiting) {
+      size_candidates += list.size();
+    }
 
-    fSurfData->fNcandList   = 2 * size_candidates;
+    // Size 2x the combined size of the candidate lists, stores candidate and frame indices
+    fSurfData->fSizeCandList   = 2 * size_candidates;
     fSurfData->fCandList    = new int[2 * size_candidates];
     int *current_candidates = fSurfData->fCandList;
-    fSurfData->fNcandidates = fCPUdata.fCandidates.size();
-    fSurfData->fCandidates  = new Candidates[fCPUdata.fCandidates.size()];
-    for (size_t i = 0; i < fCPUdata.fCandidates.size(); ++i) {
-      auto ncand                       = fCPUdata.fCandidates[i].size();
-      fSurfData->fCandidates[i].fNcand = ncand;
-      for (size_t icand = 0; icand < ncand; icand++) {
-        current_candidates[icand]         = (fCPUdata.fCandidates[i])[icand];
-        current_candidates[ncand + icand] = (fCPUdata.fFrameInd[i])[icand];
+
+    // There is one list of candidates per state
+    size_t num_states   = fCPUdata.fCandidatesEntering.size();
+    fSurfData->fNStates = num_states;
+    // We could also get the number of states from the number of exiting candidates lists 
+    assert(fCPUdata.fCandidatesEntering.size() == fCPUdata.fCandidatesExiting.size());
+
+    fSurfData->fCandidates = new Candidates[num_states];
+
+    for (size_t i = 0; i < num_states; ++i) {
+      // Copy Candidate surface, and Frame indices after
+      // For each state the memory will contain:
+      // EnteringSurfaces - ExitingSurfaces - EnteringFrameIdx - ExitingFrameIdx
+      
+      size_t offset = 0;
+
+      // Copy Entering Candidates
+      auto ncandEntering                      = fCPUdata.fCandidatesEntering[i].size();
+      fSurfData->fCandidates[i].fNEntering = ncandEntering;
+      for (size_t icand = 0; icand < ncandEntering; icand++) {
+        current_candidates[icand]         = (fCPUdata.fCandidatesEntering[i])[icand];
       }
+
+      offset += ncandEntering;
+
+      // Copy Exiting Candidates
+      auto ncandExiting                       = fCPUdata.fCandidatesExiting[i].size();
+      for (size_t icand = 0; icand < ncandExiting; icand++) {
+        current_candidates[icand + offset]         = (fCPUdata.fCandidatesExiting[i])[icand];
+      }
+
+      offset += ncandExiting;
+
+      // Copy Entering Frame Indices
+      for (size_t icand = 0; icand < ncandEntering; icand++) {
+        current_candidates[icand + offset]         = (fCPUdata.fFrameIndEntering[i])[icand];
+      }
+
+      offset += ncandEntering;
+
+      // Copy Exiting Frame Indices
+      for (size_t icand = 0; icand < ncandExiting; icand++) {
+        current_candidates[icand + offset]         = (fCPUdata.fFrameIndExiting[i])[icand];
+      }
+
+      // Store the necessary information in the Candidates Struct
+      auto ncand = ncandEntering + ncandExiting;
+      fSurfData->fCandidates[i].fNcand = ncand;
+      fSurfData->fCandidates[i].fNEntering = ncandEntering;
+
       fSurfData->fCandidates[i].fCandidates = current_candidates;
-      current_candidates += fCPUdata.fCandidates[i].size();
+      // Move the pointer to the start of the Frame index list
+      current_candidates += ncand;
       fSurfData->fCandidates[i].fFrameInd = current_candidates;
-      current_candidates += fCPUdata.fCandidates[i].size();
+      // Move the pointer to the start of the next Candidate index list
+      current_candidates += ncand;
     }
 
     // Copy local surfaces

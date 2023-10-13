@@ -142,9 +142,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   Real_t distance      = stepmax;
   int isurfcross       = 0;
   NavIndex_t in_navind = in_state.GetNavIndex();
-  auto const &cand     = surfdata.fCandidates[in_state.GetId()];
-  bool found           = false;
-  bool relocated       = false;
+  auto const &cand = surfdata.fCandidates[in_state.GetId()];
+  bool found               = false;
+  bool relocated           = false;
 
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   Vector3D<Real_t> onsurf;
@@ -153,18 +153,18 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   auto skip_surf = exit_surf;
   exit_surf      = 0;
 
-  for (auto icand = 0; icand < cand.fNcand; ++icand) {
+  // First check Exiting candidates
+  for (auto icand = cand.fNEntering; icand < cand.fNcand; ++icand) {
     int isurf = std::abs(cand[icand]);
     if (isurf == std::abs(skip_surf)) continue;
     auto const &surf = surfdata.fCommonSurfaces[isurf];
-    // Check if this is an exiting or entering surface for the current navigation state
-    // Get the side of the surface and check if the surface normal needs to be flipped
-    bool exiting   = surf.fDefaultState != in_navind;
-    bool left_side = cand[icand] > 0;
+    bool left_side   = cand[icand] > 0;
+
     // Convert point and direction to surface frame
     auto const &trans         = surfdata.fGlobalTrans[surf.fTrans];
     Vector3D<Real_t> local    = trans.Transform(point);
     Vector3D<Real_t> localdir = trans.TransformDirection(direction);
+
     // Compute distance to surface
     Real_t dist;
     bool flipped  = false;
@@ -174,69 +174,63 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     Vector3D<Real_t> onsurf_crt = local + dist * localdir;
 
     // We need to check frame intersection
-    if (exiting) {
-      // This is an exiting surface for in_state
-      // First check the frame of the current state on this surface
-      auto const &exit_side = left_side ? surf.fLeftSide : surf.fRightSide;
-      // Get the index of the first framed surface on the exit side.
-      int frameind_start = cand.fFrameInd[icand];
-      // If the current touchable is exited on this surface, it MUST be through the inside of the
-      // corresponding frames. Loop all frames coming from the same touchable
-      bool inframe = false;
-      for (int ind = frameind_start; ind < exit_side.fNsurf; ++ind) {
-        auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
-        if (framedsurf.fState != in_navind) continue;
-        inframe = framedsurf.InsideFrame(onsurf_crt, surfdata);
-        if (inframe) {
-          if (framedsurf.fLogicId) {
-            auto pushedPoint = point + (dist + kPushDistance) * direction;
-            auto inside      = LogicInside(pushedPoint, in_state, surfdata);
-            // Frame cross does not guarantee a real surface cross in case of Booleans
-            // For a real exiting, the post-crossing point must be outside the Boolean
-            if (inside) inframe = false;
-          }
-          break;
+    // This is an exiting surface for in_state
+    // First check the frame of the current state on this surface
+    auto const &exit_side = left_side ? surf.fLeftSide : surf.fRightSide;
+    // Get the index of the first framed surface on the exit side.
+    int frameind_start = cand.fFrameInd[icand];
+    // If the current touchable is exited on this surface, it MUST be through the inside of the
+    // corresponding frames. Loop all frames coming from the same touchable
+    bool inframe = false;
+    for (int ind = frameind_start; ind < exit_side.fNsurf; ++ind) {
+      auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
+      if (framedsurf.fState != in_navind) continue;
+      inframe = framedsurf.InsideFrame(onsurf_crt, surfdata);
+      if (inframe) {
+        if (framedsurf.fLogicId) {
+          auto pushedPoint = point + (dist + kPushDistance) * direction;
+          auto inside      = LogicInside(pushedPoint, in_state, surfdata);
+          // Frame cross does not guarantee a real surface cross in case of Booleans
+          // For a real exiting, the post-crossing point must be outside the Boolean
+          if (inside) inframe = false;
         }
+        break;
       }
-      if (!inframe) continue;
-
-#ifdef BREP_DAUGHTER_EXIT_CHECK
-      // If the current touchable has children with surfaces on the same common surface, their
-      // frames must NOT be crossed (otherwise there must be another surface cross at smaller distance)
-      // Daughters may only be found at indices less than `frameind` (because of pre-sorting by depth)
-      //
-      // N.B This check is sort of redundant because the search continues anyway througout the candidates and
-      // if a daughter is hit first there MUST be another closer surface which will be found
-
-      bool can_hit      = true;
-      int current_level = in_state.GetLevel();
-      for (auto ind = 0; ind < frameind_start; ++ind) {
-        auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
-        // Only search navigation levels higher than the current one
-        if (vecgeom::NavStateIndex::GetLevelImpl(framedsurf.fState) <= current_level) break;
-        if (vecgeom::NavStateIndex::IsDescendentImpl(framedsurf.fState, in_navind)) {
-          if (framedsurf.InsideFrame(onsurf_crt, surfdata)) {
-            can_hit = false;
-            break; // exiting a daughter volume on this surface, so discard
-          }
-        }
-      }
-      if (!can_hit) continue;
-#endif
-
-      // the current state is correctly exited, so there is a transition on this surface
-      found      = true;
-      relocated  = false;
-      onsurf     = onsurf_crt;
-      distance   = dist;
-      isurfcross = cand[icand];
-      // backup exited state
-      out_state.SetLastExited();
-      // the default next navigation index is the one of the common state for the surface
-      out_state.SetNavIndex(surf.fDefaultState);
-      out_state.SetBoundaryState(true);
-      continue; // there may be closer surfaces being crossed
     }
+    if (!inframe) continue;
+
+    // the current state is correctly exited, so there is a transition on this surface
+    found      = true;
+    relocated  = false;
+    onsurf     = onsurf_crt;
+    distance   = dist;
+    isurfcross = cand[icand];
+    // backup exited state
+    out_state.SetLastExited();
+    // the default next navigation index is the one of the common state for the surface
+    out_state.SetNavIndex(surf.fDefaultState);
+    out_state.SetBoundaryState(true);
+    continue; // there may be closer surfaces being crossed
+  }
+
+  for (auto icand = 0; icand < cand.fNEntering; ++icand) {
+    int isurf = std::abs(cand[icand]);
+    if (isurf == std::abs(skip_surf)) continue;
+    auto const &surf = surfdata.fCommonSurfaces[isurf];
+    bool left_side   = cand[icand] > 0;
+
+    // Convert point and direction to surface frame
+    auto const &trans         = surfdata.fGlobalTrans[surf.fTrans];
+    Vector3D<Real_t> local    = trans.Transform(point);
+    Vector3D<Real_t> localdir = trans.TransformDirection(direction);
+
+    // Compute distance to surface
+    Real_t dist;
+    bool flipped  = false;
+    auto unplaced = surfdata.GetUnplaced(isurf, flipped);
+    bool surfhit  = unplaced.Intersect(local, localdir, left_side ^ flipped, surfdata, dist);
+    if (!surfhit || dist < -vecgeom::kTolerance || dist >= distance) continue;
+    Vector3D<Real_t> onsurf_crt = local + dist * localdir;
 
     // This is an entering surface for in_state
     // First check if there is a parent frame on the entry side. If this is the case
@@ -338,6 +332,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   assert(in_navind == 0 || (in_navind > 0 && distance < vecgeom::InfinityLength<Real_t>() &&
                             "ComputeStepAndHit cannot return infinite distance"));
   return distance;
+
 }
 
 /// @brief Method computing the distance to the next surface and state after crossing it
@@ -359,11 +354,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
   int last_logic_volid = 0;
   Real_t safety        = vecgeom::InfinityLength<Real_t>();
   Vector3D<Real_t> onsurf;
-  NavIndex_t in_navind = in_state.GetNavIndex();
-  auto const &cand     = surfdata.fCandidates[in_state.GetId()];
+  auto const &cand = surfdata.fCandidates[in_state.GetId()];
 
-  // loop all visible candidates
-  for (auto icand = 0; icand < cand.fNcand; ++icand) {
+  // First check Exiting candidates
+  for (auto icand = cand.fNEntering; icand < cand.fNcand; ++icand) {
     bool validSafety     = true;
     int isurf            = std::abs(cand[icand]);
     auto const &surf     = surfdata.fCommonSurfaces[isurf];
@@ -371,7 +365,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     // Skip already checked logic surfaces.
     if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
 
-    bool exiting = surf.fDefaultState != in_navind;
     // left_side is the side which defines the exit normal
     bool left_side        = cand[icand] > 0;
     auto const &exit_side = left_side ? surf.fLeftSide : surf.fRightSide;
@@ -385,72 +378,97 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     // - negative safety (coming from the wrong side)
     // - exiting framed surfaces for which fUseSurfSafety is true
     // To test if on GPU is better to compute the projection systematically
-    bool compute_onsurf = exiting ? !exit_side.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety : true;
+    // bool compute_onsurf = exiting ? !exit_side.GetSurface(candExiting.fFrameInd[icand], surfdata).fUseSurfSafety :
+    // true;
+    bool compute_onsurf = !exit_side.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
     auto unplaced       = surfdata.GetUnplaced(isurf, flipped);
     bool can_compute = unplaced.Safety(local, left_side ^ flipped, surfdata, safety_surf, compute_onsurf, onsurf_crt);
     if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
-    // Check if the current state is exited on this surface. This is true if
-    // the in_state does not match the default state for the surface.
-    if (exiting) {
-      // This is an exiting surface for in_state
-      // Only check the frame of the current state on this surface
-      auto const &exit_side = (cand[icand] > 0) ? surf.fLeftSide : surf.fRightSide;
-      // Get the index of the framed surface on the exit side. This assumes a SINGLE frame inprint
-      // coming from a touchable on any common surface.
-      int frameind           = cand.fFrameInd[icand]; // index of framed surface on the side
-      auto const &framedsurf = exit_side.GetSurface(frameind, surfdata);
-      // Check if the exited frame safety is needed at all
-      auto safetyFrame = safety_surf;
-      if (compute_onsurf) {
-        // We need to compute also the safety of the projection of the point on surface to the frame
-        safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
+
+    // This is an exiting surface for in_state
+    // Only check the frame of the current state on this surface
+
+    // Get the index of the framed surface on the exit side. This assumes a SINGLE frame inprint
+    // coming from a touchable on any common surface.
+    int frameind           = cand.fFrameInd[icand]; // index of framed surface on the side
+    auto const &framedsurf = exit_side.GetSurface(frameind, surfdata);
+    // Check if the exited frame safety is needed at all
+    auto safetyFrame = safety_surf;
+    if (compute_onsurf) {
+      // We need to compute also the safety of the projection of the point on surface to the frame
+      safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
+    }
+    if (validSafety && safety > safetyFrame) {
+      // If Boolean surface, compute only once safety for the entire volume shell
+      if (framedsurf.fLogicId) {
+        Real_t safetyLogic = LogicSafety(point, true, framedsurf.fState, surfdata, safety);
+        last_logic_volid   = vecgeom::NavStateIndex::TopImpl(framedsurf.fState)->GetLogicalVolume()->id();
+        if (safety > safetyLogic) {
+          safety       = safetyLogic;
+          closest_surf = isurf;
+        }
+      } else {
+        safety       = safetyFrame;
+        closest_surf = isurf;
       }
-      if (validSafety && safety > safetyFrame) {
+    }
+  }
+
+  for (auto icand = 0; icand < cand.fNcand; ++icand) {
+    bool validSafety     = true;
+    int isurf            = std::abs(cand[icand]);
+    auto const &surf     = surfdata.fCommonSurfaces[isurf];
+    auto const &topframe = surfdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]];
+    // Skip already checked logic surfaces.
+    if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
+
+    // left_side is the side which defines the exit normal
+    bool left_side = cand[icand] > 0;
+    // Convert point and direction to surface frame
+    auto const &trans      = surfdata.fGlobalTrans[surf.fTrans];
+    Vector3D<Real_t> local = trans.Transform(point);
+    Vector3D<Real_t> onsurf_crt;
+    Real_t safety_surf;
+    bool flipped = false;
+    // Compute signed closest distance to surface. The closest projected point on surface is computed, except for:
+    // - negative safety (coming from the wrong side)
+    // - exiting framed surfaces for which fUseSurfSafety is true
+    // To test if on GPU is better to compute the projection systematically
+    bool compute_onsurf = true;
+    auto unplaced       = surfdata.GetUnplaced(isurf, flipped);
+    bool can_compute = unplaced.Safety(local, left_side ^ flipped, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+    if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
+
+    // Entering side. We only check the parent frames on the side
+    auto const &entry_side = left_side ? surf.fRightSide : surf.fLeftSide;
+    const int num_parents  = entry_side.fNumParents;
+    int iparent            = 0;
+    Real_t safetyParent    = safety;
+    // Parent frames are last in the list
+    for (auto ind = entry_side.fNsurf - 1; ind >= 0; --ind) {
+      auto const &framedsurf = entry_side.GetSurface(ind, surfdata);
+      if (framedsurf.fParent >= 0) continue; // skip children
+      iparent++;
+      auto safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
+      if (validSafety && safetyFrame < safetyParent) {
         // If Boolean surface, compute only once safety for the entire volume shell
         if (framedsurf.fLogicId) {
-          Real_t safetyLogic = LogicSafety(point, exiting, framedsurf.fState, surfdata, safety);
+          Real_t safetyLogic = LogicSafety(point, false, framedsurf.fState, surfdata, safetyFrame);
           last_logic_volid   = vecgeom::NavStateIndex::TopImpl(framedsurf.fState)->GetLogicalVolume()->id();
-          if (safety > safetyLogic) {
-            safety       = safetyLogic;
+          if (safetyParent > safetyLogic) {
+            safetyParent = safetyLogic;
             closest_surf = isurf;
           }
         } else {
-          safety       = safetyFrame;
+          safetyParent = safetyFrame;
           closest_surf = isurf;
         }
       }
-    } else {
-      // Entering side. We only check the parent frames on the side
-      auto const &entry_side = left_side ? surf.fRightSide : surf.fLeftSide;
-      const int num_parents  = entry_side.fNumParents;
-      int iparent            = 0;
-      Real_t safetyParent    = safety;
-      // Parent frames are last in the list
-      for (auto ind = entry_side.fNsurf - 1; ind >= 0; --ind) {
-        auto const &framedsurf = entry_side.GetSurface(ind, surfdata);
-        if (framedsurf.fParent >= 0) continue; // skip children
-        iparent++;
-        auto safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
-        if (validSafety && safetyFrame < safetyParent) {
-          // If Boolean surface, compute only once safety for the entire volume shell
-          if (framedsurf.fLogicId) {
-            Real_t safetyLogic = LogicSafety(point, exiting, framedsurf.fState, surfdata, safetyFrame);
-            last_logic_volid   = vecgeom::NavStateIndex::TopImpl(framedsurf.fState)->GetLogicalVolume()->id();
-            if (safetyParent > safetyLogic) {
-              safetyParent = safetyLogic;
-              closest_surf = isurf;
-            }
-          } else {
-            safetyParent = safetyFrame;
-            closest_surf = isurf;
-          }
-        }
-        if (iparent == num_parents) break;
-      }
-      if (safety > safetyParent) {
-        safety       = safetyParent;
-        closest_surf = isurf;
-      }
+      if (iparent == num_parents) break;
+    }
+    if (safety > safetyParent) {
+      safety       = safetyParent;
+      closest_surf = isurf;
     }
   }
   return safety;

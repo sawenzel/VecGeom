@@ -29,21 +29,23 @@ struct CPUsurfData {
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
 
-  std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
-  std::vector<RingMask_t> fRingMasks;         ///< ring masks
-  std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
-  std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
-  std::vector<Transformation> fLocalTrans;    ///< local transformations
-  std::vector<Transformation> fGlobalTrans;   ///< global transformations for surfaces in the scene
-  std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces
-  std::vector<FramedSurface> fFramedSurf;     ///< global surfaces
-  std::vector<CommonSurface> fCommonSurfaces; ///< common surfaces
-  std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
-  std::vector<std::vector<int>> fCandidates;  ///< candidate lists for each state
-  std::vector<std::vector<int>> fFrameInd;    ///< start frame index per candidate
-  std::multimap<int, int> fSurfHash;          ///< maps rotation hash index to a list of common surface id's
+  std::vector<WindowMask_t> fWindowMasks;            ///< rectangular masks
+  std::vector<RingMask_t> fRingMasks;                ///< ring masks
+  std::vector<ZPhiMask_t> fZPhiMasks;                ///< cylindrical masks
+  std::vector<QuadMask_t> fQuadMasks;                ///< quadrilateral masks
+  std::vector<CylData_t> fCylSphData;                ///< data for cyl surfaces
+  std::vector<ConeData_t> fConeData;                 ///< data for conical surfaces
+  std::vector<Transformation> fLocalTrans;           ///< local transformations
+  std::vector<Transformation> fGlobalTrans;          ///< global transformations for surfaces in the scene
+  std::vector<FramedSurface> fLocalSurfaces;         ///< local surfaces
+  std::vector<FramedSurface> fFramedSurf;            ///< global surfaces
+  std::vector<CommonSurface> fCommonSurfaces;        ///< common surfaces
+  std::vector<VolumeShellCPU> fShells;               ///< vector of local volume surfaces
+  std::vector<std::vector<int>> fCandidatesEntering; ///< candidate lists for each state
+  std::vector<std::vector<int>> fCandidatesExiting;  ///< candidate lists for each state
+  std::vector<std::vector<int>> fFrameIndEntering;   ///< start frame index per candidate
+  std::vector<std::vector<int>> fFrameIndExiting;    ///< start frame index per candidate
+  std::multimap<int, int> fSurfHash; ///< maps rotation hash index to a list of common surface id's
 
 private:
   CPUsurfData() = default;

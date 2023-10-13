@@ -9,6 +9,7 @@
 
 namespace vgbrep {
 
+// This function sets the correct pointers on device memory in the data structures that were copied
 template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
@@ -37,10 +38,12 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 
   // Write pointers into fCandidates[i].{fCandidates,fFrameInd}
   current = surfData->fCandList;
-  for (int i = 0; i < surfData->fNcandidates; i++) {
+  for (int i = 0; i < surfData->fNStates; i++) {
     surfData->fCandidates[i].fCandidates = current;
+    // Move the pointer to the start of the Frame index list
     current += surfData->fCandidates[i].fNcand;
     surfData->fCandidates[i].fFrameInd = current;
+    // Move the pointer to the start of the next Candidate index list
     current += surfData->fCandidates[i].fNcand;
   }
 }
@@ -168,16 +171,16 @@ public:
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fSides, surfData.fSides, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy candidates lists
-    fSurfDataStaging.fNcandidates = surfData.fNcandidates;
-    sizeInBytes                   = sizeof(surfData.fCandidates[0]) * surfData.fNcandidates;
+    fSurfDataStaging.fNStates = surfData.fNStates;
+    sizeInBytes                   = sizeof(surfData.fCandidates[0]) * surfData.fNStates;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCandidates, sizeInBytes));
     BREP_CUDA_CHECK(
         cudaMemcpy(fSurfDataStaging.fCandidates, surfData.fCandidates, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: the fCandidates[i].{fCandidates,fFrameInd} are backed by the
     // following array and set via BrepCudaManagerFinishTransfer.
-    fSurfDataStaging.fNcandList = surfData.fNcandList;
-    sizeInBytes                 = sizeof(surfData.fCandList[0]) * surfData.fNcandList;
+    fSurfDataStaging.fSizeCandList = surfData.fSizeCandList;
+    sizeInBytes                 = sizeof(surfData.fCandList[0]) * surfData.fSizeCandList;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCandList, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fCandList, surfData.fCandList, sizeInBytes, cudaMemcpyHostToDevice));
 

@@ -298,6 +298,7 @@ struct FramedSurface {
 /// @brief A list of candidate surfaces
 struct Candidates {
   int fNcand{0};             ///< Number of candidate surfaces
+  int fNEntering{0};          ///< Number of Entering candidate surfaces. fNcand = NEntering + NExiting
   int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
   int *fFrameInd{nullptr};   ///< [fNcand] Start index of the frame contributed by the touchable on the common surface
 
@@ -442,8 +443,8 @@ struct SurfData {
   int fNglobalSurf{0};
   int fNcommonSurf{0};
   int fNsides{0};
-  int fNcandidates{0};
-  int fNcandList{0};
+  int fNStates{0};
+  int fSizeCandList{0};
   int fNcylsph{0};
   int fNcone{0};
   int fNshells{0};
