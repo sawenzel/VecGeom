@@ -761,6 +761,38 @@ if(VECGEOM_BUILTIN_VECCORE)
   list(APPEND PATH_VARS_ARG VECCORE_PREFIX)
 endif()
 
+# Export all cache variables that start with VECGEOM_, renaming them to VecGeom_
+set(VECGEOM_EXPORT_VARIABLES)
+macro(vecgeom_export_var varext)
+  list(APPEND VECGEOM_EXPORT_VARIABLES
+    "set(VecGeom_${varext} \"${VECGEOM_${varext}}\")"
+  )
+endmacro()
+list(APPEND VECGEOM_EXPORT_VARIABLES "# Configuration options")
+get_directory_property(_cachevar_keys CACHE_VARIABLES)
+foreach(_key IN LISTS _cachevar_keys)
+  if(_key MATCHES "^VECGEOM_(.*)")
+    vecgeom_export_var(${CMAKE_MATCH_1})
+  endif()
+endforeach()
+
+# Add hints for direct dependencies and indirect geant dependencies
+list(APPEND VECGEOM_EXPORT_VARIABLES "\n# Hints for upstream dependencies")
+foreach(_key
+  CUDAToolkit_BIN_DIR VecCore_DIR XercesC_DIR
+  XercesC_LIBRARY XercesC_INCLUDE_DIR
+)
+  set(_val "${${_key}}")
+  if(_val)
+    list(APPEND VECGEOM_EXPORT_VARIABLES
+      "if(NOT DEFINED ${_key})"
+      "  set(${_key} \"${_val}\")"
+      "endif()"
+    )
+  endif()
+endforeach()
+list(JOIN VECGEOM_EXPORT_VARIABLES "\n" VECGEOM_EXPORT_VARIABLES)
+
 configure_package_config_file(VecGeomConfig.cmake.in
   "${PROJECT_BINARY_DIR}/VecGeomConfig.cmake"
   ${PATH_VARS_ARG}

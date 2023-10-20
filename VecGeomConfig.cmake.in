@@ -33,6 +33,7 @@
 # - VecGeom_shared_FOUND          - True if the VecGeom C++ library is shared.
 # - VecGeom_static_FOUND          - True if the VecGeom C++ library is static.
 # - VecGeom_GDML_FOUND            - True if the VecGeom GDML parser library is available.
+# - VecGeom_single_precision_FOUND - True if using single-precision floats
 # - VecGeom_CUDA_FOUND            - True if VecGeom was built with CUDA support.
 # - VecGeom_scalar_backend_FOUND  - True if the VecGeom backend is scalar.
 # - VecGeom_vector_backend_FOUND  - True if the VecGeom backend is vector.
@@ -66,19 +67,32 @@ set(VECGEOM_INCLUDE_DIRS ${VECGEOM_INCLUDE_DIR})
 # Full version string
 set(VecGeom_VERSION_STRING "@VecGeom_VERSION_STRING@")
 
+@VECGEOM_EXPORT_VARIABLES@
+
 # C++ Standard used in build
 set(VecGeom_CXX_STANDARD "@CMAKE_CXX_STANDARD@")
 
-# Scalar/Vector Backend, Backend Implementation, and ISA
+# Define `COMPONENTS` argument to `find_package`
 set(VecGeom_scalar_backend_FOUND @VECGEOM_SCALAR@)
 set(VecGeom_vc_backend_FOUND @VECGEOM_VC@)
+set(VecGeom_CUDA_FOUND ${VecGeom_ENABLE_CUDA})
+set(VecGeom_GDML_FOUND ${VecGeom_GDML})
+set(VecGeom_single_precision_FOUND ${VecGeom_SINGLE_PRECISION})
+
+set(VecGeom_shared_FOUND @BUILD_SHARED_LIBS@)
+if(VecGeom_static_FOUND)
+  set(VecGeom_static_FOUND FALSE)
+else()
+  set(VecGeom_static_FOUND TRUE)
+endif()
 
 if(VecGeom_vc_FOUND)
+  # Compatibility macro
   set(VecGeom_vector_backend_FOUND ON)
 endif()
 
 # Take default, but clear if it's "empty" as this is an internal "no flag supplied" case
-set(VecGeom_VECTOR_ISA "@VECGEOM_VECTOR@")
+set(VecGeom_VECTOR_ISA ${VecGeom_VECTOR})
 if(VecGeom_VECTOR_ISA STREQUAL "empty")
   unset(VecGeom_VECTOR_ISA)
 endif()
@@ -87,16 +101,14 @@ endif()
 include(CMakeFindDependencyMacro)
 
 # Always VecCore
-set(VecGeom_BUILTIN_VECCORE @VECGEOM_BUILTIN_VECCORE@)
 if(VecGeom_BUILTIN_VECCORE)
   # Must find our builtin where we expect
-  find_dependency(VecCore @VecCore_VERSION@ NO_DEFAULT_PATH PATHS "@PACKAGE_VECCORE_PREFIX@" COMPONENTS @VecCore_COMPONENTS@ )
+  find_dependency(VecCore @VecCore_VERSION@ NO_DEFAULT_PATH COMPONENTS @VecCore_COMPONENTS@ )
 else()
   find_dependency(VecCore @VecCore_VERSION@ COMPONENTS @VecCore_COMPONENTS@)
 endif()
 
 # CUDA, if built
-set(VecGeom_CUDA_FOUND @VECGEOM_ENABLE_CUDA@)
 if(VecGeom_CUDA_FOUND)
   set(VecGeom_CUDA_STANDARD "@CMAKE_CUDA_STANDARD@")
   set(VecGeom_CUDA_ARCHITECTURES "@CMAKE_CUDA_ARCHITECTURES@")
@@ -104,39 +116,24 @@ if(VecGeom_CUDA_FOUND)
 endif()
 
 # GDML (Xerces-C), if built
-set(VecGeom_GDML_FOUND @VECGEOM_GDML@)
 if(VecGeom_GDML_FOUND)
   find_dependency(XercesC)
 endif()
 
 # DEPRECATED - ROOT only used for testing/benchmarking
-set(VecGeom_ROOT_FOUND @VECGEOM_ROOT@)
+set(VecGeom_ROOT_FOUND ${VecGeom_ROOT})
 if(VecGeom_ROOT_FOUND)
   find_dependency(ROOT)
 endif()
 
 # DEPRECATED - Geant4 only used for testing/benchmarking
-set(VecGeom_Geant4_FOUND @VECGEOM_GEANT4@)
+set(VecGeom_Geant4_FOUND ${VecGeom_GEANT4})
 if(VecGeom_Geant4_FOUND)
   find_dependency(Geant4 @Geant4_VERSION@)
 endif()
 
 # Include our target definitions
 include("${CMAKE_CURRENT_LIST_DIR}/VecGeomTargets.cmake")
-
-# Static or Shared CPU found
-set(VecGeom_static_FOUND FALSE)
-set(VecGeom_shared_FOUND FALSE)
-
-get_target_property(__libvecgeom_type VecGeom::vecgeom TYPE)
-
-if(__libvecgeom_type STREQUAL "SHARED_LIBRARY")
-  set(VecGeom_shared_FOUND TRUE)
-endif()
-
-if(__libvecgeom_type STREQUAL "STATIC_LIBRARY")
-  set(VecGeom_static_FOUND TRUE)
-endif()
 
 # Setup VECGEOM_LIBRARIES so that it should "work" for consumers
 # _not_ implementing their own kernels/device code.
