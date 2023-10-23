@@ -34,7 +34,7 @@ with_ROOT:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-18-04-8)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
    script:
      - mkdir build && cd build
@@ -52,7 +52,7 @@ with_NAVINDEX_GDML_ROOT:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git xerces-c-devel
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-18-04-8)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
    script:
      - mkdir build && cd build
@@ -70,7 +70,7 @@ with_GDML_ROOT:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git xerces-c-devel
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-18-04-8)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
      - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
    script:
      - mkdir build && cd build
