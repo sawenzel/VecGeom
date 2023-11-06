@@ -7,6 +7,7 @@
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/base/CpuTypes.h>
 #include <VecGeom/surfaces/conv/SolidConverter.h>
+#include <VecGeom/management/Logger.h>
 
 // Check if math necessary
 #include <VecGeom/base/Math.h>
@@ -309,7 +310,7 @@ public:
         ComputeCylinderExtent(side);
         break;
       default:
-        std::cout << "Computing side extents dropped to default." << std::endl;
+        VECGEOM_LOG(debug) << "Computing side extents dropped to default";
         break;
       }
     };
@@ -368,7 +369,7 @@ public:
     case kTorus:
     case kGenSecondOrder:
     default:
-      std::cout << "Case not implemented. " << std::endl;
+      VECGEOM_LOG(error) <<"Surface type " << surf.fType <<" not implemented";
     }
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
@@ -403,7 +404,7 @@ public:
       case kTorus:
       case kGenSecondOrder:
       default:
-        std::cout << "Case not implemented. " << std::endl;
+      VECGEOM_LOG(error) <<"Surface type " << surf.fType <<" not implemented";
       }
     } else {
       printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
@@ -423,7 +424,7 @@ public:
   void SetNvolumes(int nvolumes)
   {
     if (fCPUdata.fShells.size() > 0) {
-      std::cout << "BrepHelper::SetNvolumes already called for this instance.\n";
+      VECGEOM_LOG(warning) <<"BrepHelper::SetNvolumes already called for this instance";
       return;
     }
     fCPUdata.fShells.resize(nvolumes);
@@ -442,11 +443,10 @@ public:
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
       bool result                           = conv::CreateSolidSurfaces<Real_t>(solid, volume->id());
       if (!result) {
-        std::cout << "BrepHelper::CreateLocalSurfaces: solid type not supported for volume: " << volume->GetName()
-                  << "\n";
+        VECGEOM_LOG(critical) <<"Solid type not supported for volume: " << volume->GetName();
         solid->Print();
+        throw std::runtime_error("unsupported solid used in surface model");
       }
-      assert(result);
       // Finalize logic expression
       auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
       logichelper::simplify_logic(crtlogic);
@@ -500,9 +500,9 @@ public:
             {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
         fCPUdata.fFramedSurf.back().fLogicId = lsurf.fLogicId;
         if (fVerbose > 0) {
-          std::cout << "framed surface " << id_glob << " for state: ";
+          VECGEOM_LOG(diagnostic) << "framed surface " << id_glob << " for state: ";
           state.Print();
-          std::cout << "  " << global << "\n";
+          VECGEOM_LOG(diagnostic) << global;
         }
         CreateCommonSurface(id_glob, vol->id());
       }
@@ -548,8 +548,8 @@ public:
 
     if (fVerbose > 1) {
       PrintCandidateLists();
-      std::cout << "Visited " << nphysical << " physical volumes, created " << fCPUdata.fCommonSurfaces.size() - 1
-                << " common surfaces\n";
+        VECGEOM_LOG(diagnostic) << "Visited " << nphysical << " physical volumes, created "
+                           << fCPUdata.fCommonSurfaces.size() - 1 << " common surfaces";
     }
 
     return true;
@@ -695,49 +695,50 @@ public:
   {
     constexpr int megabyte = 1024 * 1024;
     float total = 0, size = 0;
-    std::cout << "___________________________________________________________________________________\n";
-    std::cout << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables\n";
+    auto msg = VECGEOM_LOG(diagnostic);
+    msg<< "___________________________________________________________________________________\n";
+    msg << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables\n";
     size = float(fSurfData->fNshells * sizeof(VolumeShell) + fSurfData->fNlocalSurf * sizeof(int)) / megabyte;
     total += size;
-    std::cout << "    volume shells          = " << fSurfData->fNshells << " [" << size << " MB]\n";
+    msg << "    volume shells          = " << fSurfData->fNshells << " [" << size << " MB]\n";
     size = float(fSurfData->fNlocalTrans * sizeof(Transformation)) / megabyte;
     total += size;
-    std::cout << "    local transformations  = " << fSurfData->fNlocalTrans << " [" << size << " MB]\n";
+    msg << "    local transformations  = " << fSurfData->fNlocalTrans << " [" << size << " MB]\n";
     size = float(fSurfData->fNglobalTrans * sizeof(Transformation)) / megabyte;
     total += size;
-    std::cout << "    global transformations = " << fSurfData->fNglobalTrans << " [" << size << " MB]\n";
+    msg << "    global transformations = " << fSurfData->fNglobalTrans << " [" << size << " MB]\n";
     size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface)) / megabyte;
     total += size;
-    std::cout << "    local surfaces         = " << fSurfData->fNlocalSurf << " [" << size << " MB]\n";
+    msg << "    local surfaces         = " << fSurfData->fNlocalSurf << " [" << size << " MB]\n";
     size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface)) / megabyte;
     total += size;
-    std::cout << "    global surfaces        = " << fSurfData->fNglobalSurf << " [" << size << " MB]\n";
+    msg << "    global surfaces        = " << fSurfData->fNglobalSurf << " [" << size << " MB]\n";
     size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface) + fSurfData->fNsides * sizeof(int)) / megabyte;
     total += size;
-    std::cout << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
+    msg << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
     size = float(fSurfData->fSizeCandList * sizeof(int)) / megabyte;
     total += size;
-    std::cout << "    candidates             = " << fSurfData->fSizeCandList << " [" << size << " MB]\n";
+    msg << "    candidates             = " << fSurfData->fSizeCandList << " [" << size << " MB]\n";
     size = float(fSurfData->fNwindows * sizeof(WindowMask_t)) / megabyte;
     total += size;
-    std::cout << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
+    msg << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
     size = float(fSurfData->fNcylsph * sizeof(FramedSurface)) / megabyte;
     total += size;
-    std::cout << "    cyl/sph masks          = " << fSurfData->fNcylsph << " [" << size << " MB]\n";
+    msg << "    cyl/sph masks          = " << fSurfData->fNcylsph << " [" << size << " MB]\n";
     size = float(fSurfData->fNrings * sizeof(RingMask_t)) / megabyte;
     total += size;
-    std::cout << "    ring masks             = " << fSurfData->fNrings << " [" << size << " MB]\n";
+    msg << "    ring masks             = " << fSurfData->fNrings << " [" << size << " MB]\n";
     size = float(fSurfData->fNzphis * sizeof(ZPhiMask_t)) / megabyte;
     total += size;
-    std::cout << "    Z/phi masks            = " << fSurfData->fNzphis << " [" << size << " MB]\n";
+    msg << "    Z/phi masks            = " << fSurfData->fNzphis << " [" << size << " MB]\n";
     size = float(fSurfData->fNtriangs * sizeof(TriangleMask_t)) / megabyte;
     total += size;
-    std::cout << "    triangle masks         = " << fSurfData->fNtriangs << " [" << size << " MB]\n";
+    msg << "    triangle masks         = " << fSurfData->fNtriangs << " [" << size << " MB]\n";
     size = float(fSurfData->fNquads * sizeof(QuadMask_t)) / megabyte;
     total += size;
-    std::cout << "    quad masks             = " << fSurfData->fNquads << " [" << size << " MB]\n";
-    std::cout << " Total: " << total << "[MB]\n";
-    std::cout << "___________________________________________________________________________________\n";
+    msg << "    quad masks             = " << fSurfData->fNquads << " [" << size << " MB]\n";
+    msg << " Total: " << total << "[MB]\n";
+    msg << "___________________________________________________________________________________\n";
   }
 
 private:
@@ -1105,7 +1106,7 @@ private:
     // There is one list of candidates per state
     size_t num_states   = fCPUdata.fCandidatesEntering.size();
     fSurfData->fNStates = num_states;
-    // We could also get the number of states from the number of exiting candidates lists 
+    // We could also get the number of states from the number of exiting candidates lists
     assert(fCPUdata.fCandidatesEntering.size() == fCPUdata.fCandidatesExiting.size());
 
     fSurfData->fCandidates = new Candidates[num_states];
@@ -1114,7 +1115,7 @@ private:
       // Copy Candidate surface, and Frame indices after
       // For each state the memory will contain:
       // EnteringSurfaces - ExitingSurfaces - EnteringFrameIdx - ExitingFrameIdx
-      
+
       size_t offset = 0;
 
       // Copy Entering Candidates

@@ -183,11 +183,6 @@ option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigat
 option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
 
 option(VECGEOM_USE_NAVINDEX "Use navigation index table and states" OFF)
-if((NOT VECGEOM_USE_NAVINDEX) AND VECGEOM_ENABLE_CUDA)
-  message(STATUS "Forcing VECGEOM_USE_NAVINDEX to ON (required by VECGEOM_ENABLE_CUDA=ON)")
-  set(VECGEOM_USE_NAVINDEX ON CACHE BOOL "Use navigation index table and states" FORCE)
-  set(VECGEOM_USE_INDEXEDNAVSTATES ON CACHE BOOL "Use indices rather than volume pointers in NavigationState objects" FORCE)
-endif()
 
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
@@ -196,6 +191,14 @@ option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OF
 option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
 
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
+
+# Navigation index is REQUIRED for CUDA or SURFACE models
+cmake_dependent_option(VECGEOM_USE_NAVINDEX
+  "Use navigation index table and states"
+  OFF
+  "NOT VECGEOM_ENABLE_CUDA;NOT VECGEOM_USE_SURF"
+  ON
+)
 
 ################################################################################
 # - Testing, unit, coverage, benchmarking, validation etc
