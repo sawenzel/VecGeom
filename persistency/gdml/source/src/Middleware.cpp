@@ -243,7 +243,7 @@ bool Middleware::processPosition(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *a
     return true;
   }
 
-  auto const success       = positionMap.insert(std::make_pair(positionName, positionValue)).second;
+  auto const success = positionMap.insert(std::make_pair(positionName, positionValue)).second;
   if (!success) {
     VECGEOM_LOG(warning) << "Middleware::processNode: failed to insert position with name " << positionName
                          << " and value " << positionValue;
@@ -264,8 +264,8 @@ bool Middleware::processScale(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOM
   auto const scaleValue = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{x, y, z};
   auto const success    = scaleMap.insert(std::make_pair(scaleName, scaleValue)).second;
   if (!success) {
-    VECGEOM_LOG(warning) << "Middleware::processNode: failed to insert position with name " << scaleName << " and value "
-              << scaleValue;
+    VECGEOM_LOG(warning) << "Middleware::processNode: failed to insert position with name " << scaleName
+                         << " and value " << scaleValue;
   }
   return success;
 }
@@ -284,8 +284,8 @@ bool Middleware::processRotation(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *a
   auto const rotationValue = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{x, y, z};
   auto const success       = rotationMap.insert(std::make_pair(rotationName, rotationValue)).second;
   if (!success) {
-    VECGEOM_LOG(warning) << "Middleware::processNode: failed to insert rotation with name " << rotationName << " and value "
-              << rotationValue;
+    VECGEOM_LOG(warning) << "Middleware::processNode: failed to insert rotation with name " << rotationName
+                         << " and value " << rotationValue;
   }
   return success;
 }
@@ -544,7 +544,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VPlacedVolume const *Middleware::processMultiUn
     if (!aDOMElement) {
       // Skip whitespace/text element
       if (debug) {
-        VECGEOM_LOG(warning) <<"Skipping null DOM element: " << Helper::GetNodeInformation(it);
+        VECGEOM_LOG(warning) << "Skipping null DOM element: " << Helper::GetNodeInformation(it);
       }
       continue;
     }
@@ -557,7 +557,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VPlacedVolume const *Middleware::processMultiUn
 
       auto foundSolid = unplacedVolumeMap.find(solidName);
       if (foundSolid == unplacedVolumeMap.end()) {
-      VECGEOM_LOG(error) << "Could not find solid " << solidName;
+        VECGEOM_LOG(error) << "Could not find solid " << solidName;
         return nullptr;
       } else {
         if (debug) VECGEOM_LOG(debug) << "Found solid " << solidName;
@@ -851,7 +851,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processPolyc
   std::vector<Precision> zs;
   for (auto *it = aDOMNode->getFirstChild(); it != nullptr; it = it->getNextSibling()) {
     if (debug) {
-      VECGEOM_LOG(debug)  << "procPolycone Child: " << Helper::GetNodeInformation(it);
+      VECGEOM_LOG(debug) << "procPolycone Child: " << Helper::GetNodeInformation(it);
     }
     if (it->getNodeType() == XERCES_CPP_NAMESPACE_QUALIFIER DOMNode::ELEMENT_NODE) {
       attributes = it->getAttributes();
@@ -919,7 +919,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processPolyh
   std::vector<Precision> zs;
   for (auto *it = aDOMNode->getFirstChild(); it != nullptr; it = it->getNextSibling()) {
     if (debug) {
-      VECGEOM_LOG(debug)  << "procPolyhedr Child: " << Helper::GetNodeInformation(it);
+      VECGEOM_LOG(debug) << "procPolyhedr Child: " << Helper::GetNodeInformation(it);
     }
     if (it->getNodeType() == XERCES_CPP_NAMESPACE_QUALIFIER DOMNode::ELEMENT_NODE) {
       attributes = it->getAttributes();
@@ -969,7 +969,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processSpher
   DECLAREANDGETLENGTVAR(rmin)
   DECLAREANDGETLENGTVAR(rmax)
   DECLAREANDGETANGLEVAR(startphi)
-  DECLAREANDGETANGLEVAR(deltaphi)   // FIXME the default value is not 0
+  DECLAREANDGETANGLEVAR(deltaphi) // FIXME the default value is not 0
   DECLAREANDGETANGLEVAR(starttheta)
   DECLAREANDGETANGLEVAR(deltatheta) // FIXME the default value is not 0
   auto const anUnplacedSpherePtr =
@@ -1233,11 +1233,18 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
         DECLAREANDGETLENGTVAR(xOffset)
         DECLAREANDGETLENGTVAR(yOffset)
         DECLAREANDGETINTVAR(zOrder)
-        if (!(scalingFactor == 1 && xOffset == 0 && yOffset == 0) || !(zOrder == 0 || zOrder == 1)) {
-          VECGEOM_LOG(debug) << "Middleware::processExtruded: invalid section attributes ignored: " << theChildNodeName;
+        if (!(zOrder == 0 || zOrder == 1)) {
+          VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute zOrder=" << zOrder;
         }
-        assert(scalingFactor == 1 && xOffset == 0 && yOffset == 0);
-        assert(zOrder == 0 || zOrder == 1);
+        if (scalingFactor != 1.0) {
+          VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute scalingFactor=" << scalingFactor;
+        }
+        if (xOffset != 0.0) {
+          VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute xOffset=" << xOffset;
+        }
+        if (yOffset != 0.0) {
+          VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute yOffset=" << yOffset;
+        }
         auto const z = lengthMultiplier * GetDoubleAttribute("zPosition", childAttributes);
         zs.push_back(z);
       }
@@ -1351,8 +1358,8 @@ bool Middleware::processLogicVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const
 
       auto foundSolid = unplacedVolumeMap.find(solidName);
       if (foundSolid == unplacedVolumeMap.end()) {
-        VECGEOM_LOG(error) << "processLogicVolume: Could not find solid reference " << solidName << " for logical volume "
-                  << volumeName;
+        VECGEOM_LOG(error) << "processLogicVolume: Could not find solid reference " << solidName
+                           << " for logical volume " << volumeName;
         return false;
       } else {
         if (debug) VECGEOM_LOG(debug) << "Found solid " << solidName;
@@ -1373,8 +1380,8 @@ bool Middleware::processLogicVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const
 
       auto pairMaterial = materialMap.find(materialName);
       if (pairMaterial == materialMap.end()) {
-        VECGEOM_LOG(error) << "processLogicVolume: Could not find material reference " << materialName << " for logical volume "
-                  << volumeName;
+        VECGEOM_LOG(error) << "processLogicVolume: Could not find material reference " << materialName
+                           << " for logical volume " << volumeName;
         return false;
       } else {
         if (debug) VECGEOM_LOG(debug) << "Found material " << materialName;

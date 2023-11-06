@@ -101,7 +101,13 @@ public:
     }
   }
 
-  ~NavStatePool() { delete[] fBuffer; }
+  ~NavStatePool()
+  {
+  #ifdef VECGEOM_CUDA_INTERFACE
+    CudaAssertError(CudaFree(fGPUPointer));
+  #endif
+    delete[] fBuffer;
+  }
 #if !defined(VECCORE_CUDA) && defined(VECGEOM_ENABLE_CUDA)
   void CopyToGpu();
   void CopyFromGpu();

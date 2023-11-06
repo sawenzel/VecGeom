@@ -7,6 +7,7 @@
 #include "Frontend.h"
 #include "Backend.h"
 #include "VecGeom/management/GeoManager.h"
+#include "VecGeom/management/Logger.h"
 
 #include <string>
 
@@ -25,12 +26,12 @@ std::unique_ptr<Middleware> Parser::Load(std::string const &aFilename, bool vali
   auto aBackend      = vgdml::Backend(validate);
   auto const aDOMDoc = aBackend.Load(aFilename);
   if (!aDOMDoc) {
-    std::cerr << "== Error: GDML file " << aFilename << " could not be loaded\n";
+      VECGEOM_LOG(error) << "GDML file " << aFilename << " could not be loaded";
     return nullptr;
   }
 
   vecgeom::GeoManager::SetMillimeterUnit((vecgeom::Precision)mm_unit);
-  if (verbose == 1) std::cerr << "(II) vgdml::Frontend::Load: VecGeom millimeter is " << mm_unit << "\n";
+  VECGEOM_LOG(debug) << "VecGeom millimeter is " << mm_unit ;
 
   auto aMiddleware = std::unique_ptr<Middleware>(new Middleware());
   if (!aMiddleware->Load(aDOMDoc)) {

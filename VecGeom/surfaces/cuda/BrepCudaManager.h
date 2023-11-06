@@ -207,6 +207,8 @@ public:
     fSurfDataStaging.fShells = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fSurfShellList));
     fSurfDataStaging.fSurfShellList = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLogicList));
+    fSurfDataStaging.fLogicList = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLocalSurf));
     fSurfDataStaging.fLocalSurf = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fFramedSurf));
