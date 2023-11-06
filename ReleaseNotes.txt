@@ -1,3 +1,71 @@
+Version 2.0.0-rc2         6th Jun 2023
+======================================
+Overview:
+- Fix in SimpleExtruded shape implementation of DistanceToOut().
+- Fix for Extent of Boolean solids.
+- Fix in VGDML module.
+- Added logger, contributed from Celeritas.
+- Fixes in configuration setup.
+- Added cmake git version support.
+
+Configuration:
+- Add full vecgeom version string to exported configuration; this gives
+  provenance to installed versions of VecGeom that *aren't* point releases.
+- Export CMake cache variables with VecGeomConfig.
+- Changed static assert to runtime test failure.
+- Jenkins: explicitly target the PLATFORM instead of relying on links.
+- Added cmake git version support.
+- Modified version matching regex to match vX.Y.Z-dev.W.
+- Enforce an out-of-source build; requested to avoid odd and/or confusing
+  cmake and build warnings. Also assists in keeping source dir clean from
+  build products that might get accidently commited.
+- Bump CMake max version tested to current version.
+- Bump GCC to 12.2 in Gitlab-CI.
+- Fixed version finding script for archived versions.
+
+Shapes:
+- Fix for DistanceToOut() in simple extruded implementation.
+- Fix for extent of Boolean solids; this fixed a major bug introduced by the
+  commit 7894c5ee that changed the semantic of VPlacedVolume::Extent to compute
+  the extent of the displaced volume rather than delegate to the unplaced
+  extent calculation. The implementations of UnplacedBooleanVolume<op>::Extent
+  were converting the extents of the Boolean components to the
+  UnplacedBooleanVolume frame, so after the change this conversion was done
+  twice.
+- Use Geant4 convention for Polyhedron, interpreting negative/zero angle dphi
+  as twopi.
+- Avoid getting unit vector out as a zero-length one in sphere.
+
+Navigation:
+- Introduce BVH and Loop navigators from AdePT. BVH code refactoring.
+- Removed implementation namespace and fixed GetPlacedVolume dispatching in
+  BVHNavigator.
+- Less copies for getting cached transformations from the navigation index
+  table.
+- Fix for TestVGDMLNavigation and improvements for debugging.
+
+Persistency:
+- Fix for the rotation used in VGDML for Boolean components.
+  The rotation matrices have different layouts in VecGeom compared to Geant4,
+  row versus column major, so the constructor based on rotation elements need
+  to use transposed elements.
+- Fix for conversion of subtractions to Geant4. The rotation of the subtracted
+  node was not created and not used when converting to the corresponding Geant4
+  solid.
+- Setup stack or heap values as needed for some common CMS geometries to pass
+  GeometryTest.
+- Added generic benchmark of a volume from a GDML file.
+
+General:
+- Transformation3D is now compatible with G4AffineTransformation in Geant4.
+  Transformation produced by VGDML are now numerically compatible with the
+  oned produced by G4GDMLRead.
+- Generated unit vector does not add a small number to the magnitude.
+  This is needed for numerical compatibility with Geant4. The user is
+  responsible for not calling Unit for null vectors.
+- Added logger, contributed from Celeritas.
+- Use cerr instead of cout and printf; added missing cerr CUDA guards.
+
 Version 2.0.0-rc1         15th Jun 2023
 =======================================
 Overview:
