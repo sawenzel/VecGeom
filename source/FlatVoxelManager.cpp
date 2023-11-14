@@ -18,6 +18,8 @@
 // for timing measurement
 #include "VecGeom/base/Stopwatch.h"
 
+#define VOXEL_DEBUG 1 
+
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -84,7 +86,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
   auto elapsed = timer.Stop();
-  VECGEOM_LOG(info) << "Sampling points and keys took " << elapsed << "s \n";
+  VECGEOM_LOG(info) << "Sampling points and keys took " << elapsed << "s .";
 
   timer.Start();
   // merge all keys
@@ -259,7 +261,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
 
   std::vector<std::future<void>> safetyfutures;
 #ifdef VOXEL_DEBUG
-  VECGEOM_LOG(info) << " Calculating safety candidates ... in parallel";
+  VECGEOM_LOG(debug) << " Calculating safety candidates ... in parallel";
 #endif
   for (int t = 0; t < numtasks; ++t) {
     auto fut = std::async([t, numtasks, &safetycandidates, safetyvoxels, &sortedkeys, vol] {
@@ -287,7 +289,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
         Vector3D<float> keyupper;
         safetyvoxels->Extent(k, keylower, keyupper);
 #ifdef VOXEL_DEBUG
-        VECGEOM_LOG(info) << "KEY LOWER EXTENT " << keylower << "\n"
+        VECGEOM_LOG(debug) << "KEY LOWER EXTENT " << keylower << "\n"
                           << "KEY UPPER EXTENT " << keyupper;
 #endif
         // painful but we could speed up with SIMD
@@ -314,7 +316,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
           // surface point in double precission (needed for some interfaces)
           Vector3D<Precision> spdouble(sp.x(), sp.y(), sp.z());
 #ifdef VOXEL_DEBUG
-          VECGEOM_LOG(info) << "CHECKING SURFACE POINT " << sp;
+          VECGEOM_LOG(debug) << "CHECKING SURFACE POINT " << sp;
 #endif
           const auto inmother = vol->GetUnplacedVolume()->Contains(spdouble);
           if (!inmother) {
@@ -349,7 +351,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
             const auto safetyout    = vol->GetUnplacedVolume()->SafetyToOut(spdouble);
             const auto safetyoutsqr = safetyout * safetyout;
 #ifdef VOXEL_DEBUG
-            VECGEOM_LOG(info) << "POINT OK; MOTHER SAFETY " << safetyout;
+            VECGEOM_LOG(debug) << "POINT OK; MOTHER SAFETY " << safetyout;
 #endif
             // get all intersecting objects within this distance
             // which are not yet part of candidates ... we are using
@@ -377,8 +379,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
               const auto candidatesafety = daughters[volid]->SafetyToIn(spdouble);
               const auto candsafetysqr   = candidatesafety * candidatesafety;
 #ifdef VOXEL_DEBUG
-              VECGEOM_LOG(info) << "DAUGH " << volid << " squared box saf " << safetytoboxsqr
-                                << " cands " << candidatesafety;
+              VECGEOM_LOG(debug) << "DAUGH " << volid << " squared box saf " << safetytoboxsqr
+                                 << " cands " << candidatesafety;
 #endif
               // we take the larger of boxsafety or candidatesafety as the safety for this object
               const auto thiscandidatesafetysqr = std::max<Precision>(candsafetysqr, safetytoboxsqr);
@@ -386,16 +388,15 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
               // if this safety is smaller than the previously known safety
               if (thiscandidatesafetysqr <= finalsafetysqr) {
 #ifdef VOXEL_DEBUG
-                 VECGEOM_LOG(info) << "Updating best cand from " << bestcandidate << " to " << volid
+                VECGEOM_LOG(debug) << "Updating best cand from " << bestcandidate << " to " << volid
                                    << " safety-sq = " << thiscandidatesafetysqr << " for sp = " << sp;
-              }
-#endif
+#endif                 
                 bestcandidate  = volid;
                 finalsafetysqr = thiscandidatesafetysqr;
               }
             }
 #ifdef VOXEL_DEBUG
-            VECGEOM_LOG(info) << "Inserting best candidate " << bestcandidate << "\n";
+            VECGEOM_LOG(debug) << "Inserting best candidate " << bestcandidate;
 #endif
             othersafetycandidates.insert(bestcandidate);
           } // if not in daughter
@@ -415,7 +416,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
           // we add the other candidates to the list of existing candidates
           auto iter = std::find(safetycandidates[i].begin(), safetycandidates[i].end(), other);
           if (iter == safetycandidates[i].end()) {
-            VECGEOM_LOG(info) << "used to ignore 'inside daughter' vol " << other << "\n";
+            VECGEOM_LOG(info) << "used to ignore 'inside daughter' vol " << other;
             safetycandidates[i].push_back(other);
           }
         }
@@ -426,17 +427,17 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     safetyfutures.push_back(std::move(fut));
   }
   std::for_each(safetyfutures.begin(), safetyfutures.end(), [](std::future<void> &fut) { fut.wait(); });
-  VECGEOM_LOG(info) << "Generating safeties took " << timer.Stop() << "s \n";
+  VECGEOM_LOG(info) << "Generating safeties took " << timer.Stop() << "s";
   // bool verboseAdd= false;
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {
     auto key = sortedkeys[i];
     for (const auto &cand : safetycandidates[i]) {
-      // if( verboseAdd ) { VECGEOM_LOG(info) << "Adding cand " << cand << " to key " << key << "\n"; }
+      // if( verboseAdd ) { VECGEOM_LOG(debug) << "Adding cand " << cand << " to key " << key; }
       safetyvoxels->addPropertyForKey(key, cand);
     }
   }
-  VECGEOM_LOG(info) << " done \n";
+  VECGEOM_LOG(info) << " done.";
   return safetyvoxels;
 #endif // extreme lookup
 }
@@ -451,7 +452,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
   VECGEOM_LOG(info) << "Setting up locate voxels for " << vol->GetName()
-                    << " with " << ndaughters << " daughters \n";
+                    << " with " << ndaughters << " daughters";
   int Nx            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Ny            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Nz            = 10; // std::max(4., std::sqrt(1.*ndaughters));
@@ -468,7 +469,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   for (size_t i = 0; i < numkeys; ++i) {
     sortedkeys.push_back(i);
   }
-  VECGEOM_LOG(info) << "Generating unique keys took " << timer.Stop() << "s \n";
+  VECGEOM_LOG(info) << "Generating unique keys took " << timer.Stop() << "s";
 
   //
   timer.Start();
@@ -511,7 +512,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
     futures.push_back(std::move(fut));
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
-  VECGEOM_LOG(info) << "Generating locate voxels took " << timer.Stop() << "s \n";
+  VECGEOM_LOG(info) << "Generating locate voxels took " << timer.Stop() << "s .";
 
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {
