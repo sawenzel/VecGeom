@@ -18,7 +18,7 @@
 #include "VecGeom/navigation/GlobalLocator.h"
 #include "VecGeom/management/GeoManager.h"
 
-#include "VecGeom/management/GeoManager.h"
+#include "VecGeom/management/Logger.h"
 
 #include <cstdio>
 #include <random>
@@ -351,7 +351,7 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Tra
     std::cerr << "Uncontained capacity for " << volume.GetLabel() << ":" << uncontainedCapacity << " units\n";
     lastUncontCap = uncontainedCapacity;
   }
-  if (uncontainedCapacity <= 1000 * kTolerance) {
+  if (uncontainedCapacity <= 1000 * vecgeom::kTolerance) {
     std::cerr << "\nVolUtil: FillUncontPts: WARNING: Volume provided <" << volume.GetLabel()
               << "> does not have uncontained capacity!  Method returns false.\n";
     return false;
@@ -429,7 +429,7 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(LogicalVolume const &volume, Tra
  */
 template <typename RandomEngine, typename TrackContainer>
 VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, RandomEngine &rngengine,
-                                                TrackContainer &points)
+                                                TrackContainer &points, const bool verbose= false)
 {
   static double lastUncontCap = 0.0;
   double uncontainedCapacity  = UncontainedCapacity(volume);
@@ -439,18 +439,24 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
   }
   double totalcapacity = const_cast<VPlacedVolume &>(volume).Capacity();
 
-  std::cerr << "\nVolUtil: FillUncontPts: Volume <" << volume.GetLabel() << "  capacities: total =  " << totalcapacity
-            << " uncontained = " << uncontainedCapacity << "\n";
+  if(verbose) 
+    std::cout << "\nVolUtil: FillUncontPts: Volume <" << volume.GetLabel() << "  capacities: total =  " << totalcapacity
+              << " uncontained = " << uncontainedCapacity << "\n";
 
-  if (uncontainedCapacity <= 1000 * kTolerance) {
-    // double checkUC= UncontainedCapacity(volume); // Rerun - for debugging ...
-    std::cerr << "\nVolUtil: FillUncontPts: ERROR: Volume provided <" << volume.GetLabel()
-              << "> does not have uncontained capacity!  "
-              << "    Value = " << uncontainedCapacity << " \n"
-              << "      contained = " << totalcapacity
-        // << "    check = " << checkUC << " \n"
-        ;
-    // if( checkUC < 0 ) { assert(false); }
+#ifndef VECCORE_CUDA
+  if (verbose && uncontainedCapacity <= 0.0 ) {
+    VECGEOM_LOG(info) << " VolUtil: FillUncontPts: Volume " << volume.GetLabel() << "  capacities: "
+                      << " total =  " << totalcapacity
+                      << " uncontained = " << uncontainedCapacity << "\n";
+  }
+#endif
+
+  if (uncontainedCapacity <= 1000 * vecgeom::kTolerance)
+  {
+    VECGEOM_LOG(warning) << "\nVolUtil: FillUncontPts: ERROR: Volume provided <" << volume.GetLabel()
+                          << "> does not have uncontained capacity!  "
+                          << "    Value = " << uncontainedCapacity 
+                          << "      total = " << totalcapacity;
     return false;
     // TODO --- try to find points anyway, and decide if real points were found
   }
@@ -475,19 +481,21 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
       int onego = 0;
       do {
         ++tries;
+        point = offset + SamplePoint(dim, rngengine);
+
         onego++;
         if (onego % 100000 == 0) {
-          printf("%s line %i: Warning: %i tries ( success = %i ) to find uncontained points... volume=%s.  Please "
-                 "check.\n",
-                 __FILE__, __LINE__, tries, i, volume.GetLabel().c_str());
-        }
-        if (tries % 5000000 == 0) {
-          double ratio = 1.0 * i / tries;
-          printf("Progress : %i tries ( succeeded = %i , ratio %f %% ) to find uncontained points... volume=%s.\n",
-                 tries, i, 100.0 * ratio, volume.GetLabel().c_str());
+          VECGEOM_LOG(status) << "Warning: " <<  tries << " tries without another good point. "
+                              << " Total successful # " << i << " ) "
+                              << " to find uncontained points in volume= " << volume.GetLabel();
         }
 
-        point = offset + SamplePoint(dim, rngengine);
+        if ( verbose && tries % 5000000 == 0) {
+          double ratio = ( 1.0 * i ) / tries;
+          VECGEOM_LOG(status) << "Progress : " << tries << "tries (in this task) succeeded = " << i
+                              << ", ratio = " << 100.0 * ratio << " % " 
+                              <<  " towards finding uncontained points... volume=" << volume.GetLabel() << " . ";
+        }
       } while (!volume.UnplacedContains(point));
       points.set(i, point);
 
@@ -504,9 +512,14 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
 
     if (tries >= maxtries) break;
   }
-  std::cerr << " FillUncontained:  trials " << tries << " for num points = " << i << " ( out of " << size
-            << " requested - "
-            << " success ratio = " << (i * 1.0) / tries << "\n";
+  constexpr double too_small= 0.03; // --- Lots of work for each point
+  // if(verbose || ratio < too_small )
+  if(verbose || i < too_small * tries ) {
+     double ratio = (i * 1.0) / tries;     
+     VECGEOM_LOG(info)  << " trials " << tries << " found " << i << " points "
+                        << " ( out of " << size << " requested - success ratio = " << ratio
+                        << " ) for Volume <" << volume.GetLabel() << "\n";
+  }
   return (i > 0);
 }
 
