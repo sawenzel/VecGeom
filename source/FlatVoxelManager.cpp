@@ -86,7 +86,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
   auto elapsed = timer.Stop();
-  VECGEOM_LOG(info) << "Sampling points and keys took " << elapsed << "s .";
+  VECGEOM_LOG(diagnostic) << "- Sampling points and keys took " << elapsed << "s .";
 
   timer.Start();
   // merge all keys
@@ -111,8 +111,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       sortedkeys.push_back(k);
     }
   }
-  VECGEOM_LOG(info) << "Generating unique keys took " << timer.Stop() << "s";
-  VECGEOM_LOG(info) << "We have " << sortedkeys.size() << " sorted unique keys; fraction "
+  VECGEOM_LOG(diagnostic) << "- Generating unique keys took " << timer.Stop() << "s";
+  VECGEOM_LOG(diagnostic) << "- We have " << sortedkeys.size() << " sorted unique keys; fraction "
             << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
             << sortedkeys.size() * safetyvoxels->getVoxelVolume();
 
@@ -122,7 +122,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   const auto safetyestimator = static_cast<SimpleABBoxSafetyEstimator const *>(SimpleABBoxSafetyEstimator::Instance());
   std::vector<std::future<void>> safetyfutures;
 
-  VECGEOM_LOG(info) << " Calculating safeties ... in parallel ";
+  VECGEOM_LOG(diagnostic) << "- Calculating safeties ... in parallel ";
   for (int t = 0; t < numtasks; ++t) {
     auto fut = std::async([t, numtasks, &safeties, safetyvoxels, &sortedkeys, safetyestimator, vol] {
       // define start and end to work on
@@ -147,7 +147,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     safetyfutures.push_back(std::move(fut));
   }
   std::for_each(safetyfutures.begin(), safetyfutures.end(), [](std::future<void> &fut) { fut.wait(); });
-  VECGEOM_LOG(info) << "Generating safeties took " << timer.Stop() << "s";
+  VECGEOM_LOG(diagnostic) << "- Generating safeties took " << timer.Stop() << "s";
 
   auto filename = createName(vol, Nx, Ny, Nz);
   dumpToTFile(filename.c_str(), *points[0], sortedkeys, safeties);
@@ -158,7 +158,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     auto safety = safeties[i];
     voxels->addPropertyForKey(k, safety);
   }
-  VECGEOM_LOG(info) << " done";
+  VECGEOM_LOG(diagnostic) << " done";
 
   auto structure     = new VoxelStructure();
   structure->fVoxels = voxels;
@@ -174,7 +174,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  VECGEOM_LOG(info) << " Setting up safety voxels for " << vol->GetName() << " with " << ndaughters << " daughters ";
+  VECGEOM_LOG(diagnostic) << "Setting up safety voxels for " << vol->GetName() << " with " << ndaughters << " daughters ";
 
   int Nx = std::max(4., 2 * std::sqrt(1. * ndaughters));
   int Ny = std::max(4., 2 * std::sqrt(1. * ndaughters));
@@ -211,7 +211,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
         // delete points[t]; points[t] = nullptr;  // JA 2021.03.04 17:15 CEST ???
       } else {
         keyspertask[t] = nullptr;
-        VECGEOM_LOG(info) << " WARNING: Found 0 uncontained points for " << vol->GetName()
+        VECGEOM_LOG(warning) << "WARNING: Found 0 uncontained points for " << vol->GetName()
                   << " -- expect problems in estimating safety.";
       }
     });
@@ -219,7 +219,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
   auto elapsed = timer.Stop();
-  VECGEOM_LOG(info) << "Sampling points and keys took " << elapsed << "s";
+  VECGEOM_LOG(diagnostic) << "- Sampling points and keys took " << elapsed << "s";
 
   timer.Start();
   // merge all keys
@@ -244,9 +244,9 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       sortedkeys.push_back(k);
     }
   }
-  VECGEOM_LOG(info) << "Generating unique keys took " << timer.Stop() << " s";
+  VECGEOM_LOG(diagnostic) << "- Generating unique keys took " << timer.Stop() << " s";
 
-  VECGEOM_LOG(info) << " We have " << sortedkeys.size() << " sorted unique keys; fraction "
+  VECGEOM_LOG(diagnostic) << "- We have " << sortedkeys.size() << " sorted unique keys; fraction "
             << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
             << sortedkeys.size() * safetyvoxels->getVoxelVolume();
   size_t minSize = 50;
@@ -416,7 +416,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
           // we add the other candidates to the list of existing candidates
           auto iter = std::find(safetycandidates[i].begin(), safetycandidates[i].end(), other);
           if (iter == safetycandidates[i].end()) {
-            VECGEOM_LOG(info) << "used to ignore 'inside daughter' vol " << other;
+            VECGEOM_LOG(diagnostic) << "used to ignore 'inside daughter' vol " << other;
             safetycandidates[i].push_back(other);
           }
         }
@@ -427,7 +427,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
     safetyfutures.push_back(std::move(fut));
   }
   std::for_each(safetyfutures.begin(), safetyfutures.end(), [](std::future<void> &fut) { fut.wait(); });
-  VECGEOM_LOG(info) << "Generating safeties took " << timer.Stop() << "s";
+  VECGEOM_LOG(diagnostic) << "Generating safeties took " << timer.Stop() << "s";
   // bool verboseAdd= false;
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {
@@ -437,7 +437,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       safetyvoxels->addPropertyForKey(key, cand);
     }
   }
-  VECGEOM_LOG(info) << " done.";
+  VECGEOM_LOG(diagnostic) << " done.";
   return safetyvoxels;
 #endif // extreme lookup
 }
@@ -451,7 +451,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  VECGEOM_LOG(info) << "Setting up locate voxels for " << vol->GetName()
+  VECGEOM_LOG(diagnostic) << "Setting up locate voxels for " << vol->GetName()
                     << " with " << ndaughters << " daughters";
   int Nx            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Ny            = 10; // std::max(4., std::sqrt(1.*ndaughters));
@@ -469,7 +469,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   for (size_t i = 0; i < numkeys; ++i) {
     sortedkeys.push_back(i);
   }
-  VECGEOM_LOG(info) << "Generating unique keys took " << timer.Stop() << "s";
+  VECGEOM_LOG(diagnostic) << "- Generating unique keys took " << timer.Stop() << "s";
 
   //
   timer.Start();
@@ -477,7 +477,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   std::vector<std::vector<int>> locatecandidates(sortedkeys.size());
   std::vector<std::future<void>> futures;
 
-  VECGEOM_LOG(info) << " Calculating locate candidates ... in parallel ";
+  VECGEOM_LOG(diagnostic) << "- Calculating locate candidates ... in parallel ";
   for (int t = 0; t < numtasks; ++t) {
     auto fut = std::async([t, numtasks, &locatecandidates, locatevoxels, &sortedkeys, vol] {
       // define start and end to work on
@@ -512,7 +512,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
     futures.push_back(std::move(fut));
   }
   std::for_each(futures.begin(), futures.end(), [](std::future<void> &fut) { fut.wait(); });
-  VECGEOM_LOG(info) << "Generating locate voxels took " << timer.Stop() << "s .";
+  VECGEOM_LOG(diagnostic) << "- Generating locate voxels took " << timer.Stop() << "s .";
 
   // finally register safety or locate candidates in voxel hash map
   for (size_t i = 0; i < sortedkeys.size(); ++i) {
