@@ -6,6 +6,7 @@
 
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/NavIndexTable.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/management/ABBoxManager.h"
@@ -213,8 +214,7 @@ void GeoManager::CloseGeometry()
 
   // Initialize the Logical Volumes array for efficient access by index
   fLogicalVolumesArray.resize(GetRegisteredVolumesCount());
-  for(uint i=0; i<GetRegisteredVolumesCount(); i++)
-  {
+  for (uint i = 0; i < GetRegisteredVolumesCount(); i++) {
     fLogicalVolumesArray[i] = fLogicalVolumesMap[i];
   }
 
@@ -222,29 +222,12 @@ void GeoManager::CloseGeometry()
   vecgeom::ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
   fIsClosed = true;
 
-#ifdef VECGEOM_USE_NAVINDEX
+#if defined(VECGEOM_USE_NAVINDEX) || defined(VECGEOM_USE_NAVTUPLE)
   if (fCacheDepth == 0 || fCacheDepth > fMaxDepth) fCacheDepth = fMaxDepth;
-  MakeNavIndexTable(fCacheDepth);
-  // auto pretty_bytes = [](unsigned int bytes) {
-  //   char buf[50];
-  //   const char *suffixes[7] = {"Bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
-  //   uint s                  = 0; // which suffix to use
-  //   double count            = bytes;
-  //   while (count >= 1024 && s++ < 7)
-  //     count /= 1024;
-
-  //   if (count - std::floor(count) == 0.0)
-  //     sprintf(buf, "%d %s", (int)count, suffixes[s]);
-  //   else
-  //     sprintf(buf, "%.1f %s", count, suffixes[s]);
-  //   std::string sbytes = buf;
-  //   return sbytes;
-  // };
-  // std::cerr << "\n============================================================================\n"
-  //           << "  Geometry closed in navigation index mode. The table size is "
-  //           << pretty_bytes(NavIndexTable::Instance()->GetTableSize()) << "\n  Transformation caching depth is "
-  //           << fCacheDepth << "\n"
-  //           << "============================================================================\n\n";
+  bool success = MakeNavIndexTable(fCacheDepth, fMinPerScene);
+  if (!success) {
+    VECGEOM_LOG(critical) << "GeoManager::CloseGeometry: The navigation table has errors";
+  }
 #endif
 }
 
@@ -300,8 +283,8 @@ VPlacedVolume *GeoManager::FindPlacedVolume(char const *const label)
       } else {
         if (!multiple) {
           multiple = true;
-          std::cerr << "GeoManager::FindPlacedVolume: Multiple logical volumes with identifier \""
-                    << label << "\" found: [" << output->id() << "], ";
+          std::cerr << "GeoManager::FindPlacedVolume: Multiple logical volumes with identifier \"" << label
+                    << "\" found: [" << output->id() << "], ";
         } else {
           std::cerr << ", ";
         }
@@ -334,8 +317,8 @@ LogicalVolume *GeoManager::FindLogicalVolume(char const *const label)
       } else {
         if (!multiple) {
           multiple = true;
-          std::cerr << "GeoManager::FindLogicalVolume: Multiple logical volumes with identifier \""
-                    << label << "\" found: [" << output->id() << "], ";
+          std::cerr << "GeoManager::FindLogicalVolume: Multiple logical volumes with identifier \"" << label
+                    << "\" found: [" << output->id() << "], ";
         } else {
           std::cerr << ", ";
         }
@@ -384,14 +367,14 @@ void GeoManager::Clear()
   }
 }
 
-#ifdef VECGEOM_USE_NAVINDEX
-bool GeoManager::MakeNavIndexTable(int depth_limit, bool validate) const
+#if defined(VECGEOM_USE_NAVINDEX) || defined(VECGEOM_USE_NAVTUPLE)
+bool GeoManager::MakeNavIndexTable(int depth_limit, int min_per_scene, bool validate) const
 {
   if (gNavIndex) {
     std::cerr << "=== GeoManager::MakeNavIndexTable: navigation table already created\n";
     return false;
   }
-  bool success = NavIndexTable::Instance()->CreateTable(GetWorld(), getMaxDepth(), depth_limit);
+  bool success = NavIndexTable::Instance()->CreateTable(GetWorld(), getMaxDepth(), depth_limit, min_per_scene);
   if (success) {
     gNavIndex = NavIndexTable::Instance()->GetTable();
     NavIndexTable::Instance()->SetVolumeBuffer(gCompactPlacedVolBuffer);

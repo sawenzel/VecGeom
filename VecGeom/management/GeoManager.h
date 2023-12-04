@@ -42,10 +42,11 @@ private:
   std::map<unsigned int, VPlacedVolume *> fPlacedVolumesMap;
   std::map<unsigned int, LogicalVolume *> fLogicalVolumesMap;
   std::map<VPlacedVolume const *, unsigned int> fVolumeToIndexMap;
-  std::vector<LogicalVolume*> fLogicalVolumesArray;
-  int fMaxDepth   = 0;     // maximum geometry depth
-  int fCacheDepth = 0;     // caching level for global transformations (0 = cache all)_
-  bool fIsClosed  = false; // geometry closed flag
+  std::vector<LogicalVolume *> fLogicalVolumesArray;
+  int fMaxDepth    = 0;     // maximum geometry depth
+  int fCacheDepth  = 0;     // caching level for global transformations (0 = cache all)_
+  int fMinPerScene = 1000;  // minimum number of touchables to trigger scene creation in tuple mode
+  bool fIsClosed   = false; // geometry closed flag
 
   /// Traverses the geometry tree of placed volumes and applies injected Visitor.
   template <typename Visitor>
@@ -187,6 +188,8 @@ public:
 
   void RegisterLogicalVolume(LogicalVolume *const logical_volume);
 
+  void SetMinPerScene(int touchables) { fMinPerScene = touchables; }
+
   void DeregisterPlacedVolume(const int id);
 
   void DeregisterLogicalVolume(const int id);
@@ -202,10 +205,7 @@ public:
    */
   VPlacedVolume *FindPlacedVolume(char const *const label);
 
-  VECGEOM_FORCE_INLINE VPlacedVolume *GetPlacedVolume(const uint id)
-  {
-    return &gCompactPlacedVolBuffer[id];
-  }
+  VECGEOM_FORCE_INLINE VPlacedVolume *GetPlacedVolume(const uint id) { return &gCompactPlacedVolBuffer[id]; }
 
   /**
    * \return Volume with passed id, or NULL is the id wasn't found.
@@ -218,10 +218,7 @@ public:
    */
   LogicalVolume *FindLogicalVolume(char const *const label);
 
-  VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id)
-  {
-    return fLogicalVolumesArray[id];
-  }
+  VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id) { return fLogicalVolumesArray[id]; }
 
   /**
    * \return Id of logical volume with passed label, or -1 if not found
@@ -257,8 +254,9 @@ public:
   size_t GetTotalNodeCount() const { return fTotalNodeCount; }
 
   /// Creates the navigation index table, caching global transformations down to a given geometry depth
-#ifdef VECGEOM_USE_NAVINDEX
-  bool MakeNavIndexTable(int depth_limit = 0, bool validate = false) const;
+  /// min_per_scene is the minimum number of touchables to trigger scene creation for navigation tuples
+#if defined(VECGEOM_USE_NAVINDEX) || defined(VECGEOM_USE_NAVTUPLE)
+  bool MakeNavIndexTable(int depth_limit = 0, int min_per_scene = 1000, bool validate = true) const;
 #endif
 
 private:

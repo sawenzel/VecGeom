@@ -29,7 +29,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
  */
 class NavStateIndex {
 public:
-  using Value_t = unsigned long;
+  using Value_t = unsigned int;
 
 private:
   NavIndex_t fNavInd     = 0;     ///< Navigation state index
@@ -97,6 +97,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   NavIndex_t GetNavIndex() const { return fNavInd; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  NavIndex_t GetState() const { return fNavInd; }
 
   VECCORE_ATT_HOST_DEVICE
   int GetObjectSize() const { return (int)sizeof(NavStateIndex); }
@@ -184,6 +188,15 @@ public:
     return *content_level;
   }
 
+  /// @brief Implementation for getting the scene id for a given navigation index
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static bool GetSceneIdImpl(NavIndex_t const & /*nav_ind*/, unsigned short &scene_id, unsigned short &newscene_id)
+  {
+    scene_id = newscene_id = 0;
+    return false;
+  }
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   static NavIndex_t GetNavIndexImpl(NavIndex_t nav_ind, int level)
@@ -213,13 +226,25 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  static NavIndex_t PopImpl(NavIndex_t nav_ind) { return (nav_ind > 0) ? NavInd(nav_ind) : 0; }
+  static unsigned int GetLogicalIdImpl(NavIndex_t nav_ind)
+  {
+    auto top = TopImpl(nav_ind);
+    return top ? top->GetLogicalVolume()->id() : 0;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  static NavIndex_t PushImpl(NavIndex_t nav_ind, VPlacedVolume const *v)
+  static bool IsSceneImpl(NavIndex_t nav_ind) { return nav_ind == 0; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static void PopImpl(NavIndex_t &nav_ind) { nav_ind = (nav_ind > 0) ? NavInd(nav_ind) : 0; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static void PushImpl(NavIndex_t &nav_ind, VPlacedVolume const *v)
   {
-    return (nav_ind > 0) ? NavInd(nav_ind + 4 + v->GetChildId()) : 1;
+    nav_ind = (nav_ind > 0) ? NavInd(nav_ind + 4 + v->GetChildId()) : 1;
   }
 
   VECGEOM_FORCE_INLINE
@@ -264,6 +289,16 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  static void TopInSceneMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans)
+  {
+    // Get transformation of the node in the top scene
+    TopMatrixImpl(nav_ind, trans);
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  static void SceneMatrixImpl(NavIndex_t const & /*nav_tuple*/, Transformation3D & /*trans*/) {}
+
+  VECCORE_ATT_HOST_DEVICE
   static Vector3D<Precision> GlobalToLocalImpl(NavIndex_t nav_ind, Vector3D<Precision> const &globalpoint)
   {
     Transformation3D trans;
@@ -295,23 +330,52 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  NavIndex_t GetParentSceneTopId() const { return 0; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool GetSceneId(unsigned short &scene_id, unsigned short &newscene_id) const
+  {
+    scene_id = newscene_id = 0;
+    return false;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  unsigned int GetSceneLevel() const { return 0; }
+
+  /// @brief Implementation for getting the parent scene id
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  unsigned short GetParentScene() const { return 0; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  unsigned int GetLogicalId() const { return GetLogicalIdImpl(fNavInd); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsScene() const { return false; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   bool IsDescendent(NavIndex_t parent) const { return IsDescendentImpl(fNavInd, parent); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Push(VPlacedVolume const *v)
-  {
-    // fLastExited = fNavInd;
-    fNavInd = PushImpl(fNavInd, v);
-  }
+  void Push(VPlacedVolume const *v) { PushImpl(fNavInd, v); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Pop()
-  {
-    // fLastExited = fNavInd;
-    fNavInd = PopImpl(fNavInd);
-  }
+  void PushScene(NavIndex_t) {}
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void Pop() { PopImpl(fNavInd); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void PopScene() { fNavInd = 0; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -367,6 +431,12 @@ public:
   {
     TopMatrixImpl(GetNavIndexImpl(fNavInd, tolevel), trans);
   }
+
+  VECCORE_ATT_HOST_DEVICE
+  void TopInSceneMatrix(Transformation3D &trans) const { TopInSceneMatrixImpl(fNavInd, trans); }
+
+  VECCORE_ATT_HOST_DEVICE
+  void SceneMatrix(Transformation3D & /*trans*/) const {}
 
   // returning a "delta" transformation that can transform
   // coordinates given in reference frame of this->Top() to the reference frame of other->Top()
@@ -437,6 +507,9 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   void Print() const;
+
+  VECCORE_ATT_HOST_DEVICE
+  void PrintTop() const { Print(); }
 
   VECCORE_ATT_HOST_DEVICE
   void Dump() const { Print(); }

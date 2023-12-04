@@ -55,7 +55,7 @@ public:
         fError = 1;
         return;
       }
-      nav_ind = NavStateIndex::PushImpl(nav_ind, pdaughter);
+      NavStateIndex::PushImpl(nav_ind, pdaughter);
     }
 
     // Check if navigation index matches input
@@ -76,10 +76,14 @@ public:
       return;
     }
 
-    // Check if mother navigation index is consistent
-    if (level > 0 && nav_ind != NavStateIndex::PushImpl(NavStateIndex::PopImpl(nav_ind), pdaughter)) {
-      fError = 5;
-      return;
+    if (level > 0) {
+      auto nav_ind_m = nav_ind;
+      NavStateIndex::PopImpl(nav_ind_m);
+      NavStateIndex::PushImpl(nav_ind_m, pdaughter);
+      if (nav_ind_m != nav_ind) {
+        fError = 5;
+        return;
+      }
     }
 
     // Check if the number of daughters is correct
@@ -91,7 +95,9 @@ public:
     Transformation3D trans, trans_nav_ind;
     state->TopMatrix(trans);
     NavStateIndex::TopMatrixImpl(nav_ind, trans_nav_ind);
-    if (!trans.operator==(trans_nav_ind)) {
+    // If transformations are not cached to the full depth, strict equality does not stand:
+    // rounded(t1 * t2) * t3 * t4 != t1 * t2 * t3 * t4
+    if (!trans.ApproxEqual(trans_nav_ind)) {
       fError = 7;
       return;
     }
@@ -99,6 +105,91 @@ public:
     // success
     fError = 0;
     fNiter++;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  void apply_tuple(NavStatePath *state, NavTuple_t &nav_tuple)
+  {
+    unsigned char level            = state->GetLevel();
+    int dind                       = 0;
+    NavTuple_t nav_tpl             = 1;
+    VPlacedVolume const *pdaughter = nullptr;
+    for (int i = 1; i < level + 1; ++i) {
+      pdaughter = state->At(i);
+      dind      = pdaughter->GetChildId();
+      if (dind < 0) {
+        fError = 1;
+        return;
+      }
+      NavStateTuple::PushImpl(nav_tpl, pdaughter);
+    }
+
+    // Check if navigation index matches input
+    if (nav_tpl != nav_tuple) {
+      fError = 2;
+      return;
+    }
+
+    // Check if the physical volume is correct
+    if (NavStateTuple::TopImpl(nav_tuple) != state->Top()) {
+      fError = 3;
+      NavStateTuple::TopImpl(nav_tuple);
+      return;
+    }
+
+    // Check if the current level is valid
+    if (level != NavStateTuple::GetLevelImpl(nav_tuple)) {
+      NavStateTuple::GetLevelImpl(nav_tuple);
+      fError = 4;
+      return;
+    }
+
+    // Check if mother navigation index is consistent
+    if (level > 0) {
+      auto nav_tuple_m = nav_tuple;
+      NavStateTuple::PopImpl(nav_tuple_m);
+      NavStateTuple::PushImpl(nav_tuple_m, pdaughter);
+      if (nav_tuple_m != nav_tuple) {
+        fError      = 5;
+        nav_tuple_m = nav_tuple;
+        NavStateTuple::PopImpl(nav_tuple_m);
+        NavStateTuple::PushImpl(nav_tuple_m, pdaughter);
+        return;
+      }
+    }
+
+    // Check if the number of daughters is correct
+    if (NavStateTuple::GetNdaughtersImpl(nav_tuple) != state->Top()->GetDaughters().size()) {
+      fError = 6;
+      return;
+    }
+
+    // Check the top transformation
+    Transformation3D trans, trans_nav_tuple;
+    state->TopMatrix(trans);
+    NavStateTuple::TopMatrixImpl(nav_tuple, trans_nav_tuple);
+    // If transformations are not cached to the full depth, strict equality does not stand:
+    // rounded(t1 * t2) * t3 * t4 != t1 * t2 * t3 * t4
+    if (!trans.ApproxEqual(trans_nav_tuple)) {
+      Transformation3D trans_test, trans_nav_tuple_test;
+      state->TopMatrix(trans_test);
+      NavStateTuple::TopMatrixImpl(nav_tuple, trans_nav_tuple_test);
+      fError = 7;
+      return;
+    }
+
+    // Check the volume id
+    if (level > 0) {
+      auto ivol = pdaughter->GetLogicalVolume()->id();
+      if (ivol != NavStateTuple::GetLogicalIdImpl(nav_tuple)) {
+        NavStateTuple::GetLevelImpl(nav_tuple);
+        fError = 8;
+        return;
+      }
+    }
+
+    // success
+    fError = 0;
   }
 };
 
@@ -127,9 +218,45 @@ int visitAllPlacedVolumesPassNavIndex(VPlacedVolume const *currentvolume, Visito
     }
     if (visitor->GetNiter() > maxiter) return 0;
     for (auto daughter : currentvolume->GetDaughters()) {
-      auto nav_ind_d = NavStateIndex::PushImpl(nav_ind, daughter);
+      auto nav_ind_d = nav_ind;
+      NavStateIndex::PushImpl(nav_ind_d, daughter);
       ierr           = visitAllPlacedVolumesPassNavIndex(daughter, visitor, state, nav_ind_d);
       if (ierr > 0) return ierr;
+      if (visitor->GetNiter() > maxiter) return 0;
+    }
+    state->Pop();
+  }
+  return 0;
+}
+
+/// Traverses the geometry tree keeping track of the state context (volume path or navigation state)
+/// and applies the injected Visitor
+template <typename Visitor>
+VECCORE_ATT_DEVICE
+int visitAllPlacedVolumesPassNavTuple(VPlacedVolume const *currentvolume, Visitor *visitor, NavStatePath *state,
+                                      NavTuple_t nav_tuple)
+{
+  const char *errcodes[] = {"incompatible daughter pointer",
+                            "navigation index mismatch",
+                            "top placed volume pointer mismatch",
+                            "level mismatch",
+                            "navigation index inconsistency for Push/Pop",
+                            "number of daughters mismatch",
+                            "transformation matrix mismatch"};
+  constexpr int maxiter  = 100000; // limit the maximum number of iterations (slow on 1 GPU thread)
+  if (currentvolume != NULL) {
+    state->Push(currentvolume);
+    visitor->apply_tuple(state, nav_tuple);
+    auto ierr = visitor->GetError();
+    if (ierr) {
+      printf("=== EEE === TestNavIndex: %s\n", errcodes[ierr - 1]);
+      return ierr;
+    }
+    for (auto daughter : currentvolume->GetDaughters()) {
+      NavStateTuple::PushImpl(nav_tuple, daughter);
+      ierr = visitAllPlacedVolumesPassNavTuple(daughter, visitor, state, nav_tuple);
+      if (ierr) return ierr;
+      NavStateTuple::PopImpl(nav_tuple);
       if (visitor->GetNiter() > maxiter) return 0;
     }
     state->Pop();
@@ -149,7 +276,11 @@ __global__ void TestNavIndexGPUKernel(vecgeom::cuda::VPlacedVolume const *const 
 
   NavIndex_t nav_ind_top = 1; // The navigation index corresponding to the world
 
+#ifdef VECGEOM_USE_NAVTUPLE
+  *ierr = visitAllPlacedVolumesPassNavTuple(gpu_world, &visitor, state, NavTuple_t{nav_ind_top});
+#else
   *ierr = visitAllPlacedVolumesPassNavIndex(gpu_world, &visitor, state, nav_ind_top);
+#endif
 }
 
 int TestNavIndexGPU(vecgeom::cxx::VPlacedVolume const *const world, int maxdepth)

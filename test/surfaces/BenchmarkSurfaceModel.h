@@ -20,13 +20,13 @@
 using BrepHelper = vgbrep::BrepHelper<vecgeom::Precision>;
 using namespace vecgeom;
 
-bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state, double safety, int nsamples)
+bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, double safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
   // all of them are located in in_state
   auto &rng         = RNG::Instance();
   auto const navind = in_state.GetNavIndex();
-  NavStateIndex new_state;
+  NavigationState new_state;
   bool is_safe = true;
   for (int i = 0; i < nsamples; ++i) {
     new_state.Clear();
@@ -48,7 +48,7 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
                     vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   // Locate the start point. This is not yet implemented in the surface model
-  NavStateIndex in_state, out_state;
+  NavigationState in_state, out_state;
   int exit_surf   = 0;
   double dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
@@ -105,7 +105,7 @@ bool ValidateNavigation(int npoints, double worldX, double worldY, double worldZ
     // shoot the same ray in the surface model
     int exit_surf = 0;
     bool safesafe = true;
-    NavStateIndex in_state, out_state, surflocate_state;
+    NavigationState in_state, out_state, surflocate_state;
     vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, true);
     auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
     auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
@@ -177,7 +177,7 @@ bool ShootOneParticle(double px, double py, double pz, double dx, double dy, dou
 
   // shoot the same ray in the surface model
   int exit_surf = 0;
-  NavStateIndex out_state;
+  NavigationState out_state;
   auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, exit_surf);
   if (out_state.GetNavIndex() != outputStates[0]->GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
     num_errors++;
@@ -206,7 +206,7 @@ void TestPerformance(double worldX, double worldY, double worldZ, double scale, 
   // now setup all the navigation states
   int ndeep = GeoManager::Instance().getMaxDepth();
   NavStatePool origStates(npoints, ndeep);
-  NavStateIndex out_state;
+  NavigationState out_state;
   vecgeom::Precision distance = 0;
   auto *nav                   = vecgeom::NewSimpleNavigator<>::Instance();
 
@@ -259,7 +259,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
   // now setup all the navigation states
   int ndeep = GeoManager::Instance().getMaxDepth();
   NavStatePool origStates(npoints, ndeep);
-  NavStateIndex out_state;
+  NavigationState out_state;
   vecgeom::Precision distance = 0;
   auto *nav                   = vecgeom::NewSimpleNavigator<>::Instance();
 

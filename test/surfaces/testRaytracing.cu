@@ -14,7 +14,7 @@ using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
 using Vec3Dc = Precision[3];
 
 //==================================================================================
-__global__ void LocateSolids(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states,
+__global__ void LocateSolids(int nrays, Vector3D<Precision> const *points, NavigationState *in_states,
                              const VPlacedVolume *world)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -24,7 +24,7 @@ __global__ void LocateSolids(int nrays, Vector3D<Precision> const *points, NavSt
   }
 }
 //==================================================================================
-__global__ void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states,
+__global__ void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavigationState *in_states,
                                 const VPlacedVolume *world)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -35,7 +35,7 @@ __global__ void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, Na
 }
 //==================================================================================
 __global__ void LocateSurf(int nrays, Vector3D<Precision> const *points,
-                           NavStateIndex *out_states, const VPlacedVolume *world)
+                           NavigationState *out_states, const VPlacedVolume *world)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     // Locate with surface-based model
@@ -43,13 +43,13 @@ __global__ void LocateSurf(int nrays, Vector3D<Precision> const *points,
   }
 }
 //==================================================================================
-__global__ void ResetStates(int nrays, NavStateIndex *out_states)
+__global__ void ResetStates(int nrays, NavigationState *out_states)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x)
     out_states[i].Clear();
 }
 //==================================================================================
-__global__ void ValidateLocate(int nrays, NavStateIndex const *in_states, NavStateIndex const *out_states,
+__global__ void ValidateLocate(int nrays, NavigationState const *in_states, NavigationState const *out_states,
                                int *num_errors)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -58,7 +58,7 @@ __global__ void ValidateLocate(int nrays, NavStateIndex const *in_states, NavSta
 }
 //==================================================================================
 __global__ void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points,
-                                    NavStateIndex *in_states, Precision *safeties)
+                                    NavigationState *in_states, Precision *safeties)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     int exit_surf;
@@ -66,7 +66,7 @@ __global__ void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points
   }
 }
 //==================================================================================
-__global__ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+__global__ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                                      Precision *ref_safeties)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -74,7 +74,7 @@ __global__ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *point
   }
 }
 //==================================================================================
-__global__ void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+__global__ void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                                         Precision *ref_safeties)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -94,7 +94,7 @@ __global__ void ValidateSafety(int nrays, Precision const *safeties, Precision c
 template <typename Navigator>
 __device__
 void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                       NavStateIndex const *in_states, Precision *length_over_crossings, bool debug = false)
+                       NavigationState const *in_states, Precision *length_over_crossings, bool debug = false)
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   if (debug) {
@@ -102,8 +102,8 @@ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precis
     printf("   ");
     in_states[i].Print();
   }
-  NavStateIndex start_state = in_states[i];
-  NavStateIndex out_state;
+  NavigationState start_state = in_states[i];
+  NavigationState out_state;
   int num_cross   = 0;
   double dist_tot = 0;
   auto const &dir = dirs[i];
@@ -126,7 +126,7 @@ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vector3D<Precis
 }
 //==================================================================================
 __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points,
-                                 Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
+                                 Vector3D<Precision> const *dirs, NavigationState const *in_states,
                                  Precision *length_over_crossings, bool debug = false)
 {
   if (debug) {
@@ -134,8 +134,8 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points,
     printf("   ");
     in_states[i].Print();
   }
-  NavStateIndex start_state = in_states[i];
-  NavStateIndex out_state;
+  NavigationState start_state = in_states[i];
+  NavigationState out_state;
   int num_cross   = 0;
   int exit_surf   = 0;
   double dist_tot = 0;
@@ -160,7 +160,7 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points,
 //==================================================================================
 template <typename Navigator>
 __global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                   NavStateIndex const *in_states, Precision *length_over_crossings)
+                                   NavigationState const *in_states, Precision *length_over_crossings)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     PropagateRaySolid<Navigator>(i, points, dirs, in_states, length_over_crossings);
@@ -168,7 +168,7 @@ __global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points,
 }
 //==================================================================================
 __global__ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points,
-                                  Vector3D<Precision> const *dirs, NavStateIndex const *in_states,
+                                  Vector3D<Precision> const *dirs, NavigationState const *in_states,
                                   Precision *length_over_crossings)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
@@ -177,7 +177,7 @@ __global__ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points,
 }
 //==================================================================================
 __global__ void ValidateTraversal(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                  NavStateIndex const *in_states,
+                                  NavigationState const *in_states,
                                   Precision *length_over_crossings, Precision *refLength_over_crossings,
                                   int *num_errors, bool debug)
 {
@@ -212,10 +212,10 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   Vec3D *dirs;
   BREP_CUDA_CHECK(cudaMalloc(&dirs, nrays * sizeof(Vec3D)));
   BREP_CUDA_CHECK(cudaMemcpy(dirs, dirsh, nrays * sizeof(Vec3D), cudaMemcpyHostToDevice));
-  NavStateIndex *origStates;
-  BREP_CUDA_CHECK(cudaMalloc(&origStates, nrays * sizeof(NavStateIndex)));
-  NavStateIndex *outputStates;
-  BREP_CUDA_CHECK(cudaMalloc(&outputStates, nrays * sizeof(NavStateIndex)));
+  NavigationState *origStates;
+  BREP_CUDA_CHECK(cudaMalloc(&origStates, nrays * sizeof(NavigationState)));
+  NavigationState *outputStates;
+  BREP_CUDA_CHECK(cudaMalloc(&outputStates, nrays * sizeof(NavigationState)));
   Precision *refSafeties;
   BREP_CUDA_CHECK(cudaMalloc(&refSafeties, nrays * sizeof(Precision)));
   Precision *safeties;

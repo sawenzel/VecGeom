@@ -6,10 +6,10 @@ using namespace vecgeom;
 using BrepCudaManager = vgbrep::BrepCudaManager<vecgeom::Precision>;
 using SurfData = vgbrep::SurfData<vecgeom::Precision>;
 
-static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, NavStateIndex state)
+static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, NavigationState const state)
 {
   int exit = 0;
-  NavStateIndex out;
+  NavigationState out;
   vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exit);
   vecgeom::Precision safety = vgbrep::protonav::ComputeSafety(pos, state, exit);
 
@@ -17,7 +17,7 @@ static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, Na
 }
 
 // In testCUDA.cpp
-NavStateIndex Locate(Precision x, Precision y, Precision z);
+NavigationState Locate(Precision x, Precision y, Precision z);
 
 void TestCUDA(const SurfData &surfData)
 {
@@ -29,7 +29,7 @@ void TestCUDA(const SurfData &surfData)
 
   // Locate the point on the host; has to be in testCUDA.cpp because we
   // need the world volume and use the vecgeom::cxx namespace...
-  NavStateIndex state = Locate(pos.x(), pos.y(), pos.z());
+  NavigationState state = Locate(pos.x(), pos.y(), pos.z());
 
   Test<<<1, 1>>>(pos, dir, state);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());

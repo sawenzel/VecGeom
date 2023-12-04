@@ -1,7 +1,7 @@
 #ifndef VECGEOM_SURFACE_MODEL_H_
 #define VECGEOM_SURFACE_MODEL_H_
 
-#include <VecGeom/navigation/NavStateIndex.h>
+#include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/surfaces/base/Equations.h>
 #include <VecGeom/surfaces/surf/SurfaceImpl.h>
 #include <VecGeom/surfaces/mask/FrameMasks.h>
@@ -217,6 +217,7 @@ struct Frame {
 
 /// @brief A placed surface on a scene having a frame and a navigation state associated to a touchable
 struct FramedSurface {
+  using NavState_t = vecgeom::NavigationState::Value_t;
   UnplacedSurface fSurface;   ///< Surface identifier
   Frame fFrame;               ///< Frame
   int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
@@ -225,6 +226,9 @@ struct FramedSurface {
                               ///<   0        = non-Bool
                               ///<   positive = true logic surface
                               ///<   negative = negated logic surface
+  int fSceneCS{0};            ///< The frame may belong to a daughter scene common surface
+  int fSceneCSind{0};         ///< Index of the corresponding frame on the scene CS
+  unsigned fSurfIndex{0};     ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
   NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
   bool fUseSurfSafety{false}; ///< The surface has virtual intersections with the 3D shape. Use just the surface safety
                               ///< to outside in the minimization procedure
@@ -238,9 +242,9 @@ struct FramedSurface {
   /// Sorting by decreasing state depth and increasing state index
   bool operator<(FramedSurface const &other) const
   {
-    using vecgeom::NavStateIndex;
-    auto level1 = NavStateIndex::GetLevelImpl(fState);
-    auto level2 = NavStateIndex::GetLevelImpl(other.fState);
+    using vecgeom::NavigationState;
+    auto level1 = NavigationState::GetLevelImpl(fState);
+    auto level2 = NavigationState::GetLevelImpl(other.fState);
     if (level1 > level2)
       return true;
     else if (level1 < level2)
@@ -251,10 +255,12 @@ struct FramedSurface {
 
   /// @brief Get logical volume id for this frame
   /// @return Volume id.
-  VECCORE_ATT_HOST_DEVICE inline int VolumeId() const
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int VolumeId() const
   {
     // We may need to cache the logical volume id in the surface directly
-    return vecgeom::NavStateIndex::TopImpl(fState)->GetLogicalVolume()->id();
+    return vecgeom::NavigationState::GetLogicalIdImpl(fState);
   }
 
   /// Transform point and direction to the local frame
@@ -298,9 +304,10 @@ struct FramedSurface {
 /// @brief A list of candidate surfaces
 struct Candidates {
   int fNcand{0};             ///< Number of candidate surfaces
-  int fNEntering{0};          ///< Number of Entering candidate surfaces. fNcand = NEntering + NExiting
+  int fNExiting{0};          ///< Number of exiting candidate surfaces. fNcand = NEntering + NExiting
   int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
   int *fFrameInd{nullptr};   ///< [fNcand] Start index of the frame contributed by the touchable on the common surface
+  char *fSides{nullptr};     ///< [fNcand] Side containing relevant frames for each candidate (0=left, 1=right, 2=both)
 
   VECCORE_ATT_HOST_DEVICE
   int operator[](int i) const { return fCandidates[i]; }
@@ -334,9 +341,16 @@ struct Side {
   }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE inline FramedSurface const &GetSurface(int index, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &GetSurface(int index,
+                                                                               SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &Top(SurfData<Real_t> const &surfdata) const
+  {
+    return surfdata.fFramedSurf[fSurfaces[fNsurf - 1]];
   }
 
   size_t size() const { return sizeof(Side) + fNsurf * sizeof(int); }
@@ -349,11 +363,13 @@ struct Side {
 
 /// @brief A common surface made of two sides, having a global transformation.
 struct CommonSurface {
+  using NavState_t = vecgeom::NavigationState::Value_t;
   SurfaceType fType{kPlanar};  ///< Type of surface
+  int fSceneId{0};             ///< Scene id. if negative, it is a top scene id
   int fTrans{-1};              ///< Transformation of the first left frame
-  NavIndex_t fDefaultState{0}; ///< The default state for this surface (deepest mother)
-  Side fLeftSide;              ///< Left-side portal side id (behind normal)
-  Side fRightSide;             ///< Right-side portal side id (alongside normal)
+  NavState_t fDefaultState{0}; ///< The default state for this surface (deepest mother)
+  Side fLeftSide;              ///< Left-side (behind normal)
+  Side fRightSide;             ///< Right-side (alongside normal)
 
   CommonSurface() = default;
 
@@ -362,6 +378,14 @@ struct CommonSurface {
     // Add by default the first surface to the left side
     fLeftSide.AddSurface(global_surf);
   };
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int GetSceneId() const { return std::abs(fSceneId); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsSceneSurface() const { return (fSceneId < 0); }
 
   ///< Get the normal to the surface from a point on surface
   template <typename Real_t>
@@ -379,7 +403,7 @@ struct CommonSurface {
 
 /// @brief A volume shell holding indices for all placed surfaces belonging to a volume.
 struct VolumeShell {
-  int fNsurf;              ///< Number of local surfaces
+  int fNsurf{0};           ///< Number of local surfaces
   int *fSurfaces{nullptr}; ///< Local surface id's
   LogicExpression fLogic;  ///< Logic expression for local surfaces
 
@@ -406,14 +430,12 @@ struct VolumeShell {
   }
 };
 
-class BVH;
-
 // A level of the geometry setup with a coordinate system and multiple volumes
 // Currently called 'Universe' in Orange (name taken from MCNP, other codes)
-// A detector or setup will be composed of one or two levels of Scene
+// A detector or setup will be composed of a number of levels of Scene
 struct Scene {
-  CommonSurface *fSurfaces{nullptr}; // Doors to other scenes
-  BVH *fNavigator{nullptr};
+  int fNsurf;              /// Number of common surfaces in the scene
+  int *fSurfaces{nullptr}; ///< Common surface id's
 };
 // How we decompose scene in hierarchical Scenes
 //
@@ -437,16 +459,17 @@ struct SurfData {
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
 
+  int fNscenes{0};
   int fNlocalTrans{0};
   int fNglobalTrans{0};
   int fNlocalSurf{0};
   int fNglobalSurf{0};
+  int fNcylsph{0};
+  int fNcone{0};
   int fNcommonSurf{0};
   int fNsides{0};
   int fNStates{0};
   int fSizeCandList{0};
-  int fNcylsph{0};
-  int fNcone{0};
   int fNshells{0};
   int fNlogic{0};
   int fNrange{0};
@@ -456,19 +479,25 @@ struct SurfData {
   int fNtriangs{0};
   int fNquads{0};
 
-  /// Transformations. A portal transformation is a tuple global + local
+  int *fSceneStartIndex{nullptr}; ///< Start indices for data indexed by state id (per scene)
+  int *fSceneTouchables{nullptr}; ///< Number of touchables (per scene)
+
+  /// Transformations.
   Transformation *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
   Transformation *fGlobalTrans{nullptr}; ///< Touchable global transformations
+
+  /// Volume shells, indexed by the logical volume id
+  VolumeShell *fShells{nullptr}; ///< volume shells
+
+  // Local and global framed surfaces
+  FramedSurface *fLocalSurf{nullptr};  ///< local surfaces
+  FramedSurface *fFramedSurf{nullptr}; ///< global surfaces
 
   /// Cylindrical surface data (radius)
   CylData_t *fCylSphData{nullptr}; ///< Cyl and sphere data
   ConeData_t *fConeData{nullptr};  ///< Cone data
 
-  /// Volume shells, indexed by the logical volume id
-  VolumeShell *fShells{nullptr}; ///< volume shells
-
-  FramedSurface *fLocalSurf{nullptr};      ///< local surfaces
-  FramedSurface *fFramedSurf{nullptr};     ///< global surfaces
+  // Frame data
   WindowMask_t *fWindowMasks{nullptr};     ///< rectangular masks
   RingMask_t *fRingMasks{nullptr};         ///< ring masks
   ZPhiMask_t *fZPhiMasks{nullptr};         ///< cylindrical masks
@@ -482,7 +511,8 @@ struct SurfData {
   int *fCandList{nullptr};                 ///< global list of candidate indices
 
   VECCORE_ATT_HOST_DEVICE
-  static inline SurfData<Real_t> &Instance()
+  VECGEOM_FORCE_INLINE
+  static SurfData<Real_t> &Instance()
   {
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     return *globaldevicesurfdata::gSurfDataDevice<Real_t>;
@@ -492,26 +522,42 @@ struct SurfData {
 #endif
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Candidates const &GetCandidates(int scene_id, int state_id) const
+  {
+    return fCandidates[fSceneStartIndex[scene_id] + state_id];
+  }
+
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
   {
     FramedSurface const &surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];

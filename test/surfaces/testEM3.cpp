@@ -22,7 +22,7 @@ using namespace vecgeom;
 // Forwards
 void CreateVecGeomWorld(int, int);
 void CreateTubeWorld(int, int);
-bool CheckSafety(Vector3D<Precision> const &, NavStateIndex const &, double, int);
+bool CheckSafety(Vector3D<Precision> const &, NavigationState const &, double, int);
 bool ValidateNavigation(int, int, int, int, int);
 bool ValidateTubeNavigation(int, int);
 void TestPerformance(int, int, int, int, int);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   BrepHelper::Instance().SetVerbosity(verbose);
 
   if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesFlatTop()) return 2;
+  if (!BrepHelper::Instance().CreateCommonSurfacesScenes()) return 2;
 
   ValidateNavigation(nvalidate, layers, locatecheck, distcheck, safecheck);
 
@@ -116,13 +116,13 @@ void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
   GeoManager::Instance().SetWorldAndClose(worldPlaced);
 }
 
-bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state, double safety, int nsamples)
+bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, double safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
   // all of them are located in in_state
   auto &rng         = RNG::Instance();
   auto const navind = in_state.GetNavIndex();
-  NavStateIndex new_state;
+  NavigationState new_state;
   bool is_safe = true;
   for (int i = 0; i < nsamples; ++i) {
     new_state.Clear();
@@ -142,7 +142,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
 double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const &direction)
 {
   // Locate the start point. This is not yet implemented in the surface model
-  NavStateIndex in_state, out_state;
+  NavigationState in_state, out_state;
   int exit_surf   = 0;
   double dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
@@ -206,7 +206,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
 
     // shoot the same ray in the surface model
     int exit_surf = 0;
-    NavStateIndex out_state, locate_state;
+    NavigationState out_state, locate_state;
     double distance = 0, safety = 0;
     bool safesafe = true;
     if (locatecheck) vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, true);
@@ -298,7 +298,7 @@ void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, 
   // now setup all the navigation states
   int ndeep = GeoManager::Instance().getMaxDepth();
   NavStatePool origStates(npoints, ndeep);
-  NavStateIndex out_state;
+  NavigationState out_state;
   Precision distance = 0;
   auto *nav          = NewSimpleNavigator<>::Instance();
 

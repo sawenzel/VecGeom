@@ -28,12 +28,13 @@ using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
 using Vec3Dc = Precision[3];
 
 //==================================================================================
-int LoadGDML(const char *gdml_name, bool ongpu)
+int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene)
 {
 #ifndef VECGEOM_GDML
   std::cout << "### VecGeom must be compiled with GDML support to run this.\n";
   return 1;
 #else
+  GeoManager::Instance().SetMinPerScene(min_per_scene);
   auto load = vgdml::Frontend::Load(gdml_name, false, 1);
   if (!load) return 2;
 #endif
@@ -55,21 +56,21 @@ int LoadGDML(const char *gdml_name, bool ongpu)
   return 0;
 }
 //==================================================================================
-void LocateSolids(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
+void LocateSolids(int nrays, Vector3D<Precision> const *points, NavigationState *in_states)
 {
   for (auto i = 0; i < nrays; ++i) {
     LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
   }
 }
 //==================================================================================
-void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex *in_states)
+void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, NavigationState *in_states)
 {
   for (auto i = 0; i < nrays; ++i) {
     BVHNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
   }
 }
 //==================================================================================
-void LocateSurf(int nrays, Vector3D<Precision> const *points, NavStateIndex *out_states)
+void LocateSurf(int nrays, Vector3D<Precision> const *points, NavigationState *out_states)
 {
   for (auto i = 0; i < nrays; ++i) {
     auto const &pos = points[i];
@@ -78,8 +79,8 @@ void LocateSurf(int nrays, Vector3D<Precision> const *points, NavStateIndex *out
   }
 }
 //==================================================================================
-int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
-                   NavStateIndex *out_states, bool debug)
+int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
+                   NavigationState *out_states, bool debug)
 {
   int num_errors = 0;
   for (auto i = 0; i < nrays; ++i) {
@@ -101,7 +102,7 @@ int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavStateIndex c
   return num_errors;
 }
 //==================================================================================
-void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                           Precision *ref_safeties)
 {
   for (auto i = 0; i < nrays; ++i) {
@@ -110,7 +111,7 @@ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavState
   }
 }
 //==================================================================================
-void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                              Precision *safeties)
 {
   for (auto i = 0; i < nrays; ++i) {
@@ -119,7 +120,7 @@ void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavSt
   }
 }
 //==================================================================================
-void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                          Precision *safeties)
 {
   for (auto i = 0; i < nrays; ++i) {
@@ -128,13 +129,13 @@ void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points, NavStateI
   }
 }
 //==================================================================================
-bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state, double safety, int nsamples)
+bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, double safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
   // all of them are located in in_state
   auto &rng         = RNG::Instance();
   auto const navind = in_state.GetNavIndex();
-  NavStateIndex new_state;
+  NavigationState new_state;
   bool is_safe = true;
   for (int i = 0; i < nsamples; ++i) {
     new_state.Clear();
@@ -151,7 +152,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavStateIndex const &in_state
   return is_safe;
 }
 //==================================================================================
-int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavStateIndex const *in_states,
+int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                    Precision const *safeties, Precision const *refSafeties, bool debug, int &num_better_safety,
                    int &num_worse_safety)
 {
@@ -187,7 +188,7 @@ int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavStateIndex c
 //==================================================================================
 template <typename Navigator>
 void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                        NavStateIndex const *in_states, Precision *length_over_crossings, int idebug = -1)
+                        NavigationState const *in_states, Precision *length_over_crossings, int idebug = -1)
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   int ilast                      = nrays;
@@ -201,8 +202,8 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
     ilast  = istart + 1;
   }
   for (auto i = istart; i < ilast; ++i) {
-    NavStateIndex start_state = in_states[i];
-    NavStateIndex out_state;
+    NavigationState start_state = in_states[i];
+    NavigationState out_state;
     int num_cross   = 0;
     double dist_tot = 0;
     auto const &dir = dirs[i];
@@ -226,7 +227,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
 }
 //==================================================================================
 void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                       NavStateIndex const *in_states, Precision *length_over_crossings, int idebug = -1)
+                       NavigationState const *in_states, Precision *length_over_crossings, int idebug = -1)
 {
   int ilast  = nrays;
   int istart = 0;
@@ -238,8 +239,8 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
     ilast  = istart + 1;
   }
   for (auto i = istart; i < ilast; ++i) {
-    NavStateIndex start_state = in_states[i];
-    NavStateIndex out_state;
+    NavigationState start_state = in_states[i];
+    NavigationState out_state;
     int num_cross   = 0;
     int exit_surf   = 0;
     double dist_tot = 0;
@@ -264,7 +265,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
 }
 //==================================================================================
 int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                     NavStateIndex const *in_states, Precision *refLength_over_crossings,
+                     NavigationState const *in_states, Precision *refLength_over_crossings,
                      Precision *length_over_crossings, bool debug)
 {
   int num_errors_dist = 0;
@@ -284,9 +285,8 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug)
 {
   // allocate storage
-  NavStateIndex *origStates   = new NavStateIndex[nrays];
-  NavStateIndex *outputStates = new NavStateIndex[nrays];
-  ;
+  NavigationState *origStates   = new NavigationState[nrays];
+  NavigationState *outputStates = new NavigationState[nrays];
 
   Precision *refSafeties = new Precision[nrays];
   memset(refSafeties, 0, sizeof(Precision) * nrays);
@@ -407,12 +407,13 @@ int main(int argc, char *argv[])
   OPTION_INT(nrays, 10000);
   OPTION_INT(debug, 0);
   OPTION_INT(verbosity, 0);
+  OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
 
   Stopwatch timer;
   // Load the geometry
   timer.Start();
-  bool load = LoadGDML(gdml_name.c_str(), ongpu);
+  bool load = LoadGDML(gdml_name.c_str(), ongpu, min_per_scene);
   if (load > 0) return load;
   auto time_load = timer.Stop();
   std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";

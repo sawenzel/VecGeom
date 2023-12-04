@@ -182,8 +182,8 @@ option(VECGEOM_INPLACE_TRANSFORMATIONS "Put transformation as members rather tha
 option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigation states" OFF)
 option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
 
-option(VECGEOM_USE_NAVINDEX "Use navigation index table and states" OFF)
-
+option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" OFF)
+option(VECGEOM_NAVTUPLE_MAXDEPTH "Maximum depth of navigation tuple states" 4)
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
 option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
@@ -196,9 +196,20 @@ option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release buil
 cmake_dependent_option(VECGEOM_USE_NAVINDEX
   "Use navigation index table and states"
   OFF
-  "NOT VECGEOM_ENABLE_CUDA;NOT VECGEOM_USE_SURF"
+  "NOT VECGEOM_ENABLE_CUDA;NOT VECGEOM_USE_SURF;NOT VECGEOM_USE_NAVTUPLE"
   ON
 )
+
+if(VECGEOM_USE_NAVTUPLE)
+  message(STATUS "Enabled navigation state tuple navigation with maximum depth ${VECGEOM_NAVTUPLE_MAXDEPTH}")
+  if (VECGEOM_USE_NAVINDEX)
+    set(VECGEOM_USE_NAVINDEX OFF CACHE BOOL "Use navigation index table and states" FORCE)
+  endif()
+else()
+  if (VECGEOM_USE_NAVINDEX)
+    message(STATUS "Enabled navigation state index navigation")
+  endif()
+endif()
 
 ################################################################################
 # - Testing, unit, coverage, benchmarking, validation etc

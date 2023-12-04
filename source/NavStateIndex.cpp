@@ -39,7 +39,7 @@ void NavStateIndex::GetPathAsListOfIndices(std::list<uint> &indices) const
   while (nav_ind > 1) {
     auto pvol = TopImpl(nav_ind);
     indices.push_front(pvol->GetChildId());
-    nav_ind = PopImpl(nav_ind);
+    PopImpl(nav_ind);
   }
   // Paths start always with 0
   indices.push_front(0);

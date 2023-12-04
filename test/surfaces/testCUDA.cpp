@@ -49,10 +49,10 @@ static void CreateVecGeomWorld()
   GeoManager::Instance().SetWorldAndClose(worldPlaced);
 }
 
-NavStateIndex Locate(Precision x, Precision y, Precision z)
+NavigationState Locate(Precision x, Precision y, Precision z)
 {
   Vector3D<Precision> pos(x, y, z);
-  NavStateIndex state;
+  NavigationState state;
   vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, state, true);
   return state;
 }
@@ -63,8 +63,8 @@ static void TestHost()
   Vector3D<Precision> dir(1, 1, 1);
   dir.Normalize();
 
-  NavStateIndex state = Locate(pos.x(), pos.y(), pos.z());
-  NavStateIndex out;
+  NavigationState state = Locate(pos.x(), pos.y(), pos.z());
+  NavigationState out;
 
   auto *nav = NewSimpleNavigator<>::Instance();
   vecgeom::Precision distance, safety;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   CreateVecGeomWorld();
 
   if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesFlatTop()) return 2;
+  if (!BrepHelper::Instance().CreateCommonSurfacesScenes()) return 2;
 
   const SurfData &surfData = BrepHelper::Instance().GetSurfData();
 

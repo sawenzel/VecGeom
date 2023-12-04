@@ -95,6 +95,8 @@ int AddSurfaceToShell(int logical_id, int isurf)
   assert(logical_id < (int)cpudata.fShells.size() && "surface shell id exceeding number of volumes");
   int id = cpudata.fShells[logical_id].fSurfaces.size();
   cpudata.fShells[logical_id].fSurfaces.push_back(isurf);
+  cpudata.fSceneShells[logical_id].fSurfaces.push_back(isurf);
+  cpudata.fLocalSurfaces[isurf].fSurfIndex = id;
   return id;
 }
 

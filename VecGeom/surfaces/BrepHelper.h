@@ -143,10 +143,11 @@ public:
         for (int i = 0; i < parent_ind; ++i) {
           auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
-          if (vecgeom::NavStateIndex::IsDescendentImpl(navind, parent_navind)) child_frame.fParent = parent_ind;
+          if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) child_frame.fParent = parent_ind;
         }
       }
       side.fNumParents = num_parents;
+      assert(num_parents > 0);
     };
 
     sortAndRemoveCommonFrames(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
@@ -157,27 +158,28 @@ public:
 
   void ComputeDefaultStates(int common_id)
   {
-    using vecgeom::NavStateIndex;
+    using vecgeom::NavigationState;
+    using NavInd_t = NavigationState::Value_t;
     // Computes the default states for each side of a common surface
     Side &left  = fCPUdata.fCommonSurfaces[common_id].fLeftSide;
     Side &right = fCPUdata.fCommonSurfaces[common_id].fRightSide;
     assert(left.fNsurf > 0 || right.fNsurf > 0);
 
-    NavIndex_t default_ind = 0;
+    NavInd_t default_ind = 0;
 
     // A lambda that finds the deepest common ancestor between 2 states
-    auto getCommonState = [&](NavIndex_t const &s1, NavIndex_t const &s2) {
-      NavIndex_t a1(s1), a2(s2);
+    auto getCommonState = [&](NavInd_t const &s1, NavInd_t const &s2) {
+      NavInd_t a1(s1), a2(s2);
       // Bring both states at the same level
-      while (NavStateIndex::GetLevelImpl(a1) > NavStateIndex::GetLevelImpl(a2))
-        a1 = NavStateIndex::PopImpl(a1);
-      while (NavStateIndex::GetLevelImpl(a2) > NavStateIndex::GetLevelImpl(a1))
-        a2 = NavStateIndex::PopImpl(a2);
+      while (NavigationState::GetLevelImpl(a1) > NavigationState::GetLevelImpl(a2))
+        NavigationState::PopImpl(a1);
+      while (NavigationState::GetLevelImpl(a2) > NavigationState::GetLevelImpl(a1))
+        NavigationState::PopImpl(a2);
 
       // Pop until we reach the same state
       while (a1 != a2) {
-        a1 = NavStateIndex::PopImpl(a1);
-        a2 = NavStateIndex::PopImpl(a2);
+        NavigationState::PopImpl(a1);
+        NavigationState::PopImpl(a2);
       }
       return a1;
     };
@@ -185,11 +187,11 @@ public:
     int minlevel = 10000; // this is a big-enough number as level
     for (int isurf = 0; isurf < left.fNsurf; ++isurf) {
       auto navind = fCPUdata.fFramedSurf[left.fSurfaces[isurf]].fState;
-      minlevel    = std::min(minlevel, (int)NavStateIndex::GetLevelImpl(navind));
+      minlevel    = std::min(minlevel, (int)NavigationState::GetLevelImpl(navind));
     }
     for (int isurf = 0; isurf < right.fNsurf; ++isurf) {
       auto navind = fCPUdata.fFramedSurf[right.fSurfaces[isurf]].fState;
-      minlevel    = std::min(minlevel, (int)NavStateIndex::GetLevelImpl(navind));
+      minlevel    = std::min(minlevel, (int)NavigationState::GetLevelImpl(navind));
     }
 
     // initialize the default state
@@ -203,7 +205,7 @@ public:
     for (int isurf = 0; isurf < right.fNsurf; ++isurf)
       default_ind = getCommonState(default_ind, fCPUdata.fFramedSurf[right.fSurfaces[isurf]].fState);
 
-    if (NavStateIndex::GetLevelImpl(default_ind) == minlevel) default_ind = NavStateIndex::PopImpl(default_ind);
+    if (NavigationState::GetLevelImpl(default_ind) == minlevel) NavigationState::PopImpl(default_ind);
     fCPUdata.fCommonSurfaces[common_id].fDefaultState = default_ind;
   }
 
@@ -341,8 +343,9 @@ public:
     const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
     auto const &surf = fSurfData->fCommonSurfaces[common_id];
     fSurfData->fGlobalTrans[surf.fTrans].InverseTransformDirection(lnorm, normal);
-    printf("\n== common surface %d: type: %s, default state: ", common_id, types[int(surf.fType)]);
-    vecgeom::NavStateIndex default_state(surf.fDefaultState);
+    vecgeom::NavigationState default_state(surf.fDefaultState);
+    int scene_id = surf.GetSceneId();
+    printf("\n== common surface %d: type: %s, scene %d, default state: ", common_id, types[int(surf.fType)], scene_id);
     default_state.Print();
     printf(" transformation %d: ", surf.fTrans);
     fSurfData->fGlobalTrans[surf.fTrans].Print();
@@ -369,7 +372,7 @@ public:
     case kTorus:
     case kGenSecondOrder:
     default:
-      VECGEOM_LOG(error) <<"Surface type " << surf.fType <<" not implemented";
+      VECGEOM_LOG(error) << "Surface type " << surf.fType << " not implemented";
     }
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
@@ -377,7 +380,12 @@ public:
       printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
-      vecgeom::NavStateIndex state(placed.fState);
+      if (placed.fFrame.type == kWindow) {
+        WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
+        printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
+               mask.rangeV[1]);
+      }
+      vecgeom::NavigationState state(placed.fState);
       state.Print();
     }
     if (surf.fRightSide.fNsurf > 0) {
@@ -404,7 +412,7 @@ public:
       case kTorus:
       case kGenSecondOrder:
       default:
-      VECGEOM_LOG(error) <<"Surface type " << surf.fType <<" not implemented";
+        VECGEOM_LOG(error) << "Surface type " << surf.fType << " not implemented";
       }
     } else {
       printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
@@ -416,7 +424,12 @@ public:
       printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
-      vecgeom::NavStateIndex state(placed.fState);
+      if (placed.fFrame.type == kWindow) {
+        WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
+        printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
+               mask.rangeV[1]);
+      }
+      vecgeom::NavigationState state(placed.fState);
       state.Print();
     }
   }
@@ -424,10 +437,11 @@ public:
   void SetNvolumes(int nvolumes)
   {
     if (fCPUdata.fShells.size() > 0) {
-      VECGEOM_LOG(warning) <<"BrepHelper::SetNvolumes already called for this instance";
+      VECGEOM_LOG(warning) << "BrepHelper::SetNvolumes already called for this instance";
       return;
     }
     fCPUdata.fShells.resize(nvolumes);
+    fCPUdata.fSceneShells.resize(nvolumes);
   }
 
   bool CreateLocalSurfaces()
@@ -436,6 +450,7 @@ public:
     std::vector<vecgeom::LogicalVolume *> volumes;
     auto n_registered_volumes = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
     vecgeom::GeoManager::Instance().GetAllLogicalVolumes(volumes);
+
     SetNvolumes(n_registered_volumes);
     // TODO: Implement a VUnplacedVolume::CreateSurfaces interface for surface creation
     // create a placeholder for surface data
@@ -443,7 +458,7 @@ public:
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
       bool result                           = conv::CreateSolidSurfaces<Real_t>(solid, volume->id());
       if (!result) {
-        VECGEOM_LOG(critical) <<"Solid type not supported for volume: " << volume->GetName();
+        VECGEOM_LOG(critical) << "Solid type not supported for volume: " << volume->GetName();
         solid->Print();
         throw std::runtime_error("unsupported solid used in surface model");
       }
@@ -469,48 +484,149 @@ public:
     return true;
   }
 
-  bool CreateCommonSurfacesFlatTop()
+  /// @brief Iterate the geometry tree and flatten surfaces at scene level
+  /// @return Success of operation
+  bool CreateCommonSurfacesScenes()
   {
-    // Iterate the geometry tree and flatten surfaces at top level
     int nphysical = 0;
-    vecgeom::NavStateIndex state;
+    int maxscene  = -1;
+    int numscenes = 0;
+    vecgeom::NavigationState state;
+    int ntot = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
+    std::vector<bool> visited(ntot, false);
+    auto &numStates = fCPUdata.fSceneTouchables;
+
+    // recursive geometry visitor lambda counting the number of states per scene
+    typedef std::function<void(vecgeom::VPlacedVolume const *)> funcCountStates_t;
+    funcCountStates_t countStatesPerScene = [&](vecgeom::VPlacedVolume const *pvol) {
+      state.Push(pvol);
+      const auto vol          = pvol->GetLogicalVolume();
+      auto ivol               = vol->id();
+      auto daughters          = vol->GetDaughters();
+      int nd                  = daughters.size();
+      unsigned short scene_id = 0, newscene_id = 0;
+      bool is_scene = state.GetSceneId(scene_id, newscene_id);
+      if (scene_id > maxscene) {
+        int ntoinsert = scene_id - maxscene + 1;
+        numStates.insert(numStates.end(), ntoinsert, 0);
+        maxscene  = scene_id;
+        numscenes = maxscene + 1;
+      }
+      numStates[scene_id]++;
+      bool do_daughters = is_scene ? (!visited[ivol]) : true;
+      if (do_daughters) {
+        for (int id = 0; id < nd; ++id) {
+          countStatesPerScene(daughters[id]);
+        }
+      }
+      visited[ivol] = is_scene;
+      state.Pop();
+    };
+
+    auto allocateExitingCandidates = [&](unsigned short scene_id, int state_id, size_t nsurf) {
+      auto &candidatesExiting = fCPUdata.GetCandidatesExiting(scene_id, state_id);
+      auto &frameIndExiting   = fCPUdata.GetFrameIndExiting(scene_id, state_id);
+      auto &sidesExiting      = fCPUdata.GetSidesExiting(scene_id, state_id);
+      if (nsurf >= candidatesExiting.size()) {
+        candidatesExiting.insert(candidatesExiting.end(), nsurf - candidatesExiting.size(), 0);
+        frameIndExiting.insert(frameIndExiting.end(), nsurf - frameIndExiting.size(), 0);
+        sidesExiting.insert(sidesExiting.end(), nsurf - sidesExiting.size(), 0);
+      }
+    };
 
     // recursive geometry visitor lambda creating the common surfaces for the current placed volume
     typedef std::function<void(vecgeom::VPlacedVolume const *)> func_t;
     func_t createCommonSurfaces = [&](vecgeom::VPlacedVolume const *pvol) {
       state.Push(pvol);
-      const auto vol = pvol->GetLogicalVolume();
-      auto daughters = vol->GetDaughters();
-      int nd         = daughters.size();
+      const auto vol          = pvol->GetLogicalVolume();
+      auto ivol               = vol->id();
+      auto daughters          = vol->GetDaughters();
+      int nd                  = daughters.size();
+      NavIndex_t nav_ind      = state.GetNavIndex();
+      unsigned short scene_id = 0, newscene_id = 0;
+      bool is_scene   = state.GetSceneId(scene_id, newscene_id);
+      auto state_id   = state.GetId();
+      auto &nperscene = fCPUdata.fSceneTouchables;
       nphysical++;
+      nperscene[scene_id]++;
       Transformation trans;
-      state.TopMatrix(trans);
-      VolumeShellCPU const &shell = fCPUdata.fShells[vol->id()];
+      // only consider the surface transformation in its scene
+      state.TopInSceneMatrix(trans);
+      VolumeShellCPU const &shell = fCPUdata.fShells[ivol];
+      // Allocate exit candidates arrays
+      auto nsurf_local = shell.fSurfaces.size();
+      allocateExitingCandidates(scene_id, state_id, nsurf_local);
+      if (is_scene && !visited[ivol]) allocateExitingCandidates(newscene_id, 0, nsurf_local);
+
       for (int lsurf_id : shell.fSurfaces) {
         FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         // Ignore 'inside' helper surfaces having no frame
         if (lsurf.fFrame.type == kNoFrame) continue;
-        Transformation global(trans);
-        global.MultiplyFromRight(fCPUdata.fLocalTrans[lsurf.fTrans]);
+        Transformation surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
+        surftrans *= trans;
         int trans_id = fCPUdata.fGlobalTrans.size();
-        fCPUdata.fGlobalTrans.push_back(global);
-        // Create the global surface
-        int id_glob = fCPUdata.fFramedSurf.size();
-        fCPUdata.fFramedSurf.push_back(
-            {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, state.GetNavIndex()});
-        fCPUdata.fFramedSurf.back().fLogicId = lsurf.fLogicId;
+        fCPUdata.fGlobalTrans.push_back(surftrans);
+        // Create the surface in the current scene using the local navigation index in the scene
+        int id_surf = fCPUdata.fFramedSurf.size();
+        fCPUdata.fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, nav_ind});
+        auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
+        framed_surf.fLogicId   = lsurf.fLogicId;
+        framed_surf.fSurfIndex = lsurf.fSurfIndex;
+        assert(lsurf.fSurfIndex < nsurf_local);
+
+        char iside = 0;
+        int iframe = 0;
+        auto isurf = CreateCommonSurface(id_surf, ivol, scene_id, iframe, iside);
+
         if (fVerbose > 0) {
-          VECGEOM_LOG(diagnostic) << "framed surface " << id_glob << " for state: ";
-          state.Print();
-          VECGEOM_LOG(diagnostic) << global;
+          VECGEOM_LOG(info) << "scene " << scene_id << ": framed surface " << id_surf << " on CS " << isurf
+                            << " for state: ";
+          state.PrintTop();
+          std::cout << "  " << surftrans << "\n";
         }
-        CreateCommonSurface(id_glob, vol->id());
+
+        if (is_scene) {
+          // Create the surface once also in the new scene if the shell belongs to one
+          if (!visited[ivol]) {
+            // Make a new top framed surface in the new scene
+            int id_surf_new = fCPUdata.fFramedSurf.size();
+            // Store the local transformation of the scene volume surface
+            trans_id = fCPUdata.fGlobalTrans.size();
+            fCPUdata.fGlobalTrans.push_back(fCPUdata.fLocalTrans[lsurf.fTrans]);
+            fCPUdata.fFramedSurf.push_back(
+                {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, 0 /*top in scene*/});
+            fCPUdata.fFramedSurf.back().fLogicId   = lsurf.fLogicId;
+            fCPUdata.fFramedSurf.back().fSurfIndex = lsurf.fSurfIndex;
+            auto isurf_scene                       = CreateCommonSurface(id_surf_new, ivol, newscene_id, iframe, iside);
+            constexpr char kLside                  = 0x01;
+            assert(iside == kLside);
+            // Add the CS pointer to the frame in the parent scene. So if a track enters the frame it is relocated in
+            // this frame, it checs the info on the scene CS
+            framed_surf.fSceneCS                                          = isurf_scene;
+            framed_surf.fSceneCSind                                       = iframe;
+            fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex] = id_surf;
+            if (fVerbose > 0) {
+              VECGEOM_LOG(info) << "scene " << newscene_id << ": top framed surface " << id_surf_new << " on CS "
+                                << isurf_scene;
+              std::cout << fCPUdata.fLocalTrans[lsurf.fTrans] << "\n";
+            }
+          } else {
+            // We need to assign the scene CS pointer to the framed surface
+            int id_surf_new         = fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex];
+            auto &framed_surf_scene = fCPUdata.fFramedSurf[id_surf_new];
+            framed_surf.fSceneCS    = framed_surf_scene.fSceneCS;
+            framed_surf.fSceneCSind = framed_surf_scene.fSceneCSind;
+          }
+        }
       }
 
-      // Now do the daughters
-      for (int id = 0; id < nd; ++id) {
-        createCommonSurfaces(daughters[id]);
+      bool do_daughters = is_scene ? (!visited[ivol]) : true;
+      if (do_daughters) {
+        for (int id = 0; id < nd; ++id) {
+          createCommonSurfaces(daughters[id]);
+        }
       }
+      visited[ivol] = is_scene;
       state.Pop();
     };
 
@@ -521,7 +637,29 @@ public:
     // add a dummy common surface since index 0 is not allowed for correctly handling sides
     fCPUdata.fCommonSurfaces.push_back({});
 
-    createCommonSurfaces(vecgeom::GeoManager::Instance().GetWorld());
+    auto world = vecgeom::GeoManager::Instance().GetWorld();
+    // Count touchables per scene since this is not stored in the navigation table
+    countStatesPerScene(world);
+    // Pre-allocate data in scene arrays
+    // fCPUdata.fSceneTouchables already filled
+    fCPUdata.fSceneStartIndex.insert(fCPUdata.fSceneStartIndex.end(), numscenes, 0);
+    fCPUdata.fSurfHash.insert(fCPUdata.fSurfHash.end(), numscenes, {});
+    int startindex = 0;
+    for (int scene_id = 0; scene_id < numscenes; ++scene_id) {
+      // Reserve a place also for the outside state in each scene
+      int nt                              = ++fCPUdata.fSceneTouchables[scene_id];
+      fCPUdata.fSceneStartIndex[scene_id] = startindex;
+      startindex += nt;
+      fCPUdata.fCandidatesEntering.insert(fCPUdata.fCandidatesEntering.end(), nt, {});
+      fCPUdata.fCandidatesExiting.insert(fCPUdata.fCandidatesExiting.end(), nt, {});
+      fCPUdata.fFrameIndEntering.insert(fCPUdata.fFrameIndEntering.end(), nt, {});
+      fCPUdata.fFrameIndExiting.insert(fCPUdata.fFrameIndExiting.end(), nt, {});
+      fCPUdata.fSidesEntering.insert(fCPUdata.fSidesEntering.end(), nt, {});
+      fCPUdata.fSidesExiting.insert(fCPUdata.fSidesExiting.end(), nt, {});
+    }
+
+    std::fill(visited.begin(), visited.end(), false);
+    createCommonSurfaces(world);
 
     for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf) {
       // Compute the default states in case no frame on the surface is hit
@@ -548,8 +686,8 @@ public:
 
     if (fVerbose > 1) {
       PrintCandidateLists();
-        VECGEOM_LOG(diagnostic) << "Visited " << nphysical << " physical volumes, created "
-                           << fCPUdata.fCommonSurfaces.size() - 1 << " common surfaces";
+      std::cout << "Visited " << nphysical << " physical volumes, created " << fCPUdata.fCommonSurfaces.size() - 1
+                << " common surfaces\n";
     }
 
     return true;
@@ -561,7 +699,7 @@ public:
   {
     bool success = CreateLocalSurfaces();
     if (!success) return false;
-    success = CreateCommonSurfacesFlatTop();
+    success = CreateCommonSurfacesScenes();
     return success;
   }
 
@@ -582,8 +720,8 @@ public:
     for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob = surf.fLeftSide.fSurfaces[i];
       auto &surf = fCPUdata.fFramedSurf[idglob];
-      Transformation tnew(tsurfinv);
-      tnew.MultiplyFromRight(fCPUdata.fGlobalTrans[surf.fTrans]);
+      Transformation tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+      tnew *= tsurfinv;
       if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
       } else {
@@ -595,8 +733,8 @@ public:
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob = surf.fRightSide.fSurfaces[i];
       auto &surf = fCPUdata.fFramedSurf[idglob];
-      Transformation tnew(tsurfinv);
-      tnew.MultiplyFromRight(fCPUdata.fGlobalTrans[surf.fTrans]);
+      Transformation tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+      tnew *= tsurfinv;
       if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
       } else {
@@ -608,55 +746,104 @@ public:
   ///< This method creates helper lists of candidate surfaces for each navigation state
   void CreateCandidateLists()
   {
-    int numNodes = vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1; // count also outside state
-    fCPUdata.fCandidatesEntering.reserve(numNodes);
-    fCPUdata.fCandidatesExiting.reserve(numNodes);
-    fCPUdata.fFrameIndEntering.reserve(numNodes);
-    fCPUdata.fFrameIndExiting.reserve(numNodes);
-
+    constexpr char kLside = 0x01;
+    constexpr char kRside = 0x02;
     // Lambda adding the surface id as candidate to all states from a side
-    auto addSurfToSideStates = [&](int isurf, int iside) {
-      Side const &side =
-          (iside > 0) ? fCPUdata.fCommonSurfaces[isurf].fLeftSide : fCPUdata.fCommonSurfaces[isurf].fRightSide;
+    auto addSurfToSideStates = [&](int isurf, char iside) {
+      auto const &surf = fCPUdata.fCommonSurfaces[isurf];
+      Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
       for (int i = 0; i < side.fNsurf; ++i) {
         int idglob             = side.fSurfaces[i];
         auto const &framedsurf = fCPUdata.fFramedSurf[idglob];
-        vecgeom::NavStateIndex state(framedsurf.fState);
-        int state_id     = state.GetId();
-        auto isignedsurf = iside * isurf;
-        if (!fCPUdata.fCandidatesExiting[state_id].size() ||
-            fCPUdata.fCandidatesExiting[state_id].back() != isignedsurf) {
-          fCPUdata.fCandidatesExiting[state_id].push_back(isignedsurf);
-          fCPUdata.fFrameIndExiting[state_id].push_back(i);
+        vecgeom::NavigationState state(framedsurf.fState);
+        auto state_id = state.GetId();
+        auto surf_ind = framedsurf.fSurfIndex;
+
+        auto &candidatesExiting = fCPUdata.GetCandidatesExiting(surf.GetSceneId(), state_id);
+        auto &frameIndExiting   = fCPUdata.GetFrameIndExiting(surf.GetSceneId(), state_id);
+        auto &sidesExiting      = fCPUdata.GetSidesExiting(surf.GetSceneId(), state_id);
+        // We need to store the surface candidate and the frame index for the slot matching the local surface index
+        candidatesExiting[surf_ind] = isurf;
+        frameIndExiting[surf_ind]   = i;
+        // Exiting frames may exist on both sides
+        sidesExiting[surf_ind] |= iside;
+        if (fVerbose > 0) {
+          printf("  added to exiting of state on scene %d: ", surf.GetSceneId());
+          state.PrintTop();
+          int j = 0;
+          printf("candExiting:   ");
+          for (auto candidate : candidatesExiting)
+            printf("  %d: %d ", j++, candidate);
+          printf("\n");
         }
       }
     };
 
-    // prepare all lists
-    for (int i = 0; i < numNodes; ++i) {
-      fCPUdata.fCandidatesEntering.push_back({});
-      fCPUdata.fCandidatesExiting.push_back({});
-      fCPUdata.fFrameIndEntering.push_back({});
-      fCPUdata.fFrameIndExiting.push_back({});
-    }
-
     // loop over all common surfaces and add their index in the appropriate list
     for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf) {
       auto const &surf = fCPUdata.fCommonSurfaces[isurf];
-      // Add to default surface state
-      vecgeom::NavStateIndex state(surf.fDefaultState);
-      fCPUdata.fCandidatesEntering[state.GetId()].push_back(-isurf);
-      fCPUdata.fFrameIndEntering[state.GetId()].push_back(-1); // means this state is the default for isurf
+      if (fVerbose > 0) printf("===== CS %ld:\n", isurf);
+      if (!surf.IsSceneSurface()) {
+        //  Add surface as entering candidate for the default surface state
+        vecgeom::NavigationState state(surf.fDefaultState);
+        int state_id             = state.GetId();
+        auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
+        auto &frameIndEntering   = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
+        auto &sidesEntering      = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
+        // Check which sides contain surfaces of daughters
+        char sides = 0;
+        if (surf.fLeftSide.fNsurf) sides |= kLside;
+        if (surf.fRightSide.fNsurf) sides |= kRside;
+        candidatesEntering.push_back(isurf);
+        frameIndEntering.push_back(-1); // means this state is the default for isurf
+        sidesEntering.push_back(sides);
+        if (fVerbose > 0) {
+          printf("  added to entering of def state on scene %d: ", surf.GetSceneId());
+          state.PrintTop();
+          int j = 0;
+          printf("candEntering:   ");
+          for (auto candidate : candidatesEntering)
+            printf("  %d: %d ", j++, candidate);
+          printf("\n");
+        }
+      }
       // Add to side states
-      addSurfToSideStates(isurf, 1);
-      addSurfToSideStates(isurf, -1);
+      addSurfToSideStates(isurf, kLside);
+      addSurfToSideStates(isurf, kRside);
     }
   }
 
+  /// @brief Print the list of common surface candidates for a given state
+  /// @param state Full state (not just local scene state)
+  void PrintCandidates(vecgeom::NavigationState const &state)
+  {
+    printf("\nCandidate surfaces per state: ");
+    state.Print();
+    unsigned short scene_id = 0, newscene_id = 0;
+    bool is_scene = state.GetSceneId(scene_id, newscene_id);
+    printf("is_scene=%d  scene_id=%d  newscene_id=%d\n", int(is_scene), scene_id, newscene_id);
+    auto &cand          = fSurfData->GetCandidates(scene_id, state.GetId());
+    auto &cand_newscene = fSurfData->GetCandidates(newscene_id, 0);
+    int ncand           = is_scene ? cand.fNExiting + cand_newscene.fNcand - cand_newscene.fNExiting : cand.fNcand;
+    printf(" %d candidates: exiting={", ncand);
+    for (int i = 0; i < cand.fNExiting; ++i)
+      printf("%d (side %d, ind %d) ", cand.fCandidates[i], int(cand.fSides[i]), cand.fFrameInd[i]);
+    printf("} entering={");
+    if (is_scene) {
+      // Entering scene candidates are the entering newscene candidates
+      for (int i = cand_newscene.fNExiting; i < cand_newscene.fNcand; ++i)
+        printf("%d (side %d, ind %d) ", cand_newscene.fCandidates[i], int(cand_newscene.fSides[i]),
+               cand_newscene.fFrameInd[i]);
+    } else {
+      for (int i = cand.fNExiting; i < cand.fNcand; ++i)
+        printf("%d (side %d, ind %d) ", cand.fCandidates[i], int(cand.fSides[i]), cand.fFrameInd[i]);
+    }
+    printf("}\n");
+  }
 
   void PrintCandidateLists()
   {
-    vecgeom::NavStateIndex state;
+    vecgeom::NavigationState state;
 
     // recursive geometry visitor lambda printing the candidates lists
     // We have no direct access from a state (contiguous) id to the actual state index
@@ -666,12 +853,7 @@ public:
       const auto vol = pvol->GetLogicalVolume();
       auto daughters = vol->GetDaughters();
       int nd         = daughters.size();
-      state.Print();
-      auto const &cand = fSurfData->fCandidates[state.GetId()];
-      printf(" %d candidates: ", cand.fNcand);
-      for (int i = 0; i < cand.fNcand; ++i)
-        printf("%d (ind %d) ", cand.fCandidates[i], cand.fFrameInd[i]);
-      printf("\n");
+      PrintCandidates(state);
 
       // do daughters
       for (int id = 0; id < nd; ++id) {
@@ -680,14 +862,7 @@ public:
       state.Pop();
     };
 
-    printf("\nCandidate surfaces per state:");
-    state.Print();
-    auto const &cand = fSurfData->fCandidates[state.GetId()];
-    printf(" %d candidates: ", cand.fNcand);
-    for (int i = 0; i < cand.fNcand; ++i)
-      printf("%d (ind %d) ", cand.fCandidates[i], cand.fFrameInd[i]);
-    printf("\n");
-
+    PrintCandidates(state); // outside state
     printCandidates(vecgeom::GeoManager::Instance().GetWorld());
   }
 
@@ -696,8 +871,9 @@ public:
     constexpr int megabyte = 1024 * 1024;
     float total = 0, size = 0;
     auto msg = VECGEOM_LOG(diagnostic);
-    msg<< "___________________________________________________________________________________\n";
-    msg << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables\n";
+    msg << "___________________________________________________________________________________\n";
+    msg << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables, "
+        << fSurfData->fNscenes << " scenes\n";
     size = float(fSurfData->fNshells * sizeof(VolumeShell) + fSurfData->fNlocalSurf * sizeof(int)) / megabyte;
     total += size;
     msg << "    volume shells          = " << fSurfData->fNshells << " [" << size << " MB]\n";
@@ -742,8 +918,11 @@ public:
   }
 
 private:
-  int CreateCommonSurface(int idglob, int volId)
+  ///< @brief Create a common surface in scene_id
+  int CreateCommonSurface(int idglob, int volId, int scene_id, int &iframe, char &iside)
   {
+    constexpr char kLside = 0x01;
+    constexpr char kRside = 0x02;
     bool flip, flip_bool;
     auto approxEqual = [&](int idglob1, int idglob2) {
       flip                    = false;
@@ -829,11 +1008,11 @@ private:
       return hash;
     };
 
-#if (1)
     FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
+    bool is_scene_surf        = (scene_id > 0) && (surf.fState == 0);
     auto hash                 = surfHashUgly(idglob);
     // Get the compatible surfaces
-    auto range          = fCPUdata.fSurfHash.equal_range(hash);
+    auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
     bool found_dup_surf = false;
     int id              = -1;
     flip ^= flip_bool;
@@ -849,13 +1028,14 @@ private:
       if (approxEqual(other_id, idglob)) {
         // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the surface
         // will be missed when coming from the entering side.
-        if (flip && othersurf.VolumeId() == volId) continue;
+        // if (flip && othersurf.VolumeId() == volId) continue;
         found_dup_surf = true;
         id             = it->second;
         auto &crt_side = flip ? fCPUdata.fCommonSurfaces[id].fRightSide : fCPUdata.fCommonSurfaces[id].fLeftSide;
         // The common surface is compatible only if the parent state for the current framed surface
         // has a frame on the same side or it is already the default state.
-        auto parent_state_index = vecgeom::NavStateIndex::PopImpl(fCPUdata.fFramedSurf[idglob].fState);
+        NavIndex_t parent_state_index = fCPUdata.fFramedSurf[idglob].fState;
+        vecgeom::NavigationState::PopImpl(parent_state_index);
         if (fCPUdata.fCommonSurfaces[id].fDefaultState != parent_state_index) {
           // To be compatible, a surface of the parent state MUST exist on the same side
           bool has_parent = false;
@@ -869,7 +1049,8 @@ private:
           }
         }
         // Add the global surface to the appropriate side
-        crt_side.AddSurface(idglob);
+        iframe = crt_side.AddSurface(idglob);
+        iside  = flip ? kRside : kLside;
         break;
       }
     }
@@ -878,30 +1059,16 @@ private:
       // Set the common state to be the parent of the idglob surface state
       id = fCPUdata.fCommonSurfaces.size();
       fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob});
-      fCPUdata.fCommonSurfaces[id].fDefaultState = vecgeom::NavStateIndex::PopImpl(fCPUdata.fFramedSurf[idglob].fState);
-      fCPUdata.fSurfHash.insert(std::make_pair(hash, id));
+      iside             = kLside;
+      iframe            = 0;
+      auto parent_state = fCPUdata.fFramedSurf[idglob].fState;
+      vecgeom::NavigationState::PopImpl(parent_state);
+      fCPUdata.fCommonSurfaces[id].fSceneId      = is_scene_surf ? -scene_id : scene_id;
+      fCPUdata.fCommonSurfaces[id].fDefaultState = parent_state;
+      // insert the common surface in the scene and in the scene multimap
+      fCPUdata.fSurfHash[scene_id].insert(std::make_pair(hash, id));
     }
-#else
-    // this may be slow
-    auto it = std::find_if(std::begin(fCPUdata.fCommonSurfaces), std::end(fCPUdata.fCommonSurfaces),
-                           [&](const CommonSurface &t) {
-                             return (t.fLeftSide.fNsurf > 0) ? approxEqual(t.fLeftSide.fSurfaces[0], idglob) : false;
-                           });
-    int id  = -1;
-    if (it != std::end(fCPUdata.fCommonSurfaces)) {
-      id = int(it - std::begin(fCPUdata.fCommonSurfaces));
-      // Add the global surface to the appropriate side
-      if (flip)
-        (*it).fRightSide.AddSurface(idglob);
-      else
-        (*it).fLeftSide.AddSurface(idglob);
 
-    } else {
-      // Construct a new common surface from the current placed global surface
-      id = fCPUdata.fCommonSurfaces.size();
-      fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob});
-    }
-#endif
     return id;
   }
 
@@ -1003,22 +1170,26 @@ private:
   // when updating masks after creating both frames and extents.
   void UpdateMaskData()
   {
-    fSurfData->fNwindows    = fCPUdata.fWindowMasks.size();
+    fSurfData->fNwindows = fCPUdata.fWindowMasks.size();
+    delete[] fSurfData->fWindowMasks;
     fSurfData->fWindowMasks = new WindowMask_t[fCPUdata.fWindowMasks.size()];
     for (size_t i = 0; i < fCPUdata.fWindowMasks.size(); ++i)
       fSurfData->fWindowMasks[i] = fCPUdata.fWindowMasks[i];
 
-    fSurfData->fNrings    = fCPUdata.fRingMasks.size();
+    fSurfData->fNrings = fCPUdata.fRingMasks.size();
+    delete[] fSurfData->fRingMasks;
     fSurfData->fRingMasks = new RingMask_t[fCPUdata.fRingMasks.size()];
     for (size_t i = 0; i < fCPUdata.fRingMasks.size(); ++i)
       fSurfData->fRingMasks[i] = fCPUdata.fRingMasks[i];
 
-    fSurfData->fNzphis    = fCPUdata.fZPhiMasks.size();
+    fSurfData->fNzphis = fCPUdata.fZPhiMasks.size();
+    delete[] fSurfData->fZPhiMasks;
     fSurfData->fZPhiMasks = new ZPhiMask_t[fCPUdata.fZPhiMasks.size()];
     for (size_t i = 0; i < fCPUdata.fZPhiMasks.size(); ++i)
       fSurfData->fZPhiMasks[i] = fCPUdata.fZPhiMasks[i];
 
-    fSurfData->fNquads    = fCPUdata.fQuadMasks.size();
+    fSurfData->fNquads = fCPUdata.fQuadMasks.size();
+    delete[] fSurfData->fQuadMasks;
     fSurfData->fQuadMasks = new QuadMask_t[fCPUdata.fQuadMasks.size()];
     for (size_t i = 0; i < fCPUdata.fQuadMasks.size(); ++i)
       fSurfData->fQuadMasks[i] = fCPUdata.fQuadMasks[i];
@@ -1028,6 +1199,33 @@ private:
   void UpdateSurfData()
   {
     // Create and copy surface data
+    // Local transformations (per volume local surfaces)
+    fSurfData->fNlocalTrans = fCPUdata.fLocalTrans.size();
+    fSurfData->fLocalTrans  = new Transformation[fCPUdata.fLocalTrans.size()];
+    for (size_t i = 0; i < fCPUdata.fLocalTrans.size(); ++i)
+      fSurfData->fLocalTrans[i] = fCPUdata.fLocalTrans[i];
+
+    // Global transformations (used for placed surfaces)
+    fSurfData->fNglobalTrans = fCPUdata.fGlobalTrans.size();
+    fSurfData->fGlobalTrans  = new Transformation[fCPUdata.fGlobalTrans.size()];
+    for (size_t i = 0; i < fCPUdata.fGlobalTrans.size(); ++i)
+      fSurfData->fGlobalTrans[i] = fCPUdata.fGlobalTrans[i];
+
+    // Local surfaces (per volume)
+    auto numLocalSurf      = fCPUdata.fLocalSurfaces.size();
+    fSurfData->fNlocalSurf = numLocalSurf;
+    fSurfData->fLocalSurf  = new FramedSurface[numLocalSurf];
+    for (size_t i = 0; i < numLocalSurf; ++i)
+      fSurfData->fLocalSurf[i] = fCPUdata.fLocalSurfaces[i];
+
+    // Global surfaces (used on common surfaces)
+    auto numGlobalSurf      = fCPUdata.fFramedSurf.size();
+    fSurfData->fNglobalSurf = numGlobalSurf;
+    fSurfData->fFramedSurf  = new FramedSurface[numGlobalSurf];
+    for (size_t i = 0; i < numGlobalSurf; ++i)
+      fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
+
+    // Unplaced surface data
     fSurfData->fNcylsph    = fCPUdata.fCylSphData.size();
     fSurfData->fCylSphData = new CylData_t[fCPUdata.fCylSphData.size()];
     for (size_t i = 0; i < fCPUdata.fCylSphData.size(); ++i)
@@ -1038,36 +1236,18 @@ private:
     for (size_t i = 0; i < fCPUdata.fConeData.size(); ++i)
       fSurfData->fConeData[i] = fCPUdata.fConeData[i];
 
-    // Copy transformations
-    fSurfData->fNglobalTrans = fCPUdata.fGlobalTrans.size();
-    fSurfData->fGlobalTrans  = new Transformation[fCPUdata.fGlobalTrans.size()];
-    for (size_t i = 0; i < fCPUdata.fGlobalTrans.size(); ++i)
-      fSurfData->fGlobalTrans[i] = fCPUdata.fGlobalTrans[i];
-    fSurfData->fNlocalTrans = fCPUdata.fLocalTrans.size();
-    fSurfData->fLocalTrans  = new Transformation[fCPUdata.fLocalTrans.size()];
-    for (size_t i = 0; i < fCPUdata.fLocalTrans.size(); ++i)
-      fSurfData->fLocalTrans[i] = fCPUdata.fLocalTrans[i];
-
-    // Copy global surfaces
-    auto numGlobalSurf      = fCPUdata.fFramedSurf.size();
-    fSurfData->fNglobalSurf = numGlobalSurf;
-    fSurfData->fFramedSurf  = new FramedSurface[numGlobalSurf];
-    for (size_t i = 0; i < numGlobalSurf; ++i)
-      fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
+    // Create Masks
+    UpdateMaskData();
 
     // Copy common surfaces
     size_t size_sides = 0;
     for (auto const &surf : fCPUdata.fCommonSurfaces)
       size_sides += surf.fLeftSide.fNsurf + surf.fRightSide.fNsurf;
-
-    // Create Masks
-    UpdateMaskData();
-
     fSurfData->fNsides         = size_sides;
     fSurfData->fSides          = new int[size_sides];
     int *current_side          = fSurfData->fSides;
     fSurfData->fNcommonSurf    = fCPUdata.fCommonSurfaces.size();
-    fSurfData->fCommonSurfaces = new CommonSurface[fCPUdata.fCommonSurfaces.size()];
+    fSurfData->fCommonSurfaces = new CommonSurface[fSurfData->fNcommonSurf];
     for (size_t i = 0; i < fCPUdata.fCommonSurfaces.size(); ++i) {
       // Raw copy of surface (wrong pointers in sides)
       fSurfData->fCommonSurfaces[i] = fCPUdata.fCommonSurfaces[i];
@@ -1077,7 +1257,6 @@ private:
       // Make left sides arrays point to the buffer
       fSurfData->fCommonSurfaces[i].fLeftSide.fSurfaces = current_side;
       current_side += fCPUdata.fCommonSurfaces[i].fLeftSide.fNsurf;
-
       // Copy right sides content in buffer
       for (auto isurf = 0; isurf < fCPUdata.fCommonSurfaces[i].fRightSide.fNsurf; ++isurf)
         current_side[isurf] = fCPUdata.fCommonSurfaces[i].fRightSide.fSurfaces[isurf];
@@ -1089,25 +1268,35 @@ private:
       fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCPUdata.fCommonSurfaces[i].fRightSide.fNumParents;
     }
 
-    // Copy candidates lists
-    auto size_candidates = 0;
-    for (auto const &list : fCPUdata.fCandidatesEntering) {
-      size_candidates += list.size();
-    }
-    for (auto const &list : fCPUdata.fCandidatesExiting) {
-      size_candidates += list.size();
+    auto nscenes        = fCPUdata.fSceneStartIndex.size();
+    fSurfData->fNscenes = nscenes;
+    // Copy start indices and sizes per scene
+    fSurfData->fSceneStartIndex = new int[nscenes];
+    fSurfData->fSceneTouchables = new int[nscenes];
+    for (size_t scene_id = 0; scene_id < nscenes; ++scene_id) {
+      fSurfData->fSceneStartIndex[scene_id] = fCPUdata.fSceneStartIndex[scene_id];
+      fSurfData->fSceneTouchables[scene_id] = fCPUdata.fSceneTouchables[scene_id];
     }
 
-    // Size 2x the combined size of the candidate lists, stores candidate and frame indices
-    fSurfData->fSizeCandList   = 2 * size_candidates;
-    fSurfData->fCandList    = new int[2 * size_candidates];
-    int *current_candidates = fSurfData->fCandList;
-
+    // Copy candidates lists, frame indices, and sides
     // There is one list of candidates per state
     size_t num_states   = fCPUdata.fCandidatesEntering.size();
     fSurfData->fNStates = num_states;
-    // We could also get the number of states from the number of exiting candidates lists
-    assert(fCPUdata.fCandidatesEntering.size() == fCPUdata.fCandidatesExiting.size());
+
+    auto size_candidates = 0;
+    for (auto const &list : fCPUdata.fCandidatesExiting) {
+      size_candidates += 2 * list.size() + list.size() * sizeof(char) / sizeof(int) + 1;
+    }
+    for (auto const &list : fCPUdata.fCandidatesEntering) {
+      size_candidates += 2 * list.size() + list.size() * sizeof(char) / sizeof(int) + 1;
+    }
+    // We may need one additional integer per state
+    size_candidates += num_states;
+
+    // Stores candidate, frame indices, and sides
+    fSurfData->fSizeCandList = size_candidates;
+    fSurfData->fCandList     = new int[size_candidates];
+    int *current_candidates  = fSurfData->fCandList;
 
     fSurfData->fCandidates = new Candidates[num_states];
 
@@ -1118,54 +1307,65 @@ private:
 
       size_t offset = 0;
 
-      // Copy Entering Candidates
-      auto ncandEntering                      = fCPUdata.fCandidatesEntering[i].size();
-      fSurfData->fCandidates[i].fNEntering = ncandEntering;
-      for (size_t icand = 0; icand < ncandEntering; icand++) {
-        current_candidates[icand]         = (fCPUdata.fCandidatesEntering[i])[icand];
-      }
-
-      offset += ncandEntering;
-
       // Copy Exiting Candidates
-      auto ncandExiting                       = fCPUdata.fCandidatesExiting[i].size();
+      auto ncandExiting = fCPUdata.fCandidatesExiting[i].size();
       for (size_t icand = 0; icand < ncandExiting; icand++) {
-        current_candidates[icand + offset]         = (fCPUdata.fCandidatesExiting[i])[icand];
+        current_candidates[icand] = (fCPUdata.fCandidatesExiting[i])[icand];
       }
 
       offset += ncandExiting;
 
-      // Copy Entering Frame Indices
+      // Copy Entering Candidates
+      auto ncandEntering = fCPUdata.fCandidatesEntering[i].size();
       for (size_t icand = 0; icand < ncandEntering; icand++) {
-        current_candidates[icand + offset]         = (fCPUdata.fFrameIndEntering[i])[icand];
+        current_candidates[icand + offset] = (fCPUdata.fCandidatesEntering[i])[icand];
       }
 
       offset += ncandEntering;
 
       // Copy Exiting Frame Indices
       for (size_t icand = 0; icand < ncandExiting; icand++) {
-        current_candidates[icand + offset]         = (fCPUdata.fFrameIndExiting[i])[icand];
+        current_candidates[icand + offset] = (fCPUdata.fFrameIndExiting[i])[icand];
       }
 
+      offset += ncandExiting;
+
+      // Copy Entering Frame Indices
+      for (size_t icand = 0; icand < ncandEntering; icand++) {
+        current_candidates[icand + offset] = (fCPUdata.fFrameIndEntering[i])[icand];
+      }
+
+      offset += ncandEntering;
+
+      // Copy exiting sides
+      char *current_sides = reinterpret_cast<char *>(current_candidates + offset);
+      for (size_t icand = 0; icand < ncandExiting; icand++) {
+        current_sides[icand] = (fCPUdata.fSidesExiting[i])[icand];
+      }
+
+      // Copy entering sides
+      current_sides += ncandExiting;
+      for (size_t icand = 0; icand < ncandEntering; icand++) {
+        current_sides[icand] = (fCPUdata.fSidesEntering[i])[icand];
+      }
+
+      // compute number of integers represented bu the sides (stored as chars)
+      auto ncand  = ncandEntering + ncandExiting;
+      int add_one = ((ncand * sizeof(char)) % sizeof(int)) > 0 ? 1 : 0;
+      offset += ncand * sizeof(char) / sizeof(int) + add_one;
+
       // Store the necessary information in the Candidates Struct
-      auto ncand = ncandEntering + ncandExiting;
-      fSurfData->fCandidates[i].fNcand = ncand;
-      fSurfData->fCandidates[i].fNEntering = ncandEntering;
+      fSurfData->fCandidates[i].fNcand    = ncand;
+      fSurfData->fCandidates[i].fNExiting = ncandExiting;
 
       fSurfData->fCandidates[i].fCandidates = current_candidates;
       // Move the pointer to the start of the Frame index list
-      current_candidates += ncand;
-      fSurfData->fCandidates[i].fFrameInd = current_candidates;
+      fSurfData->fCandidates[i].fFrameInd = current_candidates + ncand;
+      // Move the pointer to the start of the sides list
+      fSurfData->fCandidates[i].fSides = reinterpret_cast<char *>(current_candidates + 2 * ncand);
       // Move the pointer to the start of the next Candidate index list
-      current_candidates += ncand;
+      current_candidates += offset;
     }
-
-    // Copy local surfaces
-    auto numLocalSurf      = fCPUdata.fLocalSurfaces.size();
-    fSurfData->fNlocalSurf = numLocalSurf;
-    fSurfData->fLocalSurf  = new FramedSurface[numLocalSurf];
-    for (size_t i = 0; i < numLocalSurf; ++i)
-      fSurfData->fLocalSurf[i] = fCPUdata.fLocalSurfaces[i];
 
     // Copy volume shells
     auto numShells            = fCPUdata.fShells.size();

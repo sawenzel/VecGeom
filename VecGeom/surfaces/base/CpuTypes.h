@@ -19,6 +19,9 @@ struct VolumeShellCPU {
 // Surface data used only on CPU during the conversion process
 template <typename Real_t>
 struct CPUsurfData {
+  using VecInt_t       = std::vector<int>;
+  using VecChar_t      = std::vector<char>;
+  using MultimapInt_t  = std::multimap<int, int>;
   using SurfData_t     = SurfData<Real_t>;
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
@@ -29,23 +32,30 @@ struct CPUsurfData {
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
 
-  std::vector<WindowMask_t> fWindowMasks;            ///< rectangular masks
-  std::vector<RingMask_t> fRingMasks;                ///< ring masks
-  std::vector<ZPhiMask_t> fZPhiMasks;                ///< cylindrical masks
-  std::vector<QuadMask_t> fQuadMasks;                ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;                ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;                 ///< data for conical surfaces
-  std::vector<Transformation> fLocalTrans;           ///< local transformations
-  std::vector<Transformation> fGlobalTrans;          ///< global transformations for surfaces in the scene
-  std::vector<FramedSurface> fLocalSurfaces;         ///< local surfaces
-  std::vector<FramedSurface> fFramedSurf;            ///< global surfaces
-  std::vector<CommonSurface> fCommonSurfaces;        ///< common surfaces
-  std::vector<VolumeShellCPU> fShells;               ///< vector of local volume surfaces
-  std::vector<std::vector<int>> fCandidatesEntering; ///< candidate lists for each state
-  std::vector<std::vector<int>> fCandidatesExiting;  ///< candidate lists for each state
-  std::vector<std::vector<int>> fFrameIndEntering;   ///< start frame index per candidate
-  std::vector<std::vector<int>> fFrameIndExiting;    ///< start frame index per candidate
-  std::multimap<int, int> fSurfHash; ///< maps rotation hash index to a list of common surface id's
+  std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
+  std::vector<RingMask_t> fRingMasks;         ///< ring masks
+  std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
+  std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
+  std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
+  std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
+  std::vector<Transformation> fLocalTrans;    ///< local transformations
+  std::vector<Transformation> fGlobalTrans;   ///< global transformations for surfaces in the scene
+  std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces per logical volume
+  std::vector<FramedSurface> fFramedSurf;     ///< global surfaces
+  std::vector<CommonSurface> fCommonSurfaces; ///< common surfaces
+  std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
+  std::vector<VolumeShellCPU> fSceneShells;   ///< vector of scene volume surfaces
+
+  VecInt_t fSceneStartIndex;            ///< Start indices for data indexed by state id (per scene)
+  VecInt_t fSceneTouchables;            ///< Number of touchables (per scene)
+  std::vector<MultimapInt_t> fSurfHash; ///< maps rotation hash index to a list of common surface id's (per scene)
+
+  std::vector<VecInt_t> fCandidatesEntering; ///< list of entering candidates: scene0...,scene1...
+  std::vector<VecInt_t> fCandidatesExiting;  ///< list of exiting candidates: scene0...,scene1...
+  std::vector<VecInt_t> fFrameIndEntering; ///< list of start frame indices for entering candidates: scene0...,scene1...
+  std::vector<VecInt_t> fFrameIndExiting;  ///< list of start frame indices for exiting candidates: scene0...,scene1...
+  std::vector<VecChar_t> fSidesEntering;   ///< list of relevant sides for entering candidates: scene0...,scene1...
+  std::vector<VecChar_t> fSidesExiting;    ///< list of relevant sides for exiting candidates: scene0...,scene1...
 
 private:
   CPUsurfData() = default;
@@ -60,34 +70,58 @@ public:
   void Clear()
   {
     // Dispose of surface data and shrink the container
-    fWindowMasks.clear();
     std::vector<WindowMask_t>().swap(fWindowMasks);
-    fRingMasks.clear();
     std::vector<RingMask_t>().swap(fRingMasks);
-    fZPhiMasks.clear();
     std::vector<ZPhiMask_t>().swap(fZPhiMasks);
-    fQuadMasks.clear();
     std::vector<QuadMask_t>().swap(fQuadMasks);
-    fCylSphData.clear();
     std::vector<CylData_t>().swap(fCylSphData);
-    fConeData.clear();
     std::vector<ConeData_t>().swap(fConeData);
-    fLocalTrans.clear();
     std::vector<Transformation>().swap(fLocalTrans);
-    fGlobalTrans.clear();
     std::vector<Transformation>().swap(fGlobalTrans);
-    fLocalSurfaces.clear();
     std::vector<FramedSurface>().swap(fLocalSurfaces);
-    fFramedSurf.clear();
     std::vector<FramedSurface>().swap(fFramedSurf);
-    fCommonSurfaces.clear();
     std::vector<CommonSurface>().swap(fCommonSurfaces);
-    for (size_t i = 0; i < fShells.size(); ++i) {
-      fShells[i].fSurfaces.clear();
-      std::vector<int>().swap(fShells[i].fSurfaces);
-    }
-    fShells.clear();
     std::vector<VolumeShellCPU>().swap(fShells);
+    std::vector<VolumeShellCPU>().swap(fSceneShells);
+    VecInt_t().swap(fSceneStartIndex);
+    VecInt_t().swap(fSceneTouchables);
+    std::vector<MultimapInt_t>().swap(fSurfHash);
+    std::vector<VecInt_t>().swap(fCandidatesEntering);
+    std::vector<VecInt_t>().swap(fCandidatesExiting);
+    std::vector<VecInt_t>().swap(fFrameIndEntering);
+    std::vector<VecInt_t>().swap(fFrameIndExiting);
+    std::vector<VecChar_t>().swap(fSidesEntering);
+    std::vector<VecChar_t>().swap(fSidesExiting);
+  }
+
+  VecInt_t &GetCandidatesEntering(int scene_id, int state_id)
+  {
+    return fCandidatesEntering[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  VecInt_t &GetCandidatesExiting(int scene_id, int state_id)
+  {
+    return fCandidatesExiting[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  VecInt_t &GetFrameIndEntering(int scene_id, int state_id)
+  {
+    return fFrameIndEntering[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  VecInt_t &GetFrameIndExiting(int scene_id, int state_id)
+  {
+    return fFrameIndExiting[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  VecChar_t &GetSidesEntering(int scene_id, int state_id)
+  {
+    return fSidesEntering[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  VecChar_t &GetSidesExiting(int scene_id, int state_id)
+  {
+    return fSidesExiting[fSceneStartIndex[scene_id] + state_id];
   }
 };
 
