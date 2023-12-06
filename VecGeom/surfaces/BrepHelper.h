@@ -983,34 +983,34 @@ private:
       return true;
     };
 
-    auto surfHashUgly = [&](int idglobal) {
-      // Compute hash for the surface rotation
-      constexpr int nth           = 1000;
-      constexpr int nph           = 1000;
+    auto surfHash = [&](int idglobal, double tolerance=100*vecgeom::kTolerance) {
+      // Compute hash for the surface rotation and translation
       FramedSurface const &surf   = fCPUdata.fFramedSurf[idglobal];
       Transformation const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
-      // convert local Z axis to the global frame
-      vecgeom::Vector3D<double> const zaxis(0, 0, 1);
-      auto vzglob = trans.InverseTransformDirection(zaxis);
-      int ith     = nth * vecCore::math::Abs(vzglob.z());
-      // backward vectors should generate the same hash
-      Real_t phi = vzglob.Phi() + vecgeom::kPi * int(vzglob.z() < 0);
-      phi        = fmod(fmod(phi, vecgeom::kTwoPi) + vecgeom::kTwoPi, vecgeom::kTwoPi); // [0, 2pi]
-      if (ith == 0) phi = fmod(phi, vecgeom::kPi);
-      int iph = nph * phi * vecgeom::kTwoPiInv + 0.5;
-      if (ith == nth) {
-        ith--;
-        iph = 0;
+
+      // get normal vector of surface
+      vecgeom::Vector3D<Real_t> normal;
+      const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
+      trans.InverseTransformDirection(lnorm, normal);
+
+      // use normal vector scaled by the distance to the origin for hashing 
+      const vecgeom::Vector3D<Real_t> scaled_norm_vector = trans.Translation().Dot(normal) * normal;
+      long hash = 0;
+      // helper function to generate hash from integer numbers
+      auto hash_combine = [](long seed, const long value) {
+        return seed ^ (std::hash<long>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
+      };
+      for (int i=0; i<3; i++) {
+        // use tolerance to generate int with the desired precision from a real number for hashing
+        hash = hash_combine(hash,std::roundl(scaled_norm_vector[i] / tolerance));
       }
-      auto hash = ith * nph + iph;
-      // std::cout << "framed_surf " << idglob << ": vzglob=" << vzglob << " ith=" << ith << " iph=" << iph << " hash= "
-      // << hash << std::endl;
+
       return hash;
     };
 
     FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
     bool is_scene_surf        = (scene_id > 0) && (surf.fState == 0);
-    auto hash                 = surfHashUgly(idglob);
+    auto hash                 = surfHash(idglob, 100*vecgeom::kTolerance);
     // Get the compatible surfaces
     auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
     bool found_dup_surf = false;
