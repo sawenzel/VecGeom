@@ -309,6 +309,7 @@ public:
         ComputePlaneExtent(side);
         break;
       case kCylindrical:
+      case kConical:
         ComputeCylinderExtent(side);
         break;
       default:
