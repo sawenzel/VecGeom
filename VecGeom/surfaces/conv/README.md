@@ -65,6 +65,7 @@ A trapezoidal inclined prism having as top and bottom faces similar trapezes par
 The condition of validity for the trapezoids is that the bottom and top trapezes are similar (scaled). So not all combinations of paramemters are valid, the following identities must hold:
 - dy1/dy2 = dx1/dx3 = dx2/dx4
 - alpha1 = alpha2
+The degenerated cases where one of these lengths is zero makes exception to the rule above.
 
 ## Extruded
 Extrusion solid created by translating and scaling a blueprint arbitrary polygon parallel with (xOy) to an arbitrary number of z positions. The blueprint polygon vertices are defined counter-clockwise in the xOy plane (as per PlanarPolygon::GetOrientation). The corresponding polygon vertices between any two consecutive z sections are connected with lines.

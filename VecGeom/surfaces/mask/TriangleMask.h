@@ -80,37 +80,37 @@ struct TriangleMask {
     valid = true;
     Vector2D<Real_t> const local2D(local.x(), local.y());
     Real_t safety = safetySurf;
-#ifdef QUAD_ACCURATE_SAFETY
-    // lambda to compute distance to segment i (common to triangles and quads, to be moved?)
-    auto distanceToSegmentSquared = [&](int i) {
-      int j     = (i + 1) % 4;
-      auto line = p_[j] - p_[i];
-      auto pvec = local2D - p_[i];
-      auto dot0 = line.Dot(pvec);
-      if (dot0 <= 0) return pvec.Mag2();
-      auto dot1 = line.Mag2();
-      if (dot1 <= dot0) return (local2D - p_[j]).Mag2();
-      return ((dot0 / dot1) * line - pvec).Mag2();
-    };
+    if (QUAD_ACCURATE_SAFETY > 0) {
+      // lambda to compute distance to segment i (common to triangles and quads, to be moved?)
+      auto distanceToSegmentSquared = [&](int i) {
+        int j     = (i + 1) % 4;
+        auto line = p_[j] - p_[i];
+        auto pvec = local2D - p_[i];
+        auto dot0 = line.Dot(pvec);
+        if (dot0 <= 0) return pvec.Mag2();
+        auto dot1 = line.Mag2();
+        if (dot1 <= dot0) return (local2D - p_[j]).Mag2();
+        return ((dot0 / dot1) * line - pvec).Mag2();
+      };
 
-    bool withinBound[3];
-    for (int i = 0; i < 3; ++i) {
-      withinBound[i] = n_[i].Dot(local2D - p_[i]) <= 0;
-    }
-    if (withinBound[0] && withinBound[1] && withinBound[2]) return safetySurf;
-
-    Precision dseg_squared = vecgeom::InfinityLength<Real_t>();
-    for (int i = 0; i < 3; ++i) {
-      if (!withinBound[i]) {
-        dseg_squared = vecCore::math::Min(dseg_squared, distanceToSegmentSquared(i));
+      bool withinBound[3];
+      for (int i = 0; i < 3; ++i) {
+        withinBound[i] = n_[i].Dot(local2D - p_[i]) <= 0;
       }
+      if (withinBound[0] && withinBound[1] && withinBound[2]) return safetySurf;
+
+      Precision dseg_squared = vecgeom::InfinityLength<Real_t>();
+      for (int i = 0; i < 3; ++i) {
+        if (!withinBound[i]) {
+          dseg_squared = vecCore::math::Min(dseg_squared, distanceToSegmentSquared(i));
+        }
+      }
+      safety = vecCore::math::Sqrt(dseg_squared + safetySurf * safetySurf);
+    } else {
+      // Compute signed safeties to segments
+      for (int i = 0; i < 3; ++i)
+        safety = vecCore::math::Max(safety, n_[i].Dot(local2D - p_[i]));
     }
-    safety = vecCore::math::Sqrt(dseg_squared + safetySurf * safetySurf);
-#else
-    // Compute signed safeties to segments
-    for (int i = 0; i < 3; ++i)
-      safety = vecCore::math::Max(safety, n_[i].Dot(local2D - p_[i]));
-#endif
     return safety;
   }
 };

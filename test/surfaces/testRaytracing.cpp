@@ -45,6 +45,8 @@ int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene)
   // For the moment we still need the world volume on the GPU
   if (ongpu) {
     std::cout << "synchronizing VecGeom geometry to GPU ...\n";
+    // Set higher stack limit to allow depper CSG for the solids model
+    CudaAssertError(CudaDeviceSetStackLimit(8192));
     auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
     cudaManager.LoadGeometry(world);
     if (!cudaManager.Synchronize()) return 4;

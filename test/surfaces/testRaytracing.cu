@@ -202,9 +202,6 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     dirsh[i].Set(dirsc[i][0], dirsc[i][1], dirsc[i][2]);
   }
 
-  // Set higher stack limit to allow depper CSG for the solids model
-  BREP_CUDA_CHECK(vecgeom::cxx::CudaDeviceSetStackLimit(100000));
-
   // Allocate/copy data on device
   Vec3D *points;
   BREP_CUDA_CHECK(cudaMalloc(&points, nrays * sizeof(Vec3D)));

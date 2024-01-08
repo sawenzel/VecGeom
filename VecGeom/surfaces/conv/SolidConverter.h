@@ -9,6 +9,7 @@
 #include <VecGeom/surfaces/conv/ConeConverter.h>
 #include <VecGeom/surfaces/conv/SExtrudedConverter.h>
 #include <VecGeom/surfaces/conv/TrdConverter.h>
+#include <VecGeom/surfaces/conv/TrapezoidConverter.h>
 #include <VecGeom/surfaces/conv/PolyhedronConverter.h>
 #include <VecGeom/surfaces/conv/BooleanConverter.h>
 
@@ -47,6 +48,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 
     auto trd = dynamic_cast<vecgeom::UnplacedTrd const *>(solid);
     if (trd) return conv::CreateTrdSurfaces<Real_t>(*trd, volId);
+
+    auto trap = dynamic_cast<vecgeom::UnplacedTrapezoid const *>(solid);
+    if (trap) return conv::CreateTrapezoidSurfaces<Real_t>(*trap, volId);
 
     auto polyhedron = dynamic_cast<vecgeom::UnplacedPolyhedron const *>(solid);
     if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId);

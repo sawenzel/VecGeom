@@ -1,6 +1,10 @@
 #ifndef VECGEOM_SURFACE_WINDOWMASK_H
 #define VECGEOM_SURFACE_WINDOWMASK_H
 
+#ifndef WINDOW_ACCURATE_SAFETY
+#define WINDOW_ACCURATE_SAFETY 0
+#endif
+
 #include <VecGeom/surfaces/base/CommonTypes.h>
 
 namespace vgbrep {
@@ -47,16 +51,16 @@ struct WindowMask {
     valid     = true;
     Real_t sx = vecCore::math::Max(local[0] - rangeU[1], rangeU[0] - local[0]);
     Real_t sy = vecCore::math::Max(local[1] - rangeV[1], rangeV[0] - local[1]);
-#ifdef BOX_ACCURATE_SAFETY
-    // The following returns the accurate safety at the price of an extra square root per frame
-    // meaning 6 for a box.
-    sx = vecCore::math::Max(Real_t(0), sx);
-    sy = vecCore::math::Max(Real_t(0), sy);
-    return vecCore::math::Sqrt(sx * sx + sy * sy + safetySurf * safetySurf);
-#else
-    // The VecGeom box version just returns the maximum
-    return vecCore::math::Max(sx, sy, safetySurf);
-#endif
+    if (WINDOW_ACCURATE_SAFETY > 0) {
+      // The following returns the accurate safety at the price of an extra square root per frame
+      // meaning 6 for a box.
+      sx = vecCore::math::Max(Real_t(0), sx);
+      sy = vecCore::math::Max(Real_t(0), sy);
+      return vecCore::math::Sqrt(sx * sx + sy * sy + safetySurf * safetySurf);
+    } else {
+      // The VecGeom box version just returns the maximum
+      return vecCore::math::Max(sx, sy, safetySurf);
+    }
   }
 };
 
