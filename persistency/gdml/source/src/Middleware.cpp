@@ -1211,7 +1211,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
   if (debug) {
     VECGEOM_LOG(debug) << "Middleware::processExtruded: processing: " << Helper::GetNodeInformation(aDOMNode);
   }
-  auto const *const attributes = aDOMNode->getAttributes();
+  auto const *attributes = aDOMNode->getAttributes();
   auto const lengthMultiplier  = GetLengthMultiplier(aDOMNode);
   std::vector<Precision> xs;
   std::vector<Precision> ys;
@@ -1222,16 +1222,18 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
     }
     if (it->getNodeType() == XERCES_CPP_NAMESPACE_QUALIFIER DOMNode::ELEMENT_NODE) {
       auto const theChildNodeName       = Helper::Transcode(it->getNodeName());
-      auto const *const childAttributes = it->getAttributes();
+      attributes = it->getAttributes();
       if (theChildNodeName == "twoDimVertex") {
-        auto const x = lengthMultiplier * GetDoubleAttribute("x", childAttributes);
-        auto const y = lengthMultiplier * GetDoubleAttribute("y", childAttributes);
+        DECLAREANDGETLENGTVAR(x);
+        DECLAREANDGETLENGTVAR(y);
         xs.push_back(x);
         ys.push_back(y);
       } else if (theChildNodeName == "section") {
-        DECLAREANDGETLENGTVAR(scalingFactor)
+        DECLAREANDGETPLAINVAR(scalingFactor)
         DECLAREANDGETLENGTVAR(xOffset)
         DECLAREANDGETLENGTVAR(yOffset)
+        DECLAREANDGETLENGTVAR(zPosition)
+        zs.push_back(zPosition);
         DECLAREANDGETINTVAR(zOrder)
         if (!(zOrder == 0 || zOrder == 1)) {
           VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute zOrder=" << zOrder;
@@ -1245,7 +1247,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
         if (yOffset != 0.0) {
           VECGEOM_LOG(warning) << "Ignoring unsupported xtru section attribute yOffset=" << yOffset;
         }
-        auto const z = lengthMultiplier * GetDoubleAttribute("zPosition", childAttributes);
+        auto const z = lengthMultiplier * GetDoubleAttribute("zPosition", attributes);
         zs.push_back(z);
       }
     }

@@ -67,6 +67,15 @@ Frame CreateFrame(FrameType type, QuadrilateralMask<Real_t> const &mask)
 }
 
 template <typename Real_t>
+Frame CreateFrame(FrameType type, TriangleMask<Real_t> const &mask)
+{
+  auto &cpudata = CPUsurfData<Real_t>::Instance();
+  int id        = cpudata.fTriangleMasks.size();
+  cpudata.fTriangleMasks.push_back(mask);
+  return Frame(type, id);
+}
+
+template <typename Real_t>
 int CreateLocalTransformation(Transformation const &trans)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();

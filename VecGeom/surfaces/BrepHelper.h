@@ -63,6 +63,8 @@ public:
     fSurfData->fZPhiMasks = nullptr;
     delete[] fSurfData->fQuadMasks;
     fSurfData->fQuadMasks = nullptr;
+    delete[] fSurfData->fTriangleMasks;
+    fSurfData->fTriangleMasks = nullptr;
     delete[] fSurfData->fCylSphData;
     fSurfData->fCylSphData = nullptr;
     delete[] fSurfData->fConeData;
@@ -249,6 +251,12 @@ public:
         WindowMask_t extLocal;
         auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
         quad.GetExtent(extentL);
+        break;
+      }
+      case kTriangle: {
+        TriangleMask_t extLocal;
+        auto const &maskLocal = fSurfData->fTriangleMasks[framed_surf.fFrame.id];
+        maskLocal.GetExtent(extentL);
         break;
       }
       default:
@@ -1194,6 +1202,12 @@ private:
     fSurfData->fQuadMasks = new QuadMask_t[fCPUdata.fQuadMasks.size()];
     for (size_t i = 0; i < fCPUdata.fQuadMasks.size(); ++i)
       fSurfData->fQuadMasks[i] = fCPUdata.fQuadMasks[i];
+
+    fSurfData->fNtriangs    = fCPUdata.fTriangleMasks.size();
+    fSurfData->fTriangleMasks = new TriangleMask_t[fCPUdata.fTriangleMasks.size()];
+    for (size_t i = 0; i < fCPUdata.fTriangleMasks.size(); ++i)
+      fSurfData->fTriangleMasks[i] = fCPUdata.fTriangleMasks[i];
+
   }
 
   ///< The method updates the SurfData storage

@@ -161,6 +161,11 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fQuadMasks, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fQuadMasks, surfData.fQuadMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
+    fSurfDataStaging.fNtriangs = surfData.fNtriangs;
+    sizeInBytes              = sizeof(surfData.fTriangleMasks[0]) * surfData.fNtriangs;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTriangleMasks, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fTriangleMasks, surfData.fTriangleMasks, sizeInBytes, cudaMemcpyHostToDevice));
+
     // Allocate and copy scene indices
     fSurfDataStaging.fNscenes = surfData.fNscenes;
     sizeInBytes               = sizeof(int) * surfData.fNscenes;

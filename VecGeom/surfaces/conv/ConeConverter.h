@@ -23,7 +23,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   using Vector3D        = vecgeom::Vector3D<Real_t>;
 
   LogicExpressionCPU
-      logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi  auto rmin1 = cone.GetRmin1();
+      logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
   auto rmin1 = cone.GetRmin1();
   auto rmax1 = cone.GetRmax1();
   auto rmin2 = cone.GetRmin2();

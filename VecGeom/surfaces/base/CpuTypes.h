@@ -35,6 +35,7 @@ struct CPUsurfData {
   std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
   std::vector<RingMask_t> fRingMasks;         ///< ring masks
   std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
+  std::vector<TriangleMask_t> fTriangleMasks; 
   std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
   std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
   std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
@@ -73,6 +74,7 @@ public:
     std::vector<WindowMask_t>().swap(fWindowMasks);
     std::vector<RingMask_t>().swap(fRingMasks);
     std::vector<ZPhiMask_t>().swap(fZPhiMasks);
+    std::vector<TriangleMask_t>().swap(fTriangleMasks);
     std::vector<QuadMask_t>().swap(fQuadMasks);
     std::vector<CylData_t>().swap(fCylSphData);
     std::vector<ConeData_t>().swap(fConeData);
