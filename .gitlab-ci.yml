@@ -57,7 +57,23 @@ with_NAVINDEX_GDML_ROOT:
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
+       # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
+     - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
+
+# build for VECGEOM_USE_SURF=ON  VECGEOM_USE_NAVTUPLE=ON  VECGEOM_NAVTUPLE_MAXDEPTH=4 and VECGEOM_GDML=ON
+with_SURF_NAVTUPLE:
+   tags:
+     - cvmfs
+   image: cern/cc7-base
+   stage: build
+   before_script:
+     - yum install environment-modules -y
+     - yum install -y unzip autoconf automake make gcc git xerces-c-devel
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
+   script:
+     - mkdir build && cd build
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Scalar -DVECGEOM_USE_SURF=ON -DVECGEOM_USE_NAVTUPLE=ON -DVECGEOM_NAVTUPLE_MAXDEPTH=4 -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 

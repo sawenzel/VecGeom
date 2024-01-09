@@ -999,20 +999,40 @@ private:
 
       // get normal vector of surface
       vecgeom::Vector3D<Real_t> normal;
+      vecgeom::Vector3D<Real_t> scaled_norm_vector; 
       const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
       trans.InverseTransformDirection(lnorm, normal);
 
-      // use normal vector scaled by the distance to the origin for hashing 
-      const vecgeom::Vector3D<Real_t> scaled_norm_vector = trans.Translation().Dot(normal) * normal;
       long hash = 0;
       // helper function to generate hash from integer numbers
       auto hash_combine = [](long seed, const long value) {
         return seed ^ (std::hash<long>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2));
       };
-      for (int i=0; i<3; i++) {
-        // use tolerance to generate int with the desired precision from a real number for hashing
-        hash = hash_combine(hash,std::roundl(scaled_norm_vector[i] / tolerance));
-      }
+
+      switch (surf.fSurface.type) {
+      case kPlanar:
+        // use normal vector scaled by the distance to the origin for hashing 
+        scaled_norm_vector = trans.Translation().Dot(normal) * normal;
+        for (int i=0; i<3; i++) {
+          // use tolerance to generate int with the desired precision from a real number for hashing
+          hash = hash_combine(hash,std::roundl(scaled_norm_vector[i] / tolerance));
+        } 
+        break;
+      case kCylindrical:
+        // use radius and normal for hashing
+        hash = hash_combine(hash,std::roundl( fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance));
+        for (int i=0; i<3; i++) {
+          hash = hash_combine(hash,std::roundl(normal[i] / tolerance));
+        }
+        break;
+      case kConical:
+      case kSpherical:
+      case kTorus:
+      case kGenSecondOrder:
+      default:
+        hash = 0;
+        break;
+      };
 
       return hash;
     };

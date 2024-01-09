@@ -21,7 +21,7 @@ template <typename Real_t>
 struct CPUsurfData {
   using VecInt_t       = std::vector<int>;
   using VecChar_t      = std::vector<char>;
-  using MultimapInt_t  = std::multimap<int, int>;
+  using MultimapInt_t  = std::multimap<long, int>;
   using SurfData_t     = SurfData<Real_t>;
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;

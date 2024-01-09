@@ -4,7 +4,9 @@
 #include "test/benchmark/ArgParser.h"
 #include <VecGeom/volumes/LogicalVolume.h>
 #include <VecGeom/management/GeoManager.h>
+#ifdef VECGEOM_CUDA_INTERFACE
 #include <VecGeom/management/CudaManager.h>
+#endif
 #include <VecGeom/management/BVHManager.h>
 #include <VecGeom/base/RNG.h>
 #include <VecGeom/navigation/BVHNavigator.h>
@@ -42,7 +44,8 @@ int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene)
   auto world = GeoManager::Instance().GetWorld();
   if (!world) return 3;
 
-  // For the moment we still need the world volume on the GPU
+    // For the moment we still need the world volume on the GPU
+#ifdef VECGEOM_CUDA_INTERFACE
   if (ongpu) {
     std::cout << "synchronizing VecGeom geometry to GPU ...\n";
     // Set higher stack limit to allow depper CSG for the solids model
@@ -51,10 +54,12 @@ int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene)
     cudaManager.LoadGeometry(world);
     if (!cudaManager.Synchronize()) return 4;
   }
-
+#endif
   vecgeom::cxx::BVHManager::Init();
-  if (ongpu) vecgeom::cxx::BVHManager::DeviceInit();
 
+#ifdef VECGEOM_CUDA_INTERFACE
+  if (ongpu) vecgeom::cxx::BVHManager::DeviceInit();
+#endif
   return 0;
 }
 //==================================================================================
@@ -453,10 +458,12 @@ int main(int argc, char *argv[])
     }
   }
 
+  int errHost = testRaytracingHost(nrays, points, dirs, debug);
+  int errCUDA = 0;
+#ifdef VECGEOM_CUDA_INTERFACE
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
-  int errHost          = testRaytracingHost(nrays, points, dirs, debug);
-  int errCUDA          = 0;
   if (ongpu) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+#endif
 
   // Clear surface data
   BrepHelper::Instance().ClearData();
