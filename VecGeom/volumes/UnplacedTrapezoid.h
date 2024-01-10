@@ -112,27 +112,11 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision theta() const
-  {
-    // follow Geant4 sign convention
-    if (fTrap.fTheta < 0 || fTrap.fTheta >= kHalfPi) {
-      return vecCore::math::ATan(vecCore::math::Abs(vecCore::math::Tan(fTrap.fTheta)));
-    } else {
-      return fTrap.fTheta;
-    }
-  }
+  Precision theta() const { return fTrap.fTheta; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision phi() const
-  {
-    // follow Geant4 sign convention
-    if (fTrap.fPhi < -kPi || fTrap.fPhi >= kPi) {
-      return vecCore::math::ATan2(fTrap.fTthetaSphi, fTrap.fTthetaCphi);
-    } else {
-      return fTrap.fPhi;
-    }
-  }
+  Precision phi() const { return fTrap.fPhi; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE

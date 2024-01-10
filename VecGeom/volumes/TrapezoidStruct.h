@@ -91,6 +91,9 @@ public:
   {
     fTthetaCphi = vecCore::math::Tan(fTheta) * vecCore::math::Cos(fPhi);
     fTthetaSphi = vecCore::math::Tan(fTheta) * vecCore::math::Sin(fPhi);
+    // Recalculate theta and phi for consistency with Geant4 
+    fTheta = vecCore::math::ATan(vecCore::math::Sqrt(fTthetaCphi*fTthetaCphi + fTthetaSphi*fTthetaSphi));
+    fPhi = vecCore::math::ATan2(fTthetaSphi, fTthetaCphi);
   }
 
 public:
