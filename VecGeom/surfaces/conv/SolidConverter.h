@@ -5,6 +5,7 @@
 
 #include <VecGeom/surfaces/conv/BoxConverter.h>
 #include <VecGeom/surfaces/conv/TubeConverter.h>
+#include <VecGeom/surfaces/conv/CutTubeConverter.h>
 #include <VecGeom/surfaces/conv/ParallelepipedConverter.h>
 #include <VecGeom/surfaces/conv/ConeConverter.h>
 #include <VecGeom/surfaces/conv/SExtrudedConverter.h>
@@ -36,6 +37,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 
     auto tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
     if (tube) return conv::CreateTubeSurfaces<Real_t>(*tube, volId);
+
+    auto cuttube = dynamic_cast<vecgeom::UnplacedCutTube const *>(solid);
+    if (cuttube) return conv::CreateTubeSurfaces<Real_t>(*cuttube, volId);
 
     auto para = dynamic_cast<vecgeom::UnplacedParallelepiped const *>(solid);
     if (para) return conv::CreateParallelepipedSurfaces<Real_t>(*para, volId);
