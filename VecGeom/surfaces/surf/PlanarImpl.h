@@ -10,8 +10,6 @@ namespace vgbrep {
 template <typename Real_t>
 struct SurfaceHelper<kPlanar, Real_t> {
 
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
   SurfaceHelper() = default;
 
   VECGEOM_FORCE_INLINE

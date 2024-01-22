@@ -26,7 +26,6 @@ struct NavTuple {
   NavIndex_t fNavInd[MAX_DEPTH]{0};
   uint fLevel{0};
 
-  VECCORE_ATT_HOST_DEVICE
   NavTuple() = default;
 
   VECCORE_ATT_HOST_DEVICE

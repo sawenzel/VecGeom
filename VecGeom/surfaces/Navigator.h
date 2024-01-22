@@ -1,10 +1,13 @@
 #ifndef VECGEOM_SURFACE_NAVIGATOR_H_
 #define VECGEOM_SURFACE_NAVIGATOR_H_
 
+#include <VecGeom/management/Logger.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/LogicEvaluator.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Algorithms.h>
+
+#include <iomanip>
 
 namespace vgbrep {
 namespace protonav {
@@ -496,6 +499,12 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   }
   // Fix the out_state if pointing to a 0 scene
   if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
+  if (!(in_navind == 0 || distance < vecgeom::InfinityLength<Real_t>())) {
+    VECGEOM_LOG(critical) << std::setprecision(16) << "at point " << point << " and direction " << direction
+                          << std::endl;
+  }
+#endif
   assert(in_navind == 0 ||
          (distance < vecgeom::InfinityLength<Real_t>() && "ComputeStepAndHit cannot return infinite distance"));
   return distance;

@@ -525,25 +525,6 @@ public:
 
 }; // End class Transformation3D
 
-/*
-VECCORE_ATT_HOST_DEVICE
-Transformation3D::Transformation3D(Transformation3D const &other)
-    : fIdentity(false), fHasRotation(false), fHasTranslation(false)
-{
-  *this = other;
-}
-
-VECCORE_ATT_HOST_DEVICE
-Transformation3D &Transformation3D::operator=(Transformation3D const &rhs)
-{
-  copy(rhs.fTranslation, rhs.fTranslation + 3, fTranslation);
-  copy(rhs.fRotation, rhs.fRotation + 9, fRotation);
-  fIdentity       = rhs.fIdentity;
-  fHasTranslation = rhs.fHasTranslation;
-  fHasRotation    = rhs.fHasRotation;
-  return *this;
-}
-*/
 VECCORE_ATT_HOST_DEVICE
 bool Transformation3D::operator==(Transformation3D const &rhs) const
 {

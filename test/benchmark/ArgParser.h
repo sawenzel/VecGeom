@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <vector>
 
 double getDoubleOpt(char **begin, char **end, const std::string &option, double defaultval)
 {
@@ -49,7 +51,42 @@ std::string getStringOpt(char **begin, char **end, const std::string &option, co
   return defaultval;
 }
 
-#define OPTION_INT(name, defaultval) int name            = getIntOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_DOUBLE(name, defaultval) double name      = getDoubleOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_BOOL(name, defaultval) bool name          = getBoolOpt(argv, argc + argv, "-" #name, defaultval)
+bool isNumeric(const char *value)
+{
+  std::string stringValue(value);
+  // Remove trailing comma if it exists
+  if (!stringValue.empty() && stringValue.back() == ',') stringValue.pop_back();
+  std::istringstream stream(stringValue);
+  double temp;
+
+  // Attempt to read a value from the string to a double and check if the entire string was consumed
+  return (stream >> temp) && stream.eof();
+}
+
+std::vector<double> getVectorOpt(char **begin, char **end, const std::string &option,
+                                 const std::vector<double> &defaultval)
+{
+  char **itr = std::find(begin, end, option);
+  if (itr != end && itr + 1 != end) {
+    std::vector<double> components;
+    ++itr; // Move to the next element after the option
+
+    while (itr != end && *itr != nullptr && isNumeric(*itr)) {
+      double value;
+      std::istringstream(*itr) >> value;
+      components.push_back(value);
+      ++itr;
+    }
+
+    return components;
+  }
+
+  std::cout << "INFO: using default for option " << option << "\n";
+  return defaultval;
+}
+
+#define OPTION_INT(name, defaultval) int name = getIntOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_DOUBLE(name, defaultval) double name = getDoubleOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_BOOL(name, defaultval) bool name = getBoolOpt(argv, argc + argv, "-" #name, defaultval)
 #define OPTION_STRING(name, defaultval) std::string name = getStringOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_VECTOR(name, defaultval) std::vector<double> name = getVectorOpt(argv, argc + argv, "-" #name, defaultval)

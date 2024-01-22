@@ -416,6 +416,28 @@ int main(int argc, char *argv[])
   OPTION_INT(verbosity, 0);
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
+  std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
+                                       vecgeom::InfinityLength<Precision>()};
+  OPTION_VECTOR(point, default_point);
+  std::vector<double> default_direction = {
+      0.,
+      0.,
+      0.,
+  };
+  OPTION_VECTOR(direction, default_direction);
+  assert(point.size() == 3 && direction.size() == 3);
+  // transform to Vec3D for further handling
+  Vec3D point_3D     = {point[0], point[1], point[2]};
+  Vec3D direction_3D = {direction[0], direction[1], direction[2]};
+
+  bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
+  if (use_provided_point) {
+    // check if direction is normalized
+    assert(direction_3D.Mag2() == 1);
+    nrays = 1;
+    if (debug)
+      std::cout << "Tracking single ray with point " << point_3D << " and direction " << direction_3D << std::endl;
+  }
 
   Stopwatch timer;
   // Load the geometry
@@ -443,8 +465,13 @@ int main(int argc, char *argv[])
   world->GetLogicalVolume()->GetUnplacedVolume()->Extent(amin, amax);
 
   Vec3D origin{0, 0, 0};
-  volumeUtilities::FillRandomPoints(amin, amax, points, nrays);
-  volumeUtilities::FillRandomDirections(dirs, nrays);
+  if (!use_provided_point) {
+    volumeUtilities::FillRandomPoints(amin, amax, points, nrays);
+    volumeUtilities::FillRandomDirections(dirs, nrays);
+  } else {
+    points[0] = point_3D;
+    dirs[0]   = direction_3D;
+  }
 
   // UGLY: Use a points struct to avoid passing Vector3D to the cuda namespace
   auto pointsc = new Vec3Dc[nrays];
