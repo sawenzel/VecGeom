@@ -473,7 +473,8 @@ public:
       }
       // Finalize logic expression
       auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
-      logichelper::simplify_logic(crtlogic);
+      vgbrep::logichelper::LogicExpressionConstruct lc(crtlogic);
+      lc.Simplify(crtlogic);
     }
 
     if (fVerbose > 0) {
@@ -992,14 +993,14 @@ private:
       return true;
     };
 
-    auto surfHash = [&](int idglobal, double tolerance=100*vecgeom::kTolerance) {
+    auto surfHash = [&](int idglobal, double tolerance = 100 * vecgeom::kTolerance) {
       // Compute hash for the surface rotation and translation
       FramedSurface const &surf   = fCPUdata.fFramedSurf[idglobal];
       Transformation const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
 
       // get normal vector of surface
       vecgeom::Vector3D<Real_t> normal;
-      vecgeom::Vector3D<Real_t> scaled_norm_vector; 
+      vecgeom::Vector3D<Real_t> scaled_norm_vector;
       const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
       trans.InverseTransformDirection(lnorm, normal);
 
@@ -1011,18 +1012,18 @@ private:
 
       switch (surf.fSurface.type) {
       case kPlanar:
-        // use normal vector scaled by the distance to the origin for hashing 
+        // use normal vector scaled by the distance to the origin for hashing
         scaled_norm_vector = trans.Translation().Dot(normal) * normal;
-        for (int i=0; i<3; i++) {
+        for (int i = 0; i < 3; i++) {
           // use tolerance to generate int with the desired precision from a real number for hashing
-          hash = hash_combine(hash,std::roundl(scaled_norm_vector[i] / tolerance));
-        } 
+          hash = hash_combine(hash, std::roundl(scaled_norm_vector[i] / tolerance));
+        }
         break;
       case kCylindrical:
         // use radius and normal for hashing
-        hash = hash_combine(hash,std::roundl( fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance));
-        for (int i=0; i<3; i++) {
-          hash = hash_combine(hash,std::roundl(normal[i] / tolerance));
+        hash = hash_combine(hash, std::roundl(fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance));
+        for (int i = 0; i < 3; i++) {
+          hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
         }
         break;
       case kConical:
@@ -1039,7 +1040,7 @@ private:
 
     FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
     bool is_scene_surf        = (scene_id > 0) && (surf.fState == 0);
-    auto hash                 = surfHash(idglob, 100*vecgeom::kTolerance);
+    auto hash                 = surfHash(idglob, 100 * vecgeom::kTolerance);
     // Get the compatible surfaces
     auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
     bool found_dup_surf = false;
@@ -1223,11 +1224,10 @@ private:
     for (size_t i = 0; i < fCPUdata.fQuadMasks.size(); ++i)
       fSurfData->fQuadMasks[i] = fCPUdata.fQuadMasks[i];
 
-    fSurfData->fNtriangs    = fCPUdata.fTriangleMasks.size();
+    fSurfData->fNtriangs      = fCPUdata.fTriangleMasks.size();
     fSurfData->fTriangleMasks = new TriangleMask_t[fCPUdata.fTriangleMasks.size()];
     for (size_t i = 0; i < fCPUdata.fTriangleMasks.size(); ++i)
       fSurfData->fTriangleMasks[i] = fCPUdata.fTriangleMasks[i];
-
   }
 
   ///< The method updates the SurfData storage

@@ -18,11 +18,10 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
                                             LogicExpression const &logic, SurfData<Real_t> const &surfdata,
                                             const int logic_id = -1, const bool is_inside = 0)
 {
-  int depth       = 0;
-  bool last_value = false;
-  bool negate     = false;
-  // auto const &vshell = surfdata.fShells[volId];
-
+  auto test_bit  = [](unsigned bset, int bit) { return (bset & (unsigned(1) << bit)) > 0; };
+  auto set_bit   = [](unsigned &bset, int bit) { bset |= unsigned(1) << bit; };
+  auto reset_bit = [](unsigned &bset, int bit) { bset &= ~(unsigned(1) << bit); };
+  auto swap_bit  = [](unsigned &bset, int bit) { bset ^= unsigned(1) << bit; };
   ///< Lambda to get the inside for individual unplaced surfaces of the same logical volume
   auto insideSurf = [&](int isurf) {
     // Convert point from volume to local surface coordinates
@@ -30,33 +29,55 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
     auto const &unplaced        = surfdata.fLocalSurf[isurf].fSurface;
     return unplaced.Inside(plocalSurf, surfdata);
   };
-
+  unsigned stack  = 0;
+  unsigned negate = 0;
+  int depth       = 0;
+  bool result     = false;
   unsigned i;
   for (i = 0; i < logic.size(); ++i) {
-    auto item = logic[i];
-    if (item == lplus) {
+    switch (logic[i]) {
+    case lplus:
       depth++;
-      last_value = false;
-    } else if (item == lminus) {
-      depth--;
-      assert(depth >= 0);
-    } else if (item == lnot) {
-      negate = true;
-    } else if (LogicExpression::is_operator_token(item)) {
-      if ((item == lor && last_value) || (item == land && !last_value)) {
+      break;
+    case lminus:
+      result = test_bit(stack, depth);
+      reset_bit(negate, depth--);
+      result ^= test_bit(negate, depth);
+      if (result)
+        set_bit(stack, depth);
+      else
+        reset_bit(stack, depth);
+      break;
+    case lnot:
+      swap_bit(negate, depth);
+      break;
+    case lor:
+      if (test_bit(stack, depth))
         i = logic[i + 1] - 1;
-        assert(i <= logic.size());
-      } else
+      else
         i++;
-    } else {
-      // This is a surface index
-      last_value = item == logic_id ? is_inside : insideSurf(int(item));
-      if (negate) last_value = !last_value;
-      negate = false;
+      break;
+    case land:
+      if (!test_bit(stack, depth))
+        i = logic[i + 1] - 1;
+      else
+        i++;
+      break;
+    default:
+      // This is an operand
+      result = insideSurf(int(logic[i]));
+      result = logic[i] == logic_id ? is_inside : insideSurf(int(logic[i]));
+      result ^= test_bit(negate, depth);
+      reset_bit(negate, depth);
+      // We can ignore the previous value because of short-circuiting
+      if (result)
+        set_bit(stack, depth);
+      else
+        reset_bit(stack, depth);
     }
   }
   assert(depth == 0);
-  return last_value;
+  return (stack & 1) > 0;
 }
 
 /// @brief Evaluate the isotropic safety for the logic expression.
