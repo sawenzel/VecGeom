@@ -10,8 +10,10 @@ namespace vgbrep {
 namespace conv {
 
 // sign function
-template <typename Real_t> int sgn(Real_t val) {
-    return (Real_t(0) < val) - (val < Real_t(0));
+template <typename Real_t>
+int sgn(Real_t val)
+{
+  return (Real_t(0) < val) - (val < Real_t(0));
 }
 
 /// @brief Converter for Tube
@@ -24,7 +26,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
 {
   using ZPhiMask_t   = ZPhiMask<Real_t>;
   using WindowMask_t = WindowMask<Real_t>;
-  using Vector3         = vecgeom::Vector3D<Real_t>;
+  using Vector3      = vecgeom::Vector3D<Real_t>;
 
   LogicExpressionCPU logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
   auto sphi = tube.sphi();
@@ -33,23 +35,11 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
 
   // get normal of the end caps
   auto bottom_normal = tube.BottomNormal();
-  auto top_normal = tube.TopNormal();
+  auto top_normal    = tube.TopNormal();
 
   // get maximum extent
   Vector3 aMin, aMax;
   tube.Extent(aMin, aMax);
-
-  // helper function to calculate theta from the normal
-  auto ReturnTheta = [=](Vector3 v) {
-    assert(v.Length() > vecgeom::kTolerance);
-    return acos(v[2]/v.Length());
-  };
-
-  // helper function to calculate phi from the normal
-  auto ReturnPhi = [=](Vector3 v) {
-    assert(v[0]*v[0] + v[1]*v[1] > vecgeom::kTolerance);
-    return sgn(v[1]) * acos(v[0]/ (sqrt(v[0]*v[0] + v[1]*v[1])) );
-  };
 
   assert(dphi > vecgeom::kTolerance);
 
@@ -66,15 +56,14 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   Real_t surfdata[2];
 
   // We need angles in degrees for transformations
-  auto sphid = vecgeom::kRadToDeg * sphi;
-  auto ephid = vecgeom::kRadToDeg * ephi;
-  auto thetad_top = ReturnTheta(top_normal)*vecgeom::kRadToDeg;
-  auto phid_top = ReturnPhi(top_normal)*vecgeom::kRadToDeg;
-  auto thetad_bottom = ReturnTheta(bottom_normal)*vecgeom::kRadToDeg;
-  auto phid_bottom = ReturnPhi(bottom_normal)*vecgeom::kRadToDeg;
-  // assert for 0 <= theta top < 90 and 90 <= theta bottom < 180  
-  assert( (thetad_top > - vecgeom::kTolerance) && (thetad_top < 90)  );
-  assert( (thetad_bottom - 90 > - vecgeom::kTolerance) && (thetad_bottom - 90 < 90)  );
+  auto sphid         = vecgeom::kRadToDeg * sphi;
+  auto ephid         = vecgeom::kRadToDeg * ephi;
+  auto thetad_top    = top_normal.Theta() * vecgeom::kRadToDeg;
+  auto phid_top      = top_normal.Phi() * vecgeom::kRadToDeg;
+  auto thetad_bottom = bottom_normal.Theta() * vecgeom::kRadToDeg;
+  auto phid_bottom   = bottom_normal.Phi() * vecgeom::kRadToDeg;
+  // assert for 0 <= theta top <= 90 and 90 <= theta bottom <= 180
+  assert(top_normal[2] >= 0 && bottom_normal[2] <= 0);
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
 
@@ -86,8 +75,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   assert(abs(top_normal.z()) > vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{tube.rmax(), tube.rmax()/top_normal.z() }),
-      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), phid_top-90, -thetad_top, 0}), use_surf_safety);
+      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
+      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}), use_surf_safety);
   auto &surf = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -96,13 +85,13 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   logic.push_back(land);
 
   // surface at -dz
-  assert(abs(cos(vecgeom::kPi-ReturnTheta(bottom_normal))) > vecgeom::kTolerance); // assert before division
-  isurf          = builder::CreateLocalSurface<Real_t>(
+  assert(abs(cos(vecgeom::kPi - bottom_normal.Theta() > vecgeom::kTolerance))); // assert before division
+  isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
       builder::CreateFrame<Real_t>(kWindow,
-        WindowMask_t{tube.rmax(), tube.rmax()/cos(vecgeom::kPi-ReturnTheta(bottom_normal))}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), phid_bottom-90, -thetad_bottom, 0}),
-        use_surf_safety);
+                                   WindowMask_t{tube.rmax(), tube.rmax() / cos(vecgeom::kPi - bottom_normal.Theta())}),
+      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}),
+      use_surf_safety);
   auto &surf2 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -116,10 +105,10 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
         builder::CreateUnplacedSurface<Real_t>(kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
         builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
-  auto &surf3 = cpudata.fLocalSurfaces[isurf];
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  // Make the surface "logical"
-  surf3.fLogicId = isurf;
+    auto &surf3 = cpudata.fLocalSurfaces[isurf];
+    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    // Make the surface "logical"
+    surf3.fLogicId = isurf;
     logic.push_back(land);
     logic.push_back(isurf);
   }
@@ -132,7 +121,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   auto &surf4 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
-  surf4.fLogicId = isurf;  logic.push_back(land);
+  surf4.fLogicId = isurf;
+  logic.push_back(land);
   logic.push_back(isurf);
 
   if (ApproxEqual(dphi, vecgeom::kTwoPi)) {
@@ -146,8 +136,9 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   // plane cap at Sphi
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, aMax[2]}),
-      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}),
+      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, 0.5 * (aMax[2] - aMin[2])}),
+      builder::CreateLocalTransformation<Real_t>(
+          {Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0.5 * (aMin[2] + aMax[2]), sphid, 90, 0}),
       use_surf_safety && smallerPi);
   auto &surf5 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -160,8 +151,9 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   // plane cap at Sphi+Dphi
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, aMax[2]}),
-      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}),
+      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, 0.5 * (aMax[2] - aMin[2])}),
+      builder::CreateLocalTransformation<Real_t>(
+          {Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0.5 * (aMin[2] + aMax[2]), ephid, -90, 0}),
       use_surf_safety && smallerPi);
   auto &surf6 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);

@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
   bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
   if (use_provided_point) {
     // check if direction is normalized
-    assert(direction_3D.Mag2() == 1);
+    assert(direction_3D.IsNormalized());
     nrays = 1;
     if (debug)
       std::cout << "Tracking single ray with point " << point_3D << " and direction " << direction_3D << std::endl;
