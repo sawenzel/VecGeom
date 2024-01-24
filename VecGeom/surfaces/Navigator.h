@@ -16,25 +16,31 @@ namespace protonav {
 /// @param point Point in local volume coordinates
 /// @param volId Logical volume id
 /// @param surfdata Surface data storage
+/// @param logic_id Logical id entering/exiting surface for which the logic is known
+/// @param is_inside whether the known entering/exiting surface is inside or not
 /// @return Boolean value representing if the point is inside the VolumeShell
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInsideLocal(vecgeom::Vector3D<Real_t> const &localpoint,
-                                                                   int volId, SurfData<Real_t> const &surfdata)
+                                                                   int volId, SurfData<Real_t> const &surfdata,
+                                                                   const int logic_id = -1, const bool is_inside = 0)
 {
   auto const &logic = surfdata.fShells[volId].fLogic;
   // Evaluate volume shell logic
-  auto inside = EvaluateInside(localpoint, volId, logic, surfdata);
+  auto inside = EvaluateInside(localpoint, volId, logic, surfdata, logic_id, is_inside);
   return inside;
 }
 
 /// @brief Check the Inside for the VolumeShell object associated with a touchable
 /// @param point Point in global coordinates
 /// @param in_state Navigation state associated with the touchable
+/// @param logic_id Logical id of entering/exiting surface for which the logic is known
+/// @param is_inside whether the known entering/exiting surface is inside or not
 /// @return Boolean value representing if the point is inside the VolumeShell
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<Real_t> const &point,
                                                               vecgeom::NavigationState const &in_state,
-                                                              SurfData<Real_t> const &surfdata)
+                                                              SurfData<Real_t> const &surfdata, const int logic_id = -1,
+                                                              const bool is_inside = 0)
 {
   // Convert point in local VolumeShell coordinates
   Vector3D<Real_t> localpoint;
@@ -43,7 +49,7 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<
   trans.Transform(point, localpoint);
   auto vol    = in_state.Top();
   auto volId  = vol->GetLogicalVolume()->id();
-  auto inside = LogicInsideLocal(localpoint, volId, surfdata);
+  auto inside = LogicInsideLocal(localpoint, volId, surfdata, logic_id, is_inside);
   return inside;
 }
 
@@ -90,7 +96,8 @@ VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecge
         checked_state.PushScene(framedsurf.fState);
       else
         checked_state.SetNavIndex(framedsurf.fState);
-      auto inside = LogicInside(pushedPoint, checked_state, surfdata);
+      // The logic for the frame that is entered can be set to true without a numerical check
+      auto inside = LogicInside(pushedPoint, checked_state, surfdata, framedsurf.fLogicId, true);
       // Frame cross does not guarantee a real surface cross in case of Booleans
       // For a real exiting, the post-crossing point must be inside the Boolean
       if (!inside) continue;
@@ -284,7 +291,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         }
         if (framedsurf.fLogicId) {
           auto pushedPoint = point + (dist + kPushDistance) * direction;
-          auto inside      = LogicInside(pushedPoint, in_state, surfdata);
+          // The logic for the frame that is exited can be set to false without a numerical check
+          auto inside = LogicInside(pushedPoint, in_state, surfdata, framedsurf.fLogicId, false);
           // Frame cross does not guarantee a real surface cross in case of Booleans
           // For a real exiting, the post-crossing point must be outside the Boolean
           if (inside) inframe = false;

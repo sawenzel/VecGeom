@@ -10,10 +10,13 @@ namespace vgbrep {
 /// @param volId Volume id
 /// @param logic Logic expression
 /// @param surfdata Surface data storage
+/// @param logic_id Logical id entering/exiting surface for which the logic is known
+/// @param is_inside whether the known entering/exiting surface is inside or not
 /// @return Inside property
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plocalVol, int volId,
-                                            LogicExpression const &logic, SurfData<Real_t> const &surfdata)
+                                            LogicExpression const &logic, SurfData<Real_t> const &surfdata,
+                                            const int logic_id = -1, const bool is_inside = 0)
 {
   int depth       = 0;
   bool last_value = false;
@@ -47,7 +50,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
         i++;
     } else {
       // This is a surface index
-      last_value = insideSurf(int(item));
+      last_value = item == logic_id ? is_inside : insideSurf(int(item));
       if (negate) last_value = !last_value;
       negate = false;
     }
