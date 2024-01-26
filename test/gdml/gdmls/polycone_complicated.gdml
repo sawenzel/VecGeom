@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+  <define>
+    <position name="PCON_1inTOPpos" x="0" y="0" z="0" unit="cm"/>
+  </define>
+  <materials>
+    <material name="Al" Z="13">
+      <D unit="g/cm3" value="2.7000000000000002"/>
+      <atom unit="g/mole" value="26.98"/>
+    </material>
+  </materials>
+  <solids>
+    <box name="TOP" x="200" y="200" z="240" lunit="cm"/>
+    <polycone name="PCON0x1" startphi="330" deltaphi="300" aunit="deg" lunit="cm">
+      <zplane z="0" rmin="5" rmax="15"/>
+      <zplane z="20" rmin="10" rmax="10"/>
+      <zplane z="20" rmin="10" rmax="10"/>
+      <zplane z="50" rmin="5" rmax="15"/>
+      <zplane z="70" rmin="0" rmax="10"/>
+      <zplane z="100" rmin="0" rmax="0"/>
+    </polycone>
+  </solids>
+  <structure>
+    <volume name="PCON">
+      <materialref ref="Al"/>
+      <solidref ref="PCON0x1"/>
+    </volume>
+    <volume name="TOP">
+      <materialref ref="Al"/>
+      <solidref ref="TOP"/>
+      <physvol name="PCON_1" copynumber="1">
+        <volumeref ref="PCON"/>
+        <positionref ref="PCON_1inTOPpos"/>
+      </physvol>
+    </volume>
+  </structure>
+  <setup name="default" version="1.0">
+    <world ref="TOP"/>
+  </setup>
+</gdml>

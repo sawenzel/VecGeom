@@ -376,7 +376,13 @@ public:
           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
       break;
     }
-    case kConical:
+    case kConical: {
+      ConeData_t const &extL = fSurfData->fConeData[surf.fLeftSide.fExtent.id - fSurfData->fNcone];
+      printf(
+          "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
+          surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
+      break;
+    }
     case kSpherical:
     case kTorus:
     case kGenSecondOrder:
@@ -416,7 +422,13 @@ public:
                extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
       }
-      case kConical:
+      case kConical: {
+        ConeData_t const &extL = fSurfData->fConeData[surf.fRightSide.fExtent.id - fSurfData->fNcone];
+        printf(
+            "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
+            surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extL.radius, extL.slope);
+        break;
+      }
       case kSpherical:
       case kTorus:
       case kGenSecondOrder:

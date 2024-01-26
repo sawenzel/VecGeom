@@ -306,12 +306,21 @@ struct PolyconeStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeHistorical *GetOriginalParameters() const { return fOriginal_parameters; }
+  PolyconeHistorical *GetOriginalParameters() const
+  {
+    return fOriginal_parameters;
+  }
 
-  VECCORE_ATT_HOST_DEVICE unsigned int GetNz() const { return fNz; }
+  VECCORE_ATT_HOST_DEVICE unsigned int GetNz() const
+  {
+    return fNz;
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  int GetNSections() const { return fSections.size(); }
+  int GetNSections() const
+  {
+    return fSections.size();
+  }
 
   VECCORE_ATT_HOST_DEVICE
   int GetSectionIndex(Precision zposition) const
@@ -335,7 +344,10 @@ struct PolyconeStruct {
 
   VECCORE_ATT_HOST_DEVICE
   // GetSection if index is known
-  PolyconeSection const &GetSection(int index) const { return fSections[index]; }
+  PolyconeSection const &GetSection(int index) const
+  {
+    return fSections[index];
+  }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRminAtPlane(int index) const
@@ -364,6 +376,34 @@ struct PolyconeStruct {
   {
     assert(index <= fSections.size());
     return fZs[index];
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmin1AtSection(size_t index) const
+  {
+    assert(index < fSections.size());
+    return fSections[index].fSolid->fRmin1;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmin2AtSection(size_t index) const
+  {
+    assert(index < fSections.size());
+    return fSections[index].fSolid->fRmin2;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmax1AtSection(size_t index) const
+  {
+    assert(index < fSections.size());
+    return fSections[index].fSolid->fRmax1;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmax2AtSection(size_t index) const
+  {
+    assert(index < fSections.size());
+    return fSections[index].fSolid->fRmax2;
   }
 
   VECCORE_ATT_HOST_DEVICE

@@ -1,0 +1,233 @@
+#ifndef VECGEOM_SURFACE_POLYCONECONVERTER_H_
+#define VECGEOM_SURFACE_POLYCONECONVERTER_H_
+
+#include <VecGeom/surfaces/conv/Builder.h>
+#include <VecGeom/surfaces/Model.h>
+
+#include <VecGeom/volumes/Polycone.h>
+
+namespace vgbrep {
+namespace conv {
+
+/// @brief Converter for Polycone
+/// @tparam Real_t Precision type
+/// @param polycone Polycone solid to be converted
+/// @param logical_id Id of the logical volume
+/// @return Conversion success
+template <typename Real_t>
+bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logical_id)
+{
+  using RingMask_t      = RingMask<Real_t>;
+  using ZPhiMask_t      = ZPhiMask<Real_t>;
+  using Quadrilateral_t = QuadrilateralMask<Real_t>;
+  using Vector3D        = vecgeom::Vector3D<Real_t>;
+
+  LogicExpressionCPU
+      logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi  auto rmin1 = cone.GetRmin1();
+
+  auto nSect = polycone.GetNSections();
+  auto sphi  = polycone.GetStartPhi();
+  auto dphi  = polycone.GetDeltaPhi();
+  auto ephi  = polycone.GetEndPhi();
+  assert(dphi > vecgeom::kTolerance);
+
+  bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
+  bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
+
+  bool use_surf_safety = true;
+  int isurf;
+  Real_t surfdata[2];
+
+  // We need angles in degrees for transformations
+  auto sphid = vecgeom::kRadToDeg * sphi;
+  auto ephid = vecgeom::kRadToDeg * ephi;
+
+  vecgeom::Transformation3D transformation;
+  std::vector<Vector3D> vert; // Stores 3D coordinates of the four corners that create a quadrilateral.
+  auto csphi = std::cos(sphi);
+  auto ssphi = std::sin(sphi);
+  auto cephi = std::cos(ephi);
+  auto sephi = std::sin(ephi);
+
+  // loop over sections, at each section the full cone-like solid is constructed
+  for (int i = 0; i < nSect; i++) {
+    logic.push_back(lplus); // '(' parenthesis around section
+
+    auto z1    = polycone.GetZAtPlane(i);     // note: indices for GetZAtPlane is the
+    auto z2    = polycone.GetZAtPlane(i + 1); // number of distinct z points of the polycone
+    auto rmin1 = polycone.GetRmin1AtSection(i);
+    auto rmax1 = polycone.GetRmax1AtSection(i);
+    auto rmin2 = polycone.GetRmin2AtSection(i);
+    auto rmax2 = polycone.GetRmax2AtSection(i);
+
+    assert(rmax1 - rmin1 > -vecgeom::kTolerance);
+    assert(rmax2 - rmin2 > -vecgeom::kTolerance);
+
+    // do virtual end caps of the section
+    // virtual surface at z2
+    if (rmax2 - rmin2 > vecgeom::kTolerance) {
+      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
+                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}),
+                                                  use_surf_safety);
+      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      logic.push_back(isurf);
+      logic.push_back(land);
+    }
+
+    // virtual surface at z1
+    if (rmax1 - rmin1 > vecgeom::kTolerance) {
+      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
+                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}),
+                                                  use_surf_safety);
+      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      logic.push_back(isurf);
+      logic.push_back(land);
+    }
+
+    // construct top and bottom surfaces:
+    // if there are previous or following sections, the top and bottom surface consist
+    // of up to two rings (inner and outer ring). All of those are real surfaces
+
+    // lets start with the adjusted bottom rings:
+    // case where there is a previous section
+    if (i > 0) {
+      auto rmin_prev = polycone.GetRmin2AtSection(i - 1);
+      auto rmax_prev = polycone.GetRmax2AtSection(i - 1);
+
+      bool has_inner_ring = rmin1 < rmin_prev - vecgeom::kTolerance;
+      bool has_outer_ring = rmax1 > rmax_prev + vecgeom::kTolerance;
+
+      if (has_inner_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin1, rmin_prev, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+      if (has_outer_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmax_prev, rmax1, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+    }
+    // adjusted top rings in case there is a following section
+    if (i < nSect - 1) {
+      auto rmin_next = polycone.GetRmin1AtSection(i + 1);
+      auto rmax_next = polycone.GetRmax1AtSection(i + 1);
+
+      bool has_inner_ring = rmin2 < rmin_next - vecgeom::kTolerance;
+      bool has_outer_ring = rmax2 > rmax_next + vecgeom::kTolerance;
+
+      if (has_inner_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin2, rmin_next, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+      if (has_outer_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmax_next, rmax2, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+    }
+
+    // first section has the full initial ring as bottom surface
+    if (i == 0) {
+      // real surface at z1
+      if (rmax1 - rmin1 > vecgeom::kTolerance) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+    }
+
+    // last section has the full initial ring as top surface
+    if (i == nSect - 1) {
+      // real surface at z2
+      if (rmax1 - rmin1 > vecgeom::kTolerance) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(kPlanar),
+            builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      }
+    }
+
+    // Cones:
+    const Real_t z_shift = 0.5 * (z1 + z2);
+    // inner cone
+    if (rmin2 > vecgeom::kTolerance || rmin1 > vecgeom::kTolerance) {
+      surfdata[0] = 0.5 * (rmin1 + rmin2);
+      surfdata[1] = (rmin2 - rmin1) / (z2 - z1);
+      isurf       = builder::CreateLocalSurface<Real_t>(
+          builder::CreateUnplacedSurface<Real_t>(kConical, surfdata, /*flipped=*/true),
+          builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, sphi, ephi}),
+          builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}), use_surf_safety);
+      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      logic.push_back(isurf);
+      logic.push_back(land);
+    }
+    // outer cone
+    surfdata[0] = 0.5 * (rmax1 + rmax2);
+    surfdata[1] = (rmax2 - rmax1) / (z2 - z1);
+    isurf       = builder::CreateLocalSurface<Real_t>(
+        builder::CreateUnplacedSurface<Real_t>(kConical, surfdata),
+        builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, sphi, ephi}),
+        builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}), use_surf_safety);
+    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    logic.push_back(isurf);
+
+    if (!fullCirc) {
+      // corners of the sphi and ephi faces
+      std::vector<Vector3D> corners = {{rmin1 * csphi, rmin1 * ssphi, z1}, {rmax1 * csphi, rmax1 * ssphi, z1},
+                                       {rmax2 * csphi, rmax2 * ssphi, z2}, {rmin2 * csphi, rmin2 * ssphi, z2},
+                                       {rmax1 * cephi, rmax1 * sephi, z1}, {rmin1 * cephi, rmin1 * sephi, z1},
+                                       {rmin2 * cephi, rmin2 * sephi, z2}, {rmax2 * cephi, rmax2 * sephi, z2}};
+
+      // plane cap at sphi
+      vert           = {corners[0], corners[1], corners[2], corners[3]};
+      transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
+      isurf          = builder::CreateLocalSurface<Real_t>(
+          builder::CreateUnplacedSurface<Real_t>(kPlanar),
+          builder::CreateFrame<Real_t>(kQuadrilateral,
+                                       Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(), vert[2].x(),
+                                                       vert[2].y(), vert[3].x(), vert[3].y()}),
+          builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety && smallerPi);
+      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      logic.push_back(land);
+      logic.push_back(lplus); // '('
+      logic.push_back(isurf);
+
+      // plane cap at sphi+dphi
+      vert           = {corners[4], corners[5], corners[6], corners[7]};
+      transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
+      isurf          = builder::CreateLocalSurface<Real_t>(
+          builder::CreateUnplacedSurface<Real_t>(kPlanar),
+          builder::CreateFrame<Real_t>(kQuadrilateral,
+                                       Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(), vert[2].x(),
+                                                       vert[2].y(), vert[3].x(), vert[3].y()}),
+          builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety && smallerPi);
+      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      logic.push_back(smallerPi ? land : lor);
+      logic.push_back(isurf);
+      logic.push_back(lminus); // ')'
+    }
+
+    logic.push_back(lminus);                 // ')' // close parenthesis after section
+    if (i < nSect - 1) logic.push_back(lor); // union with next section if any
+  }                                          // end loop over sections
+  builder::AddLogicToShell<Real_t>(logical_id, logic);
+
+  return true;
+}
+
+} // namespace conv
+} // namespace vgbrep
+#endif

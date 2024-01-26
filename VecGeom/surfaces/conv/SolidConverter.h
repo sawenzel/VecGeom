@@ -8,6 +8,7 @@
 #include <VecGeom/surfaces/conv/CutTubeConverter.h>
 #include <VecGeom/surfaces/conv/ParallelepipedConverter.h>
 #include <VecGeom/surfaces/conv/ConeConverter.h>
+#include <VecGeom/surfaces/conv/PolyconeConverter.h>
 #include <VecGeom/surfaces/conv/SExtrudedConverter.h>
 #include <VecGeom/surfaces/conv/TrdConverter.h>
 #include <VecGeom/surfaces/conv/TrapezoidConverter.h>
@@ -46,6 +47,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 
     auto cone = dynamic_cast<vecgeom::UnplacedCone const *>(solid);
     if (cone) return conv::CreateConeSurfaces<Real_t>(*cone, volId);
+
+    auto polycone = dynamic_cast<vecgeom::UnplacedPolycone const *>(solid);
+    if (polycone) return conv::CreatePolyconeSurfaces<Real_t>(*polycone, volId);
 
     auto xtru = dynamic_cast<vecgeom::UnplacedSExtruVolume const *>(solid);
     if (xtru) return conv::CreateSExtrudedSurfaces<Real_t>(*xtru, volId);

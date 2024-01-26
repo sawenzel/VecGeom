@@ -139,6 +139,18 @@ public:
   VECCORE_ATT_HOST_DEVICE
   Precision GetZAtPlane(int index) const { return fPolycone.GetZAtPlane(index); }
 
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmin1AtSection(int index) const { return fPolycone.GetRmin1AtSection(index); }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmax1AtSection(int index) const { return fPolycone.GetRmax1AtSection(index); }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmin2AtSection(int index) const { return fPolycone.GetRmin2AtSection(index); }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision GetRmax2AtSection(int index) const { return fPolycone.GetRmax2AtSection(index); }
+
   Precision Capacity() const override
   {
     Precision cubicVolume = 0.;
@@ -181,7 +193,10 @@ public:
   // these methods are required by VUnplacedVolume
   //
 public:
-  virtual int MemorySize() const override { return sizeof(*this); }
+  virtual int MemorySize() const override
+  {
+    return sizeof(*this);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   virtual void Print() const final;
@@ -192,7 +207,10 @@ public:
 #endif
 
   std::ostream &StreamInfo(std::ostream &os) const;
-  std::string GetEntityType() const { return "Polycone"; }
+  std::string GetEntityType() const
+  {
+    return "Polycone";
+  }
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual size_t DeviceSizeOf() const override
