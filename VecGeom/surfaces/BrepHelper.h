@@ -378,9 +378,8 @@ public:
     }
     case kConical: {
       ConeData_t const &extL = fSurfData->fConeData[surf.fLeftSide.fExtent.id - fSurfData->fNcone];
-      printf(
-          "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
-          surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
+      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
       break;
     }
     case kSpherical:
@@ -424,9 +423,9 @@ public:
       }
       case kConical: {
         ConeData_t const &extL = fSurfData->fConeData[surf.fRightSide.fExtent.id - fSurfData->fNcone];
-        printf(
-            "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
-            surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extL.radius, extL.slope);
+        printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
+               surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extL.radius,
+               extL.slope);
         break;
       }
       case kSpherical:
@@ -484,9 +483,13 @@ public:
         throw std::runtime_error("unsupported solid used in surface model");
       }
       // Finalize logic expression
-      auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
-      vgbrep::logichelper::LogicExpressionConstruct lc(crtlogic);
-      lc.Simplify(crtlogic);
+      auto id = fCPUdata.fShells[volume->id()].fSurfaces[0];
+      if (fCPUdata.fLocalSurfaces[id].fLogicId == 0) {
+        auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
+        vgbrep::logichelper::LogicExpressionConstruct lc(crtlogic);
+        lc.Simplify(crtlogic);
+        vgbrep::logichelper::insert_jumps(crtlogic);
+      }
     }
 
     if (fVerbose > 0) {

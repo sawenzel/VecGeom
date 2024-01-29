@@ -265,6 +265,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       surfhit    = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
     }
     if (!surfhit || dist < -vecgeom::kTolerance || dist >= distance) continue;
+#if SURF_NAV_DEBUG > 0
+    std::cout << " to out -> surface " << isurf << " hit at dist = " << dist << " -> ";
+#endif
     Vector3D<Real_t> onsurf_crt = local + dist * localdir;
 
     // We need to check frame intersection
@@ -293,6 +296,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
           auto pushedPoint = point + (dist + kPushDistance) * direction;
           // The logic for the frame that is exited can be set to false without a numerical check
           auto inside = LogicInside(pushedPoint, in_state, surfdata, framedsurf.fLogicId, false);
+#if SURF_NAV_DEBUG > 0
+          if (inside) std::cout << " logic exiting still inside -> ";
+#endif
           // Frame cross does not guarantee a real surface cross in case of Booleans
           // For a real exiting, the post-crossing point must be outside the Boolean
           if (inside) inframe = false;
@@ -300,6 +306,12 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         break;
       }
     }
+#if SURF_NAV_DEBUG > 0
+    if (inframe)
+      std::cout << " HIT\n";
+    else
+      std::cout << " NOT HIT\n";
+#endif
     if (!inframe) continue;
 
     // the current state is correctly exited, so there is a transition on this surface
@@ -378,6 +390,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       surfhit    = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
     }
     if (!surfhit || dist < -vecgeom::kTolerance || dist >= distance) continue;
+#if SURF_NAV_DEBUG > 0
+    std::cout << " to in  -> surface " << isurf << " hit at dist = " << dist << " -> ";
+#endif
     Vector3D<Real_t> onsurf_crt = local + dist * localdir;
 
     // This is an entering surface for in_state
@@ -385,6 +400,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // and it is missed, then we have a virtual hit so we skip
 
     auto const &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
+#if SURF_NAV_DEBUG > 0
+    if (!entry_side.fExtent.Inside(onsurf_crt, surfdata)) std::cout << " NOT HIT\n";
+#endif
     // first check the extent of the entry side using onsurf
     if (!entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
 
@@ -401,6 +419,12 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       full_check = true;
     }
 
+#if SURF_NAV_DEBUG > 0
+    if (iframe >= 0)
+      std::cout << " HIT\n";
+    else
+      std::cout << " NOT HIT\n";
+#endif
     if (iframe >= 0) {
       auto const &framedsurf = entry_side.GetSurface(iframe, surfdata);
       // This surface is certainly hit because the parent frame is hit

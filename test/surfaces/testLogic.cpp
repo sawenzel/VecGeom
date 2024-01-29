@@ -15,10 +15,11 @@ int test_logic(vgbrep::LogicExpressionCPU &logic_expr, const char *swhat, int ns
   vgbrep::logichelper::print_logic(logic_expr_start, 0, -1, false);
   vgbrep::logichelper::LogicExpressionConstruct lc(logic_expr);
   lc.Simplify(logic_expr);
+  vgbrep::logichelper::insert_jumps(logic_expr);
   std::cout << "   simplified logic: ";
   vgbrep::logichelper::print_logic(logic_expr, 0, -1, true);
-  if (max_operand > 1000) {
-    std::cout << "To test the expression, introduce operands with values less than 1000\n";
+  if (max_operand > 10000) {
+    std::cout << "To test the expression, introduce operands with values less than 10000\n";
     return 0;
   }
   bool *test_sample = new bool[max_operand + 1];

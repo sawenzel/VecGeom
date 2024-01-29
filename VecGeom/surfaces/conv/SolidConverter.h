@@ -92,94 +92,76 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 template <typename Real_t>
 bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id)
 {
-  using Bnode   = logichelper::Bnode;
-  auto &cpudata = CPUsurfData<Real_t>::Instance();
   Transformation trans;
-  Bnode top(trans, logical_id, bstruct);
-  AppendLogicTo<Real_t>(top, cpudata.fShells[logical_id].fLogic);
+  AppendLogicTo<Real_t>(bstruct, trans, logical_id);
+
+  auto &cpudata = CPUsurfData<Real_t>::Instance();
+  // Finalize logic expression
+  auto &crtlogic = cpudata.fShells[logical_id].fLogic;
+  vgbrep::logichelper::LogicExpressionConstruct lc(crtlogic);
+  lc.Simplify(crtlogic);
+
   // Assign logic id to each surface
   for (auto id : cpudata.fShells[logical_id].fSurfaces) {
     // All frames of Boolean surfaces must be checked
     cpudata.fLocalSurfaces[id].fUseSurfSafety = false;
     // Set the logic id for Boolean surfaces
-    if (logichelper::is_negated(id, cpudata.fShells[logical_id].fLogic))
+    if (logichelper::is_negated(id, crtlogic))
       cpudata.fLocalSurfaces[id].fLogicId = -id;
     else
       cpudata.fLocalSurfaces[id].fLogicId = id;
   }
+
+  vgbrep::logichelper::insert_jumps(crtlogic);
+
   return true;
 }
 
 template <typename Real_t>
-void AppendLogicTo(logichelper::Bnode const &node, LogicExpressionCPU &logic, bool negate)
+void AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id)
 {
-  using Bnode  = logichelper::Bnode;
-  using Placed = logichelper::Placed;
-  // open paranthesys
-  logic.push_back(lplus);
-
-  auto left_complexity  = node.left_->GetComplexity();
-  auto right_complexity = node.right_->GetComplexity();
-  // use commutativity of AND/OR to keep left node as least complex
-  bool swap = left_complexity > right_complexity;
-  if (swap) {
-    auto complexity  = left_complexity;
-    left_complexity  = right_complexity;
-    right_complexity = complexity;
-  }
-  Placed *new_left   = swap ? node.right_ : node.left_;
-  Placed *new_right  = swap ? node.left_ : node.right_;
-  bool new_neg_left  = swap ? node.neg_right_ : node.neg_left_;
-  bool new_neg_right = swap ? node.neg_left_ : node.neg_right_;
-
+  auto &cpudata = CPUsurfData<Real_t>::Instance();
+  auto &logic   = cpudata.fShells[logical_id].fLogic;
   // left node
-  if (left_complexity > 0) {
-    auto left_node = static_cast<Bnode *>(new_left);
-    AppendLogicTo<Real_t>(*left_node, logic, negate ^ new_neg_left);
-  } else {
-    // Leaf node. Check if negated.
-    // append leaf expression
-    logic.push_back(lplus);
-    size_t istart = logic.size();
-    CreateSolidSurfaces<Real_t>(new_left->fUnplaced, new_left->fVolId, &new_left->fTrans);
-    int inserts = 0;
-    if (new_neg_left ^ negate) logichelper::negate_logic(logic, istart, logic.size() - 1, inserts);
-    logic.push_back(lminus);
-  }
+  // open parenthesis
+  logic.push_back(lplus);
+  vecgeom::Transformation3D tr_left(trans);
+  tr_left.MultiplyFromRight(*bstruct.fLeftVolume->GetTransformation());
+  auto const unplaced_left = bstruct.fLeftVolume->GetUnplacedVolume();
+  auto bstruct_left        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_left);
+  if (bstruct_left)
+    AppendLogicTo<Real_t>(*bstruct_left, tr_left, logical_id);
+  else
+    CreateSolidSurfaces<Real_t>(unplaced_left, logical_id, &tr_left);
+  // close parenthesis
+  logic.push_back(lminus);
 
-  switch (node.op_) {
+  // operator
+  switch (bstruct.fOp) {
   case vecgeom::kUnion:
-    if (negate)
-      logic.push_back(land);
-    else
-      logic.push_back(lor);
+    logic.push_back(lor);
     break;
   case vecgeom::kIntersection:
-    if (negate)
-      logic.push_back(lor);
-    else
-      logic.push_back(land);
+    logic.push_back(land);
     break;
   case vecgeom::kSubtraction:
-    printf("cannot find subtraction here\n");
+    logic.push_back(land);
+    logic.push_back(lnot);
     break;
   };
 
   // right node
-  if (right_complexity > 0) {
-    auto right_node = static_cast<Bnode *>(new_right);
-    AppendLogicTo<Real_t>(*right_node, logic, negate ^ new_neg_right);
-  } else {
-    // Leaf node. Check if negated.
-    // append leaf expression
-    logic.push_back(lplus);
-    size_t istart = logic.size();
-    CreateSolidSurfaces<Real_t>(new_right->fUnplaced, new_right->fVolId, &new_right->fTrans);
-    int inserts = 0;
-    if (new_neg_right ^ negate) logichelper::negate_logic(logic, istart, logic.size() - 1, inserts);
-    logic.push_back(lminus);
-  }
-
+  // open parenthesis
+  logic.push_back(lplus);
+  vecgeom::Transformation3D tr_right(trans);
+  tr_right.MultiplyFromRight(*bstruct.fRightVolume->GetTransformation());
+  auto const unplaced_right = bstruct.fRightVolume->GetUnplacedVolume();
+  auto bstruct_right        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_right);
+  if (bstruct_right)
+    AppendLogicTo<Real_t>(*bstruct_right, tr_right, logical_id);
+  else
+    CreateSolidSurfaces<Real_t>(unplaced_right, logical_id, &tr_right);
+  // close parenthesis
   logic.push_back(lminus);
 }
 

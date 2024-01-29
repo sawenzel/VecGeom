@@ -194,77 +194,6 @@ void insert_jumps(LogicExpressionCPU &logic)
   }
 }
 
-void swap_expressions(LogicExpressionCPU &logic, size_t istart1, size_t iend1, size_t istart2, size_t iend2)
-{
-  LogicExpressionCPU temp;
-  for (size_t i = 0; i < istart1; ++i)
-    temp.push_back(logic[i]);
-  for (size_t i = istart2; i <= iend2; ++i)
-    temp.push_back(logic[i]);
-  for (size_t i = iend1 + 1; i < istart2; ++i)
-    temp.push_back(logic[i]);
-  for (size_t i = istart1; i <= iend1; ++i)
-    temp.push_back(logic[i]);
-  for (size_t i = iend2 + 1; i < logic.size(); ++i)
-    temp.push_back(logic[i]);
-  logic = temp;
-}
-
-void negate_logic(LogicExpressionCPU &logic, size_t istart, size_t iend, int &inserts)
-{
-  // negate logic between istart and iend
-#ifdef SURF_DEBUG_LOGIC
-  printf("negating logic: ");
-  print_logic(logic, istart, iend, false);
-#endif
-  int depth     = 0;
-  int mindepth  = std::numeric_limits<int>::max();
-  logic_int op  = 0;
-  size_t op_pos = 0;
-  // search for the first operator
-  for (size_t i = istart; i <= iend; ++i) {
-    if (logic[i] == lplus) depth++;
-    if (logic[i] == lminus) depth--;
-    if (depth < mindepth && (logic[i] == lor || logic[i] == land)) {
-      op       = logic[i];
-      op_pos   = i;
-      mindepth = depth;
-      if (mindepth == 0) break;
-    }
-  }
-
-  if (op) {
-    // negate left operand
-    auto inserts_left = 0;
-    negate_logic(logic, istart, op_pos - 1, inserts_left);
-    op_pos += inserts_left;
-    if (op == lor)
-      logic[op_pos] = land;
-    else if (op == land)
-      logic[op_pos] = lor;
-    // negate right operand
-    size_t iend1       = iend + inserts_left;
-    auto inserts_right = 0;
-    inserts            = 0;
-    negate_logic(logic, op_pos + 1, iend1, inserts_right);
-    inserts = inserts_left + inserts_right;
-  } else {
-    // this is an operand, find if already negated
-    assert(logic[istart] != lplus && "Cannot have paranthesis before operand");
-    if (logic[istart] == lnot) {
-      logic.erase(logic.begin() + istart);
-      inserts--;
-    } else {
-      logic.insert(logic.begin() + istart, lnot);
-      inserts++;
-    }
-  }
-#ifdef SURF_DEBUG_LOGIC
-  printf("after negation: ");
-  print_logic(logic, istart, iend + inserts, false);
-#endif
-}
-
 bool is_negated(int isurf, LogicExpressionCPU &logic)
 {
   // Find if a given surface is negated in the logic
@@ -275,21 +204,6 @@ bool is_negated(int isurf, LogicExpressionCPU &logic)
   // Should never reach this point
   assert(0 && "Surface not found");
   return false;
-}
-
-void negate_closure(LogicExpressionCPU &logic, size_t start)
-{
-  int ldepth = 1;
-  assert(logic[start] == lplus);
-  size_t i;
-  for (i = start + 1; i < logic.size(); ++i) {
-    if (logic[i] == lplus) ldepth++;
-    if (logic[i] == lminus) ldepth--;
-    if (ldepth == 0) break;
-  }
-  assert(ldepth == 0 && "parenthesis closure not found");
-  int inserts = 0;
-  negate_logic(logic, start + 1, i - 1, inserts);
 }
 
 size_t find_matching_parenthesis(LogicExpressionCPU &logic, size_t start)
@@ -310,31 +224,6 @@ size_t find_matching_parenthesis(LogicExpressionCPU &logic, size_t start)
     }
   }
   return logic.size();
-}
-
-size_t find_closure_and_op(LogicExpressionCPU &logic, size_t start, logic_int &op, int &complexity)
-{
-  // Returns the paranthesis closure index matching to the one opened at `start`
-  // Fills the operation done at the same parantheses depth, and complexity (number of ops)
-  int ldepth = 1;
-  complexity = 0;
-  op         = 0;
-  assert(logic[start] == lplus);
-  size_t i;
-  for (i = start + 1; i < logic.size(); ++i) {
-    if (logic[i] == lplus) ldepth++;
-    if (logic[i] == lminus) ldepth--;
-    bool is_op = (logic[i] == lor) || (logic[i] == land);
-    complexity += int(is_op);
-    if (ldepth == 1 && is_op) {
-      // Only allow identical operators to exist at the same depth
-      assert(op == 0 || op == logic[i]);
-      op = logic[i];
-    }
-    if (ldepth == 0) break;
-  }
-
-  return i;
 }
 
 /// @brief Logic expression decomposed in a vector of operands (also logic expressions) connected by and/or operators
@@ -751,7 +640,6 @@ struct LogicExpressionConstruct {
     SwapByComplexity();
     logic.clear();
     GetLogicExpression(logic);
-    insert_jumps(logic);
   }
 };
 
@@ -834,71 +722,6 @@ bool evaluate_logic(LogicExpressionCPU const &logic, const bool *values, int &nu
   return (stack & 1) > 0;
 }
 
-struct Placed {
-  vecgeom::Transformation3D fTrans;                   ///< Transformation
-  int fVolId{-1};                                     ///< Volume Id
-  vecgeom::VUnplacedVolume const *fUnplaced{nullptr}; ///< Unplaced volume
-
-  virtual int GetComplexity() const { return 0; }
-
-  Placed(vecgeom::Transformation3D const &trans, int volId, vecgeom::VUnplacedVolume const *unplaced = nullptr)
-      : fTrans{trans}, fVolId{volId}, fUnplaced(unplaced)
-  {
-  }
-  virtual ~Placed() {}
-};
-
-struct Bnode : public Placed {
-  int depth_{0};
-  bool neg_left_{false};
-  bool neg_right_{false};
-  Placed *left_{nullptr};
-  Placed *right_{nullptr};
-  vecgeom::BooleanOperation op_;
-
-  virtual ~Bnode()
-  {
-    delete left_;
-    delete right_;
-  }
-
-  Bnode(vecgeom::Transformation3D const &trans, int volId, vecgeom::BooleanStruct const &bstruct) : Placed(trans, volId)
-  {
-    // Transform subtractions in intersection with negation
-    op_ = bstruct.fOp;
-    if (op_ == vecgeom::kSubtraction) {
-      op_        = vecgeom::kIntersection;
-      neg_right_ = true;
-    }
-
-    // left node
-    vecgeom::Transformation3D tr_left(trans);
-    tr_left.MultiplyFromRight(*bstruct.fLeftVolume->GetTransformation());
-    auto const unplaced_left = bstruct.fLeftVolume->GetUnplacedVolume();
-    auto bstruct_left        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_left);
-    if (bstruct_left)
-      left_ = new Bnode(tr_left, volId, *bstruct_left);
-    else
-      left_ = new Placed(tr_left, volId, unplaced_left);
-
-    // right node
-    vecgeom::Transformation3D tr_right(trans);
-    tr_right.MultiplyFromRight(*bstruct.fRightVolume->GetTransformation());
-    auto const unplaced_right = bstruct.fRightVolume->GetUnplacedVolume();
-    auto bstruct_right        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_right);
-    if (bstruct_right)
-      right_ = new Bnode(tr_right, volId, *bstruct_right);
-    else
-      right_ = new Placed(tr_right, volId, unplaced_right);
-  }
-
-  int GetComplexity() const override
-  {
-    int complexity = 1;
-    complexity += left_->GetComplexity() + right_->GetComplexity();
-    return complexity;
-  }
-};
 } // namespace logichelper
 } // namespace vgbrep
 #endif

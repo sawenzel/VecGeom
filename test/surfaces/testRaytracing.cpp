@@ -18,6 +18,8 @@
 #include <Frontend.h>
 #endif
 
+#define SURF_NAV_DEBUG 0
+
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/BrepHelper.h>
 #include <VecGeom/surfaces/Navigator.h>
@@ -30,14 +32,14 @@ using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
 using Vec3Dc = Precision[3];
 
 //==================================================================================
-int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene)
+int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene, double mmunit = 1)
 {
 #ifndef VECGEOM_GDML
   std::cout << "### VecGeom must be compiled with GDML support to run this.\n";
   return 1;
 #else
   GeoManager::Instance().SetMinPerScene(min_per_scene);
-  auto load = vgdml::Frontend::Load(gdml_name, false, 1);
+  auto load = vgdml::Frontend::Load(gdml_name, false, mmunit);
   if (!load) return 2;
 #endif
 
@@ -257,7 +259,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
       exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
       if (idebug >= 0) {
-        printf("     dist = %15.10f\n", distance);
+        printf("     dist = %15.10f  surf = %d\n", distance, exit_surf);
         printf("   ");
         out_state.Print();
       }
@@ -416,6 +418,7 @@ int main(int argc, char *argv[])
   OPTION_INT(verbosity, 0);
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
+  OPTION_DOUBLE(mmunit, 1);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(point, default_point);
@@ -442,7 +445,7 @@ int main(int argc, char *argv[])
   Stopwatch timer;
   // Load the geometry
   timer.Start();
-  bool load = LoadGDML(gdml_name.c_str(), ongpu, min_per_scene);
+  bool load = LoadGDML(gdml_name.c_str(), ongpu, min_per_scene, mmunit);
   if (load > 0) return load;
   auto time_load = timer.Stop();
   std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";

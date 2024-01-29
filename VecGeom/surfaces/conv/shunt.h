@@ -28,8 +28,8 @@ Retrieved from: http://en.literateprograms.org/Shunting_yard_algorithm_(C)?oldid
 #include <stdio.h>
 #include <ctype.h>
 
-#define SHUNT_MAXOPSTACK 64
-#define SHUNT_MAXNUMSTACK 64
+#define SHUNT_MAXOPSTACK 256
+#define SHUNT_MAXNUMSTACK 256
 
 namespace shunt {
 
