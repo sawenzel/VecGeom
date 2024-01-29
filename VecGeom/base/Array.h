@@ -17,7 +17,7 @@ class Array : public AlignedBase {
 
 private:
   Type *fData = nullptr;
-  int fSize = 0;
+  unsigned int fSize = 0;
   bool fAllocated = false;
 
 public:
@@ -25,14 +25,14 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array(const unsigned size);
+  Array(const unsigned int size);
 
   VECGEOM_FORCE_INLINE
   Array(Array<Type> const &other);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array(Type *data, int size);
+  Array(Type *data, unsigned int size);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -56,7 +56,7 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Allocate(const unsigned size);
+  void Allocate(const unsigned int size);
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -84,7 +84,7 @@ public:
 
 template <typename Type>
 VECCORE_ATT_HOST_DEVICE
-Array<Type>::Array(const unsigned initSize)
+Array<Type>::Array(const unsigned int initSize)
 {
   Allocate(initSize);
 }
@@ -99,7 +99,7 @@ Array<Type>::Array(Array<Type> const &other)
 template <typename Type>
 VECGEOM_FORCE_INLINE
 VECCORE_ATT_HOST_DEVICE
-Array<Type>::Array(Type *data, int initSize) : fData(data), fSize(initSize), fAllocated(false)
+Array<Type>::Array(Type *data, unsigned int initSize) : fData(data), fSize(initSize), fAllocated(false)
 {
 }
 
@@ -114,7 +114,7 @@ Array<Type>::~Array()
 
 template <typename Type>
 VECCORE_ATT_HOST_DEVICE
-void Array<Type>::Allocate(const unsigned initSize)
+void Array<Type>::Allocate(const unsigned int initSize)
 {
   Deallocate();
   fSize = initSize;
