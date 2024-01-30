@@ -45,25 +45,27 @@ int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene, double mmunit
 
   auto world = GeoManager::Instance().GetWorld();
   if (!world) return 3;
-
-    // For the moment we still need the world volume on the GPU
-#ifdef VECGEOM_CUDA_INTERFACE
-  if (ongpu) {
-    std::cout << "synchronizing VecGeom geometry to GPU ...\n";
-    // Set higher stack limit to allow depper CSG for the solids model
-    CudaAssertError(CudaDeviceSetStackLimit(8192));
-    auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
-    cudaManager.LoadGeometry(world);
-    if (!cudaManager.Synchronize()) return 4;
-  }
-#endif
   vecgeom::cxx::BVHManager::Init();
+  return 0;
+}
 
+//==================================================================================
+int LoadOnGPU()
+{
 #ifdef VECGEOM_CUDA_INTERFACE
-  if (ongpu) vecgeom::cxx::BVHManager::DeviceInit();
+  std::cout << "synchronizing VecGeom geometry to GPU ...\n";
+  auto world = GeoManager::Instance().GetWorld();
+  if (!world) return 3;
+  // Set higher stack limit to allow depper CSG for the solids model
+  CudaAssertError(CudaDeviceSetStackLimit(8192));
+  auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
+  cudaManager.LoadGeometry(world);
+  if (!cudaManager.Synchronize()) return 4;
+  vecgeom::cxx::BVHManager::DeviceInit();
 #endif
   return 0;
 }
+
 //==================================================================================
 void LocateSolids(int nrays, Vector3D<Precision> const *points, NavigationState *in_states)
 {
@@ -268,7 +270,6 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
       start_state = out_state;
       num_cross++;
     } while (!out_state.IsOutside());
-
     length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
   }
 }
@@ -448,7 +449,7 @@ int main(int argc, char *argv[])
   bool load = LoadGDML(gdml_name.c_str(), ongpu, min_per_scene, mmunit);
   if (load > 0) return load;
   auto time_load = timer.Stop();
-  std::cout << "Geometry loading and GPU transfer: " << time_load << " [s]\n";
+  std::cout << "Geometry loading: " << time_load << " [s]\n";
 
   BrepHelper::Instance().SetVerbosity(verbosity);
 
@@ -491,8 +492,15 @@ int main(int argc, char *argv[])
   int errHost = testRaytracingHost(nrays, points, dirs, debug);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
+  // Copy geometry to GPU
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
-  if (ongpu) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+  if (ongpu) {
+    timer.Start();
+    errCUDA            = LoadOnGPU();
+    auto time_transfer = timer.Stop();
+    std::cout << "Solid model GPU transfer time: " << time_transfer << " [s]\n";
+    if (!errCUDA) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+  }
 #endif
 
   // Clear surface data

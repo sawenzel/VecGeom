@@ -480,7 +480,7 @@ public:
       if (!result) {
         VECGEOM_LOG(critical) << "Solid type not supported for volume: " << volume->GetName();
         solid->Print();
-        throw std::runtime_error("unsupported solid used in surface model");
+        return false;
       }
       // Finalize logic expression
       auto id = fCPUdata.fShells[volume->id()].fSurfaces[0];
@@ -494,7 +494,7 @@ public:
 
     if (fVerbose > 0) {
       for (auto volume : volumes) {
-        VolumeShellCPU const &shell = fCPUdata.fShells[volume->id()];
+        auto const &shell = fCPUdata.fShells[volume->id()];
         printf("shell %d for volume %s:\n", volume->id(), volume->GetName());
         logichelper::print_logic(shell.fLogic);
         for (int lsurf_id : shell.fSurfaces) {

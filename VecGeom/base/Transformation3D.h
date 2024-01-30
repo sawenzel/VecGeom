@@ -147,7 +147,7 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Transformation3D operator*(Transformation3D const &tf);
+  Transformation3D operator*(Transformation3D const &tf) const;
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -660,7 +660,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> Transformation3
 
 VECCORE_ATT_HOST_DEVICE
 VECGEOM_FORCE_INLINE
-Transformation3D Transformation3D::operator*(Transformation3D const &rhs)
+Transformation3D Transformation3D::operator*(Transformation3D const &rhs) const
 {
   if (rhs.fIdentity) return Transformation3D(*this);
   return Transformation3D(tx_ * rhs.rxx_ + ty_ * rhs.ryx_ + tz_ * rhs.rzx_ + rhs.tx_, // tx

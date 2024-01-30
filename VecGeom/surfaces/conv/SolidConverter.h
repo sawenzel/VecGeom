@@ -14,6 +14,8 @@
 #include <VecGeom/surfaces/conv/TrapezoidConverter.h>
 #include <VecGeom/surfaces/conv/PolyhedronConverter.h>
 #include <VecGeom/surfaces/conv/BooleanConverter.h>
+#include <VecGeom/surfaces/conv/ScaledConverter.h>
+#include <VecGeom/volumes/ScaledShape.h>
 
 namespace vgbrep {
 namespace conv {
@@ -32,7 +34,7 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
   auto const &shell = cpudata.fShells[volId];
   auto isurf_first  = shell.fSurfaces.size();
 
-  auto createSurfacesLocal = [&]() {
+  auto createSurfacesLocal = [](vecgeom::VUnplacedVolume const *solid, int volId) {
     auto box = dynamic_cast<vecgeom::UnplacedBox const *>(solid);
     if (box) return conv::CreateBoxSurfaces<Real_t>(*box, volId);
 
@@ -66,10 +68,13 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
     auto bstruct = vecgeom::BooleanHelper::GetBooleanStruct(solid);
     if (bstruct) return conv::CreateBooleanSurfaces<Real_t>(*bstruct, volId);
 
+    auto scaled = dynamic_cast<vecgeom::UnplacedScaledShape const *>(solid);
+    if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId);
+
     return false;
   };
 
-  success = createSurfacesLocal();
+  success = createSurfacesLocal(solid, volId);
 
   // If there is a local transformation, apply it to all surfaces
   if (success && localtrans) {
@@ -80,6 +85,34 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
       trans.MultiplyFromRight(cpudata.fLocalTrans[surf.fTrans]);
       cpudata.fLocalTrans[surf.fTrans] = trans;
     }
+  }
+  return success;
+}
+
+/// @brief Converter for scaled solids
+/// @tparam Real_t Precision type
+/// @param scaled Scaled solid to be converted
+/// @param logical_id Id of the logical volume
+/// @return Conversion success
+template <typename Real_t>
+bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logical_id)
+{
+  auto const &vec_scale = scaled.GetScale().Scale();
+  if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<Real_t>{1, 1, -1})) {
+    VECGEOM_LOG(critical) << "UnplacedScaledShape having scale " << vec_scale << " not supported";
+    return false;
+  }
+  auto success = CreateSolidSurfaces<Real_t>(scaled.UnscaledShape(), logical_id);
+  // Reflect all framed surfaces held by the shell
+  auto &cpudata     = CPUsurfData<Real_t>::Instance();
+  auto const &shell = cpudata.fShells[logical_id];
+  for (int lsurf_id : shell.fSurfaces) {
+    FramedSurface const &lsurf = cpudata.fLocalSurfaces[lsurf_id];
+    auto const &trans          = cpudata.fLocalTrans[lsurf.fTrans];
+    // Reflect the framed surface
+    Transformation scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
+    Transformation refl_trans         = trans * scalez;
+    cpudata.fLocalTrans[lsurf.fTrans] = refl_trans;
   }
   return success;
 }
