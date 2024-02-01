@@ -507,7 +507,7 @@ struct TorusImplementation2 {
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Bool_v unused, outside;
-    TorusImplementation2::GenericKernelForContainsAndInside<Real_v, true, false>(torus, point, unused, outside);
+    TorusImplementation2::GenericKernelForContainsAndInside<Real_v, true, true>(torus, point, unused, outside);
     contains = !outside;
   }
 
@@ -595,28 +595,17 @@ struct TorusImplementation2 {
       // check phi intersections if bounding tube intersection is due to phi in which case we are done
       if (vecCore::MaskFull(d1 != kInfLength)) {
         Real_v daxis = DistSqrToTorusR(torus, localPoint, localDirection, d1);
-        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2())) {
+        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2() && d1 > -kTolerance)) {
           distance = d1;
-          // check if tube intersections is due to phi in which case we are done
-          if (vecCore::MaskFull(Abs(distance) < kTolerance)) {
-            distance += tubeDistance;
-            return;
-          }
         }
       }
 
       if (vecCore::MaskFull(d2 != kInfLength)) {
         Real_v daxis = DistSqrToTorusR(torus, localPoint, localDirection, d2);
-        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2())) {
-          distance = Min(d2, distance);
-          // check if tube intersections is due to phi in which case we are done
-          if (vecCore::MaskFull(Abs(distance) < kTolerance)) {
-            distance += tubeDistance;
-            return;
-          }
+        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2() && d2 > -kTolerance)) {
+          distance = Min(distance, d2);
         }
       }
-      distance = kInfLength;
     }
 
     Real_v dd = ToBoundary<Real_v, false>(torus, localPoint, localDirection, torus.rmax(), false);
