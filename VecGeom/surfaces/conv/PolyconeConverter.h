@@ -64,7 +64,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
     // do virtual end caps of the section
     // virtual surface at z2
-    if (rmax2 - rmin2 > vecgeom::kTolerance) {
+    if (rmax2 - rmin2 > vecgeom::kTolerance && (i != nSect - 1)) {
       isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
                                                   builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}),
                                                   use_surf_safety);
@@ -74,7 +74,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
     }
 
     // virtual surface at z1
-    if (rmax1 - rmin1 > vecgeom::kTolerance) {
+    if (rmax1 - rmin1 > vecgeom::kTolerance && (i != 0)) {
       isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
                                                   builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}),
                                                   use_surf_safety);
@@ -144,6 +144,8 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
     }
 
@@ -156,6 +158,8 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
     }
 
