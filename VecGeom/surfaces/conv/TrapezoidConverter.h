@@ -17,8 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical_id)
 {
-  using Quadrilateral_t = QuadrilateralMask<Real_t>;
-  using Vector3D        = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<Real_t>;
 
   auto dx1 = trap.GetDx1();
   auto dx2 = trap.GetDx2();
@@ -47,75 +46,49 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
       {+dx4 + dy2 * txy + dz * txz, +dy2 + dz * tyz, +dz}, {-dx4 + dy2 * txy + dz * txz, +dy2 + dz * tyz, +dz}};
 
   // surface at -dx:
-  vert           = {corners[0], corners[1], corners[5], corners[4]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(isurf);
+  vert  = {corners[0], corners[1], corners[5], corners[4]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) logic.push_back(isurf);
 
   // surface at +dx:
-  vert           = {corners[2], corners[3], corners[7], corners[6]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(land);
-  logic.push_back(isurf);
+  vert  = {corners[2], corners[3], corners[7], corners[6]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) {
+    logic.push_back(land);
+    logic.push_back(isurf);
+  }
 
   // surface at -dy:
-  vert           = {corners[3], corners[0], corners[4], corners[7]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(land);
-  logic.push_back(isurf);
+  vert  = {corners[3], corners[0], corners[4], corners[7]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) {
+    logic.push_back(land);
+    logic.push_back(isurf);
+  }
 
   // surface at +dy:
-  vert           = {corners[1], corners[2], corners[6], corners[5]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(land);
-  logic.push_back(isurf);
+  vert  = {corners[1], corners[2], corners[6], corners[5]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) {
+    logic.push_back(land);
+    logic.push_back(isurf);
+  }
 
   // surface at -dz:
-  vert           = {corners[0], corners[3], corners[2], corners[1]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(land);
-  logic.push_back(isurf);
+  vert  = {corners[0], corners[3], corners[2], corners[1]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) {
+    logic.push_back(land);
+    logic.push_back(isurf);
+  }
 
   // surface at +dz:
-  vert           = {corners[4], corners[5], corners[6], corners[7]};
-  transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-  isurf          = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kQuadrilateral, Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(),
-                                                                   vert[2].x(), vert[2].y(), vert[3].x(), vert[3].y()}),
-      builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-  logic.push_back(land);
-  logic.push_back(isurf);
+  vert  = {corners[4], corners[5], corners[6], corners[7]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  if (isurf >= 0) {
+    logic.push_back(land);
+    logic.push_back(isurf);
+  }
   builder::AddLogicToShell<Real_t>(logical_id, logic);
   return true;
 }

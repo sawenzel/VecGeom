@@ -109,39 +109,72 @@ struct ConeData {
 
 ///< Constants and tolerances
 template <typename Real_t>
-constexpr Real_t Tolerance()
+VECCORE_ATT_HOST_DEVICE constexpr Real_t Tolerance()
 {
   return 0;
 }
 
 template <>
-constexpr double Tolerance()
+VECCORE_ATT_HOST_DEVICE constexpr double Tolerance()
 {
   return 1.e-9;
 }
 
 template <>
-constexpr float Tolerance()
+VECCORE_ATT_HOST_DEVICE constexpr float Tolerance()
 {
   return 1.e-4;
 }
 
 template <typename Real_t>
-bool ApproxEqual(Real_t t1, Real_t t2)
+VECCORE_ATT_HOST_DEVICE bool ApproxEqual(Real_t t1, Real_t t2)
 {
   return std::abs(t1 - t2) <= Tolerance<Real_t>();
 }
 
 template <typename Real_t>
-bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
+VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
 {
   return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
 }
 
 template <typename Real_t>
-bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
+VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
 {
   return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]);
+}
+
+/// @brief Truncate a value to as many significant digits as a given tolerance.
+///  For example, if the tolerance is 1e-9, truncate the vlaue to 9 significant digits
+/// @tparam Real_t Precision type
+/// @param x Value to truncate
+/// @param tolerance Tolerance with as many significant digits as the truncation result
+/// @return Truncated value
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = Tolerance<Real_t>())
+{
+  auto div = std::abs(x);
+  while (int(div) > 0) {
+    div /= 10;
+    tolerance *= 10;
+  }
+  return tolerance * std::lround(x / tolerance);
+}
+
+/// @brief Return the rounding error of a value, assuming as many significant digits as a provided tolerance
+/// @tparam Real_t Precision type
+/// @param x Value subject to rounding
+/// @param tolerance Tolerance with as many significant digits as the truncation result
+/// @return Truncation error
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = Tolerance<Real_t>())
+{
+  auto div = std::abs(x);
+  while (int(div) > 0) {
+    div /= 10;
+    tolerance *= 10;
+  }
+  return tolerance;
 }
 
 } // namespace vgbrep

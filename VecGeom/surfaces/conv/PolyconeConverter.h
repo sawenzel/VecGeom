@@ -17,10 +17,9 @@ namespace conv {
 template <typename Real_t>
 bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logical_id)
 {
-  using RingMask_t      = RingMask<Real_t>;
-  using ZPhiMask_t      = ZPhiMask<Real_t>;
-  using Quadrilateral_t = QuadrilateralMask<Real_t>;
-  using Vector3D        = vecgeom::Vector3D<Real_t>;
+  using RingMask_t = RingMask<Real_t>;
+  using ZPhiMask_t = ZPhiMask<Real_t>;
+  using Vector3D   = vecgeom::Vector3D<Real_t>;
 
   LogicExpressionCPU
       logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi  auto rmin1 = cone.GetRmin1();
@@ -192,29 +191,17 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
                                        {rmin2 * cephi, rmin2 * sephi, z2}, {rmax2 * cephi, rmax2 * sephi, z2}};
 
       // plane cap at sphi
-      vert           = {corners[0], corners[1], corners[2], corners[3]};
-      transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-      isurf          = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(kPlanar),
-          builder::CreateFrame<Real_t>(kQuadrilateral,
-                                       Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(), vert[2].x(),
-                                                       vert[2].y(), vert[3].x(), vert[3].y()}),
-          builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety && smallerPi);
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      vert  = {corners[0], corners[1], corners[2], corners[3]};
+      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+      assert(isurf >= 0);
       logic.push_back(land);
       logic.push_back(lplus); // '('
       logic.push_back(isurf);
 
       // plane cap at sphi+dphi
-      vert           = {corners[4], corners[5], corners[6], corners[7]};
-      transformation = builder::TransformationFromPlanarPoints<Real_t>(vert);
-      isurf          = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(kPlanar),
-          builder::CreateFrame<Real_t>(kQuadrilateral,
-                                       Quadrilateral_t{vert[0].x(), vert[0].y(), vert[1].x(), vert[1].y(), vert[2].x(),
-                                                       vert[2].y(), vert[3].x(), vert[3].y()}),
-          builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety && smallerPi);
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      vert  = {corners[4], corners[5], corners[6], corners[7]};
+      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+      assert(isurf >= 0);
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);
       logic.push_back(lminus); // ')'

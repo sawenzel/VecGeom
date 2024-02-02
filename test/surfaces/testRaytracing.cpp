@@ -280,7 +280,8 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 {
   int num_errors_dist = 0;
   for (auto i = 0; i < nrays; ++i) {
-    bool error_dist = Abs(length_over_crossings[i] - refLength_over_crossings[i]) > kTolerance;
+    bool error_dist = Abs(length_over_crossings[i] - refLength_over_crossings[i]) >
+                      vgbrep::RoundingError(refLength_over_crossings[i], 100 * kTolerance);
     num_errors_dist += error_dist;
     if (debug && error_dist && (num_errors_dist == 1)) {
       // replay first error

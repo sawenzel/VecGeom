@@ -13,9 +13,7 @@ namespace conv {
 
 template <typename Real_t>
 struct ReducedPoly {
-  using Triangle_t      = TriangleMask<Real_t>;
-  using Quadrilateral_t = QuadrilateralMask<Real_t>;
-  using Vector3         = vecgeom::Vector3D<Real_t>;
+  using Vector3 = vecgeom::Vector3D<Real_t>;
 
   int Nconvex;              // number of convex vertices
   int Nvert;                // total number of vertices
@@ -206,9 +204,7 @@ struct ReducedPoly {
 template <typename Real_t>
 bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logical_id)
 {
-  using Triangle_t      = TriangleMask<Real_t>;
-  using Quadrilateral_t = QuadrilateralMask<Real_t>;
-  using Vector3         = vecgeom::Vector3D<Real_t>;
+  using Vector3 = vecgeom::Vector3D<Real_t>;
 
   auto const &shell         = xtru.GetStruct();
   int n_vertices            = shell.GetPolygon().GetNVertices();
@@ -271,19 +267,13 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
                       section_origin2 + section_scale2 * vert1, section_origin1 + section_scale1 * vert1};
           logic.push_back(lnot);
         }
-        transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
 
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
-          isurf = builder::CreateLocalSurface<Real_t>(
-              builder::CreateUnplacedSurface<Real_t>(kPlanar),
-              builder::CreateFrame<Real_t>(
-                  kQuadrilateral, Quadrilateral_t{vertices[0].x(), vertices[0].y(), vertices[1].x(), vertices[1].y(),
-                                                  vertices[2].x(), vertices[2].y(), vertices[3].x(), vertices[3].y()}),
-              builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-          builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
         } else {
           // create virtual surface without frame
+          transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
           isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
                                                       builder::CreateLocalTransformation<Real_t>(transformation),
                                                       use_surf_safety);
@@ -322,19 +312,12 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           logic.push_back(lnot);
         }
 
-        transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
-
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
-          isurf = builder::CreateLocalSurface<Real_t>(
-              builder::CreateUnplacedSurface<Real_t>(kPlanar),
-              builder::CreateFrame<Real_t>(
-                  kQuadrilateral, Quadrilateral_t{vertices[0].x(), vertices[0].y(), vertices[1].x(), vertices[1].y(),
-                                                  vertices[2].x(), vertices[2].y(), vertices[3].x(), vertices[3].y()}),
-              builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-          builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
         } else {
           // create virtual surface without frame
+          transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
           isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
                                                       builder::CreateLocalTransformation<Real_t>(transformation),
                                                       use_surf_safety);
@@ -426,24 +409,12 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
     // bottom triangles
     vertices = {section_origin1 + section_scale1 * triangle_var[2], section_origin1 + section_scale1 * triangle_var[1],
                 section_origin1 + section_scale1 * triangle_var[0]};
-    transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
-    isurf          = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kTriangle, Triangle_t{vertices[0].x(), vertices[0].y(), vertices[1].x(),
-                                                           vertices[1].y(), vertices[2].x(), vertices[2].y()}),
-        builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
 
     // top triangles
     vertices = {section_origin2 + section_scale2 * triangle_var[0], section_origin2 + section_scale2 * triangle_var[1],
                 section_origin2 + section_scale2 * triangle_var[2]};
-    transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
-    isurf          = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kTriangle, Triangle_t{vertices[0].x(), vertices[0].y(), vertices[1].x(),
-                                                           vertices[1].y(), vertices[2].x(), vertices[2].y()}),
-        builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
   }
 
   // bottom virtual surface

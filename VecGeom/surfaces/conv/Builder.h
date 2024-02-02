@@ -118,6 +118,24 @@ void AddLogicToShell(int logical_id, LogicExpressionCPU &logic)
   crtlogic.insert(crtlogic.end(), logic.begin(), logic.end());
 }
 
+/// @brief Creates a quadrilateral frame, triangular frame of no frame based on a vector of vertices (using only XY coordinates)
+/// @tparam Real_t Precision type
+/// @tparam Container Container type
+/// @param points Vector of points
+/// @return Created frame. If this has the type kNoFrame, the user must abort framed surface creation
+template <typename Real_t, typename Container>
+Frame CreateFrameFromVertices(Container &points)
+{
+  if (points.size() == 3)
+    return CreateFrame<Real_t>(kTriangle, TriangleMask<Real_t>{points[0].x(), points[0].y(), points[1].x(),
+                                                               points[1].y(), points[2].x(), points[2].y()});
+  if (points.size() == 4)
+    return CreateFrame<Real_t>(kQuadrilateral,
+                               QuadrilateralMask<Real_t>{points[0].x(), points[0].y(), points[1].x(), points[1].y(),
+                                                         points[2].x(), points[2].y(), points[3].x(), points[3].y()});
+  return Frame(kNoFrame);
+}
+
 /// @brief Compute transformation (rotation + translation) for a surface defined by a set of co-planar points.
 /// @details The points must be ordered such that the cross product of any two consecutive segments has the same
 /// direction as the normal. All points must be different and not all colinear.
@@ -148,7 +166,7 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
       cross_mag2_max = cross_mag2;
     }
   }
-  assert(cross_mag2_max > vecgeom::kTolerance && "TransformationFromPlanarPoints: degenerated polygon");
+  assert(cross_mag2_max > vecgeom::kToleranceSquared && "TransformationFromPlanarPoints: degenerated polygon");
   center *= 1. / npoints;
 
   Vector3 zref = normal;
@@ -162,6 +180,39 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
     points[i]     = local;
   }
   return transformation;
+}
+
+/// @brief Create local surface starting from a vector of maximum four vertices
+/// @tparam Real_t Precision type
+/// @tparam Container Container type
+/// @param points Vertices vector
+/// @return Index of created local surface
+template <typename Real_t, typename Container>
+int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_surf_safety)
+{
+  // copy container because the content may get changed due to degenerated vertices
+  Container vertices(points);
+  // Remove duplicated vertices
+  size_t i = 0;
+  for (i = 0; i < vertices.size(); ++i) {
+    for (size_t j = 0; j < i; ++j) {
+      if (ApproxEqualVector(vertices[i], vertices[j])) {
+        // remove duplicate vertex
+        vertices.erase(vertices.begin() + i--);
+        break;
+      }
+    }
+  }
+  if (vertices.size() < 3) return -1;
+
+  auto transformation = TransformationFromPlanarPoints<Real_t>(vertices);
+  auto itrans         = CreateLocalTransformation<Real_t>(transformation);
+  auto frame          = CreateFrameFromVertices<Real_t>(vertices);
+  // Create transformation
+  int isurf =
+      builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(kPlanar), frame, itrans, use_surf_safety);
+  AddSurfaceToShell<Real_t>(logical_id, isurf);
+  return isurf;
 }
 
 } // namespace builder
