@@ -130,9 +130,9 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
     return true;
   }
 
-  // Simple implementation of the plane caps at Sphi and Ephi by using a window with the size of the maximum extend.
-  // Depending on the phi cut position, this window is significantly larger than the actual surface.
-  // To be optimized by using a quadrilateral surface with the correct size
+  // Implementation of the plane caps at Sphi and Ephi by using a window with the size of the maximum extent.
+  // Depending on the phi cut position, this window is a bit larger than the actual surface,
+  // but we found this implementation to be faster than a quadrilateral with the correct size
   // plane cap at Sphi
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),

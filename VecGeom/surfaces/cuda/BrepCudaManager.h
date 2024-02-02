@@ -108,6 +108,11 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fConeData, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fConeData, surfData.fConeData, sizeInBytes, cudaMemcpyHostToDevice));
 
+    fSurfDataStaging.fNtorus = surfData.fNtorus;
+    sizeInBytes             = sizeof(surfData.fTorusData[0]) * surfData.fNtorus;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTorusData, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fTorusData, surfData.fTorusData, sizeInBytes, cudaMemcpyHostToDevice));
+
     // Allocate and copy volume shells
     fSurfDataStaging.fNshells = surfData.fNshells;
     sizeInBytes               = sizeof(surfData.fShells[0]) * surfData.fNshells;

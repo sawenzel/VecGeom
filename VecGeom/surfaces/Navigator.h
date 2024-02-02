@@ -81,6 +81,7 @@ VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecge
       (to_be_checked == kCheckChildren) ? surface_side.fNsurf - surface_side.fNumParents : surface_side.fNsurf;
   for (auto ind = start_ind; ind < last_ind; ++ind) {
     auto const &framedsurf = surface_side.GetSurface(ind, surfdata);
+    if (framedsurf.fNeverCheck) continue;
     // If this frame has the same state as the exited state (this can happen in Booleans
     // having internal surfaces), it means that the current touchable has an internal common
     // surface being crossed, so this surface must be ignored
@@ -283,7 +284,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     for (int ind = frameind_start; ind < exit_side.fNsurf; ++ind) {
       auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
       if (framedsurf.fState != in_navind) continue;
-      inframe = framedsurf.InsideFrame(onsurf_crt, surfdata);
+      inframe = framedsurf.fNeverCheck ? true : framedsurf.InsideFrame(onsurf_crt, surfdata);
       if (inframe) {
         // Find the appropriate surface index
         surf_index       = framedsurf.fSurfIndex;
@@ -404,7 +405,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     if (!entry_side.fExtent.Inside(onsurf_crt, surfdata)) std::cout << " NOT HIT\n";
 #endif
     // first check the extent of the entry side using onsurf
-    if (!entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
+    if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
 
     bool has_children = entry_side.fNsurf > entry_side.fNumParents;
     bool full_check   = !has_children;

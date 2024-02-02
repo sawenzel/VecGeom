@@ -176,6 +176,53 @@ VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = Tolera
   }
   return tolerance;
 }
+/// @brief Data for torus surfaces
+/// @tparam Real_t Storage type
+/// @tparam Real_s Interface type
+template <typename Real_t, typename Real_s = Real_t>
+struct TorusData {
+  Real_t rTor{0};  ///< radius to the center the torus.
+  Real_t rTube{0}; ///< radius of the tube around the torus center, if negative, the torus is flipped
+  AngleVector<Real_t> vecSPhi{
+      vecgeom::kInfLength,
+      vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
+  AngleVector<Real_t> vecEPhi{
+      vecgeom::kInfLength,
+      vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
+  CylData<Real_t, Real_t> cycl_data;
+
+  /// @brief Check if local point is in the phi range
+  /// @param local Point in local coordinates
+  /// @return Point inside phi
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool InsidePhi(Vector3D<Real_t> const &local) const
+  {
+    if (vecSPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance &&
+        vecEPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance)
+      return true;
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
+    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    return convex ? in1 && in2 : in1 || in2;
+  }
+
+  TorusData() = default;
+  TorusData(Real_s rad, Real_s rad_tube, Real_s sphi = Real_s{0}, Real_s ephi = Real_s{0}, bool flip = false)
+      : rTor(rad), rTube(flip ? -rad_tube : rad_tube), vecSPhi(vecgeom::Cos(sphi), vecgeom::Sin(sphi)),
+        vecEPhi(vecgeom::Cos(ephi), vecgeom::Sin(ephi)), cycl_data(rad + rad_tube, false){};
+  VECCORE_ATT_HOST_DEVICE
+  Real_s Radius() const { return std::abs(Real_s(rTor)); }
+  VECCORE_ATT_HOST_DEVICE
+  Real_s RadiusTube() const { return std::abs(Real_s(rTube)); }
+  VECCORE_ATT_HOST_DEVICE
+  VECCORE_ATT_HOST_DEVICE
+  bool IsFlipped() const { return rTube < 0; }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  CylData<Real_t, Real_t> const &GetCylData() const { return cycl_data; }
+};
 
 } // namespace vgbrep
 

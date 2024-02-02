@@ -52,6 +52,7 @@ struct UnplacedSurface {
     case kSpherical:
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
     case kTorus:
+      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point);
     case kGenSecondOrder:
       // unhandled
       return false;
@@ -81,6 +82,7 @@ struct UnplacedSurface {
     case kSpherical:
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, left_side, distance);
     case kTorus:
+      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id)).Intersect(point, dir, left_side, distance);
     case kGenSecondOrder:
       // unhandled
       return false;
@@ -114,6 +116,8 @@ struct UnplacedSurface {
       return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kTorus:
+      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id))
+          .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case kGenSecondOrder:
       // unhandled
       return false;
@@ -232,10 +236,13 @@ struct FramedSurface {
   NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
   bool fUseSurfSafety{false}; ///< The surface has virtual intersections with the 3D shape. Use just the surface safety
                               ///< to outside in the minimization procedure
+  bool fNeverCheck{false};    ///< This frames should never be checked
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool surfsafety, NavIndex_t index = 0)
-      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fUseSurfSafety(surfsafety)
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool surfsafety, NavIndex_t index = 0,
+                const bool never_check = 0)
+      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fUseSurfSafety(surfsafety),
+        fNeverCheck(never_check)
   {
   }
 
@@ -339,6 +346,8 @@ struct Side {
     fSurfaces = surfaces;
     return fNsurf - 1;
   }
+
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasExtent() const { return fExtent.id >= 0; }
 
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &GetSurface(int index,
@@ -453,6 +462,7 @@ struct SurfData {
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
   using SphData_t      = SphData<Real_t>;
+  using TorusData_t    = TorusData<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
   using ZPhiMask_t     = ZPhiMask<Real_t>;
@@ -466,6 +476,7 @@ struct SurfData {
   int fNglobalSurf{0};
   int fNcylsph{0};
   int fNcone{0};
+  int fNtorus{0};
   int fNcommonSurf{0};
   int fNsides{0};
   int fNStates{0};
@@ -494,8 +505,9 @@ struct SurfData {
   FramedSurface *fFramedSurf{nullptr}; ///< global surfaces
 
   /// Cylindrical surface data (radius)
-  CylData_t *fCylSphData{nullptr}; ///< Cyl and sphere data
-  ConeData_t *fConeData{nullptr};  ///< Cone data
+  CylData_t *fCylSphData{nullptr};  ///< Cyl and sphere data
+  ConeData_t *fConeData{nullptr};   ///< Cone data
+  TorusData_t *fTorusData{nullptr}; ///< Torus data
 
   // Frame data
   WindowMask_t *fWindowMasks{nullptr};     ///< rectangular masks
@@ -532,28 +544,58 @@ struct SurfData {
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
+  CylData_t const &GetCylData(int id) const
+  {
+    return fCylSphData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
+  SphData_t const &GetSphData(int id) const
+  {
+    return fCylSphData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
+  ConeData_t const &GetConeData(int id) const
+  {
+    return fConeData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
+  TorusData_t const &GetTorusData(int id) const
+  {
+    return fTorusData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
+  WindowMask_t const &GetWindowMask(int id) const
+  {
+    return fWindowMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
+  RingMask_t const &GetRingMask(int id) const
+  {
+    return fRingMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
+  ZPhiMask_t const &GetZPhiMask(int id) const
+  {
+    return fZPhiMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
+  TriangleMask_t const &GetTriangleMask(int id) const
+  {
+    return fTriangleMasks[id];
+  }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  QuadMask_t const &GetQuadMask(int id) const
+  {
+    return fQuadMasks[id];
+  }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE

@@ -25,6 +25,7 @@ struct CPUsurfData {
   using SurfData_t     = SurfData<Real_t>;
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
+  using TorusData_t    = TorusData<Real_t>;
   using SphData_t      = SphData<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
@@ -39,6 +40,7 @@ struct CPUsurfData {
   std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
   std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
   std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
+  std::vector<TorusData_t> fTorusData;        ///< data for conical surfaces
   std::vector<Transformation> fLocalTrans;    ///< local transformations
   std::vector<Transformation> fGlobalTrans;   ///< global transformations for surfaces in the scene
   std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces per logical volume
@@ -78,6 +80,7 @@ public:
     std::vector<QuadMask_t>().swap(fQuadMasks);
     std::vector<CylData_t>().swap(fCylSphData);
     std::vector<ConeData_t>().swap(fConeData);
+    std::vector<TorusData_t>().swap(fTorusData);
     std::vector<Transformation>().swap(fLocalTrans);
     std::vector<Transformation>().swap(fGlobalTrans);
     std::vector<FramedSurface>().swap(fLocalSurfaces);

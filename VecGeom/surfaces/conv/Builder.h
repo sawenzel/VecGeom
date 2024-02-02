@@ -22,8 +22,10 @@ UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, 
     cpudata.fConeData.push_back({data[0], data[1], flip});
     return UnplacedSurface(type, cpudata.fConeData.size() - 1);
   case kTorus:
+    cpudata.fTorusData.push_back({data[0], data[1], data[2], data[3], flip});
+    return UnplacedSurface(type, cpudata.fTorusData.size() - 1);
   case kGenSecondOrder:
-    std::cout << "kTorus, kGenSecondOrder unhandled\n";
+    std::cout << "kGenSecondOrder unhandled\n";
     return UnplacedSurface(type);
   };
   return UnplacedSurface(type);
@@ -85,11 +87,12 @@ int CreateLocalTransformation(Transformation const &trans)
 }
 
 template <typename Real_t>
-int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool use_surf_safety)
+int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool use_surf_safety,
+                       bool never_check = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   int id        = cpudata.fLocalSurfaces.size();
-  cpudata.fLocalSurfaces.push_back({unplaced, frame, trans, use_surf_safety});
+  cpudata.fLocalSurfaces.push_back({unplaced, frame, trans, use_surf_safety, /*NavIndex=*/0, never_check});
   return id;
 }
 

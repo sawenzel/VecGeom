@@ -26,6 +26,7 @@ class BrepHelper {
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
   using SphData_t      = SphData<Real_t>;
+  using TorusData_t    = TorusData<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
   using ZPhiMask_t     = ZPhiMask<Real_t>;
@@ -1285,6 +1286,11 @@ private:
     fSurfData->fConeData = new ConeData_t[fCPUdata.fConeData.size()];
     for (size_t i = 0; i < fCPUdata.fConeData.size(); ++i)
       fSurfData->fConeData[i] = fCPUdata.fConeData[i];
+
+    fSurfData->fNtorus    = fCPUdata.fTorusData.size();
+    fSurfData->fTorusData = new TorusData_t[fCPUdata.fTorusData.size()];
+    for (size_t i = 0; i < fCPUdata.fTorusData.size(); ++i)
+      fSurfData->fTorusData[i] = fCPUdata.fTorusData[i];
 
     // Create Masks
     UpdateMaskData();
