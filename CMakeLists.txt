@@ -183,7 +183,7 @@ option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigat
 option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
 
 option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" OFF)
-option(VECGEOM_NAVTUPLE_MAXDEPTH "Maximum depth of navigation tuple states" 4)
+set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
 option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
