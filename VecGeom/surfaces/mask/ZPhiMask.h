@@ -165,6 +165,7 @@ struct ZPhiMask {
 
       if (in1 && !in2) {
         vecSPhi = other.vecSPhi;
+        return;
       }
       assert(0 && "wrong logic for ZPhiMask::IntersectExtent");
     }
