@@ -201,8 +201,7 @@ bool is_negated(int isurf, LogicExpressionCPU &logic)
     if (logic[i] == isurf) return false;
     if (logic[i] == lnot && logic[++i] == isurf) return true;
   }
-  // Should never reach this point
-  assert(0 && "Surface not found");
+  // It may happen that a surface is not added explicitly to the logic
   return false;
 }
 
@@ -492,10 +491,13 @@ struct LogicExpressionConstruct {
         if (removed_scope) {
           // pull the operand expression up
           fComplexity += operand.fComplexity;
-          sjump = operand.fOperands.size() - 1;
-          fOperators.insert(fOperators.begin() + i, operand.fOperators.begin(), operand.fOperators.end());
-          fOperands.insert(fOperands.begin() + i + 1, operand.fOperands.begin(), operand.fOperands.end());
-          fOperands.erase(fOperands.begin() + i);
+          sjump = 0;
+          if (operand.fComplexity > 0) {
+            sjump = operand.fOperands.size() - 1;
+            fOperators.insert(fOperators.begin() + i, operand.fOperators.begin(), operand.fOperators.end());
+            fOperands.insert(fOperands.begin() + i + 1, operand.fOperands.begin(), operand.fOperands.end());
+            fOperands.erase(fOperands.begin() + i);
+          }
         }
       } else {
         operand.RemoveChildrenScopes();
