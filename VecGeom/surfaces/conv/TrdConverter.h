@@ -17,120 +17,55 @@ namespace conv {
 template <typename Real_t>
 bool CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
 {
-  using WindowMask_t = WindowMask<Real_t>;
-  using QuadMask_t   = QuadrilateralMask<Real_t>;
-
+  using Vector3              = vecgeom::Vector3D<Real_t>;
+  const bool use_surf_safety = true;
+  int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3 & 4 & 5
-  bool use_surf_safety = true;
-  auto dx              = trd.dx1() - trd.dx2();
-  auto dy              = trd.dy1() - trd.dy2();
-  auto dzx             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dy * dy) * 0.5;
-  auto dzy             = vecgeom::Sqrt(4 * trd.dz() * trd.dz() + dx * dx) * 0.5;
 
-  auto phix = ApproxEqual(dy, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dy) * vecgeom::kRadToDeg;
-  auto phiy = ApproxEqual(dx, 0.) ? 90 : vecgeom::ATan(2 * trd.dz() / dx) * vecgeom::kRadToDeg;
-  if (phix < 0) phix = 180 + phix;
-  if (phiy < 0) phiy = 180 + phiy;
+  auto dx1 = trd.dx1();
+  auto dx2 = trd.dx2();
+  auto dy1 = trd.dy1();
+  auto dy2 = trd.dy2();
+  auto dz  = trd.dz();
 
-  auto movey = (trd.dy1() + trd.dy2()) * 0.5;
-  auto movex = (trd.dx1() + trd.dx2()) * 0.5;
-
-  // Bottom face
-  int isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dx1(), trd.dy1()}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -trd.dz(), 0, 180, 0}), use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  // corners represented as vectors (-x, -y, -z), (+x, -y, -z), (+x, +y, -z), (-x, +y, -z), same for +z
+  std::vector<Vector3> corners = {{-dx1, -dy1, -dz}, {dx1, -dy1, -dz}, {dx1, dy1, -dz}, {-dx1, dy1, -dz},
+                                  {-dx2, -dy2, dz},  {dx2, -dy2, dz},  {dx2, dy2, dz},  {-dx2, dy2, dz}};
+  auto assertWindow            = [](int isurf) {
+    assert(isurf >= 0 && CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == kWindow);
+  };
+  std::vector<Vector3> vert;
+  // surface at -dx:
+  vert  = {corners[3], corners[0], corners[4], corners[7]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
   logic.push_back(isurf);
-
-  // Top face
-  isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar),
-                                              builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dx2(), trd.dy2()}),
-                                              builder::CreateLocalTransformation<Real_t>({0, 0, trd.dz()}),
-                                              use_surf_safety);
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  // surface at +dx:
+  vert  = {corners[1], corners[2], corners[6], corners[5]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
   logic.push_back(land);
   logic.push_back(isurf);
-
-  // Sides parallel to x axis
-  if (vecgeom::Abs(dx) > vecgeom::kTolerance) {
-    // At -dy
-    isurf = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kQuadrilateral,
-                                     QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-        builder::CreateLocalTransformation<Real_t>({0, -movey, 0, 0, phix, 0}), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-
-    // At +dy
-    isurf = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kQuadrilateral,
-                                     QuadMask_t{-trd.dx1(), -dzx, trd.dx1(), -dzx, trd.dx2(), dzx, -trd.dx2(), dzx}),
-        builder::CreateLocalTransformation<Real_t>({0, movey, 0, 180, phix, 0}), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-  } else { // We have rectangles.
-    isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar),
-                                                builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                                builder::CreateLocalTransformation<Real_t>({0, -movey, 0, 0, phix, 0}),
-                                                use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-
-    // At +dy
-    isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar),
-                                                builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dx1(), dzx}),
-                                                builder::CreateLocalTransformation<Real_t>({0, movey, 0, 180, phix, 0}),
-                                                use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-  }
-  // Sides parallel to y axis
-  if (vecgeom::Abs(dy) > vecgeom::kTolerance) {
-    // At -dx
-    isurf = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kQuadrilateral,
-                                     QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-        builder::CreateLocalTransformation<Real_t>({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-
-    // At +dx
-    isurf = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kQuadrilateral,
-                                     QuadMask_t{-trd.dy1(), -dzy, trd.dy1(), -dzy, trd.dy2(), dzy, -trd.dy2(), dzy}),
-        builder::CreateLocalTransformation<Real_t>({movex, 0, 0, 90, phiy, 0}), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-  } else { // We have rectangles.
-    // At -dx
-    isurf = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kPlanar),
-        builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dy1(), dzy}),
-        builder::CreateLocalTransformation<Real_t>({-movex, 0, 0, -90, phiy, 0}), use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-
-    // At +dx
-    isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(kPlanar),
-                                                builder::CreateFrame<Real_t>(kWindow, WindowMask_t{trd.dy1(), dzy}),
-                                                builder::CreateLocalTransformation<Real_t>({movex, 0, 0, 90, phiy, 0}),
-                                                use_surf_safety);
-    builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    logic.push_back(land);
-    logic.push_back(isurf);
-  }
+  // surface at -dy:
+  vert  = {corners[0], corners[1], corners[5], corners[4]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  logic.push_back(land);
+  logic.push_back(isurf);
+  // surface at +dy:
+  vert  = {corners[2], corners[3], corners[7], corners[6]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  logic.push_back(land);
+  logic.push_back(isurf);
+  // surface at -dz:
+  vert  = {corners[0], corners[3], corners[2], corners[1]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  assertWindow(isurf);
+  logic.push_back(land);
+  logic.push_back(isurf);
+  // surface at +dz:
+  vert  = {corners[4], corners[5], corners[6], corners[7]};
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  assertWindow(isurf);
+  logic.push_back(land);
+  logic.push_back(isurf);
   builder::AddLogicToShell<Real_t>(logical_id, logic);
   return true;
 }

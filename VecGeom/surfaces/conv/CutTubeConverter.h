@@ -29,9 +29,15 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   using Vector3      = vecgeom::Vector3D<Real_t>;
 
   LogicExpressionCPU logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
-  auto sphi = tube.sphi();
-  auto dphi = tube.dphi();
-  auto ephi = tube.sphi() + tube.dphi();
+  auto sphi  = tube.sphi();
+  auto dphi  = tube.dphi();
+  auto ephi  = tube.sphi() + tube.dphi();
+  auto csphi = vecCore::math::Cos(sphi);
+  auto ssphi = vecCore::math::Sin(sphi);
+  auto cephi = vecCore::math::Cos(ephi);
+  auto sephi = vecCore::math::Sin(ephi);
+  auto rmin  = tube.rmin();
+  auto rmax  = tube.rmax();
 
   // get normal of the end caps
   auto bottom_normal = tube.BottomNormal();
@@ -43,11 +49,6 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
 
   assert(dphi > vecgeom::kTolerance);
 
-  auto Rmean = (tube.rmin() + tube.rmax()) / 2;
-  auto Rdiff = (tube.rmax() - tube.rmin()) / 2;
-
-  assert(Rdiff > 0);
-
   bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
   bool use_surf_safety = true;
@@ -56,8 +57,6 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   Real_t surfdata[2];
 
   // We need angles in degrees for transformations
-  auto sphid         = vecgeom::kRadToDeg * sphi;
-  auto ephid         = vecgeom::kRadToDeg * ephi;
   auto thetad_top    = top_normal.Theta() * vecgeom::kRadToDeg;
   auto phid_top      = top_normal.Phi() * vecgeom::kRadToDeg;
   auto thetad_bottom = bottom_normal.Theta() * vecgeom::kRadToDeg;
@@ -72,7 +71,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   // that fully contains the ellipse and making the surface logical such that the full boolean expression
   // must be evaluated to decide whether it is a hit or not.
   // As a consequence, all surfaces of this volume must be logical surfaces.
-  assert(abs(top_normal.z()) > vecgeom::kTolerance); // assert before division
+  assert(std::abs(top_normal.z()) > vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
       builder::CreateFrame<Real_t>(kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
@@ -85,7 +84,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   logic.push_back(land);
 
   // surface at -dz
-  assert(abs(cos(vecgeom::kPi - bottom_normal.Theta() > vecgeom::kTolerance))); // assert before division
+  assert(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta()) > vecgeom::kTolerance)); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(kPlanar),
       builder::CreateFrame<Real_t>(kWindow,
@@ -130,35 +129,40 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
     return true;
   }
 
-  // Implementation of the plane caps at Sphi and Ephi by using a window with the size of the maximum extent.
-  // Depending on the phi cut position, this window is a bit larger than the actual surface,
-  // but we found this implementation to be faster than a quadrilateral with the correct size
-  // plane cap at Sphi
-  isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, 0.5 * (aMax[2] - aMin[2])}),
-      builder::CreateLocalTransformation<Real_t>(
-          {Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0.5 * (aMin[2] + aMax[2]), sphid, 90, 0}),
-      use_surf_safety && smallerPi);
-  auto &surf5 = cpudata.fLocalSurfaces[isurf];
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  // Implementation of the plane caps at Sphi and Ephi by using a window with the size of the extent of the
+  // quadrilaterals. Depending on the phi cut position, this window is a bit larger than the actual surface, but we
+  // found this implementation to be faster than a quadrilateral with the correct size plane cap at Sphi
+  auto zmin1 = std::min(-tube.z() - rmin * (bottom_normal.x() * csphi + bottom_normal.y() * ssphi) / bottom_normal.z(),
+                        -tube.z() - rmax * (bottom_normal.x() * csphi + bottom_normal.y() * ssphi) / bottom_normal.z());
+  auto zmax1 = std::max(tube.z() - rmin * (top_normal.x() * csphi + top_normal.y() * ssphi) / top_normal.z(),
+                        tube.z() - rmax * (top_normal.x() * csphi + top_normal.y() * ssphi) / top_normal.z());
+  auto zmin2 = std::min(-tube.z() - rmin * (bottom_normal.x() * cephi + bottom_normal.y() * sephi) / bottom_normal.z(),
+                        -tube.z() - rmax * (bottom_normal.x() * cephi + bottom_normal.y() * sephi) / bottom_normal.z());
+  auto zmax2 = std::max(tube.z() - rmin * (top_normal.x() * cephi + top_normal.y() * sephi) / top_normal.z(),
+                        tube.z() - rmax * (top_normal.x() * cephi + top_normal.y() * sephi) / top_normal.z());
+
+  std::vector<Vector3> vert(4);
+  vert[0].Set(rmin * csphi, rmin * ssphi, zmin1);
+  vert[1].Set(rmax * csphi, rmax * ssphi, zmin1);
+  vert[2].Set(rmax * csphi, rmax * ssphi, zmax1);
+  vert[3].Set(rmin * csphi, rmin * ssphi, zmax1);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+  assert(isurf >= 0);
   // Make the surface "logical"
-  surf5.fLogicId = isurf;
+  cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(land);
   logic.push_back(lplus); // '('
   logic.push_back(isurf);
 
   // plane cap at Sphi+Dphi
-  isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, 0.5 * (aMax[2] - aMin[2])}),
-      builder::CreateLocalTransformation<Real_t>(
-          {Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0.5 * (aMin[2] + aMax[2]), ephid, -90, 0}),
-      use_surf_safety && smallerPi);
-  auto &surf6 = cpudata.fLocalSurfaces[isurf];
-  builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  vert[0].Set(rmax * cephi, rmax * sephi, zmin2);
+  vert[1].Set(rmin * cephi, rmin * sephi, zmin2);
+  vert[2].Set(rmin * cephi, rmin * sephi, zmax2);
+  vert[3].Set(rmax * cephi, rmax * sephi, zmax2);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+  assert(isurf >= 0);
   // Make the surface "logical"
-  surf6.fLogicId = isurf;
+  cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);
   logic.push_back(lminus); // ')'

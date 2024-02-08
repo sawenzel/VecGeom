@@ -127,15 +127,26 @@ void AddLogicToShell(int logical_id, LogicExpressionCPU &logic)
 /// @param points Vector of points
 /// @return Created frame. If this has the type kNoFrame, the user must abort framed surface creation
 template <typename Real_t, typename Container>
-Frame CreateFrameFromVertices(Container &points)
+Frame CreateFrameFromVertices(Container &points, Transformation &trans)
 {
   if (points.size() == 3)
     return CreateFrame<Real_t>(kTriangle, TriangleMask<Real_t>{points[0].x(), points[0].y(), points[1].x(),
                                                                points[1].y(), points[2].x(), points[2].y()});
-  if (points.size() == 4)
-    return CreateFrame<Real_t>(kQuadrilateral,
-                               QuadrilateralMask<Real_t>{points[0].x(), points[0].y(), points[1].x(), points[1].y(),
-                                                         points[2].x(), points[2].y(), points[3].x(), points[3].y()});
+  if (points.size() == 4) {
+    // Check for rectangular frame
+    // The 0->1 vector is aligned with the local Ox
+    bool rectangle = ApproxEqualVector(points[1] - points[0], points[2] - points[3]);
+    rectangle &= ApproxEqual((points[1] - points[0]).Dot(points[3] - points[0]), 0.);
+    if (rectangle) {
+      auto dx = 0.5 * (points[1] - points[0]).Mag();
+      auto dy = 0.5 * (points[3] - points[0]).Mag();
+      return CreateFrame<Real_t>(kWindow, WindowMask<Real_t>{dx, dy});
+    } else {
+      return CreateFrame<Real_t>(kQuadrilateral,
+                                 QuadrilateralMask<Real_t>{points[0].x(), points[0].y(), points[1].x(), points[1].y(),
+                                                           points[2].x(), points[2].y(), points[3].x(), points[3].y()});
+    }
+  }
   return Frame(kNoFrame);
 }
 
@@ -210,7 +221,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
 
   auto transformation = TransformationFromPlanarPoints<Real_t>(vertices);
   auto itrans         = CreateLocalTransformation<Real_t>(transformation);
-  auto frame          = CreateFrameFromVertices<Real_t>(vertices);
+  auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
   // Create transformation
   int isurf =
       builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(kPlanar), frame, itrans, use_surf_safety);

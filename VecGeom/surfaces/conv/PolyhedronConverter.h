@@ -34,6 +34,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
   auto const &rMin    = poly.fRMin;
   auto const &rMax    = poly.fRMax;
   auto const &zPlanes = poly.fZPlanes;
+  Real_t csphi, ssphi, cephi, sephi;
 
   if (sideCount == 1) assert(smallerPi && "Polyhedron with one segment cannot have angle larger than pi!");
 
@@ -47,6 +48,13 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
       side = 0;
     }
     return vecgeom::NormalizeAngle<vecgeom::kScalar>(phiStart + side * sidePhi);
+  };
+
+  auto getSinCos = [&](Real_t sphi, Real_t ephi) {
+    csphi = vecCore::math::Cos(sphi);
+    ssphi = vecCore::math::Sin(sphi);
+    cephi = vecCore::math::Cos(ephi);
+    sephi = vecCore::math::Sin(ephi);
   };
 
   // lambda to convert a full Z segment
@@ -92,16 +100,13 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
     // outer surfaces
     if (hasOuter) {
       for (size_t iside = 0; iside < sideCount; iside++) {
-        auto sphi = getPhi(iside);
-        auto ephi = getPhi(iside + 1);
-
+        getSinCos(getPhi(iside), getPhi(iside + 1));
         // corners of the outer surfaces
-        vertices = {
-            {rMax[iseg] * conv * vecCore::math::Cos(sphi), rMax[iseg] * conv * vecCore::math::Sin(sphi), z1},
-            {rMax[iseg] * conv * vecCore::math::Cos(ephi), rMax[iseg] * conv * vecCore::math::Sin(ephi), z1},
-            {rMax[iseg + 1] * conv * vecCore::math::Cos(ephi), rMax[iseg + 1] * conv * vecCore::math::Sin(ephi), z2},
-            {rMax[iseg + 1] * conv * vecCore::math::Cos(sphi), rMax[iseg + 1] * conv * vecCore::math::Sin(sphi), z2}};
-        isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+        vertices = {{rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1},
+                    {rMax[iseg] * conv * cephi, rMax[iseg] * conv * sephi, z1},
+                    {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
+                    {rMax[iseg + 1] * conv * csphi, rMax[iseg + 1] * conv * ssphi, z2}};
+        isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
         if (realSeg) {
           logic.push_back(land);
           logic.push_back(isurf);
@@ -112,15 +117,12 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
     // inner surfaces
     if (hasInner) {
       for (size_t iside = 0; iside < sideCount; iside++) {
-        auto sphi = getPhi(iside);
-        auto ephi = getPhi(iside + 1);
-
-        vertices = {
-            {rMin[iseg + 1] * conv * vecCore::math::Cos(sphi), rMin[iseg + 1] * conv * vecCore::math::Sin(sphi), z2},
-            {rMin[iseg + 1] * conv * vecCore::math::Cos(ephi), rMin[iseg + 1] * conv * vecCore::math::Sin(ephi), z2},
-            {rMin[iseg] * conv * vecCore::math::Cos(ephi), rMin[iseg] * conv * vecCore::math::Sin(ephi), z1},
-            {rMin[iseg] * conv * vecCore::math::Cos(sphi), rMin[iseg] * conv * vecCore::math::Sin(sphi), z1}};
-        isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+        getSinCos(getPhi(iside), getPhi(iside + 1));
+        vertices = {{rMin[iseg + 1] * conv * csphi, rMin[iseg + 1] * conv * ssphi, z2},
+                    {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2},
+                    {rMin[iseg] * conv * cephi, rMin[iseg] * conv * sephi, z1},
+                    {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
+        isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
         if (realSeg) {
           if (iside == 0) {
             logic.push_back(land);
@@ -137,50 +139,44 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
     }
 
     if (hasPhi) {
-      auto phi1 = phiStart;
-      auto phi2 = (phiStart + phiDelta);
-
-      vertices = {
-          {rMax[iseg + 1] * conv * vecCore::math::Cos(phi1), rMax[iseg + 1] * conv * vecCore::math::Sin(phi1), z2},
-          {rMin[iseg + 1] * conv * vecCore::math::Cos(phi1), rMin[iseg + 1] * conv * vecCore::math::Sin(phi1), z2},
-          {rMin[iseg] * conv * vecCore::math::Cos(phi1), rMin[iseg] * conv * vecCore::math::Sin(phi1), z1},
-          {rMax[iseg] * conv * vecCore::math::Cos(phi1), rMax[iseg] * conv * vecCore::math::Sin(phi1), z1}};
-      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+      getSinCos(phiStart, phiStart + phiDelta);
+      vertices = {{rMax[iseg + 1] * conv * csphi, rMax[iseg + 1] * conv * ssphi, z2},
+                  {rMin[iseg + 1] * conv * csphi, rMin[iseg + 1] * conv * ssphi, z2},
+                  {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1},
+                  {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1}};
+      isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
       logic.push_back(land);
       logic.push_back(lplus); // '('
       logic.push_back(isurf);
 
-      vertices = {
-          {rMax[iseg] * conv * vecCore::math::Cos(phi2), rMax[iseg] * conv * vecCore::math::Sin(phi2), z1},
-          {rMin[iseg] * conv * vecCore::math::Cos(phi2), rMin[iseg] * conv * vecCore::math::Sin(phi2), z1},
-          {rMin[iseg + 1] * conv * vecCore::math::Cos(phi2), rMin[iseg + 1] * conv * vecCore::math::Sin(phi2), z2},
-          {rMax[iseg + 1] * conv * vecCore::math::Cos(phi2), rMax[iseg + 1] * conv * vecCore::math::Sin(phi2), z2}};
-      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+      vertices = {{rMax[iseg] * conv * cephi, rMax[iseg] * conv * sephi, z1},
+                  {rMin[iseg] * conv * cephi, rMin[iseg] * conv * sephi, z1},
+                  {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2},
+                  {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2}};
+      isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);
       logic.push_back(lminus); // ')'
     }
 
     for (size_t iside = 0; iside < sideCount; iside++) {
-      auto sphi = getPhi(iside);
-      auto ephi = getPhi(iside + 1);
+      getSinCos(getPhi(iside), getPhi(iside + 1));
       // Add bottom frames
       if (iseg == 0) {
-        vertices = {{rMin[iseg] * conv * vecCore::math::Cos(ephi), rMin[iseg] * conv * vecCore::math::Sin(ephi), z1},
-                    {rMax[iseg] * conv * vecCore::math::Cos(ephi), rMax[iseg] * conv * vecCore::math::Sin(ephi), z1},
-                    {rMax[iseg] * conv * vecCore::math::Cos(sphi), rMax[iseg] * conv * vecCore::math::Sin(sphi), z1},
-                    {rMin[iseg] * conv * vecCore::math::Cos(sphi), rMin[iseg] * conv * vecCore::math::Sin(sphi), z1}};
+        vertices = {{rMin[iseg] * conv * cephi, rMin[iseg] * conv * sephi, z1},
+                    {rMax[iseg] * conv * cephi, rMax[iseg] * conv * sephi, z1},
+                    {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1},
+                    {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
       }
 
       // Add top frames
       if (iseg == (nseg - 1)) {
-        vertices = {
-            {rMin[iseg + 1] * conv * vecCore::math::Cos(sphi), rMin[iseg + 1] * conv * vecCore::math::Sin(sphi), z2},
-            {rMax[iseg + 1] * conv * vecCore::math::Cos(sphi), rMax[iseg + 1] * conv * vecCore::math::Sin(sphi), z2},
-            {rMax[iseg + 1] * conv * vecCore::math::Cos(ephi), rMax[iseg + 1] * conv * vecCore::math::Sin(ephi), z2},
-            {rMin[iseg + 1] * conv * vecCore::math::Cos(ephi), rMin[iseg + 1] * conv * vecCore::math::Sin(ephi), z2}};
-        isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+        vertices = {{rMin[iseg + 1] * conv * csphi, rMin[iseg + 1] * conv * ssphi, z2},
+                    {rMax[iseg + 1] * conv * csphi, rMax[iseg + 1] * conv * ssphi, z2},
+                    {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
+                    {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2}};
+        isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
       }
     }
 
