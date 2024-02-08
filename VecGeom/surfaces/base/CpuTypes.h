@@ -14,6 +14,7 @@ using LogicExpressionCPU = std::vector<logic_int>;
 struct VolumeShellCPU {
   std::vector<int> fSurfaces; ///< Local surface id's for this volume
   LogicExpressionCPU fLogic;  ///< Logic expression for the solid
+  bool fSimplified{false};    ///< The logic was simplified
 };
 
 // Surface data used only on CPU during the conversion process
@@ -33,10 +34,10 @@ struct CPUsurfData {
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
 
-  std::vector<WindowMask_t> fWindowMasks;     ///< rectangular masks
-  std::vector<RingMask_t> fRingMasks;         ///< ring masks
-  std::vector<ZPhiMask_t> fZPhiMasks;         ///< cylindrical masks
-  std::vector<TriangleMask_t> fTriangleMasks; 
+  std::vector<WindowMask_t> fWindowMasks; ///< rectangular masks
+  std::vector<RingMask_t> fRingMasks;     ///< ring masks
+  std::vector<ZPhiMask_t> fZPhiMasks;     ///< cylindrical masks
+  std::vector<TriangleMask_t> fTriangleMasks;
   std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
   std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
   std::vector<ConeData_t> fConeData;          ///< data for conical surfaces

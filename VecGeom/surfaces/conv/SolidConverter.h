@@ -150,6 +150,7 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
   }
 
   vgbrep::logichelper::insert_jumps(crtlogic);
+  cpudata.fShells[logical_id].fSimplified = true;
 
   return true;
 }

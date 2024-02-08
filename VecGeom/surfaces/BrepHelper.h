@@ -484,12 +484,12 @@ public:
         return false;
       }
       // Finalize logic expression
-      auto id = fCPUdata.fShells[volume->id()].fSurfaces[0];
-      if (fCPUdata.fLocalSurfaces[id].fLogicId == 0) {
+      if (!fCPUdata.fShells[volume->id()].fSimplified) {
         auto &crtlogic = fCPUdata.fShells[volume->id()].fLogic;
         vgbrep::logichelper::LogicExpressionConstruct lc(crtlogic);
         lc.Simplify(crtlogic);
         vgbrep::logichelper::insert_jumps(crtlogic);
+        fCPUdata.fShells[volume->id()].fSimplified = true;
       }
     }
 
