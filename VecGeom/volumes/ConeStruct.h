@@ -9,6 +9,7 @@
 
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/Wedge_Evolution.h"
+#include <VecGeom/management/Logger.h>
 
 namespace vecgeom {
 
@@ -74,7 +75,6 @@ struct ConeStruct {
   Precision fTanRMax;
   Precision fZNormInner;
   Precision fZNormOuter;
-  Precision fConeTolerance;
 
   /* Some additional variable to store original Rmax
    * for the cases when Rmax is modified because of Rmin==Rmax
@@ -98,16 +98,14 @@ struct ConeStruct {
     if (fRmin1 == fRmax1) {
       fRmax1 += kConeTolerance;
     }
-
     if (fRmin2 == fRmax2) {
       fRmax2 += kConeTolerance;
     }
 
-    fSqRmin1       = fRmin1 * fRmin1;
-    fSqRmax1       = fRmax1 * fRmax1;
-    fSqRmin2       = fRmin2 * fRmin2;
-    fSqRmax2       = fRmax2 * fRmax2;
-    fConeTolerance = 1e-7;
+    fSqRmin1 = fRmin1 * fRmin1;
+    fSqRmax1 = fRmax1 * fRmax1;
+    fSqRmin2 = fRmin2 * fRmin2;
+    fSqRmax2 = fRmax2 * fRmax2;
 
     fTanRMin    = (fRmin2 - fRmin1) * 0.5 / fDz;
     fSecRMin    = std::sqrt(1.0 + fTanRMin * fTanRMin);
@@ -168,10 +166,16 @@ struct ConeStruct {
            fRmin1, fRmax1, fRmin2, fRmax2, fDz, fSPhi, fDPhi);
   }
 
-  void Print(std::ostream &os) const { os << "UnplacedCone; please implement Print to outstream\n"; }
+  void Print(std::ostream &os) const
+  {
+    os << "UnplacedCone; please implement Print to outstream\n";
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  bool IsFullPhi() const { return fDPhi == kTwoPi; }
+  bool IsFullPhi() const
+  {
+    return fDPhi == kTwoPi;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   bool Normal(Vector3D<Precision> const &p, Vector3D<Precision> &norm) const
@@ -399,15 +403,21 @@ struct ConeStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetTolIz() const { return fTolIz; }
+  Precision GetTolIz() const
+  {
+    return fTolIz;
+  }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetTolOz() const { return fTolOz; }
+  Precision GetTolOz() const
+  {
+    return fTolOz;
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetConeTolerane() const { return fConeTolerance; }
-
-  VECCORE_ATT_HOST_DEVICE
-  evolution::Wedge const &GetWedge() const { return fPhiWedge; }
+  evolution::Wedge const &GetWedge() const
+  {
+    return fPhiWedge;
+  }
 
   // constructors
   VECCORE_ATT_HOST_DEVICE

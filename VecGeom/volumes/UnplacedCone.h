@@ -79,8 +79,6 @@ public:
   Precision GetTolOz() const { return fCone.fTolOz; }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetConeTolerane() const { return fCone.fConeTolerance; }
-  VECCORE_ATT_HOST_DEVICE
   Precision GetSqRmin1() const { return fCone.fSqRmin1; }
   VECCORE_ATT_HOST_DEVICE
   Precision GetSqRmin2() const { return fCone.fSqRmin2; }

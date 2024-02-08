@@ -976,6 +976,7 @@ private:
       // Use double precision explicitly
       vecgeom::Vector3D<double> tdiff = t1.Translation() - t2.Translation();
       bool same_tr                    = ApproxEqualVector(tdiff, {0, 0, 0});
+      static bool warning_printed     = false;
       vecgeom::Vector3D<double> ldir;
       switch (s1.fSurface.type) {
       case kPlanar:
@@ -999,11 +1000,29 @@ private:
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
         break;
       case kConical:
+        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].RadiusZ(-t1.Translation()[2]) -
+                     fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-t2.Translation()[2])) > vecgeom::kTolerance) {
+          return false;
+        }
+        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].Slope() - fCPUdata.fConeData[s2.fSurface.id].Slope()) >
+            vecgeom::kTolerance) {
+          return false;
+        }
+        flip = fCPUdata.fConeData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fConeData[s2.fSurface.id].IsFlipped();
+        if (same_tr) break;
+        tdiff.Normalize();
+        t1.TransformDirection(tdiff, ldir);
+        // For connected cones, the connecting vector must be along the Z axis
+        if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
+        break;
       case kSpherical:
       case kTorus:
       case kGenSecondOrder:
       default:
-        printf("CreateCommonSurface: case not implemented\n");
+        if (!warning_printed) {
+          VECGEOM_LOG(warning) << "CreateCommonSurface: case " << s1.fSurface.type << " not implemented";
+          warning_printed = true;
+        }
         return false;
       };
       return true;

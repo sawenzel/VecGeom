@@ -65,8 +65,9 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   if (rmin2 > vecgeom::kTolerance || rmin1 > vecgeom::kTolerance) {
     surfdata[0] = 0.5 * (rmin1 + rmin2);
     surfdata[1] = 0.5 * (rmin2 - rmin1) / dz;
+    auto stype  = std::abs(surfdata[1]) > vecgeom::kTolerance ? kConical : kCylindrical;
     isurf       = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kConical, surfdata, /*flipped=*/true),
+        builder::CreateUnplacedSurface<Real_t>(stype, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{-dz, dz, fullCirc, sphi, ephi}),
         builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -76,8 +77,9 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   // outer cone
   surfdata[0] = 0.5 * (rmax1 + rmax2);
   surfdata[1] = 0.5 * (rmax2 - rmax1) / dz;
+  auto stype  = std::abs(surfdata[1]) > vecgeom::kTolerance ? kConical : kCylindrical;
   isurf       = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kConical, surfdata),
+      builder::CreateUnplacedSurface<Real_t>(stype, surfdata),
       builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{-dz, dz, fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);

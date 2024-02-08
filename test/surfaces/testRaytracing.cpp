@@ -424,16 +424,20 @@ int main(int argc, char *argv[])
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(point, default_point);
-  std::vector<double> default_direction = {
-      0.,
-      0.,
-      0.,
-  };
+  std::vector<double> default_direction = {0., 0., 0.};
   OPTION_VECTOR(direction, default_direction);
+  OPTION_VECTOR(max_world, default_point);
+  std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
+                                           -vecgeom::InfinityLength<Precision>()};
+  OPTION_VECTOR(min_world, default_min_world);
   assert(point.size() == 3 && direction.size() == 3);
+  assert(min_world.size() == 3 && default_min_world.size() == 3);
+
   // transform to Vec3D for further handling
   Vec3D point_3D     = {point[0], point[1], point[2]};
   Vec3D direction_3D = {direction[0], direction[1], direction[2]};
+  Vec3D min_world_3d = {min_world[0], min_world[1], min_world[2]};
+  Vec3D max_world_3d = {max_world[0], max_world[1], max_world[2]};
 
   bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
   if (use_provided_point) {
@@ -468,6 +472,10 @@ int main(int argc, char *argv[])
   Vec3D amin, amax;
   auto world = GeoManager::Instance().GetWorld();
   world->GetLogicalVolume()->GetUnplacedVolume()->Extent(amin, amax);
+  for (int i = 0; i < 3; i++) {
+    amin[i] = std::max(amin[i], min_world_3d[i]);
+    amax[i] = std::min(amax[i], max_world_3d[i]);
+  }
 
   Vec3D origin{0, 0, 0};
   if (!use_provided_point) {
