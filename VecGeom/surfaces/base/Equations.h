@@ -5,6 +5,7 @@
 #include <VecGeom/base/Math.h>
 
 #include <VecCore/VecCore>
+#include <VecGeom/surfaces/base/CommonTypes.h>
 
 namespace vgbrep {
 
@@ -114,13 +115,12 @@ VECCORE_ATT_HOST_DEVICE void QuadraticSolver(QuadraticCoef<Real_t> const &coef, 
   numroots     = 0;
   Real_t delta = coef.phalf * coef.phalf - coef.q;
   if (delta < Real_t(0)) return;
-
-  delta           = Sqrt(delta);
-  roots[numroots] = -coef.phalf - delta;
-  if (roots[numroots] > Real_t(-vecgeom::kTolerance)) numroots++;
-
-  roots[numroots] = -coef.phalf + delta;
-  if (roots[numroots] > Real_t(-vecgeom::kTolerance)) numroots++;
+  Real_t r1 = -coef.phalf - Sign(coef.phalf) * Sqrt(delta);
+  Real_t r2 = coef.q / vecgeom::NonZero(r1);
+  numroots += int(r1 > Real_t(-vecgeom::kTolerance)) + int(r2 > Real_t(-vecgeom::kTolerance));
+  roots[0] = Min(r1, r2);
+  roots[1] = Max(r1, r2);
+  if (numroots == 1) roots[0] = roots[1];
 }
 
 template <typename Real_t>
