@@ -153,15 +153,14 @@ int main(int argc, char **argv)
 
     if (navigate(p, dir, navigator, ref_navigator, verbose)) continue;
 
-    delete navigator;
-
     // Call navigate with verbose=1
-    navigate(p, dir, navigator, ref_navigator);
+    navigate(p, dir, navigator, ref_navigator, 1);
     printf("\nNavigation test for BVHNavigator failed! seed = %lu, iteration = %lu\n", seed, i);
+    delete navigator;
     return EXIT_FAILURE;
   }
 
   delete navigator;
-
+  printf("\nNavigation test for BVHNavigator passed! seed = %lu\n", seed);
   return EXIT_SUCCESS;
 }
