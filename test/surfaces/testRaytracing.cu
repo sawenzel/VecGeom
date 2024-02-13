@@ -314,7 +314,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_traverse_surf = timer.Stop();
 
-  ValidateTraversal<<<1, 1 /*initBlocks, initThreads*/>>>(nrays, points, dirs, origStates, length_over_crossings,
+  ValidateTraversal<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings,
                                                           refLength_over_crossings, num_errors_dist_d, debug);
   BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
