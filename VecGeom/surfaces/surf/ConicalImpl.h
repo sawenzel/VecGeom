@@ -7,7 +7,7 @@
 namespace vgbrep {
 
 template <typename Real_t>
-struct SurfaceHelper<kConical, Real_t> {
+struct SurfaceHelper<SurfaceType::kConical, Real_t> {
   ConeData<Real_t> const *fConeData{nullptr};
 
   VECGEOM_FORCE_INLINE

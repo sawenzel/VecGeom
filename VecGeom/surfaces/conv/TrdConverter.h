@@ -32,7 +32,7 @@ bool CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
   std::vector<Vector3> corners = {{-dx1, -dy1, -dz}, {dx1, -dy1, -dz}, {dx1, dy1, -dz}, {-dx1, dy1, -dz},
                                   {-dx2, -dy2, dz},  {dx2, -dy2, dz},  {dx2, dy2, dz},  {-dx2, dy2, dz}};
   auto assertWindow            = [](int isurf) {
-    assert(isurf >= 0 && CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == kWindow);
+    assert(isurf >= 0 && CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == FrameType::kWindow);
   };
   std::vector<Vector3> vert;
   // surface at -dx:

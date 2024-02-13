@@ -80,7 +80,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
     isurf = isurfZlast;
     if (isurf < 0) {
       isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
+          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
           builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg], 0, 0, 0}), use_surf_safety);
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     }
@@ -90,7 +90,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
       logic.push_back(isurf);
       logic.push_back(land);
       isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(kPlanar), Frame{kNoFrame},
+          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
           builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg + 1], 0, 0, 0}), use_surf_safety);
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       logic.push_back(isurf);

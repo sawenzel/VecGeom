@@ -46,17 +46,25 @@ struct LogicExpression {
 };
 
 ///< Supported surface types
-enum SurfaceType { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kGenSecondOrder };
+///< kPlanar        <- planar (xOy) half-space having the normal along z direction
+///< kCylindrical   <- cylindrical half-space around the z-axis, having the normals pointing outwards
+///< kConical       <- conical half-space around z-axis, having the normals pointing outwards
+///< kSpherical     <- sphere centered in origin, normals pointing outwards
+///< kTorus         <- toroidal surface hafing the median circle in the xy plane, cenetred in origin
+///< kArb4          <- twisted surface defined by 4 non co-planar vertices
+enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kArb4 };
 
 ///< Supported frame types
-///< kNoFrame     <- no frame, used for Inside only
-///< kRangeZ      <- range along z-axis
-///< kRing        <- a "ring" range on a plane
-///< kZPhi        <- z and phi range on a cylinder
-///< kRangeSph    <- theta and phi range on a sphere
-///< kWindow      <- rectangular range in xy-plane
-///< kTriangle    <- triangular range in xy-plane
-enum FrameType { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
+///< kNoFrame       <- no frame, used for Inside only
+///< kRangeZ        <- range along z-axis
+///< kRing          <- a "ring" range on a plane
+///< kZPhi          <- z and phi range on a cylinder
+///< kRangeSph      <- theta and phi range on a sphere
+///< kWindow        <- rectangular range in xy-plane
+///< kTriangle      <- triangular range in xy-plane
+///< kQuadrilateral <- planar quadrilateral in xy-plane
+///< kArb4          <- non-planar quadrilateral
+enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
 // Aliases for different usages of Vec2D.
 template <typename Real_t>

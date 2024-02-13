@@ -448,6 +448,7 @@ int main(int argc, char *argv[])
       std::cout << "Tracking single ray with point " << point_3D << " and direction " << direction_3D << std::endl;
   }
 
+  vecgeom::logger().level(vecgeom::LogLevel::info);
   Stopwatch timer;
   // Load the geometry
   timer.Start();

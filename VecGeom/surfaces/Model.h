@@ -25,8 +25,8 @@ using Extent = Frame;
 ///   - Unplaced spheres have the origin as center, normal pointing outwards.
 /// The type does not store the surface data, but only an id to an external storage.
 struct UnplacedSurface {
-  SurfaceType type{kPlanar}; ///< surface type
-  int id{-1};                ///< surface id
+  SurfaceType type{SurfaceType::kPlanar}; ///< surface type
+  int id{-1};                             ///< surface id
 
   UnplacedSurface() = default;
   UnplacedSurface(SurfaceType stype, int sid = -1)
@@ -43,17 +43,17 @@ struct UnplacedSurface {
   VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
-    case kPlanar:
-      return SurfaceHelper<kPlanar, Real_t>().Inside(point);
-    case kCylindrical:
-      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point);
-    case kConical:
-      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Inside(point);
-    case kSpherical:
-      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
-    case kTorus:
-      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point);
-    case kGenSecondOrder:
+    case SurfaceType::kPlanar:
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point);
+    case SurfaceType::kCylindrical:
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point);
+    case SurfaceType::kConical:
+      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id)).Inside(point);
+    case SurfaceType::kSpherical:
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
+    case SurfaceType::kTorus:
+      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point);
+    case SurfaceType::kArb4:
       // unhandled
       return false;
     };
@@ -73,17 +73,21 @@ struct UnplacedSurface {
                                          SurfData<Real_t> const &surfdata, Real_t &distance) const
   {
     switch (type) {
-    case kPlanar:
-      return SurfaceHelper<kPlanar, Real_t>().Intersect(point, dir, left_side, distance);
-    case kCylindrical:
-      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id)).Intersect(point, dir, left_side, distance);
-    case kConical:
-      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id)).Intersect(point, dir, left_side, distance);
-    case kSpherical:
-      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id)).Intersect(point, dir, left_side, distance);
-    case kTorus:
-      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id)).Intersect(point, dir, left_side, distance);
-    case kGenSecondOrder:
+    case SurfaceType::kPlanar:
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(point, dir, left_side, distance);
+    case SurfaceType::kCylindrical:
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
+          .Intersect(point, dir, left_side, distance);
+    case SurfaceType::kConical:
+      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
+          .Intersect(point, dir, left_side, distance);
+    case SurfaceType::kSpherical:
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
+          .Intersect(point, dir, left_side, distance);
+    case SurfaceType::kTorus:
+      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
+          .Intersect(point, dir, left_side, distance);
+    case SurfaceType::kArb4:
       // unhandled
       return false;
     };
@@ -104,21 +108,21 @@ struct UnplacedSurface {
                                       Real_t &distance, bool compute_onsurf, Vector3D<Real_t> &onsurf) const
   {
     switch (type) {
-    case kPlanar:
-      return SurfaceHelper<kPlanar, Real_t>().Safety(point, left_side, distance, compute_onsurf, onsurf);
-    case kCylindrical:
-      return SurfaceHelper<kCylindrical, Real_t>(surfdata.GetCylData(id))
+    case SurfaceType::kPlanar:
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Safety(point, left_side, distance, compute_onsurf, onsurf);
+    case SurfaceType::kCylindrical:
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
-    case kConical:
-      return SurfaceHelper<kConical, Real_t>(surfdata.GetConeData(id))
+    case SurfaceType::kConical:
+      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
-    case kSpherical:
-      return SurfaceHelper<kSpherical, Real_t>(surfdata.GetSphData(id))
+    case SurfaceType::kSpherical:
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
-    case kTorus:
-      return SurfaceHelper<kTorus, Real_t>(surfdata.GetTorusData(id))
+    case SurfaceType::kTorus:
+      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
-    case kGenSecondOrder:
+    case SurfaceType::kArb4:
       // unhandled
       return false;
     };
@@ -128,8 +132,8 @@ struct UnplacedSurface {
 
 /// @brief A frame delimiting the real solid surface on an infinite half-space
 struct Frame {
-  FrameType type{kWindow}; ///< frame type
-  int id{-1};              ///< frame mask id
+  FrameType type{FrameType::kWindow}; ///< frame type
+  int id{-1};                         ///< frame mask id
 
   Frame() = default;
   Frame(FrameType mtype, int mid = -1) : type(mtype), id(mid) {}
@@ -139,21 +143,21 @@ struct Frame {
   VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &local, SurfData<Real_t> const &surfdata) const
   {
     switch (type) {
-    case kRing:
+    case FrameType::kRing:
       return surfdata.GetRingMask(id).Inside(local);
-    case kZPhi:
+    case FrameType::kZPhi:
       return surfdata.GetZPhiMask(id).Inside(local);
-    case kWindow:
+    case FrameType::kWindow:
       return surfdata.GetWindowMask(id).Inside(local);
     // TODO: Support these
-    case kTriangle:
+    case FrameType::kTriangle:
       return surfdata.GetTriangleMask(id).Inside(local);
-    case kQuadrilateral:
+    case FrameType::kQuadrilateral:
       return surfdata.GetQuadMask(id).Inside(local);
-    case kRangeZ:
+    case FrameType::kRangeZ:
       /*return (local[2] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
               local[2] < vecgeom::MakePlusTolerant<true>(u[1]));*/
-    case kRangeSph:
+    case FrameType::kRangeSph:
       /*return (rsq > vecgeom::MakeMinusTolerantSquare<true>(u[0]) &&
               rsq < vecgeom::MakePlusTolerantSquare<true>(u[1]));*/
     default:
@@ -174,18 +178,18 @@ struct Frame {
                                         SurfData<Real_t> const &surfdata, bool &valid) const
   {
     switch (type) {
-    case kRing:
+    case FrameType::kRing:
       return surfdata.GetRingMask(id).Safety(local, safetySurf, valid);
-    case kZPhi:
+    case FrameType::kZPhi:
       return surfdata.GetZPhiMask(id).Safety(local, safetySurf, valid);
-    case kWindow:
+    case FrameType::kWindow:
       return surfdata.GetWindowMask(id).Safety(local, safetySurf, valid);
-    case kTriangle:
+    case FrameType::kTriangle:
       return surfdata.GetTriangleMask(id).Safety(local, safetySurf, valid);
-    case kQuadrilateral:
+    case FrameType::kQuadrilateral:
       return surfdata.GetQuadMask(id).Safety(local, safetySurf, valid);
-    case kRangeZ:
-    case kRangeSph:
+    case FrameType::kRangeZ:
+    case FrameType::kRangeSph:
     default:
       // unhandled
       valid = false;
@@ -373,12 +377,12 @@ struct Side {
 /// @brief A common surface made of two sides, having a global transformation.
 struct CommonSurface {
   using NavState_t = vecgeom::NavigationState::Value_t;
-  SurfaceType fType{kPlanar};  ///< Type of surface
-  int fSceneId{0};             ///< Scene id. if negative, it is a top scene id
-  int fTrans{-1};              ///< Transformation of the first left frame
-  NavState_t fDefaultState{0}; ///< The default state for this surface (deepest mother)
-  Side fLeftSide;              ///< Left-side (behind normal)
-  Side fRightSide;             ///< Right-side (alongside normal)
+  SurfaceType fType{SurfaceType::kPlanar}; ///< Type of surface
+  int fSceneId{0};                         ///< Scene id. if negative, it is a top scene id
+  int fTrans{-1};                          ///< Transformation of the first left frame
+  NavState_t fDefaultState{0};             ///< The default state for this surface (deepest mother)
+  Side fLeftSide;                          ///< Left-side (behind normal)
+  Side fRightSide;                         ///< Right-side (alongside normal)
 
   CommonSurface() = default;
 
@@ -544,58 +548,31 @@ struct SurfData {
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData_t const &GetCylData(int id) const
-  {
-    return fCylSphData[id];
-  }
+  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  SphData_t const &GetSphData(int id) const
-  {
-    return fCylSphData[id];
-  }
+  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ConeData_t const &GetConeData(int id) const
-  {
-    return fConeData[id];
-  }
+  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TorusData_t const &GetTorusData(int id) const
-  {
-    return fTorusData[id];
-  }
+  TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  WindowMask_t const &GetWindowMask(int id) const
-  {
-    return fWindowMasks[id];
-  }
+  WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  RingMask_t const &GetRingMask(int id) const
-  {
-    return fRingMasks[id];
-  }
+  RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ZPhiMask_t const &GetZPhiMask(int id) const
-  {
-    return fZPhiMasks[id];
-  }
+  ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TriangleMask_t const &GetTriangleMask(int id) const
-  {
-    return fTriangleMasks[id];
-  }
+  TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  QuadMask_t const &GetQuadMask(int id) const
-  {
-    return fQuadMasks[id];
-  }
+  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE

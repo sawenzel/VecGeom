@@ -20,6 +20,28 @@
 
 namespace vgbrep {
 
+template <typename T>
+char const *to_cstring(T type)
+{
+  return nullptr;
+}
+
+template <>
+char const *to_cstring<SurfaceType>(SurfaceType type)
+{
+  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "arb4"};
+  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  return data[static_cast<int>(type)];
+}
+
+template <>
+char const *to_cstring<FrameType>(FrameType type)
+{
+  static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
+  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  return data[static_cast<int>(type)];
+}
+
 template <typename Real_t>
 class BrepHelper {
   using SurfData_t     = SurfData<Real_t>;
@@ -238,23 +260,23 @@ public:
       WindowMask_t extentL;
       // Calculating the limits
       switch (frame_type) {
-      case kWindow: {
+      case FrameType::kWindow: {
         auto const &maskLocal = fSurfData->fWindowMasks[framed_surf.fFrame.id];
         maskLocal.GetExtent(extentL);
         break;
       }
-      case kRing: {
+      case FrameType::kRing: {
         auto const &maskLocal = fSurfData->fRingMasks[framed_surf.fFrame.id];
         maskLocal.GetExtent(extentL);
         break;
       }
-      case kQuadrilateral: {
+      case FrameType::kQuadrilateral: {
         WindowMask_t extLocal;
         auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
         quad.GetExtent(extentL);
         break;
       }
-      case kTriangle: {
+      case FrameType::kTriangle: {
         TriangleMask_t extLocal;
         auto const &maskLocal = fSurfData->fTriangleMasks[framed_surf.fFrame.id];
         maskLocal.GetExtent(extentL);
@@ -289,7 +311,7 @@ public:
   void ComputeCylinderExtent(Side &side)
   {
     // Setting initial extent mask
-    side.fExtent.type  = kZPhi;
+    side.fExtent.type  = FrameType::kZPhi;
     ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
 
     // loop over remaining frames on the side
@@ -314,11 +336,11 @@ public:
     // Lambda for computing the extent of a single side
     auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
       switch (type) {
-      case kPlanar:
+      case SurfaceType::kPlanar:
         ComputePlaneExtent(side);
         break;
-      case kCylindrical:
-      case kConical:
+      case SurfaceType::kCylindrical:
+      case SurfaceType::kConical:
         ComputeCylinderExtent(side);
         break;
       default:
@@ -347,20 +369,19 @@ public:
   // Perhaps each mask should have its own print() method that returns a string.
   void PrintCommonSurface(int common_id)
   {
-    const char *types[] = {"planar", "cylindrical", "Conical", "Spherical", "Torus", "GenSecondOrder"};
-    auto round0         = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
+    auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
     vecgeom::Vector3D<Real_t> normal;
     const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
     auto const &surf = fSurfData->fCommonSurfaces[common_id];
     fSurfData->fGlobalTrans[surf.fTrans].InverseTransformDirection(lnorm, normal);
     vecgeom::NavigationState default_state(surf.fDefaultState);
     int scene_id = surf.GetSceneId();
-    printf("\n== common surface %d: type: %s, scene %d, default state: ", common_id, types[int(surf.fType)], scene_id);
+    printf("\n== common surface %d: type: %s, scene %d, default state: ", common_id, to_cstring(surf.fType), scene_id);
     default_state.Print();
     printf(" transformation %d: ", surf.fTrans);
     fSurfData->fGlobalTrans[surf.fTrans].Print();
     switch (surf.fType) {
-    case kPlanar: {
+    case SurfaceType::kPlanar: {
       WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
       printf(
           "\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, %g, "
@@ -369,7 +390,7 @@ public:
           extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
       break;
     }
-    case kCylindrical: {
+    case SurfaceType::kCylindrical: {
       ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
       printf(
           "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, %g}}\n",
@@ -377,17 +398,17 @@ public:
           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
       break;
     }
-    case kConical: {
+    case SurfaceType::kConical: {
       ConeData_t const &extL = fSurfData->fConeData[surf.fLeftSide.fExtent.id - fSurfData->fNcone];
       printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
              surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
       break;
     }
-    case kSpherical:
-    case kTorus:
-    case kGenSecondOrder:
+    case SurfaceType::kSpherical:
+    case SurfaceType::kTorus:
+    case SurfaceType::kArb4:
     default:
-      VECGEOM_LOG(error) << "Surface type " << surf.fType << " not implemented";
+      VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented";
     }
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
@@ -395,7 +416,7 @@ public:
       printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
-      if (placed.fFrame.type == kWindow) {
+      if (placed.fFrame.type == FrameType::kWindow) {
         WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
         printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
                mask.rangeV[1]);
@@ -405,7 +426,7 @@ public:
     }
     if (surf.fRightSide.fNsurf > 0) {
       switch (surf.fType) {
-      case kPlanar: {
+      case SurfaceType::kPlanar: {
         WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
         printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, "
                "%g, %g)\n",
@@ -414,7 +435,7 @@ public:
                round0(-normal[2]));
         break;
       }
-      case kCylindrical: {
+      case SurfaceType::kCylindrical: {
         ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
         printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
                "%g}}\n",
@@ -422,18 +443,18 @@ public:
                extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
       }
-      case kConical: {
+      case SurfaceType::kConical: {
         ConeData_t const &extL = fSurfData->fConeData[surf.fRightSide.fExtent.id - fSurfData->fNcone];
         printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
                surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extL.radius,
                extL.slope);
         break;
       }
-      case kSpherical:
-      case kTorus:
-      case kGenSecondOrder:
+      case SurfaceType::kSpherical:
+      case SurfaceType::kTorus:
+      case SurfaceType::kArb4:
       default:
-        VECGEOM_LOG(error) << "Surface type " << surf.fType << " not implemented";
+        VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented";
       }
     } else {
       printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
@@ -445,7 +466,7 @@ public:
       printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
       fSurfData->fGlobalTrans[placed.fTrans].Print();
       printf("\n    ");
-      if (placed.fFrame.type == kWindow) {
+      if (placed.fFrame.type == FrameType::kWindow) {
         WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
         printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
                mask.rangeV[1]);
@@ -587,7 +608,7 @@ public:
       for (int lsurf_id : shell.fSurfaces) {
         FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         // Ignore 'inside' helper surfaces having no frame
-        if (lsurf.fFrame.type == kNoFrame) continue;
+        if (lsurf.fFrame.type == FrameType::kNoFrame) continue;
         Transformation surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
         surftrans *= trans;
         int trans_id = fCPUdata.fGlobalTrans.size();
@@ -896,7 +917,7 @@ public:
   {
     constexpr int megabyte = 1024 * 1024;
     float total = 0, size = 0;
-    auto msg = VECGEOM_LOG(diagnostic);
+    auto msg = VECGEOM_LOG(info);
     msg << "___________________________________________________________________________________\n";
     msg << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables, "
         << fSurfData->fNscenes << " scenes\n";
@@ -949,7 +970,7 @@ private:
   {
     constexpr char kLside = 0x01;
     constexpr char kRside = 0x02;
-    bool flip, flip_bool;
+    bool flip{false}, flip_bool{false};
     auto approxEqual = [&](int idglob1, int idglob2) {
       flip                    = false;
       flip_bool               = false;
@@ -979,7 +1000,7 @@ private:
       static bool warning_printed     = false;
       vecgeom::Vector3D<double> ldir;
       switch (s1.fSurface.type) {
-      case kPlanar:
+      case SurfaceType::kPlanar:
         flip = z1.Dot(z2) < 0;
         if (same_tr) break;
         // For planes to match, the connecting vector must be along the planes
@@ -987,7 +1008,7 @@ private:
         t1.TransformDirection(tdiff, ldir);
         if (std::abs(ldir[2]) > vecgeom::kTolerance) return false;
         break;
-      case kCylindrical:
+      case SurfaceType::kCylindrical:
         if (std::abs(fCPUdata.fCylSphData[s1.fSurface.id].Radius() - fCPUdata.fCylSphData[s2.fSurface.id].Radius()) >
             vecgeom::kTolerance)
           return false;
@@ -999,7 +1020,7 @@ private:
         // For connected cylinders, the connecting vector must be along the Z axis
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
         break;
-      case kConical:
+      case SurfaceType::kConical:
         if (std::abs(fCPUdata.fConeData[s1.fSurface.id].RadiusZ(-t1.Translation()[2]) -
                      fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-t2.Translation()[2])) > vecgeom::kTolerance) {
           return false;
@@ -1015,12 +1036,12 @@ private:
         // For connected cones, the connecting vector must be along the Z axis
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
         break;
-      case kSpherical:
-      case kTorus:
-      case kGenSecondOrder:
+      case SurfaceType::kSpherical:
+      case SurfaceType::kTorus:
+      case SurfaceType::kArb4:
       default:
         if (!warning_printed) {
-          VECGEOM_LOG(warning) << "CreateCommonSurface: case " << s1.fSurface.type << " not implemented";
+          VECGEOM_LOG(warning) << "CreateCommonSurface: case " << to_cstring(s1.fSurface.type) << " not implemented";
           warning_printed = true;
         }
         return false;
@@ -1046,7 +1067,7 @@ private:
       };
 
       switch (surf.fSurface.type) {
-      case kPlanar:
+      case SurfaceType::kPlanar:
         // use normal vector scaled by the distance to the origin for hashing
         scaled_norm_vector = trans.Translation().Dot(normal) * normal;
         for (int i = 0; i < 3; i++) {
@@ -1054,17 +1075,17 @@ private:
           hash = hash_combine(hash, std::roundl(scaled_norm_vector[i] / tolerance));
         }
         break;
-      case kCylindrical:
+      case SurfaceType::kCylindrical:
         // use radius and normal for hashing
         hash = hash_combine(hash, std::roundl(fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance));
         for (int i = 0; i < 3; i++) {
           hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
         }
         break;
-      case kConical:
-      case kSpherical:
-      case kTorus:
-      case kGenSecondOrder:
+      case SurfaceType::kConical:
+      case SurfaceType::kSpherical:
+      case SurfaceType::kTorus:
+      case SurfaceType::kArb4:
       default:
         hash = 0;
         break;
@@ -1155,9 +1176,9 @@ private:
 
     // Different treatment of different frame types
     switch (s1.fFrame.type) {
-    case kRangeZ:
+    case FrameType::kRangeZ:
       break;
-    case kRing: {
+    case FrameType::kRing: {
       auto mask1 = fCPUdata.fRingMasks[s1.fFrame.id];
       auto mask2 = fCPUdata.fRingMasks[s2.fFrame.id];
 
@@ -1176,7 +1197,7 @@ private:
       if (ApproxEqualVector(phimin1, phimin2) && ApproxEqualVector(phimax1, phimax2)) return true;
       break;
     }
-    case kZPhi: {
+    case FrameType::kZPhi: {
       auto mask1 = fCPUdata.fZPhiMasks[s1.fFrame.id];
       auto mask2 = fCPUdata.fZPhiMasks[s2.fFrame.id];
 
@@ -1195,10 +1216,10 @@ private:
       if (ApproxEqualVector(phimin1, phimin2) && ApproxEqualVector(phimax1, phimax2)) return true;
       break;
     }
-    case kRangeSph:
+    case FrameType::kRangeSph:
       // if (ApproxEqualVector(v1, v2)) return true; //Must be changed.
       break;
-    case kWindow: {
+    case FrameType::kWindow: {
       auto frameData1 = fCPUdata.fWindowMasks[s1.fFrame.id];
       auto frameData2 = fCPUdata.fWindowMasks[s2.fFrame.id];
 
@@ -1218,10 +1239,10 @@ private:
 
       return ApproxEqualVector(diag1.Abs(), diag2.Abs());
     }
-    case kTriangle:
+    case FrameType::kTriangle:
       // to be implemented
       break;
-    case kQuadrilateral: {
+    case FrameType::kQuadrilateral: {
       // to be implemented
       break;
     }

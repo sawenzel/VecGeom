@@ -7,7 +7,7 @@
 namespace vgbrep {
 
 template <typename Real_t>
-struct SurfaceHelper<kSpherical, Real_t> {
+struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
   SphData<Real_t> const *fSphData{nullptr};
 
   VECGEOM_FORCE_INLINE

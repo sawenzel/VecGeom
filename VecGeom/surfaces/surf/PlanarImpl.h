@@ -8,7 +8,7 @@ namespace vgbrep {
 /// @brief Partial specialization of surface helper for planar surfaces.
 /// @tparam Real_t Floating-point precision type
 template <typename Real_t>
-struct SurfaceHelper<kPlanar, Real_t> {
+struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
 
   SurfaceHelper() = default;
 

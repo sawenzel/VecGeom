@@ -7,7 +7,7 @@
 namespace vgbrep {
 
 template <typename Real_t>
-struct SurfaceHelper<kCylindrical, Real_t> {
+struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   CylData<Real_t> const *fCylData{nullptr};
 
   VECGEOM_FORCE_INLINE

@@ -12,20 +12,20 @@ UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, 
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   switch (type) {
-  case kPlanar:
+  case SurfaceType::kPlanar:
     return UnplacedSurface(type);
-  case kCylindrical:
-  case kSpherical:
+  case SurfaceType::kCylindrical:
+  case SurfaceType::kSpherical:
     cpudata.fCylSphData.push_back({data[0], flip});
     return UnplacedSurface(type, cpudata.fCylSphData.size() - 1);
-  case kConical:
+  case SurfaceType::kConical:
     cpudata.fConeData.push_back({data[0], data[1], flip});
     return UnplacedSurface(type, cpudata.fConeData.size() - 1);
-  case kTorus:
+  case SurfaceType::kTorus:
     cpudata.fTorusData.push_back({data[0], data[1], data[2], data[3], flip});
     return UnplacedSurface(type, cpudata.fTorusData.size() - 1);
-  case kGenSecondOrder:
-    std::cout << "kGenSecondOrder unhandled\n";
+  case SurfaceType::kArb4:
+    std::cout << "kArb4 unhandled\n";
     return UnplacedSurface(type);
   };
   return UnplacedSurface(type);
@@ -130,8 +130,8 @@ template <typename Real_t, typename Container>
 Frame CreateFrameFromVertices(Container &points, Transformation &trans)
 {
   if (points.size() == 3)
-    return CreateFrame<Real_t>(kTriangle, TriangleMask<Real_t>{points[0].x(), points[0].y(), points[1].x(),
-                                                               points[1].y(), points[2].x(), points[2].y()});
+    return CreateFrame<Real_t>(FrameType::kTriangle, TriangleMask<Real_t>{points[0].x(), points[0].y(), points[1].x(),
+                                                                          points[1].y(), points[2].x(), points[2].y()});
   if (points.size() == 4) {
     // Check for rectangular frame
     // The 0->1 vector is aligned with the local Ox
@@ -140,14 +140,14 @@ Frame CreateFrameFromVertices(Container &points, Transformation &trans)
     if (rectangle) {
       auto dx = 0.5 * (points[1] - points[0]).Mag();
       auto dy = 0.5 * (points[3] - points[0]).Mag();
-      return CreateFrame<Real_t>(kWindow, WindowMask<Real_t>{dx, dy});
+      return CreateFrame<Real_t>(FrameType::kWindow, WindowMask<Real_t>{dx, dy});
     } else {
-      return CreateFrame<Real_t>(kQuadrilateral,
+      return CreateFrame<Real_t>(FrameType::kQuadrilateral,
                                  QuadrilateralMask<Real_t>{points[0].x(), points[0].y(), points[1].x(), points[1].y(),
                                                            points[2].x(), points[2].y(), points[3].x(), points[3].y()});
     }
   }
-  return Frame(kNoFrame);
+  return Frame(FrameType::kNoFrame);
 }
 
 /// @brief Compute transformation (rotation + translation) for a surface defined by a set of co-planar points.
@@ -223,8 +223,8 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
   auto itrans         = CreateLocalTransformation<Real_t>(transformation);
   auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
   // Create transformation
-  int isurf =
-      builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(kPlanar), frame, itrans, use_surf_safety);
+  int isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans,
+                                                  use_surf_safety);
   AddSurfaceToShell<Real_t>(logical_id, isurf);
   return isurf;
 }

@@ -46,15 +46,15 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
 
   // surface at +dz
   isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+      builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), 0, 0, 0}), use_surf_safety);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
   // surface at -dz
   isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+      builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), 0, 180, -sphid - ephid}), use_surf_safety);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
@@ -63,8 +63,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   if (tube.rmin() > vecgeom::kTolerance) {
     surfdata[0] = tube.rmin();
     isurf       = builder::CreateLocalSurface<Real_t>(
-        builder::CreateUnplacedSurface<Real_t>(kCylindrical, surfdata, /*flipped=*/true),
-        builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+        builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
+        builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
         builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     logic.push_back(land);
@@ -73,8 +73,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   // outer cylinder
   surfdata[0] = tube.rmax();
   isurf       = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kCylindrical, surfdata),
-      builder::CreateFrame<Real_t>(kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
+      builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
@@ -86,8 +86,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   }
   // plane cap at Sphi
   isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, tube.z()}),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+      builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
       builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}),
       use_surf_safety && smallerPi);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -97,8 +97,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
 
   // plane cap at Sphi+Dphi
   isurf = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(kPlanar),
-      builder::CreateFrame<Real_t>(kWindow, WindowMask_t{Rdiff, tube.z()}),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+      builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
       builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}),
       use_surf_safety && smallerPi);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);

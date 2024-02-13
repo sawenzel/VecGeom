@@ -7,7 +7,7 @@
 namespace vgbrep {
 
 template <typename Real_t>
-struct SurfaceHelper<kTorus, Real_t> {
+struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   TorusData<Real_t> const *fTorusData{nullptr};
 
   VECGEOM_FORCE_INLINE
@@ -52,29 +52,28 @@ struct SurfaceHelper<kTorus, Real_t> {
 
     // RESCALING, from now on RadTube is normalized to TorusRadius and TorusRadius = 1!
     Vector3D<Real_t> localpoint = point / fTorusData->Radius();
-    Real_t RadTube_R0 = fTorusData->RadiusTube() / fTorusData->Radius();
+    Real_t RadTube_R0           = fTorusData->RadiusTube() / fTorusData->Radius();
 
     Real_t tubeDistance = 0;
 
     // if point is outside bounding tube of the torus, propagate to the bounding tube.
-    if ( !(SurfaceHelper<kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Inside(localpoint)
-        && SurfaceHelper<kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint))
-        || (Abs(localpoint[2]) > Abs(RadTube_R0 + vecgeom::kTolerance))) {
+    if (!(SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Inside(localpoint) &&
+          SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint)) ||
+        (Abs(localpoint[2]) > Abs(RadTube_R0 + vecgeom::kTolerance))) {
 
-      Real_t tmp = vecgeom::kInfLength;
+      Real_t tmp   = vecgeom::kInfLength;
       tubeDistance = -1; // ensure it returns if no hit
       // check upper plane
       // emulate transformation of upper surface
-      localpoint[2]             = point[2] / fTorusData->Radius() - RadTube_R0;
+      localpoint[2] = point[2] / fTorusData->Radius() - RadTube_R0;
       Vector3D<Real_t> tmppoint;
       Real_t tmp_rho;
-      if (SurfaceHelper<kPlanar, Real_t>().Intersect(localpoint, dir, false, tmp)) {
-        tmppoint = point / fTorusData->Radius() + tmp*dir;
-        tmp_rho  = Sqrt(tmppoint[0]*tmppoint[0] + tmppoint[1]*tmppoint[1]);
-        if ((tmp > -vecgeom::kTolerance) &&
-            (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance ) &&
+      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, dir, false, tmp)) {
+        tmppoint = point / fTorusData->Radius() + tmp * dir;
+        tmp_rho  = Sqrt(tmppoint[0] * tmppoint[0] + tmppoint[1] * tmppoint[1]);
+        if ((tmp > -vecgeom::kTolerance) && (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance) &&
             (tmp_rho - (1. + RadTube_R0) < vecgeom::kTolerance)) {
-              tubeDistance = tmp;
+          tubeDistance = tmp;
         }
       }
 
@@ -82,13 +81,11 @@ struct SurfaceHelper<kTorus, Real_t> {
       // emulate transformation of lower surface
       Vector3D<Real_t> localdir = {dir[0], dir[1], -dir[2]};
       localpoint[2]             = -point[2] / fTorusData->Radius() - RadTube_R0;
-      if(SurfaceHelper<kPlanar, Real_t>().Intersect(localpoint, localdir, false, tmp)) {
-        tmppoint = point / fTorusData->Radius() + tmp*dir;
-        tmp_rho  = Sqrt(tmppoint[0]*tmppoint[0] + tmppoint[1]*tmppoint[1]);
-        if ((tmp > -vecgeom::kTolerance) && 
-            (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance ) &&
-            (tmp_rho - (1. + RadTube_R0) < vecgeom::kTolerance) && 
-            (tmp > -vecgeom::kTolerance)) {
+      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, localdir, false, tmp)) {
+        tmppoint = point / fTorusData->Radius() + tmp * dir;
+        tmp_rho  = Sqrt(tmppoint[0] * tmppoint[0] + tmppoint[1] * tmppoint[1]);
+        if ((tmp > -vecgeom::kTolerance) && (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance) &&
+            (tmp_rho - (1. + RadTube_R0) < vecgeom::kTolerance) && (tmp > -vecgeom::kTolerance)) {
           if (tubeDistance > -vecgeom::kTolerance) {
             tubeDistance = Min(tubeDistance, tmp);
           } else {
@@ -99,8 +96,9 @@ struct SurfaceHelper<kTorus, Real_t> {
 
       // check outer cylinder
       localpoint = point / fTorusData->Radius();
-      if(SurfaceHelper<kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Intersect(localpoint, dir, false, tmp)) {
-        tmppoint = point / fTorusData->Radius() + tmp*dir;
+      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData())
+              .Intersect(localpoint, dir, false, tmp)) {
+        tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {
             tubeDistance = Min(tubeDistance, tmp);
@@ -112,8 +110,9 @@ struct SurfaceHelper<kTorus, Real_t> {
 
       // check inner cylinder
       localpoint = point / fTorusData->Radius();
-      if(SurfaceHelper<kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Intersect(localpoint, dir, false, tmp)) {
-        tmppoint = point / fTorusData->Radius() + tmp*dir;
+      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData())
+              .Intersect(localpoint, dir, false, tmp)) {
+        tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {
             tubeDistance = Min(tubeDistance, tmp);
@@ -141,8 +140,7 @@ struct SurfaceHelper<kTorus, Real_t> {
 
     // special condition
     if (Abs(dir[2]) < 1E-3 && Abs(localpoint[2]) < 0.1 * RadTube_R0) {
-      Real_t r0 = 1 -
-                  Sqrt((RadTube_R0 - localpoint[2]) * (RadTube_R0 + localpoint[2]));
+      Real_t r0        = 1 - Sqrt((RadTube_R0 - localpoint[2]) * (RadTube_R0 + localpoint[2]));
       Real_t invdirxy2 = 1. / (1 - dir.z() * dir.z());
       Real_t b0        = (localpoint[0] * dir[0] + localpoint[1] * dir[1]) * invdirxy2;
       Real_t c0        = (localpoint[0] * localpoint[0] + (localpoint[1] - r0) * (localpoint[1] + r0)) * invdirxy2;
@@ -153,8 +151,7 @@ struct SurfaceHelper<kTorus, Real_t> {
         roots[numroots] = -b0 + Sqrt(delta);
         if (roots[numroots] > -tol) numroots++;
       }
-      r0 = 1 +
-           Sqrt((RadTube_R0 - localpoint[2]) * (RadTube_R0 + localpoint[2]));
+      r0    = 1 + Sqrt((RadTube_R0 - localpoint[2]) * (RadTube_R0 + localpoint[2]));
       c0    = (localpoint[0] * localpoint[0] + (localpoint[1] - r0) * (localpoint[1] + r0)) * invdirxy2;
       delta = b0 * b0 - c0;
       if (delta > 0) {
@@ -218,7 +215,7 @@ struct SurfaceHelper<kTorus, Real_t> {
         // use more accurate solution
         distance = Max(Real_t(0.), s);
 
-        distance += tubeDistance; // add distance to bounding tube (0 if inside)
+        distance += tubeDistance;         // add distance to bounding tube (0 if inside)
         distance *= fTorusData->Radius(); // denormalize
 
         return true;
