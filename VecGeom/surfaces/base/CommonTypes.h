@@ -189,7 +189,8 @@ struct TorusData {
   AngleVector<Real_t> vecEPhi{
       vecgeom::kInfLength,
       vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
-  CylData<Real_t, Real_t> cycl_data;
+  CylData<Real_t, Real_t> inner_cycl_data; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
+  CylData<Real_t, Real_t> outer_cycl_data; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
 
   /// @brief Check if local point is in the phi range
   /// @param local Point in local coordinates
@@ -211,7 +212,8 @@ struct TorusData {
   TorusData() = default;
   TorusData(Real_s rad, Real_s rad_tube, Real_s sphi = Real_s{0}, Real_s ephi = Real_s{0}, bool flip = false)
       : rTor(rad), rTube(flip ? -rad_tube : rad_tube), vecSPhi(vecgeom::Cos(sphi), vecgeom::Sin(sphi)),
-        vecEPhi(vecgeom::Cos(ephi), vecgeom::Sin(ephi)), cycl_data(rad + rad_tube, false){};
+        vecEPhi(vecgeom::Cos(ephi), vecgeom::Sin(ephi)), inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
+        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false){};
   VECCORE_ATT_HOST_DEVICE
   Real_s Radius() const { return std::abs(Real_s(rTor)); }
   VECCORE_ATT_HOST_DEVICE
@@ -221,7 +223,10 @@ struct TorusData {
   bool IsFlipped() const { return rTube < 0; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData<Real_t, Real_t> const &GetCylData() const { return cycl_data; }
+  CylData<Real_t, Real_t> const &GetInnerCylData() const { return inner_cycl_data; }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  CylData<Real_t, Real_t> const &GetOuterCylData() const { return outer_cycl_data; }
 };
 
 } // namespace vgbrep
