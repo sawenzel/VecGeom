@@ -180,12 +180,12 @@ struct TorusImplementation2 {
   using UnplacedVolume_t = UnplacedTorus2;
 
   template <class Real_v>
-  VECCORE_ATT_HOST_DEVICE static Real_v DistSqrToTorusR(UnplacedStruct_t const &torus, Vector3D<Real_v> const &point,
+  VECCORE_ATT_HOST_DEVICE static Real_v DistSqrToTorusR(Vector3D<Real_v> const &point,
                                                         Vector3D<Real_v> const &dir, Real_v dist)
   {
     Vector3D<Real_v> p = point + dir * dist;
     Real_v rxy         = p.Perp();
-    return (rxy - torus.rtor()) * (rxy - torus.rtor()) + p.z() * p.z();
+    return (rxy - 1.) * (rxy - 1.) + p.z() * p.z();
   }
 
   template <typename Real_v>
@@ -229,14 +229,15 @@ struct TorusImplementation2 {
     done |= locus == EInside::kOutside;
     if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(done)) return;
 
-    Real_v dout = ToBoundary<Real_v, false>(torus, point, dir, torus.rmax(), true);
+    Real_v dout = ToBoundary<Real_v, false>(torus, point/torus.rtor(), dir, torus.rmax()/torus.rtor(), true);
     // ToBoundary<Backend, false, true>(torus, point, dir, torus.rmax());
     Real_v din(kInfLength);
     if (hasrmin) {
-      din = ToBoundary<Real_v, true>(torus, point, dir, torus.rmin(), true);
+      din = ToBoundary<Real_v, true>(torus, point/torus.rtor(), dir, torus.rmin()/torus.rtor(), true);
       // ToBoundary<Backend, true, true>(torus, point, dir, torus.rmin());
     }
     distance = Min(dout, din);
+    distance *= torus.rtor();
     // std::cerr << "dout, din: " << dout << ", " << din << '\n';
     // std::cerr << "distance = Min(dout, din): " << distance << '\n';
 
@@ -386,19 +387,19 @@ struct TorusImplementation2 {
     VECGEOM_CONST Real_v tol = 100. * vecgeom::kTolerance;
     Real_v r0sq              = pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2];
     Real_v rdotn             = pt[0] * dir[0] + pt[1] * dir[1] + pt[2] * dir[2];
-    Real_v rsumsq            = torus.rtor2() + radius * radius;
+    Real_v rsumsq            = 1. + radius * radius;
     Real_v a                 = 4. * rdotn;
-    Real_v b                 = 2. * (r0sq + 2. * rdotn * rdotn - rsumsq + 2. * torus.rtor2() * dir[2] * dir[2]);
-    Real_v c                 = 4. * (r0sq * rdotn - rsumsq * rdotn + 2. * torus.rtor2() * pt[2] * dir[2]);
-    Real_v d                 = r0sq * r0sq - 2. * r0sq * rsumsq + 4. * torus.rtor2() * pt[2] * pt[2] +
-               (torus.rtor2() - radius * radius) * (torus.rtor2() - radius * radius);
+    Real_v b                 = 2. * (r0sq + 2. * rdotn * rdotn - rsumsq + 2. * dir[2] * dir[2]);
+    Real_v c                 = 4. * (r0sq * rdotn - rsumsq * rdotn + 2. * pt[2] * dir[2]);
+    Real_v d                 = r0sq * r0sq - 2. * r0sq * rsumsq + 4. * pt[2] * pt[2] +
+               (1. - radius * radius) * (1. - radius * radius);
 
     Real_v x[4] = {vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength};
     int nsol    = 0;
 
     // special condition
     if (vecCore::MaskFull(Abs(dir[2]) < 1E-3 && Abs(pt[2]) < 0.1 * radius)) {
-      Real_v r0        = torus.rtor() - Sqrt((radius - pt[2]) * (radius + pt[2]));
+      Real_v r0        = 1. - Sqrt((radius - pt[2]) * (radius + pt[2]));
       Real_v invdirxy2 = 1. / (1 - dir.z() * dir.z());
       Real_v b0        = (pt[0] * dir[0] + pt[1] * dir[1]) * invdirxy2;
       Real_v c0        = (pt[0] * pt[0] + (pt[1] - r0) * (pt[1] + r0)) * invdirxy2;
@@ -409,7 +410,7 @@ struct TorusImplementation2 {
         x[nsol] = -b0 + Sqrt(delta);
         if (vecCore::MaskFull(x[nsol] > -tol)) nsol++;
       }
-      r0    = torus.rtor() + Sqrt((radius - pt[2]) * (radius + pt[2]));
+      r0    = 1. + Sqrt((radius - pt[2]) * (radius + pt[2]));
       c0    = (pt[0] * pt[0] + (pt[1] - r0) * (pt[1] + r0)) * invdirxy2;
       delta = b0 * b0 - c0;
       if (vecCore::MaskFull(delta > 0)) {
@@ -430,15 +431,15 @@ struct TorusImplementation2 {
 
     // look for first positive solution
     Real_v ndotd;
-    bool inner = vecCore::MaskFull(Abs(radius - torus.rmin()) < vecgeom::kTolerance);
+    bool inner = vecCore::MaskFull(Abs(radius - torus.rmin()/torus.rtor()) < vecgeom::kTolerance);
     for (int i = 0; i < nsol; i++) {
-      if (vecCore::MaskFull(x[i] < -10)) continue;
+      if (vecCore::MaskFull(x[i] < -100)) continue;
 
       Vector3D<Real_v> r0   = pt + x[i] * dir;
       Vector3D<Real_v> norm = r0;
       r0.z()                = 0.;
       r0.Normalize();
-      r0 *= torus.rtor();
+      //r0 *= torus.rtor();
       norm -= r0;
       // norm = pt
       // for (unsigned int ipt = 0; ipt < 3; ipt++)
@@ -463,7 +464,7 @@ struct TorusImplementation2 {
       Real_v eps0  = -delta / (4. * s * s * s + 3. * a * s * s + 2. * b * s + c);
       int ntry     = 0;
       while (vecCore::MaskFull(Abs(eps) > vecgeom::kTolerance)) {
-        if (vecCore::MaskFull(Abs(eps0) > 100)) break;
+        if (vecCore::MaskFull(Abs(eps0) > 200)) break;
         s += eps0;
         if (vecCore::MaskFull(Abs(s + eps0) < vecgeom::kTolerance)) break;
         delta = s * s * s * s + a * s * s * s + b * s * s + c * s + d;
@@ -583,6 +584,7 @@ struct TorusImplementation2 {
     // Propagate the point to the bounding tube, as this will reduce the
     // coefficients of the quartic and improve precision of the solutions
     localPoint += tubeDistance * localDirection;
+    localPoint /= torus.rtor();
     Bool_v hasphi = Bool_v(torus.dphi() < vecgeom::kTwoPi);
     if (vecCore::MaskFull(hasphi)) {
       Real_v d1, d2;
@@ -594,28 +596,29 @@ struct TorusImplementation2 {
 
       // check phi intersections if bounding tube intersection is due to phi in which case we are done
       if (vecCore::MaskFull(d1 != kInfLength)) {
-        Real_v daxis = DistSqrToTorusR(torus, localPoint, localDirection, d1);
-        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2() && d1 > -kTolerance)) {
+        Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d1);
+        if (vecCore::MaskFull(daxis >= torus.rmin2()/torus.rtor()/torus.rtor() && daxis < torus.rmax2()/torus.rtor()/torus.rtor() && d1 > -kTolerance)) {
           distance = d1;
         }
       }
 
       if (vecCore::MaskFull(d2 != kInfLength)) {
-        Real_v daxis = DistSqrToTorusR(torus, localPoint, localDirection, d2);
-        if (vecCore::MaskFull(daxis >= torus.rmin2() && daxis < torus.rmax2() && d2 > -kTolerance)) {
+        Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d2);
+        if (vecCore::MaskFull(daxis >= torus.rmin2()/torus.rtor()/torus.rtor() && daxis < torus.rmax2()/torus.rtor()/torus.rtor() && d2 > -kTolerance)) {
           distance = Min(distance, d2);
         }
       }
     }
 
-    Real_v dd = ToBoundary<Real_v, false>(torus, localPoint, localDirection, torus.rmax(), false);
+    Real_v dd = ToBoundary<Real_v, false>(torus, localPoint, localDirection, torus.rmax()/torus.rtor(), false);
 
     // in case of a phi opening we also need to check the Rmin surface
     if (torus.rmin() > 0.) {
-      Real_v ddrmin = ToBoundary<Real_v, true>(torus, localPoint, localDirection, torus.rmin(), false);
+      Real_v ddrmin = ToBoundary<Real_v, true>(torus, localPoint, localDirection, torus.rmin()/torus.rtor(), false);
       dd            = Min(dd, ddrmin);
     }
     distance = Min(distance, dd);
+    distance *= torus.rtor();
     distance += tubeDistance;
     // This has to be added because distance can become > kInfLength due to
     // missing early returns in CUDA. This makes comparisons to kInfLength fail.
