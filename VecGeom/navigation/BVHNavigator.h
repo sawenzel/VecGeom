@@ -334,6 +334,7 @@ public:
   static Precision ComputeSafety(Vector3D<Precision> const &globalpoint, vecgeom::NavigationState const &state)
   {
     Daughter pvol = state.Top();
+    if (pvol == nullptr) return kInfLength;
     vecgeom::Transformation3D m;
     state.TopMatrix(m);
     Vector3D<Precision> localpoint = m.Transform(globalpoint);
@@ -359,6 +360,7 @@ public:
                                                  vecgeom::NavigationState const &in_state,
                                                  vecgeom::NavigationState &out_state, Precision push = 0)
   {
+    if (in_state.Top() == nullptr) return kInfLength;
     // If we are on the boundary, push a bit more.
     if (in_state.IsOnBoundary()) {
       push += kBoundaryPush;
@@ -424,6 +426,7 @@ public:
                                             vecgeom::NavigationState const &in_state,
                                             vecgeom::NavigationState &out_state, Precision push = 0)
   {
+    if (in_state.Top() == nullptr) return kInfLength;
     // If we are on the boundary, push a bit more.
     if (in_state.IsOnBoundary()) {
       push += kBoundaryPush;
@@ -480,6 +483,7 @@ public:
                                                    Vector3D<Precision> const &globaldir, Precision step_limit,
                                                    vecgeom::NavigationState const &in_state)
   {
+    if (in_state.Top() == nullptr) return kInfLength;
     // calculate local point/dir from global point/dir
     Vector3D<Precision> localpoint;
     Vector3D<Precision> localdir;

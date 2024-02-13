@@ -207,10 +207,11 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   constexpr char kCheckChildren = 1;
   constexpr char kCheckParents  = 2;
   // Get the list of candidate surfaces for in_state
+  auto in_navind = in_state.GetNavIndex();
+  if (in_navind == 0) return vecgeom::InfinityLength<Real_t>();
   auto const &surfdata    = SurfData<Real_t>::Instance();
   Real_t distance         = stepmax;
   int isurfcross          = 0;
-  auto in_navind          = in_state.GetNavIndex();
   unsigned short scene_id = 0, newscene_id = 0;
   bool is_scene     = in_state.GetSceneId(scene_id, newscene_id);
   auto const &cand  = surfdata.GetCandidates(scene_id, in_state.GetId());
@@ -563,6 +564,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
   closest_surf         = 0;
   int last_logic_volid = 0;
   Real_t safety        = vecgeom::InfinityLength<Real_t>();
+  if (in_state.GetNavIndex() == 0) return safety;
   Vector3D<Real_t> onsurf;
   unsigned short scene_id = 0, newscene_id = 0;
   // Get the list of visible candidate surfaces for in_state
