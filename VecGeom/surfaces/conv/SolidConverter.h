@@ -69,11 +69,13 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
     auto polyhedron = dynamic_cast<vecgeom::UnplacedPolyhedron const *>(solid);
     if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId);
 
+    auto scaled = dynamic_cast<vecgeom::UnplacedScaledShape const *>(solid);
+    if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId);
+
     auto bstruct = vecgeom::BooleanHelper::GetBooleanStruct(solid);
     if (bstruct) return conv::CreateBooleanSurfaces<Real_t>(*bstruct, volId);
 
-    auto scaled = dynamic_cast<vecgeom::UnplacedScaledShape const *>(solid);
-    if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId);
+    VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid;
 
     return false;
   };
@@ -103,7 +105,7 @@ bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logica
 {
   auto const &vec_scale = scaled.GetScale().Scale();
   if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<Real_t>{1, 1, -1})) {
-    VECGEOM_LOG(critical) << "UnplacedScaledShape having scale " << vec_scale << " not supported";
+    VECGEOM_LOG(error) << "UnplacedScaledShape having scale " << vec_scale << " not supported";
     return false;
   }
   auto success = CreateSolidSurfaces<Real_t>(scaled.UnscaledShape(), logical_id);
@@ -130,7 +132,7 @@ template <typename Real_t>
 bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id)
 {
   Transformation trans;
-  AppendLogicTo<Real_t>(bstruct, trans, logical_id);
+  if (!AppendLogicTo<Real_t>(bstruct, trans, logical_id)) return false;
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   // Finalize logic expression
@@ -156,8 +158,9 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
 }
 
 template <typename Real_t>
-void AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id)
+bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id)
 {
+  bool success  = true;
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   auto &logic   = cpudata.fShells[logical_id].fLogic;
   // left node
@@ -168,9 +171,10 @@ void AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &
   auto const unplaced_left = bstruct.fLeftVolume->GetUnplacedVolume();
   auto bstruct_left        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_left);
   if (bstruct_left)
-    AppendLogicTo<Real_t>(*bstruct_left, tr_left, logical_id);
+    success = AppendLogicTo<Real_t>(*bstruct_left, tr_left, logical_id);
   else
-    CreateSolidSurfaces<Real_t>(unplaced_left, logical_id, &tr_left);
+    success = CreateSolidSurfaces<Real_t>(unplaced_left, logical_id, &tr_left);
+  if (!success) return false;
   // close parenthesis
   logic.push_back(lminus);
 
@@ -196,11 +200,13 @@ void AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &
   auto const unplaced_right = bstruct.fRightVolume->GetUnplacedVolume();
   auto bstruct_right        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_right);
   if (bstruct_right)
-    AppendLogicTo<Real_t>(*bstruct_right, tr_right, logical_id);
+    success = AppendLogicTo<Real_t>(*bstruct_right, tr_right, logical_id);
   else
-    CreateSolidSurfaces<Real_t>(unplaced_right, logical_id, &tr_right);
+    success = CreateSolidSurfaces<Real_t>(unplaced_right, logical_id, &tr_right);
+  if (!success) return false;
   // close parenthesis
   logic.push_back(lminus);
+  return true;
 }
 
 } // namespace conv

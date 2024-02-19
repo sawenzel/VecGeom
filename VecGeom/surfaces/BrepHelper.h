@@ -500,8 +500,7 @@ public:
       vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
       bool result                           = conv::CreateSolidSurfaces<Real_t>(solid, volume->id());
       if (!result) {
-        VECGEOM_LOG(critical) << "Solid type not supported for volume: " << volume->GetName();
-        solid->Print();
+        VECGEOM_LOG(critical) << "Could not convert volume " << volume->id() << ": " << volume->GetName();
         return false;
       }
       // Finalize logic expression
@@ -615,7 +614,8 @@ public:
         fCPUdata.fGlobalTrans.push_back(surftrans);
         // Create the surface in the current scene using the local navigation index in the scene
         int id_surf = fCPUdata.fFramedSurf.size();
-        fCPUdata.fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, nav_ind, lsurf.fNeverCheck});
+        fCPUdata.fFramedSurf.push_back(
+            {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, nav_ind, lsurf.fNeverCheck});
         auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
         framed_surf.fLogicId   = lsurf.fLogicId;
         framed_surf.fSurfIndex = lsurf.fSurfIndex;

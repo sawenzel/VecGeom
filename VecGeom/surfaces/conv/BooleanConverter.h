@@ -14,7 +14,7 @@ template <typename Real_t>
 bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id);
 
 template <typename Real_t>
-void AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id);
+bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id);
 
 } // namespace conv
 } // namespace vgbrep

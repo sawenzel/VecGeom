@@ -435,8 +435,11 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
           int iparent = reps.first;
           nrep_ref += reps.second;
           if (iparent == ivol) {
-            assert((reps.second * nrep[ivol]) % nrep_old == 0);
-            reps.second = reps.second * nrep[ivol] / nrep_old;
+            // Avoid integer overflow
+            double newvalue = double(reps.second) * nrep[ivol] / nrep_old;
+            assert(std::floor(newvalue) == newvalue);
+            reps.second = int(newvalue);
+            // reps.second = reps.second * nrep[ivol] / nrep_old;
           }
           nrep[idaughter] += reps.second;
         }
