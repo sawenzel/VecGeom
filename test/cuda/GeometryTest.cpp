@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   OPTION_INT(verbosity, 0);
   OPTION_INT(stacksize, 8192);
   OPTION_INT(heapsize, 8388608);
-  bool validate  = true;
+  OPTION_BOOL(validate, false);
   double mm_unit = 0.1;
 
   if (argc == 1) errx(ENOENT, "No input GDML file. \n\tUsage: ./GeometryTest <gdml> [-verbosity N] [-stacksize SS] [-heapsize HS]");

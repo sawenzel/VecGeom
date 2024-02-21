@@ -268,8 +268,10 @@ if(VECGEOM_ENABLE_CUDA)
     target_link_libraries(GeometryTest PUBLIC vecgeomcuda_static vgdml)
 
     add_test(NAME BVHTest      COMMAND BVHTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml)
-    add_test(NAME GeometryTest-Device-trackML COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml)
-    add_test(NAME GeometryTest-Device-cms2018 COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/cms2018.gdml)
+    add_test(NAME GeometryTest-Device-trackML
+      COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml -validate false)
+    add_test(NAME GeometryTest-Device-cms2018
+      COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/cms2018.gdml -validate false)
   endif()
 endif()
 

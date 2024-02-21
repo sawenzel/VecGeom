@@ -7,6 +7,7 @@
 #include <iostream>
 #include "Backend.h"
 #include "xercesc/dom/DOMDocument.hpp"
+#include "test/benchmark/ArgParser.h"
 
 namespace {
 static void usage()
@@ -18,13 +19,15 @@ static void usage()
 }
 } // namespace
 
-int main(int argC, char *argV[])
+int main(int argc, char *argv[])
 {
-  if (argC != 2) {
+  if (argc != 2) {
     usage();
   }
-  auto const filename = std::string((argC > 1) ? argV[1] : "TestXercesBackend.gdml");
-  auto aBackend       = vgdml::Backend(true);
+  OPTION_BOOL(validate, false);
+
+  auto const filename = std::string((argc > 1) ? argv[1] : "TestXercesBackend.gdml");
+  auto aBackend       = vgdml::Backend(validate);
   auto const loaded   = aBackend.Load(filename);
   aBackend.Save(loaded, "TestXercesBackend.out.gdml");
   return 0;

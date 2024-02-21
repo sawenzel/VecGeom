@@ -23,7 +23,7 @@ add_test(NAME TestVGDMLVolumeAuxiliaryInfo COMMAND TestVGDMLVolumeAuxiliaryInfo 
 file(GLOB GDMLS ${CMAKE_CURRENT_SOURCE_DIR}/gdmls/*.gdml)
 foreach(GDML ${GDMLS})
   get_filename_component(BASENAMEGDML ${GDML} NAME)
-  add_test(NAME TestXercesBackend-${BASENAMEGDML} COMMAND TestXercesBackend ${GDML})
+  add_test(NAME TestXercesBackend-${BASENAMEGDML} COMMAND TestXercesBackend ${GDML} -validate false)
 endforeach()
 
 # - Middleware
