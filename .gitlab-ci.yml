@@ -33,12 +33,12 @@ with_ROOT:
    before_script:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
+     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVc_DIR=${VC_ROOT}/lib/cmake -DVECGEOM_ROOT=ON -DVECGEOM_GDML=OFF
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_ROOT=ON -DVECGEOM_GDML=OFF
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 
@@ -51,12 +51,12 @@ with_NAVINDEX_GDML_ROOT:
    before_script:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git xerces-c-devel
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
+     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVc_DIR=${VC_ROOT}/lib/cmake -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 
@@ -69,11 +69,11 @@ with_GDML_ROOT:
    before_script:
      - yum install environment-modules -y
      - yum install -y unzip autoconf automake make gcc git xerces-c-devel
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv CMake::v3.18.2-1)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9)"
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv Vc::1.4.1-6)"
+     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
+     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVc_DIR=${VC_ROOT}/lib/cmake -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
