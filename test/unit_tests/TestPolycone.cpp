@@ -98,8 +98,7 @@ bool TestPolycone()
   assert(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., -1.)) == 2.5);
   assert(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., 1.)) == kInfLength);
   assert(placedpoly1->DistanceToIn(Vec_t(3., 0., 0), Vec_t(-1., 0., 0.)) == 1);
-  assert(std::fabs(placedpoly1->DistanceToIn(Vec_t(0., 0., 1.9999999), Vec_t(1., 0., 0.)) - 0.4) <
-         1000. * kTolerance);
+  assert(std::fabs(placedpoly1->DistanceToIn(Vec_t(0., 0., 1.9999999), Vec_t(1., 0., 0.)) - 0.4) < 1000. * kTolerance);
 
   // test SafetyToIn
   assert(placedpoly1->SafetyToIn(Vec_t(0., 0., -3.)) == 2.);
@@ -548,6 +547,18 @@ bool TestPolycone()
   Vec_t norm175;
   bool valid175 = pcon175.Normal(point175a, norm175);
   assert(ApproxEqual(norm175, Vec_t(0, 0, -1)) && valid175);
+
+  {
+    // Test cases corresponding to issue-618
+    // Point is exactly on the joining disc between 2 sections of a polycone
+    Precision rmin[]     = {0.1, 0.0, 0.0, 0.4};
+    Precision rmax[]     = {1., 2., 2., 1.5};
+    Precision z[]        = {-1, -0.5, 0.5, 2};
+    int nZ               = 4;
+    Polycone_t *newPCone = new Polycone_t("NewPCone", 0, 2 * kPi, nZ, z, rmin, rmax);
+    Vec_t pin(0.4, 0., -0.5);
+    assert(newPCone->SafetyToOut(pin) != 0.);
+  }
 
   return true;
 }

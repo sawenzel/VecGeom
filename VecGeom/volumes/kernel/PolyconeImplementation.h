@@ -414,10 +414,67 @@ struct PolyconeImplementation {
     }
     return;
   }
+  /* A function to calculation the shortest distance of a point from a segment */
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v DistanceToSeg(Vector3D<Real_v> const &point,
+                                                                           Vector3D<Precision> segment_start,
+                                                                           Vector3D<Precision> segment_end)
+  {
+    Vector3D<Real_v> segment_vector   = segment_end - segment_start;
+    Vector3D<Real_v> point_vector     = point - segment_start;
+    Real_v projection_scalar          = point_vector.Dot(segment_vector) / segment_vector.Mag2();
+    Vector3D<Real_v> projection_point = segment_start + projection_scalar * segment_vector;
+    vecCore__MaskedAssignFunc(projection_point, projection_scalar < Real_v(0.), Vector3D<Real_v>(segment_start));
+    vecCore__MaskedAssignFunc(projection_point, projection_scalar > Real_v(1.), Vector3D<Real_v>(segment_end));
+    Vector3D<Real_v> distVec = point - projection_point;
+    return distVec.Mag();
+  }
 
+  /*
+  ** New definition that uses Segments and Single Wedge, instead of SafetyToOut from ConeImplementation
+  */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &polycone,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
+  {
+    typedef typename vecCore::Mask_v<Real_v> Bool_v;
+    safety = Real_v(kInfLength);
+    Bool_v compIn(false), compOut(false), done(false);
+    GenericKernelForContainsAndInside<Real_v, Bool_v, true>(polycone, point, compIn, compOut);
+    vecCore__MaskedAssignFunc(safety, compOut && !done, Real_v(-1.));
+    done |= compOut;
+    if (vecCore::MaskFull(done)) return;
+
+    Vector3D<Real_v> twoDPoint = Vector3D<Real_v>(point.Perp(), point.z(), 0.);
+    for (unsigned int currSegIndex = 0; currSegIndex < polycone.fTwoDVec.size(); currSegIndex++) {
+      unsigned int nextSegIndex = currSegIndex + 1;
+      if (currSegIndex == polycone.fTwoDVec.size() - 1) {
+        nextSegIndex = 0;
+      }
+
+      Real_v distance(kInfLength);
+      if ((polycone.fTwoDVec[currSegIndex].x() == 0 && polycone.fTwoDVec[nextSegIndex].x() == 0) ||
+          (polycone.fTwoDVec[currSegIndex].x() == polycone.fTwoDVec[nextSegIndex].x() &&
+           polycone.fTwoDVec[currSegIndex].y() == polycone.fTwoDVec[nextSegIndex].y()))
+        distance = Real_v(kInfLength);
+      else
+        distance = DistanceToSeg(twoDPoint, polycone.fTwoDVec[currSegIndex], polycone.fTwoDVec[nextSegIndex]);
+
+      vecCore__MaskedAssignFunc(safety, (distance < safety) && !done, distance);
+    }
+
+    if (polycone.fDeltaPhi < 2 * kPi) {
+      Real_v safetyPhi = polycone.fPhiWedge.SafetyToOut<Real_v>(point);
+      vecCore__MaskedAssignFunc(safety, safetyPhi < safety, safetyPhi);
+    }
+  }
+
+#if (0)
+  /* Retaining the old definition for the time being */
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut_Old(UnplacedStruct_t const &polycone,
+                                                                           Vector3D<Real_v> const &point,
+                                                                           Real_v &safety)
   {
     typedef typename vecCore::Mask_v<Real_v> Bool_v;
     Bool_v compIn(false), compOut(false);
@@ -480,6 +537,7 @@ struct PolyconeImplementation {
     safety = minSafety;
     return;
   }
+#endif
 };
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

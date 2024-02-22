@@ -78,6 +78,20 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  void UpdateNormals()
+  {
+    fAlongVector1.x() = std::cos(fSPhi);
+    fAlongVector1.y() = std::sin(fSPhi);
+    fAlongVector2.x() = std::cos(fSPhi + fDPhi);
+    fAlongVector2.y() = std::sin(fSPhi + fDPhi);
+
+    fNormalVector1.x() = -std::sin(fSPhi);
+    fNormalVector1.y() = std::cos(fSPhi); // not the + sign
+    fNormalVector2.x() = std::sin(fSPhi + fDPhi);
+    fNormalVector2.y() = -std::cos(fSPhi + fDPhi); // note the - sign
+  }
+
+  VECCORE_ATT_HOST_DEVICE
   Vector3D<Precision> GetAlong1() const { return fAlongVector1; }
 
   VECCORE_ATT_HOST_DEVICE

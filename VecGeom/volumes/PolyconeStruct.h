@@ -36,6 +36,11 @@ struct PolyconeStruct {
   Vector<Precision> fZs;
   PolyconeHistorical *fOriginal_parameters;
 
+  // Data member to hold the line segment that form Polycone boundary
+  Vector<Vector3D<Precision>> fRMinTwoDVec;
+  Vector<Vector3D<Precision>> fRMaxTwoDVec;
+  Vector<Vector3D<Precision>> fTwoDVec;
+
   VECCORE_ATT_HOST_DEVICE
   bool CheckContinuity(const Precision rOuter[], const Precision rInner[], const Precision zPlane[],
                        Vector<Precision> &newROuter, Vector<Precision> &newRInner, Vector<Precision> &newZPlane)
@@ -237,8 +242,8 @@ struct PolyconeStruct {
 
       // i has to be at least one to complete a section
       if (i > 0) {
-	// GL: I had to add kTolerance here, otherwise this polycone would get an
-	//     extra 0-length ZSection on the GPU -- see VECGEOM-578
+        // GL: I had to add kTolerance here, otherwise this polycone would get an
+        //     extra 0-length ZSection on the GPU -- see VECGEOM-578
         if (((z > prevZ + kTolerance) && (dirZ > 0)) || ((z < prevZ - kTolerance) && (dirZ < 0))) {
           if (dirZ * (z - prevZ) < 0) {
 #ifndef VECCORE_CUDA
@@ -266,6 +271,10 @@ struct PolyconeStruct {
           section.fConvex = !((rMax < prevRmax) || (rMax < RMaxextent) || (prevRmax < RMaxextent));
 
           fSections.push_back(section);
+          fRMinTwoDVec.push_back(Vector3D<Precision>(prevRmin, prevZ, 0));
+          fRMinTwoDVec.push_back(Vector3D<Precision>(rMin, z, 0));
+          fRMaxTwoDVec.push_back(Vector3D<Precision>(prevRmax, prevZ, 0));
+          fRMaxTwoDVec.push_back(Vector3D<Precision>(rMax, z, 0));
         }
       } else { // for i == 0 just push back first z plane
         fZs.push_back(z);
@@ -275,7 +284,13 @@ struct PolyconeStruct {
       prevRmin = rMin;
       prevRmax = rMax;
     }
+    for (auto val : fRMaxTwoDVec) {
+      fTwoDVec.push_back(val);
+    }
 
+    for (int k = fRMinTwoDVec.size() - 1; k >= 0; k--) {
+      fTwoDVec.push_back(fRMinTwoDVec[k]);
+    }
     fOriginal_parameters                  = new PolyconeHistorical(numZPlanes);
     fOriginal_parameters->fHStart_angle   = phiStart;
     fOriginal_parameters->fHOpening_angle = phiTotal;
@@ -366,6 +381,7 @@ struct PolyconeStruct {
 
     // Update Wedge
     fPhiWedge.SetStartPhi(fStartPhi);
+    fPhiWedge.UpdateNormals();
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -386,6 +402,7 @@ struct PolyconeStruct {
     }
     // Update Wedge
     fPhiWedge.SetDeltaPhi(fDeltaPhi);
+    fPhiWedge.UpdateNormals();
   }
 
   VECCORE_ATT_HOST_DEVICE
