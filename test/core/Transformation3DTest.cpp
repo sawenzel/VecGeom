@@ -58,13 +58,13 @@ int main()
   assert(testMultiply(t5, t6));
 
 #ifdef VECGEOM_GEANT4
-  Transformation3D t5;
-  t5.RotateX(45 * kDegToRad);
-  t5.RotateY(120 * kDegToRad);
-  t5.RotateZ(-30 * kDegToRad);
-  t5.Rectify();
-  Transformation3D t6(10., 20., 30, t5);
-  auto vec1 = t6.Transform(Vector3D<double>{1, 1, 1});
+  Transformation3D t7;
+  t7.RotateX(45 * kDegToRad);
+  t7.RotateY(120 * kDegToRad);
+  t7.RotateZ(-30 * kDegToRad);
+  t7.Rectify();
+  Transformation3D t8(10., 20., 30, t7);
+  auto vec1 = t8.Transform(Vector3D<double>{1, 1, 1});
 
   G4RotationMatrix rg5;
   rg5.rotateX(45 * kDegToRad);
