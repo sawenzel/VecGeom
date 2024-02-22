@@ -46,7 +46,7 @@ target_link_libraries(VecGeomTest
     vecgeom
     "$<$<BOOL:${VECGEOM_ROOT}>:ROOT::Graf3d>"
     # G4persistency public because there is direct use of it in tests
-    "$<$<BOOL:${VECGEOM_GEANT4}>:Geant4::G4geometry;Geant4::G4persistency>"
+    "$<$<BOOL:${VECGEOM_GEANT4}>:Geant4::G4geometry;$<IF:$<TARGET_EXISTS:Geant4::G4persistency>,Geant4::G4persistency,Geant4::G4gdml>>"
   PRIVATE
     "$<$<BOOL:${VECGEOM_ROOT}>:ROOT::Core;ROOT::Geom;ROOT::Gpad>"
   )
