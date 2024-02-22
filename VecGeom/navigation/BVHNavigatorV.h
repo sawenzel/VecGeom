@@ -122,7 +122,6 @@ public:
     auto vol = GetPlacedVolume(aLVIndex, index);
     Transformation3D const *tr     = vol->GetTransformation();
     Vector3D<Precision> pv_localpoint = tr->Transform(localpoint);
-    Vector3D<Precision> pv_localdir   = tr->TransformDirection(localdir);
     Vector3D<Precision> pv_invlocaldir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
     return vol->GetUnplacedVolume()->ApproachSolid(pv_localpoint, pv_invlocaldir);
   };
