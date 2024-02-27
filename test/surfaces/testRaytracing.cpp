@@ -205,9 +205,8 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
   int ilast                      = nrays;
   int istart                     = 0;
   if (idebug >= 0) {
-    printf("PropagateRaysSolid debug ray %d: p{%16.12f, %16.12f, %16.12f} d{%16.12f, %16.12f, %16.12f}\n", idebug,
-           points[idebug][0], points[idebug][1], points[idebug][2], dirs[idebug][0], dirs[idebug][1], dirs[idebug][2]);
-    printf("   ");
+    std::cout << std::setprecision(16) << "PropagateRaysSurf debug ray " << idebug << " : p{" << points[idebug]
+              << "} d{" << dirs[idebug] << "}\n   0 :";
     in_states[idebug].Print();
     istart = idebug;
     ilast  = istart + 1;
@@ -215,7 +214,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
   for (auto i = istart; i < ilast; ++i) {
     NavigationState start_state = in_states[i];
     NavigationState out_state;
-    int num_cross   = 0;
+    int num_cross   = 1;
     double dist_tot = 0;
     auto const &dir = dirs[i];
     auto pt         = points[i];
@@ -223,8 +222,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
       auto distance =
           Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
       if (idebug >= 0) {
-        printf("     dist = %15.10f\n", distance);
-        printf("   ");
+        std::cout << std::setprecision(16) << "     dist = " << distance << "\n   " << num_cross << " : ";
         out_state.Print();
       }
       dist_tot += (num_cross + 1) * distance;
@@ -233,7 +231,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
       num_cross++;
     } while (!out_state.IsOutside());
 
-    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+    length_over_crossings[i] = (num_cross > 1) ? dist_tot / num_cross : 0;
   }
 }
 //==================================================================================
@@ -243,8 +241,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
   int ilast  = nrays;
   int istart = 0;
   if (idebug >= 0) {
-    printf("PropagateRaysSurf debug ray %d:\n", idebug);
-    printf("   ");
+    std::cout << "PropagateRaysSurf debug ray " << idebug << "\n   0 : ";
     in_states[idebug].Print();
     istart = idebug;
     ilast  = istart + 1;
@@ -252,7 +249,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
   for (auto i = istart; i < ilast; ++i) {
     NavigationState start_state = in_states[i];
     NavigationState out_state;
-    int num_cross   = 0;
+    int num_cross   = 1;
     int exit_surf   = 0;
     double dist_tot = 0;
     auto pt         = points[i];
@@ -260,9 +257,25 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
     do {
       exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
+      if (exit_surf == -1) {
+        VECGEOM_LOG(critical) << std::setprecision(16) << "No exiting surface for ray " << i
+                              << " at num_cross = " << num_cross;
+        std::cout << std::setprecision(16) << "   starting point " << points[i] << " and direction " << dirs[i]
+                  << "\n   state for failing step : ";
+        start_state.Print();
+        // Find true location for the crossing point
+        NavigationState true_state;
+        vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pt, true_state, true, start_state.Top());
+        std::cout << "   crossing point : " << pt << " was located in : ";
+        true_state.Print();
+
+        // Now replay the failure before exiting
+        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
+        return;
+      }
       if (idebug >= 0) {
-        printf("     dist = %15.10f  surf = %d\n", distance, exit_surf);
-        printf("   ");
+        std::cout << std::setprecision(16) << "     dist = " << distance << "  surf = " << exit_surf << "\n   "
+                  << num_cross << " : ";
         out_state.Print();
       }
       dist_tot += (num_cross + 1) * distance;
@@ -270,7 +283,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
       start_state = out_state;
       num_cross++;
     } while (!out_state.IsOutside());
-    length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
+    length_over_crossings[i] = (num_cross > 1) ? dist_tot / num_cross : 0;
   }
 }
 //==================================================================================
@@ -316,6 +329,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   int num_errors_dist   = 0;
   int num_better_safety = 0;
   int num_worse_safety  = 0;
+  int idebug            = (debug && nrays == 1) ? 0 : -1;
 
   Stopwatch timer;
   // Locating the global points
@@ -372,7 +386,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Distance computation + relocation for solid model
   timer.Start();
-  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, refLength_over_crossings);
+  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, refLength_over_crossings, idebug);
   auto time_traverse_solids = timer.Stop();
 
   // Distance computation + relocation for solid model + BVH
@@ -382,7 +396,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Distance computation + relocation for surface model
   timer.Start();
-  PropagateRaysSurf(nrays, points, dirs, origStates, length_over_crossings);
+  PropagateRaysSurf(nrays, points, dirs, origStates, length_over_crossings, idebug);
   auto time_traverse_surf = timer.Stop();
 
   // Corectness for traversal
@@ -504,7 +518,7 @@ int main(int argc, char *argv[])
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
-  if (ongpu) {
+  if (ongpu && !debug) {
     timer.Start();
     errCUDA            = LoadOnGPU();
     auto time_transfer = timer.Stop();

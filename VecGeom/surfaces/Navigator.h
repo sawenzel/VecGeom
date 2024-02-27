@@ -144,7 +144,7 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol,
                                                                     vecgeom::Vector3D<Real_t> const &point,
                                                                     vecgeom::NavigationState &path, bool top,
-                                                                    vecgeom::VPlacedVolume *exclude = nullptr)
+                                                                    vecgeom::VPlacedVolume const *exclude = nullptr)
 {
   using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
   auto const &surfdata     = SurfData<Real_t>::Instance();
@@ -192,8 +192,10 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPl
 /// @param in_state Input navigation state before crossing
 /// @param out_state Output navigation state after crossing
 /// @param surfdata Surface data storage
-/// @param exit_surf Input: surface to be skipped, output: crossed surface index
-/// @return Distance to next surface
+/// @param exit_surf Input: surface to be skipped, output: crossed surface index.
+///                  If zero, there is no surface crossing closer than stepmax
+///                  If negative, there is a geometry error
+/// @return Distance to next surface.
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point,
                                                  vecgeom::Vector3D<Real_t> const &direction,
@@ -354,6 +356,13 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         surf_index = parent_surf.fLeftSide.Top(surfdata).fSurfIndex;
     }
     continue; // there may be closer surfaces being crossed
+  }
+  // If there is no physics step limitation, an exiting surface must be found
+  if (!found && stepmax == vecgeom::InfinityLength<Real_t>()) {
+    exit_surf = -1;
+    // This can happen if the exit point is outside the mother volume (extrusion)
+    // To recover, one can return the mother state as output and a zero distance
+    return stepmax;
   }
 
   // Now check entering candidates
@@ -533,14 +542,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   }
   // Fix the out_state if pointing to a 0 scene
   if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
-#ifndef VECCORE_CUDA_DEVICE_COMPILATION
-  if (!(in_navind == 0 || distance < vecgeom::InfinityLength<Real_t>())) {
-    VECGEOM_LOG(critical) << std::setprecision(16) << "at point " << point << " and direction " << direction
-                          << std::endl;
-  }
-#endif
-  assert(in_navind == 0 ||
-         (distance < vecgeom::InfinityLength<Real_t>() && "ComputeStepAndHit cannot return infinite distance"));
   return distance;
 }
 

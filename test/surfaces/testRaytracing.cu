@@ -143,8 +143,12 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vecto
   do {
     exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
     auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
+    if (exit_surf == -1) {
+      if (debug) printf("No exiting surface for ray %d at num_cross = %d\n", i, num_cross);
+      return;
+    }
     if (debug) {
-      printf("     dist = %15.10f  surf = %d\n", distance, exit_surf);
+      printf("     dist = %.16f  surf = %d\n", distance, exit_surf);
       printf("   ");
       out_state.Print();
     }
