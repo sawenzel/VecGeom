@@ -136,22 +136,26 @@ public:
   void SortSides(int common_id)
   {
     // lambda to remove a surface from a side
+    /*
     auto removeSurface = [&](Side &side, int ind) {
       for (int i = ind + 1; i < side.fNsurf; ++i)
         side.fSurfaces[i - 1] = side.fSurfaces[i];
       if (ind < side.fNsurf) side.fNsurf--;
     };
+    */
 
     // lambda to detect surfaces on a side that have identical frame
     auto sortAndRemoveCommonFrames = [&](Side &side) {
       if (!side.fNsurf) return;
       std::sort(side.fSurfaces, side.fSurfaces + side.fNsurf,
                 [&](int i, int j) { return fCPUdata.fFramedSurf[i] < fCPUdata.fFramedSurf[j]; });
+      /*
       for (int i = 0; i < side.fNsurf - 1; ++i) {
         for (int j = side.fNsurf - 1; j > i; --j) {
           if (EqualFrames(side, i, j)) removeSurface(side, j);
         }
       }
+      */
     };
 
     // lambda to find all parent frames on one side
