@@ -165,17 +165,24 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
 //==================================================================================
 int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                    Precision const *safeties, Precision const *refSafeties, bool debug, int &num_better_safety,
-                   int &num_worse_safety)
+                   int &num_worse_safety, Precision const tolerance)
 {
   int num_errors   = 0;
   int num_warnings = 0;
   for (auto i = 0; i < nrays; ++i) {
     num_better_safety += (safeties[i] > refSafeties[i] + kTolerance);
     num_worse_safety += (safeties[i] < refSafeties[i] - kTolerance);
+    if (safeties[i] / refSafeties[i] < tolerance) {
+      VECGEOM_LOG(critical) << std::setprecision(16)
+                            << "Safety of surface model below critical tolerance for point index " << i
+                            << " with point " << points[i] << " safety Solid = " << refSafeties[i]
+                            << " safety surf = " << safeties[i]
+                            << " and ratio surf/solid = " << (safeties[i] / refSafeties[i]) << std::endl;
+    }
     if (debug && num_warnings < 10 && safeties[i] < refSafeties[i] - kTolerance) {
       num_warnings++;
-      printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g\n", i, points[i][0], points[i][1],
-             points[i][2], refSafeties[i], safeties[i]);
+      printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g ratio surf/solid = %g\n", i, points[i][0],
+             points[i][1], points[i][2], refSafeties[i], safeties[i], (safeties[i] / refSafeties[i]));
       if (num_warnings == 10) printf("=== only fist 10 warnings are shown\n");
       // Replay before exiting for debugging
       int exit_surf = 0;
@@ -306,7 +313,8 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
   return num_errors_dist;
 }
 //==================================================================================
-int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug)
+int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug,
+                       Precision safety_tolerance)
 {
   // allocate storage
   NavigationState *origStates   = new NavigationState[nrays];
@@ -372,8 +380,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   auto time_safety_surf = timer.Stop();
 
   // Corectness for safety
-  num_errors_safe =
-      ValidateSafety(nrays, points, origStates, safeties, refSafeties, debug, num_better_safety, num_worse_safety);
+  num_errors_safe = ValidateSafety(nrays, points, origStates, safeties, refSafeties, debug, num_better_safety,
+                                   num_worse_safety, safety_tolerance);
   num_errors += num_errors_safe;
   // Report timing
   if (num_errors_safe > 0) std::cout << "HOST: Safety errors: " << num_errors_safe << "\n";
@@ -435,6 +443,7 @@ int main(int argc, char *argv[])
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
   OPTION_DOUBLE(mmunit, 1);
+  OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(point, default_point);
@@ -513,7 +522,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  int errHost = testRaytracingHost(nrays, points, dirs, debug);
+  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU

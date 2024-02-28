@@ -136,9 +136,17 @@ struct Arb4Data {
   Vector3D fViCrossVj;   /** Pre-computed vi X vj */
   Vector3D fHi1CrossHi0; /** Pre-computed hi1 X hi0 */
 
+#ifdef SURF_ACCURATE_SAFETY
+  // pre-computed normals of the plane using 3 of the 4 points of the Arb4 for additional safety calcuation
+  Vector3D normal0;
+  Vector3D normal1;
+  Vector3D normal2;
+  Vector3D normal3;
+#endif
+
   Arb4Data() = default;
-  Arb4Data(Real_s v0_0, Real_s v0_1, Real_s v0_2, Real_s v1_0, Real_s v1_1, Real_s v2_0, Real_s v2_1,
-           Real_s v2_2, Real_s v3_0, Real_s v3_1)
+  Arb4Data(Real_s v0_0, Real_s v0_1, Real_s v0_2, Real_s v1_0, Real_s v1_1, Real_s v2_0, Real_s v2_1, Real_s v2_2,
+           Real_s v3_0, Real_s v3_1)
       : halfH(0.5 * (v2_2 - v0_2)), halfH_inv(1. / halfH)
   {
 
@@ -175,6 +183,24 @@ struct Arb4Data {
     fViCrossHi0  = (vb - va).Cross(vc - va);
     fViCrossVj   = (vb - va).Cross(vd - vc);
     fHi1CrossHi0 = (vd - vb).Cross(vc - va);
+
+#ifdef SURF_ACCURATE_SAFETY
+    normal0 = (vd - vc).Cross(va - vc);
+    normal0.Normalize();
+    if ((vb - vc).Dot(normal0) < 0) normal0 *= -1;
+
+    normal1 = (vb - va).Cross(vc - va);
+    normal1.Normalize();
+    if ((vd - va).Dot(normal1) < 0) normal1 *= -1;
+
+    normal2 = (vc - vd).Cross(vb - vd);
+    normal2.Normalize();
+    if ((va - vd).Dot(normal2) < 0) normal2 *= -1;
+
+    normal3 = (vd - vb).Cross(vc - vb);
+    normal3.Normalize();
+    if ((vc - vb).Dot(normal3) < 0) normal3 *= -1;
+#endif
   };
 };
 

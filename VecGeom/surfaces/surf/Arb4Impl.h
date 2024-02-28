@@ -70,8 +70,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
     Real_t dys = ys2 - ys1;
 
     // calculate quadratic coefficients
-    Real_t a =
-        (fArb4Data->fDeltatx * dir[1] - fArb4Data->fDeltaty * dir[0] + fArb4Data->ft1crosst2 * dir[2]) * dir[2];
+    Real_t a = (fArb4Data->fDeltatx * dir[1] - fArb4Data->fDeltaty * dir[0] + fArb4Data->ft1crosst2 * dir[2]) * dir[2];
     Real_t b = dxs * dir[1] - dys * dir[0] +
                (fArb4Data->fDeltatx * point[1] - fArb4Data->fDeltaty * point[0] + fArb4Data->fty2 * xs1 -
                 fArb4Data->fty1 * xs2 + fArb4Data->ftx1 * ys2 - fArb4Data->ftx2 * ys1) *
@@ -96,21 +95,20 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
       // calculate the normal
       // when calculating the normal, we also calculate the vertical ratio rz and the horizontal ratios r in x and y.
       // They can be immediately used as a framecheck, so that the frame does not need to be checked later again.
-      Real_t r  = -1;
-      Real_t rz = 0.5 * dz_inv * (onsurf[2] + fArb4Data->halfH);
-      Real_t num =
-          (onsurf.x() - fArb4Data->verticesX[1]) - rz * (fArb4Data->verticesX[3] - fArb4Data->verticesX[1]);
-      Real_t denom = (fArb4Data->verticesX[0] - fArb4Data->verticesX[1]) +
-                     rz * (fArb4Data->verticesX[2] - fArb4Data->verticesX[0] - fArb4Data->verticesX[3] +
-                           fArb4Data->verticesX[1]);
+      Real_t r   = -1;
+      Real_t rz  = 0.5 * dz_inv * (onsurf[2] + fArb4Data->halfH);
+      Real_t num = (onsurf.x() - fArb4Data->verticesX[1]) - rz * (fArb4Data->verticesX[3] - fArb4Data->verticesX[1]);
+      Real_t denom =
+          (fArb4Data->verticesX[0] - fArb4Data->verticesX[1]) +
+          rz * (fArb4Data->verticesX[2] - fArb4Data->verticesX[0] - fArb4Data->verticesX[3] + fArb4Data->verticesX[1]);
       if (Abs(denom) > 1e-6) {
         r = num / vecgeom::NonZero(denom);
         if (!((r >= -vecgeom::kTolerance) && (r <= 1. + vecgeom::kTolerance))) continue;
       }
-      num   = (onsurf.y() - fArb4Data->verticesY[1]) - rz * (fArb4Data->verticesY[3] - fArb4Data->verticesY[1]);
-      denom = (fArb4Data->verticesY[0] - fArb4Data->verticesY[1]) +
-              rz * (fArb4Data->verticesY[2] - fArb4Data->verticesY[0] - fArb4Data->verticesY[3] +
-                    fArb4Data->verticesY[1]);
+      num = (onsurf.y() - fArb4Data->verticesY[1]) - rz * (fArb4Data->verticesY[3] - fArb4Data->verticesY[1]);
+      denom =
+          (fArb4Data->verticesY[0] - fArb4Data->verticesY[1]) +
+          rz * (fArb4Data->verticesY[2] - fArb4Data->verticesY[0] - fArb4Data->verticesY[3] + fArb4Data->verticesY[1]);
       if (Abs(denom) > 1e-6) r = num / vecgeom::NonZero(denom);
 
       // frame check?
@@ -139,11 +137,36 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    // Real_t sphR = fSphData->Radius();
-    // Real_t rho  = point.Mag();
-    // // the onsurf computation code is missing below
 
     Real_t dzp = fArb4Data->halfH + point[2];
+
+    // safety in z
+    distance = (fabs(point[2]) > fArb4Data->halfH + vecgeom::kTolerance) ? fabs(point[2]) - fArb4Data->halfH : 0.;
+
+#ifdef SURF_ACCURATE_SAFETY
+    Real_t v_safety         = vecgeom::InfinityLength<Real_t>();
+    Real_t tmp              = 0.;
+    Vector3D<Real_t> vplane = {fArb4Data->verticesX[0], fArb4Data->verticesY[0], -fArb4Data->halfH};
+    tmp                     = (point - vplane).Dot(fArb4Data->normal0);
+    if (tmp > 0) v_safety = tmp;
+
+    vplane = {fArb4Data->verticesX[1], fArb4Data->verticesY[1], -fArb4Data->halfH};
+    tmp    = (point - vplane).Dot(fArb4Data->normal1);
+    if (tmp > 0) v_safety = Min(v_safety, tmp);
+
+    vplane = {fArb4Data->verticesX[2], fArb4Data->verticesY[2], fArb4Data->halfH};
+    tmp    = (point - vplane).Dot(fArb4Data->normal2);
+    if (tmp > 0) v_safety = Min(v_safety, tmp);
+
+    vplane = {fArb4Data->verticesX[3], fArb4Data->verticesY[3], -fArb4Data->halfH};
+    tmp    = (point - vplane).Dot(fArb4Data->normal3);
+    if (tmp > 0) v_safety = Min(v_safety, tmp);
+
+    if (v_safety < vecgeom::InfinityLength<Real_t>()) {
+      distance = Max(distance, v_safety);
+    }
+
+#endif
 
     Real_t xs1 = fArb4Data->verticesX[1] + fArb4Data->ftx1 * dzp;
     Real_t ys1 = fArb4Data->verticesY[1] + fArb4Data->fty1 * dzp;
@@ -187,7 +210,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
     // Denominator below always positive as fDz>0
     safety *= Real_t(1.) - Real_t(4.) * fArb4Data->halfH * fArb4Data->halfH /
                                (dxs * dxs + dys * dys + Real_t(4.) * fArb4Data->halfH * fArb4Data->halfH);
-    distance = Sqrt(safety);
+    distance = Max(distance, Sqrt(safety));
 
     return true;
   }
