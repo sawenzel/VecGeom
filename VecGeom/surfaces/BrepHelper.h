@@ -497,7 +497,11 @@ public:
 
   bool CreateLocalSurfaces()
   {
-    // Iterate logical volumes and create local surfaces
+    // add identity first in the list of local transformations
+    Transformation identity;
+    assert(fCPUdata.fLocalTrans.size() == 0);
+    fCPUdata.fLocalTrans.push_back(identity);
+    //  Iterate logical volumes and create local surfaces
     std::vector<vecgeom::LogicalVolume *> volumes;
     auto n_registered_volumes = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
     vecgeom::GeoManager::Instance().GetAllLogicalVolumes(volumes);
@@ -689,7 +693,6 @@ public:
     // add identity first in the list of global transformations
     Transformation identity;
     fCPUdata.fGlobalTrans.push_back(identity);
-    fCPUdata.fLocalTrans.push_back(identity);
     // add a dummy common surface since index 0 is not allowed for correctly handling sides
     fCPUdata.fCommonSurfaces.push_back({});
 

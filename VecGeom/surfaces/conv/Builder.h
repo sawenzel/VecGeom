@@ -223,7 +223,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
     Real_t resid  = Max(Max(fabs(resid1), fabs(resid2)), Max(fabs(resid3), fabs(resid4)));
 
     // the residue should be small compared to the length scale of the quadrilateral
-    return resid/dist_scale < 100 * vecgeom::kTolerance;
+    return resid / dist_scale < 100 * vecgeom::kTolerance;
   };
 
   // copy container because the content may get changed due to degenerated vertices
@@ -250,7 +250,6 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
     isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans,
                                                 use_surf_safety);
   } else { // creating Arb4 surface
-    auto itrans = CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0});
     Real_t surfdata[10];
     surfdata[0] = points[0].x();
     surfdata[1] = points[0].y();
@@ -264,7 +263,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
     surfdata[9] = points[3].y();
     // we are using the frame above although it is never used for the Arb4
     isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kArb4, surfdata), frame,
-                                                itrans, use_surf_safety, /*never_check=*/1);
+                                                /*identity transformation*/ 0, use_surf_safety, /*never_check=*/1);
   }
   AddSurfaceToShell<Real_t>(logical_id, isurf);
   return isurf;

@@ -103,7 +103,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
-        builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
+        /*identity transformation*/ 0, use_surf_safety);
     auto &surf3 = cpudata.fLocalSurfaces[isurf];
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     // Make the surface "logical"
@@ -116,7 +116,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
+      /*identity transformation*/ 0, use_surf_safety);
   auto &surf4 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"

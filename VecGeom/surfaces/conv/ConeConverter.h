@@ -69,7 +69,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(stype, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, sphi, ephi}),
-        builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
+        /*identity transformation*/ 0, use_surf_safety);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     logic.push_back(land);
     logic.push_back(isurf);
@@ -81,7 +81,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(stype, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0}), use_surf_safety);
+      /*identity transformation*/ 0, use_surf_safety);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(isurf);

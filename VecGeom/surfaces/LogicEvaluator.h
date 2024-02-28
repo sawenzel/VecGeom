@@ -25,7 +25,8 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
   ///< Lambda to get the inside for individual unplaced surfaces of the same logical volume
   auto insideSurf = [&](int isurf) {
     // Convert point from volume to local surface coordinates
-    Vector3D<Real_t> plocalSurf = surfdata.fLocalTrans[isurf].Transform(plocalVol);
+    auto itrans                 = surfdata.fLocalSurf[isurf].fTrans;
+    Vector3D<Real_t> plocalSurf = surfdata.fLocalTrans[itrans].Transform(plocalVol);
     auto const &unplaced        = surfdata.fLocalSurf[isurf].fSurface;
     return unplaced.Inside(plocalSurf, surfdata);
   };
