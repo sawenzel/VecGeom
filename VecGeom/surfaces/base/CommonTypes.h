@@ -63,7 +63,6 @@ enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTo
 ///< kWindow        <- rectangular range in xy-plane
 ///< kTriangle      <- triangular range in xy-plane
 ///< kQuadrilateral <- planar quadrilateral in xy-plane
-///< kArb4          <- non-planar quadrilateral
 enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
 // Aliases for different usages of Vec2D.
@@ -110,9 +109,73 @@ struct ConeData {
   VECCORE_ATT_HOST_DEVICE
   Real_s RadiusZ(Real_s z) const { return Radius() + z * slope; }
   VECCORE_ATT_HOST_DEVICE
-  Real_s Slope() const { return slope; }
-  VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
+};
+
+/// @brief Data for Arb4 surfaces
+/// @tparam Real_t Storage type
+/// @tparam Real_s Interface type
+template <typename Real_t, typename Real_s = Real_t>
+struct Arb4Data {
+  using Vector3D = vecgeom::Vector3D<Real_t>;
+
+  Real_t verticesX[4];
+  Real_t verticesY[4];
+  Real_t connecting_compX[2];
+  Real_t connecting_compY[2];
+  Real_t halfH;                  ///< half the height of the Arb4
+  Real_t halfH_inv;              ///< inverse of half the height
+  Real_t ftx1, fty1, ftx2, fty2; /** Connecting components top-bottom */
+
+  Real_t ft1crosst2; /** Cross term ftx1[i]*fty2[i] - ftx2[i]*fty1[i] */
+  Real_t fDeltatx;   /** Term ftx2[i] - ftx1[i] */
+  Real_t fDeltaty;   /** Term fty2[i] - fty1[i] */
+
+  // pre-computed cross products for normal computation
+  Vector3D fViCrossHi0;  /** Pre-computed vi X hi0 */
+  Vector3D fViCrossVj;   /** Pre-computed vi X vj */
+  Vector3D fHi1CrossHi0; /** Pre-computed hi1 X hi0 */
+
+  Arb4Data() = default;
+  Arb4Data(Real_s v0_0, Real_s v0_1, Real_s v0_2, Real_s v1_0, Real_s v1_1, Real_s v2_0, Real_s v2_1,
+           Real_s v2_2, Real_s v3_0, Real_s v3_1)
+      : halfH(0.5 * (v2_2 - v0_2)), halfH_inv(1. / halfH)
+  {
+
+    verticesX[0] = v0_0;
+    verticesX[1] = v1_0;
+    verticesX[2] = v3_0; // note the flip here to stick to the convention of GenTrapImplementation in the solid model
+    verticesX[3] = v2_0;
+    verticesY[0] = v0_1;
+    verticesY[1] = v1_1;
+    verticesY[2] = v3_1;
+    verticesY[3] = v2_1;
+
+    for (int i = 0; i < 2; ++i) {
+      connecting_compX[i] = verticesX[i] - verticesX[i + 2];
+      connecting_compY[i] = verticesY[i] - verticesY[i + 2];
+    }
+
+    ftx1 = 0.5 * halfH_inv * -connecting_compX[1];
+    fty1 = 0.5 * halfH_inv * -connecting_compY[1];
+    ftx2 = 0.5 * halfH_inv * -connecting_compX[0];
+    fty2 = 0.5 * halfH_inv * -connecting_compY[0];
+
+    ft1crosst2 = ftx1 * fty2 - ftx2 * fty1;
+    fDeltatx   = ftx2 - ftx1;
+    fDeltaty   = fty2 - fty1;
+
+    // temporary vertices
+    Vector3D va = {verticesX[1], verticesY[1], -halfH};
+    Vector3D vb = {verticesX[3], verticesY[3], halfH};
+    Vector3D vc = {verticesX[0], verticesY[0], -halfH};
+    Vector3D vd = {verticesX[2], verticesY[2], halfH};
+
+    // Cross products used for normal computation
+    fViCrossHi0  = (vb - va).Cross(vc - va);
+    fViCrossVj   = (vb - va).Cross(vd - vc);
+    fHi1CrossHi0 = (vd - vb).Cross(vc - va);
+  };
 };
 
 ///< Constants and tolerances
@@ -196,7 +259,7 @@ struct TorusData {
       vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
   AngleVector<Real_t> vecEPhi{
       vecgeom::kInfLength,
-      vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
+      vecgeom::kInfLength};                ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
   CylData<Real_t, Real_t> inner_cycl_data; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
   CylData<Real_t, Real_t> outer_cycl_data; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
 

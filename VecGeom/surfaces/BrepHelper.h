@@ -49,6 +49,7 @@ class BrepHelper {
   using ConeData_t     = ConeData<Real_t>;
   using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
+  using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
   using ZPhiMask_t     = ZPhiMask<Real_t>;
@@ -92,6 +93,10 @@ public:
     fSurfData->fCylSphData = nullptr;
     delete[] fSurfData->fConeData;
     fSurfData->fConeData = nullptr;
+    delete[] fSurfData->fTorusData;
+    fSurfData->fTorusData = nullptr;
+    delete[] fSurfData->fArb4Data;
+    fSurfData->fArb4Data = nullptr;
     delete[] fSurfData->fGlobalTrans;
     fSurfData->fGlobalTrans = nullptr;
     delete[] fSurfData->fLocalTrans;
@@ -983,6 +988,16 @@ private:
       // Surfaces may be in future "compatible" even if they are not the same, for now enforce equality
       if (s1.fSurface.type != s2.fSurface.type) return false;
 
+      // Skip Arb4 for now
+      static bool warning_printed = false;
+      if (s1.fSurface.type == SurfaceType::kArb4 || s2.fSurface.type == SurfaceType::kArb4) {
+        if (!warning_printed) {
+          VECGEOM_LOG(warning) << "CreateCommonSurface: case " << to_cstring(s1.fSurface.type) << " not implemented";
+          warning_printed = true;
+        }
+        return false;
+      }
+
       // Check if the surfaces may be flipped because of Boolean negation
       flip_bool = s1.fLogicId * s2.fLogicId < 0;
 
@@ -1001,7 +1016,6 @@ private:
       // Use double precision explicitly
       vecgeom::Vector3D<double> tdiff = t1.Translation() - t2.Translation();
       bool same_tr                    = ApproxEqualVector(tdiff, {0, 0, 0});
-      static bool warning_printed     = false;
       vecgeom::Vector3D<double> ldir;
       switch (s1.fSurface.type) {
       case SurfaceType::kPlanar:
@@ -1029,7 +1043,7 @@ private:
                      fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-t2.Translation()[2])) > vecgeom::kTolerance) {
           return false;
         }
-        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].Slope() - fCPUdata.fConeData[s2.fSurface.id].Slope()) >
+        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].slope - fCPUdata.fConeData[s2.fSurface.id].slope) >
             vecgeom::kTolerance) {
           return false;
         }
@@ -1087,6 +1101,14 @@ private:
         }
         break;
       case SurfaceType::kConical:
+        // use radius at origin, slope, and normal for hashing
+        hash = hash_combine(
+            hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-trans.Translation()[2]) / tolerance));
+        hash = hash_combine(hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance));
+        for (int i = 0; i < 3; i++) {
+          hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
+        }
+        break;
       case SurfaceType::kSpherical:
       case SurfaceType::kTorus:
       case SurfaceType::kArb4:
@@ -1106,44 +1128,48 @@ private:
     bool found_dup_surf = false;
     int id              = -1;
     flip ^= flip_bool;
-    for (auto it = range.first; it != range.second; ++it) {
-      const auto &other_id = fCPUdata.fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
-      // Do not de-duplicate surfaces if they do not belong to the same Boolean volume.
-      // This is needed because safety for Booleans must be evaluated only once based on the volume logic expression.
-      // Safety evaluation is triggered by the first Boolean surface found closest. All candidate surfaces to be checked
-      // for the same Boolean volume must be consecutive, to allow caching the result.
-      FramedSurface const &othersurf = fCPUdata.fFramedSurf[other_id];
-      if (surf.fLogicId && surf.fLogicId != othersurf.fLogicId) continue;
+    // check duplicates only for valid hashes
+    if (hash != 0) {
+      for (auto it = range.first; it != range.second; ++it) {
+        const auto &other_id = fCPUdata.fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
+        // Do not de-duplicate surfaces if they do not belong to the same Boolean volume.
+        // This is needed because safety for Booleans must be evaluated only once based on the volume logic expression.
+        // Safety evaluation is triggered by the first Boolean surface found closest. All candidate surfaces to be
+        // checked for the same Boolean volume must be consecutive, to allow caching the result.
+        FramedSurface const &othersurf = fCPUdata.fFramedSurf[other_id];
+        if (surf.fLogicId && surf.fLogicId != othersurf.fLogicId) continue;
 
-      if (approxEqual(other_id, idglob)) {
-        // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the surface
-        // will be missed when coming from the entering side.
-        // if (flip && othersurf.VolumeId() == volId) continue;
-        found_dup_surf = true;
-        id             = it->second;
-        auto &crt_side = flip ? fCPUdata.fCommonSurfaces[id].fRightSide : fCPUdata.fCommonSurfaces[id].fLeftSide;
-        // The common surface is compatible only if the parent state for the current framed surface
-        // has a frame on the same side or it is already the default state.
-        NavIndex_t parent_state_index = fCPUdata.fFramedSurf[idglob].fState;
-        vecgeom::NavigationState::PopImpl(parent_state_index);
-        if (fCPUdata.fCommonSurfaces[id].fDefaultState != parent_state_index) {
-          // To be compatible, a surface of the parent state MUST exist on the same side
-          bool has_parent = false;
-          for (auto isurf = 0; isurf < crt_side.fNsurf; ++isurf) {
-            has_parent = fCPUdata.fFramedSurf[crt_side.fSurfaces[isurf]].fState == parent_state_index;
-            if (has_parent) break;
+        if (approxEqual(other_id, idglob)) {
+          // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the
+          // surface will be missed when coming from the entering side. if (flip && othersurf.VolumeId() == volId)
+          // continue;
+          found_dup_surf = true;
+          id             = it->second;
+          auto &crt_side = flip ? fCPUdata.fCommonSurfaces[id].fRightSide : fCPUdata.fCommonSurfaces[id].fLeftSide;
+          // The common surface is compatible only if the parent state for the current framed surface
+          // has a frame on the same side or it is already the default state.
+          NavIndex_t parent_state_index = fCPUdata.fFramedSurf[idglob].fState;
+          vecgeom::NavigationState::PopImpl(parent_state_index);
+          if (fCPUdata.fCommonSurfaces[id].fDefaultState != parent_state_index) {
+            // To be compatible, a surface of the parent state MUST exist on the same side
+            bool has_parent = false;
+            for (auto isurf = 0; isurf < crt_side.fNsurf; ++isurf) {
+              has_parent = fCPUdata.fFramedSurf[crt_side.fSurfaces[isurf]].fState == parent_state_index;
+              if (has_parent) break;
+            }
+            if (!has_parent) {
+              found_dup_surf = false;
+              continue;
+            }
           }
-          if (!has_parent) {
-            found_dup_surf = false;
-            continue;
-          }
+          // Add the global surface to the appropriate side
+          iframe = crt_side.AddSurface(idglob);
+          iside  = flip ? kRside : kLside;
+          break;
         }
-        // Add the global surface to the appropriate side
-        iframe = crt_side.AddSurface(idglob);
-        iside  = flip ? kRside : kLside;
-        break;
       }
     }
+
     if (!found_dup_surf) {
       // Construct a new common surface from the current placed global surface
       // Set the common state to be the parent of the idglob surface state
@@ -1335,6 +1361,11 @@ private:
     fSurfData->fTorusData = new TorusData_t[fCPUdata.fTorusData.size()];
     for (size_t i = 0; i < fCPUdata.fTorusData.size(); ++i)
       fSurfData->fTorusData[i] = fCPUdata.fTorusData[i];
+
+    fSurfData->fNarb4    = fCPUdata.fArb4Data.size();
+    fSurfData->fArb4Data = new Arb4Data_t[fCPUdata.fArb4Data.size()];
+    for (size_t i = 0; i < fCPUdata.fArb4Data.size(); ++i)
+      fSurfData->fArb4Data[i] = fCPUdata.fArb4Data[i];
 
     // Create Masks
     UpdateMaskData();

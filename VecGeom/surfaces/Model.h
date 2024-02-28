@@ -54,8 +54,7 @@ struct UnplacedSurface {
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point);
     case SurfaceType::kArb4:
-      // unhandled
-      return false;
+      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id)).Inside(point);
     };
     return false;
   }
@@ -88,8 +87,8 @@ struct UnplacedSurface {
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
           .Intersect(point, dir, left_side, distance);
     case SurfaceType::kArb4:
-      // unhandled
-      return false;
+      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
+          .Intersect(point, dir, left_side, distance);
     };
     return false;
   }
@@ -123,8 +122,8 @@ struct UnplacedSurface {
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
           .Safety(point, left_side, distance, compute_onsurf, onsurf);
     case SurfaceType::kArb4:
-      // unhandled
-      return false;
+      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
+          .Safety(point, left_side, distance, compute_onsurf, onsurf);
     };
     return false;
   }
@@ -467,6 +466,7 @@ struct SurfData {
   using ConeData_t     = ConeData<Real_t>;
   using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
+  using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
   using ZPhiMask_t     = ZPhiMask<Real_t>;
@@ -481,6 +481,7 @@ struct SurfData {
   int fNcylsph{0};
   int fNcone{0};
   int fNtorus{0};
+  int fNarb4{0};
   int fNcommonSurf{0};
   int fNsides{0};
   int fNStates{0};
@@ -512,6 +513,7 @@ struct SurfData {
   CylData_t *fCylSphData{nullptr};  ///< Cyl and sphere data
   ConeData_t *fConeData{nullptr};   ///< Cone data
   TorusData_t *fTorusData{nullptr}; ///< Torus data
+  Arb4Data_t *fArb4Data{nullptr};   ///< Arb4 data
 
   // Frame data
   WindowMask_t *fWindowMasks{nullptr};     ///< rectangular masks
@@ -548,31 +550,64 @@ struct SurfData {
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
+  CylData_t const &GetCylData(int id) const
+  {
+    return fCylSphData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
+  SphData_t const &GetSphData(int id) const
+  {
+    return fCylSphData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
+  ConeData_t const &GetConeData(int id) const
+  {
+    return fConeData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
+  TorusData_t const &GetTorusData(int id) const
+  {
+    return fTorusData[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
+  Arb4Data_t const &GetArb4Data(int id) const
+  {
+    return fArb4Data[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
+  WindowMask_t const &GetWindowMask(int id) const
+  {
+    return fWindowMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
+  RingMask_t const &GetRingMask(int id) const
+  {
+    return fRingMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
+  ZPhiMask_t const &GetZPhiMask(int id) const
+  {
+    return fZPhiMasks[id];
+  }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
+  TriangleMask_t const &GetTriangleMask(int id) const
+  {
+    return fTriangleMasks[id];
+  }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  QuadMask_t const &GetQuadMask(int id) const
+  {
+    return fQuadMasks[id];
+  }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE

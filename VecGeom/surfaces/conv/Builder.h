@@ -25,8 +25,9 @@ UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, 
     cpudata.fTorusData.push_back({data[0], data[1], data[2], data[3], flip});
     return UnplacedSurface(type, cpudata.fTorusData.size() - 1);
   case SurfaceType::kArb4:
-    std::cout << "kArb4 unhandled\n";
-    return UnplacedSurface(type);
+    cpudata.fArb4Data.push_back(
+        {data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]});
+    return UnplacedSurface(type, cpudata.fArb4Data.size() - 1);
   };
   return UnplacedSurface(type);
 }
@@ -204,6 +205,27 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
 template <typename Real_t, typename Container>
 int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_surf_safety)
 {
+  // helper function to find non-coplanar surfaces (Arb4)
+  using Vector3      = vecgeom::Vector3D<Real_t>;
+  auto PointsOnPlane = [](Container &points) {
+    // this method of checking the co-planarity was taken from the UnplacedTrapezoid
+    Vector3 normalVector = (points[2] - points[0]).Cross(points[3] - points[1]);
+    normalVector.Normalize();
+    Vector3 centr = 0.25 * (points[0] + points[1] + points[2] + points[3]);
+
+    Real_t dist_scale = Max(Max((points[0] - centr).Length(), (points[1] - centr).Length()),
+                            Max((points[2] - centr).Length(), (points[3] - centr).Length()));
+    // check co-planarity
+    Real_t resid1 = normalVector.Dot(points[0] - centr);
+    Real_t resid2 = normalVector.Dot(points[1] - centr);
+    Real_t resid3 = normalVector.Dot(points[2] - centr);
+    Real_t resid4 = normalVector.Dot(points[3] - centr);
+    Real_t resid  = Max(Max(fabs(resid1), fabs(resid2)), Max(fabs(resid3), fabs(resid4)));
+
+    // the residue should be small compared to the length scale of the quadrilateral
+    return resid/dist_scale < 100 * vecgeom::kTolerance;
+  };
+
   // copy container because the content may get changed due to degenerated vertices
   Container vertices(points);
   // Remove duplicated vertices
@@ -219,12 +241,31 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
   }
   if (vertices.size() < 3) return -1;
 
-  auto transformation = TransformationFromPlanarPoints<Real_t>(vertices);
-  auto itrans         = CreateLocalTransformation<Real_t>(transformation);
-  auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
+  int isurf = 0;
   // Create transformation
-  int isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans,
-                                                  use_surf_safety);
+  auto transformation = TransformationFromPlanarPoints<Real_t>(vertices);
+  auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
+  if (vertices.size() != 4 || PointsOnPlane(vertices)) {
+    auto itrans = CreateLocalTransformation<Real_t>(transformation);
+    isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans,
+                                                use_surf_safety);
+  } else { // creating Arb4 surface
+    auto itrans = CreateLocalTransformation<Real_t>({0, 0, 0, 0, 0, 0});
+    Real_t surfdata[10];
+    surfdata[0] = points[0].x();
+    surfdata[1] = points[0].y();
+    surfdata[2] = points[0].z();
+    surfdata[3] = points[1].x();
+    surfdata[4] = points[1].y();
+    surfdata[5] = points[2].x();
+    surfdata[6] = points[2].y();
+    surfdata[7] = points[2].z();
+    surfdata[8] = points[3].x();
+    surfdata[9] = points[3].y();
+    // we are using the frame above although it is never used for the Arb4
+    isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kArb4, surfdata), frame,
+                                                itrans, use_surf_safety, /*never_check=*/1);
+  }
   AddSurfaceToShell<Real_t>(logical_id, isurf);
   return isurf;
 }

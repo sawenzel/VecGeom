@@ -109,9 +109,14 @@ public:
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fConeData, surfData.fConeData, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNtorus = surfData.fNtorus;
-    sizeInBytes             = sizeof(surfData.fTorusData[0]) * surfData.fNtorus;
+    sizeInBytes              = sizeof(surfData.fTorusData[0]) * surfData.fNtorus;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTorusData, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fTorusData, surfData.fTorusData, sizeInBytes, cudaMemcpyHostToDevice));
+
+    fSurfDataStaging.fNarb4 = surfData.fNarb4;
+    sizeInBytes             = sizeof(surfData.fArb4Data[0]) * surfData.fNarb4;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fArb4Data, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fArb4Data, surfData.fArb4Data, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy volume shells
     fSurfDataStaging.fNshells = surfData.fNshells;
@@ -167,9 +172,10 @@ public:
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fQuadMasks, surfData.fQuadMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNtriangs = surfData.fNtriangs;
-    sizeInBytes              = sizeof(surfData.fTriangleMasks[0]) * surfData.fNtriangs;
+    sizeInBytes                = sizeof(surfData.fTriangleMasks[0]) * surfData.fNtriangs;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTriangleMasks, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fTriangleMasks, surfData.fTriangleMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    BREP_CUDA_CHECK(
+        cudaMemcpy(fSurfDataStaging.fTriangleMasks, surfData.fTriangleMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy scene indices
     fSurfDataStaging.fNscenes = surfData.fNscenes;
@@ -228,6 +234,10 @@ public:
     fSurfDataStaging.fCylSphData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fConeData));
     fSurfDataStaging.fConeData = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fTorusData));
+    fSurfDataStaging.fTorusData = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fArb4Data));
+    fSurfDataStaging.fArb4Data = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShells));
     fSurfDataStaging.fShells = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fSurfShellList));

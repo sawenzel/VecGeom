@@ -205,7 +205,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
   int ilast                      = nrays;
   int istart                     = 0;
   if (idebug >= 0) {
-    std::cout << std::setprecision(16) << "PropagateRaysSurf debug ray " << idebug << " : p{" << points[idebug]
+    std::cout << std::setprecision(16) << "PropagateRaysSolid debug ray " << idebug << " : p{" << points[idebug]
               << "} d{" << dirs[idebug] << "}\n   0 :";
     in_states[idebug].Print();
     istart = idebug;

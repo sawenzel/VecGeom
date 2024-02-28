@@ -41,15 +41,15 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
     Real_t roots[2];
     int numroots      = 0;
     bool flip_exiting = left_side ^ fConeData->IsFlipped();
-    ConeEq<Real_t>(point, dir, fConeData->Radius(), fConeData->Slope(), coef);
+    ConeEq<Real_t>(point, dir, fConeData->Radius(), fConeData->slope, coef);
     QuadraticSolver(coef, roots, numroots);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
       // Exclude solutions beyond the tip of the cone. What if the tip is included? TODO
-      if (fConeData->Radius() + onsurf[2] * fConeData->Slope() < 0) continue;
+      if (fConeData->Radius() + onsurf[2] * fConeData->slope < 0) continue;
       Vector3D<Real_t> normal(onsurf[0], onsurf[1],
-                              -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * fConeData->Slope());
+                              -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * fConeData->slope);
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) return true;
@@ -69,7 +69,7 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    Real_t t       = fConeData->Slope();
+    Real_t t       = fConeData->slope;
     Real_t coneR   = std::abs(fConeData->Radius() + point[2] * t);
     Real_t rho     = point.Perp();
     auto distanceR = left_side ? coneR - rho : rho - coneR;
