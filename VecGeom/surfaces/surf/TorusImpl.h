@@ -238,14 +238,17 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
+    if (!fTorusData->InsidePhi(point)) {
+      // If the point is not in the phi range, there are other surfaces closer than this one
+      distance = vecgeom::InfinityLength<Real_t>();
+      return true;
+    }
     Real_t rho   = Sqrt(point.x() * point.x() + point.y() * point.y());
     Real_t rTor  = fTorusData->Radius();
     Real_t rTube = fTorusData->RadiusTube();
 
     distance = left_side ? rTube - Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor))
                          : Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube;
-
-    // Todo: take care of phi cut, this can be an underestimation
 
     return true;
   }
