@@ -639,8 +639,7 @@ public:
         auto isurf = CreateCommonSurface(id_surf, ivol, scene_id, iframe, iside);
 
         if (fVerbose > 0) {
-          VECGEOM_LOG(info) << "scene " << scene_id << ": framed surface " << id_surf << " on CS " << isurf
-                            << " for state: ";
+          std::cout << "scene " << scene_id << ": framed surface " << id_surf << " on CS " << isurf << std::endl;
           state.PrintTop();
           std::cout << "  " << surftrans << "\n";
         }
@@ -1135,12 +1134,6 @@ private:
     if (hash != 0) {
       for (auto it = range.first; it != range.second; ++it) {
         const auto &other_id = fCPUdata.fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
-        // Do not de-duplicate surfaces if they do not belong to the same Boolean volume.
-        // This is needed because safety for Booleans must be evaluated only once based on the volume logic expression.
-        // Safety evaluation is triggered by the first Boolean surface found closest. All candidate surfaces to be
-        // checked for the same Boolean volume must be consecutive, to allow caching the result.
-        FramedSurface const &othersurf = fCPUdata.fFramedSurf[other_id];
-        if (surf.fLogicId && surf.fLogicId != othersurf.fLogicId) continue;
 
         if (approxEqual(other_id, idglob)) {
           // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the
