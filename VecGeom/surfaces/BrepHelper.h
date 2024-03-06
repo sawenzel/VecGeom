@@ -657,8 +657,12 @@ public:
             fCPUdata.fFramedSurf.back().fLogicId   = lsurf.fLogicId;
             fCPUdata.fFramedSurf.back().fSurfIndex = lsurf.fSurfIndex;
             auto isurf_scene                       = CreateCommonSurface(id_surf_new, ivol, newscene_id, iframe, iside);
-            constexpr char kLside                  = 0x01;
-            assert(iside == kLside);
+
+            // This assert was to ensure that the first surface of a new volume must be on the left side
+            // For booleans, this is not strictly true, so we remove this as a consequence of !1075
+            // constexpr char kLside                  = 0x01;
+            // assert(iside == kLside);
+
             // Add the CS pointer to the frame in the parent scene. So if a track enters the frame it is relocated in
             // this frame, it checs the info on the scene CS
             framed_surf.fSceneCS                                          = isurf_scene;
