@@ -90,9 +90,16 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
   if (success && localtrans) {
     auto isurf_last = shell.fSurfaces.size();
     for (size_t i = isurf_first; i < isurf_last; ++i) {
-      auto const &surf = cpudata.fLocalSurfaces[shell.fSurfaces[i]];
+      auto &surf = cpudata.fLocalSurfaces[shell.fSurfaces[i]];
       Transformation trans(*localtrans);
-      trans.MultiplyFromRight(cpudata.fLocalTrans[surf.fTrans]);
+      if (surf.fTrans) {
+        trans.MultiplyFromRight(cpudata.fLocalTrans[surf.fTrans]);
+        cpudata.fLocalTrans[surf.fTrans] = trans;
+      } else {
+        int itrans = cpudata.fLocalTrans.size();
+        cpudata.fLocalTrans.push_back(trans);
+        surf.fTrans = itrans;
+      }
       cpudata.fLocalTrans[surf.fTrans] = trans;
     }
   }
