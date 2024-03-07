@@ -608,16 +608,16 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     // To test if on GPU is better to compute the projection systematically
     // bool compute_onsurf = exiting ? !exit_side.GetSurface(candExiting.fFrameInd[icand], surfdata).fUseSurfSafety :
     // true;
-    auto const &check_side = left_side ? surf.fLeftSide : surf.fRightSide;
-    bool compute_onsurf    = !check_side.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
-    bool can_compute       = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+    // auto const &check_side = left_side ? surf.fLeftSide : surf.fRightSide;
+    bool compute_onsurf = true; // !check_side.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
+    bool can_compute    = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
     if (!can_compute && check_both_sides) {
       // Left side already checked, now check right side
       // Note: only one side can have a valid safety
-      left_side      = false;
-      visibility     = flipped;
-      compute_onsurf = !surf.fRightSide.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
-      can_compute    = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+      left_side  = false;
+      visibility = flipped;
+      // compute_onsurf = !surf.fRightSide.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
+      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
     }
 
     if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
@@ -632,10 +632,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     auto const &framedsurf = exit_side.GetSurface(frameind, surfdata);
     // Check if the exited frame safety is needed at all
     auto safetyFrame = safety_surf;
-    if (compute_onsurf) {
-      // We need to compute also the safety of the projection of the point on surface to the frame
-      safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
-    }
+    // We need to compute also the safety of the projection of the point on surface to the frame
+    safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
     if (validSafety && safety > safetyFrame) {
       // If Boolean surface, compute only once safety for the entire volume shell
       if (framedsurf.fLogicId) {

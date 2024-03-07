@@ -15,15 +15,19 @@ struct ZPhiMask {
   //// vecSPhi, vecEPhi   -> Cartesian coordinates of vectors that delimit phi-cut
 
   Range<Real_t> rangeZ;        ///< Limits on the z-axis.
-  bool isFullCirc;             ///< Does the phi cut exist here?
+  Real_t invcalf;              ///< Inverse of the cosine of the surface angle with respect to z axis
   AngleVector<Real_t> vecSPhi; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
   AngleVector<Real_t> vecEPhi; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
+  bool isFullCirc;             ///< Does the phi cut exist here?
 
   ZPhiMask() = default;
-  ZPhiMask(Real_t zmin, Real_t zmax, bool isFullCircle, Real_t sphi = Real_t{0}, Real_t ephi = Real_t{0})
+  ZPhiMask(Real_t zmin, Real_t zmax, bool isFullCircle, Real_t sphi = Real_t{0}, Real_t ephi = Real_t{0},
+           Real_t rbottom = Real_t{0}, Real_t rtop = Real_t{0})
       : rangeZ(zmin, zmax), isFullCirc(isFullCircle)
   {
-    // If there is no Phi cut, we needn't wotty about phi vectors.
+    Real_t t = (rtop - rbottom) / (zmax - zmin);
+    invcalf  = vecCore::math::Abs(vecCore::math::Sqrt(Real_t(1) + t * t));
+    // If there is no Phi cut, we needn't worry about phi vectors.
     if (isFullCirc) return;
     vecSPhi.Set(vecgeom::Cos(sphi), vecgeom::Sin(sphi));
     vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
@@ -180,13 +184,21 @@ struct ZPhiMask {
   VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
   {
-    valid          = true;
+    valid = true;
+    if (!InsidePhi(local[0], local[1])) {
+      // If the point is not in the phi range, there are other surfaces closer than this one
+      // so this frame should not be part of the minimization process.
+      valid = false;
+      return vecgeom::InfinityLength<Real_t>();
+    }
     Real_t safetyZ = vecCore::math::Max(local[2] - rangeZ[1], rangeZ[0] - local[2]);
-    if (InsidePhi(local[0], local[1])) return vecCore::math::Max(safetySurf, safetyZ);
-    // If the point is not in the phi range, there are other surfaces closer than this one
-    // This frame should not be part of the minimization process.
-    valid = false;
-    return vecgeom::InfinityLength<Real_t>();
+    if (safetyZ < 0) return safetySurf;
+      // Correct safetyZ by the cosine of the angle between the surface generators and the Z axis
+#ifdef SURF_ACCURATE_SAFETY
+    return vecCore::math::Sqrt(safetySurf * safetySurf + safetyZ * safetyZ * invcalf * invcalf);
+#else
+    return vecCore::math::Max(safetySurf, safetyZ * calf);
+#endif
   }
 };
 

@@ -112,19 +112,22 @@ struct RingMask {
   VECCORE_ATT_HOST_DEVICE
   Real_t Safety(Vector3D<Real_t> const &local, Real_t safetySurf, bool &valid) const
   {
-    valid         = true;
-    Real_t rho    = local.Perp();
-    Real_t safR   = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
-    Real_t safety = vecCore::math::Max(safR, safetySurf);
-    if (isFullCirc) return safety;
-
-    if (!InsidePhi(local)) {
-      AngleVector<Real_t> localAngle{local[0], local[1]};
-      Real_t safPhi = vecCore::math::Max(localAngle.CrossZ(vecSPhi), -localAngle.CrossZ(vecEPhi));
-      safety        = vecCore::math::Max(safety, safPhi);
-    }
-
-    return safety;
+    valid       = true;
+    Real_t rho  = local.Perp(); // still a square root, but less registers/branching
+    Real_t safR = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
+    if (isFullCirc || InsidePhi(local))
+#ifdef SURF_ACCURATE_SAFETY
+      return vecCore::math::Sqrt(safetySurf * safetySurf + safR * safR);
+#else
+      return vecCore::math::Max(safetySurf, safR);
+#endif
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    Real_t safPhi = vecCore::math::Max(localAngle.CrossZ(vecSPhi), -localAngle.CrossZ(vecEPhi));
+#ifdef SURF_ACCURATE_SAFETY
+    return vecCore::math::Sqrt(safetySurf * safetySurf + safR * safR + safPhi * safPhi);
+#else
+    return vecCore::math::Max(safetySurf, safR, safPhi);
+#endif
   }
 };
 

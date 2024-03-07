@@ -69,14 +69,16 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
               Vector3D<Real_t> &onsurf) const
   {
-    Real_t t       = fConeData->slope;
-    Real_t coneR   = std::abs(fConeData->Radius() + point[2] * t);
-    Real_t rho     = point.Perp();
-    auto distanceR = left_side ? coneR - rho : rho - coneR;
-    Real_t calf    = Real_t(1) / std::sqrt(Real_t(1) + t * t);
-    distance       = distanceR * calf;
-    // the onsurf computation code is missing below
-
+    Real_t t          = fConeData->slope;
+    Real_t coneR      = fConeData->RadiusZ(point[2]);
+    Real_t rho        = point.Perp();
+    bool flip_exiting = left_side ^ fConeData->IsFlipped();
+    auto distanceR    = flip_exiting ? coneR - rho : rho - coneR;
+    Real_t calf       = Real_t(1) / std::sqrt(Real_t(1) + t * t);
+    distance          = distanceR * calf;
+    // We only use for the ZPhi frame safety the z of the point propagated on the cone surface
+    onsurf = point;
+    onsurf[2] += distanceR * t / (Real_t(1) + t * t);
     return true;
   }
 };

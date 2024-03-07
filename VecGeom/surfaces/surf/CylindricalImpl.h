@@ -63,21 +63,14 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
   /// @return Validity of the calculation
-  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool /*compute_onsurf*/,
               Vector3D<Real_t> &onsurf) const
   {
     Real_t cylR       = fCylData->Radius();
     Real_t rho        = point.Perp();
     bool flip_exiting = left_side ^ fCylData->IsFlipped();
     distance          = flip_exiting ? cylR - rho : rho - cylR;
-    // Cannot project if the point is on the center of the cylinder
-    if (compute_onsurf && distance > -vecgeom::kTolerance) {
-      onsurf.Set(0, 0, 0);
-      if (rho > vecgeom::kTolerance) {
-        auto invrho = 1. / rho;
-        onsurf.Set(point[0] * invrho, point[1] * invrho, point[2]);
-      }
-    }
+    onsurf            = point; // we only need the z of the projected point
     return true;
   }
 };
