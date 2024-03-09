@@ -17,6 +17,7 @@
 #include <VecGeom/surfaces/conv/PolyhedronConverter.h>
 #include <VecGeom/surfaces/conv/BooleanConverter.h>
 #include <VecGeom/surfaces/conv/ScaledConverter.h>
+#include <VecGeom/surfaces/conv/TetConverter.h>
 #include <VecGeom/volumes/ScaledShape.h>
 
 namespace vgbrep {
@@ -69,6 +70,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
 
     auto gentrap = dynamic_cast<vecgeom::UnplacedGenTrap const *>(solid);
     if (gentrap) return conv::CreateGenTrapSurfaces<Real_t>(*gentrap, volId);
+
+    auto tet = dynamic_cast<vecgeom::UnplacedTet const *>(solid);
+    if (tet) return conv::CreateTetSurfaces<Real_t>(*tet, volId);
 
     auto polyhedron = dynamic_cast<vecgeom::UnplacedPolyhedron const *>(solid);
     if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId);

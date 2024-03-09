@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+Copied from solids.gdml, and simplified to just a Tet inside a Box.
+
+License and Disclaimer
+
+The Geant4 software is copyright of the Copyright Holders of
+the Geant4 Collaboration. It is provided under the terms and
+conditions of the Geant4 Software License, included in the file
+LICENSE and available at http://cern.ch/geant4/license . These
+include a list of copyright holders.
+
+Neither the authors of this software system, nor their employing
+institutes, nor the agencies providing financial support for this
+work make any representation or warranty, express or implied,
+regarding this software system or assume any liability for its
+use. Please see the license in the file LICENSE and URL above
+for the full disclaimer and the limitation of liability.
+
+This code implementation is the result of the scientific and
+technical work of the GEANT4 collaboration.
+By using, copying, modifying or distributing the software (or
+any work based on the software) you agree to acknowledge its
+use in resulting scientific publications, and indicate your
+acceptance of all terms of the Geant4 Software license.
+
+-->
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+ <define>
+  <position name="center"     x="0" y="0" z="0"/>
+  <rotation name="norot"      x="0" y="0" z="0"/>
+
+  <position name="posTetrah1" x="-50" y="60" z="60" unit="mm" />
+
+  <position name="v0" unit="mm"  x="0" y="0" z="20" />
+  <position name="v1" unit="mm"  x="-10" y="10" z="-20" />
+  <position name="v2" unit="mm"  x="-10" y="-10" z="-20" />
+  <position name="v3" unit="mm"  x="10" y="-10" z="-20" />
+
+  <constant name="wextent" value="20."/>
+ </define>
+
+ <materials>
+   <element name="Hydrogen" formula="H"  Z="1.">  <atom value="1.01"/>   </element>
+   <material name="Al" Z="13.0"> <D value="2.70"/> <atom value="26.98"/> </material>
+   <material name="Water" formula="H20">
+     <D value="1.0"/>
+     <composite n="2" ref="Hydrogen"/>
+     <composite n="1" ref="Oxygen"/>
+   </material>
+   <material name="Air">
+     <D value="0.0001"/>
+     <fraction n="0.7" ref="Nitrogen"/>
+     <fraction n="0.3" ref="Oxygen"/>
+   </material>
+ </materials>
+
+ <solids>
+  <box name="WorldBox" lunit="mm" x="200" y="200" z="200"/>
+  <tet name="testtet" vertex1="v0" vertex2="v1" vertex3="v2" vertex4="v3"/>
+
+ </solids>
+
+ <structure>
+  <volume name="tetrah1_LV">
+    <materialref ref="Water"/>
+    <solidref ref="testtet"/>
+  </volume>
+
+  <volume name="World_LV">
+    <materialref ref="Air"/>
+    <solidref ref="WorldBox"/>
+
+    <physvol>
+      <volumeref ref="tetrah1_LV"/>
+      <positionref ref="posTetrah1"/>
+      <!--rotationref ref="rotatebyy"/-->
+    </physvol>
+  </volume>
+ </structure>
+
+ <setup name="Default" version="1.0">
+   <world ref="World_LV"/>
+ </setup>
+</gdml>

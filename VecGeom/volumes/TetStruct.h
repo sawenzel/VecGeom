@@ -10,6 +10,7 @@
 #define VECGEOM_VOLUMES_TETSTRUCT_H_
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Vector3D.h"
+#include "VecGeom/management/Logger.h"
 
 namespace vecgeom {
 
@@ -58,7 +59,6 @@ struct TetStruct {
   TetStruct(const Vector3D<T> p0, const Vector3D<T> p1, const Vector3D<T> p2, const Vector3D<T> p3)
       : fCubicVolume(0.), fSurfaceArea(0.)
   {
-
     CalculateCached(p0, p1, p2, p3);
   }
 
@@ -76,8 +76,11 @@ struct TetStruct {
     fVertex[2] = p2;
     fVertex[3] = p3;
 
-    // if (CheckDegeneracy()) std::cerr << "DeGenerate Tetrahedron not allowed" << std::endl;
-    CheckDegeneracy();
+    if (this->CheckDegeneracy()) {
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
+      VECGEOM_LOG(critical) << "Degenerate Tetrahedron not allowed";
+#endif
+    }
 
     Vector3D<Precision> n0 = (fVertex[1] - fVertex[0]).Cross(fVertex[2] - fVertex[0]).Unit();
     Vector3D<Precision> n1 = (fVertex[2] - fVertex[1]).Cross(fVertex[3] - fVertex[1]).Unit();

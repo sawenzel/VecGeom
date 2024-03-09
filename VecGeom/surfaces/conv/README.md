@@ -62,7 +62,7 @@ A trapezoidal inclined prism having as top and bottom faces similar trapezes par
 - *alpha2* - angle between the segment connecting the centers of the top trapeze parallel x edges with the y axis
 
 ### Important note
-The condition of validity for the trapezoids is that the bottom and top trapezes are similar (scaled). So not all combinations of paramemters are valid, the following identities must hold:
+The condition of validity for the trapezoids is that the bottom and top trapezes are similar (scaled). So not all combinations of parameters are valid, the following identities must hold:
 - dy1/dy2 = dx1/dx3 = dx2/dx4
 - alpha1 = alpha2
 The degenerated cases where one of these lengths is zero makes exception to the rule above.
@@ -97,3 +97,9 @@ A z-connected series of right prisms. The (xOy)-parallel faces are segments in a
 - *zPlanes*     - z positions of the sections
 - *rMin*        - radius of the inscribed circel of the inner polygons at each section
 - *rMax*        - radius of the inscribed circle of the outer polygons at each section
+
+## Tet
+A simple tetrahedron defined by 4 vertices.
+
+### Variables:
+- *fVertex[4]* - the four vertices, each vertex being its (x,y,z) coordinates.

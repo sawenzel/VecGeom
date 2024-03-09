@@ -356,9 +356,9 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   LocateSurf(nrays, points, outputStates);
   auto time_locate_surf = timer.Stop();
 
-  // Corectness for locating points
+  // Correctness for locating points
   num_errors = ValidateLocate(nrays, points, origStates, outputStates, debug);
-  if (num_errors > 0) std::cout << "HOST: Point locate errors: " << num_errors << "\n";
+  if (num_errors > 0) std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
   if (!debug) {
     std::cout << "HOST: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
               << "  locate_surf: " << time_locate_surf << "\n";
@@ -379,12 +379,12 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   ComputeSafetiesSurf(nrays, points, origStates, safeties);
   auto time_safety_surf = timer.Stop();
 
-  // Corectness for safety
+  // Correctness for safety
   num_errors_safe = ValidateSafety(nrays, points, origStates, safeties, refSafeties, debug, num_better_safety,
                                    num_worse_safety, safety_tolerance);
   num_errors += num_errors_safe;
   // Report timing
-  if (num_errors_safe > 0) std::cout << "HOST: Safety errors: " << num_errors_safe << "\n";
+  if (num_errors_safe > 0) std::cout << "*** HOST: Safety errors: " << num_errors_safe << "\n";
   if (!debug) {
     std::cout << "HOST: safety_solids: " << time_safety_solids << "  safety_solids_BVH: " << time_safety_solids_bvh
               << "  safety_surf: " << time_safety_surf << "\n";
@@ -412,7 +412,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
       ValidateCrossing(nrays, points, dirs, origStates, refLength_over_crossings, length_over_crossings, debug);
 
   num_errors += num_errors_dist;
-  if (num_errors_dist > 0) std::cout << "HOST: traverse errors surf: " << num_errors_dist << "\n";
+  if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
   if (!debug) {
     std::cout << "HOST: traverse_solids: " << time_traverse_solids
               << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf
@@ -461,6 +461,7 @@ int main(int argc, char *argv[])
   Vec3D direction_3D = {direction[0], direction[1], direction[2]};
   Vec3D min_world_3d = {min_world[0], min_world[1], min_world[2]};
   Vec3D max_world_3d = {max_world[0], max_world[1], max_world[2]};
+  if (direction_3D.Mag2() > 0) direction_3D.Normalize();
 
   bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
   if (use_provided_point) {

@@ -1,6 +1,9 @@
 #include <VecGeom/surfaces/cuda/BrepCudaManager.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/Navigator.h>
+#ifdef VECGEOM_CUDA_INTERFACE
+#include <VecGeom/management/CudaManager.h>
+#endif
 
 using namespace vecgeom;
 using BrepCudaManager = vgbrep::BrepCudaManager<vecgeom::Precision>;
@@ -12,20 +15,21 @@ static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, Na
   NavigationState out;
   vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exit);
   vecgeom::Precision safety = vgbrep::protonav::ComputeSafety(pos, state, exit);
-
-  printf("DEVICE: distance = %f, safety = %f\n", distance, safety);
+  printf("Surf@DEVICE: distance = %f, safety = %f\n", distance, safety);
 }
 
 // In testCUDA.cpp
 NavigationState Locate(Precision x, Precision y, Precision z);
 
-void TestCUDA(const SurfData &surfData)
+void TestCUDA(const SurfData &surfData,
+   Precision px, Precision py, Precision pz,
+   Precision dx, Precision dy, Precision dz)
 {
-  BrepCudaManager::Instance().TransferSurfData(surfData);
-
-  Vector3D<Precision> pos(0, 0, 0);
-  Vector3D<Precision> dir(1, 1, 1);
+  Vector3D<Precision> pos(px, py, pz);
+  Vector3D<Precision> dir(dx, dy, dz);
   dir.Normalize();
+
+  BrepCudaManager::Instance().TransferSurfData(surfData);
 
   // Locate the point on the host; has to be in testCUDA.cpp because we
   // need the world volume and use the vecgeom::cxx namespace...
