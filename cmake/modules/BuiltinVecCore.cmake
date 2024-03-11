@@ -15,7 +15,6 @@ function (build_external_project target globpattern ) #FOLLOWING ARGUMENTS are t
       include(ExternalProject)
       ExternalProject_add(${target}
               ${ARGN}
-              DOWNLOAD_EXTRACT_TIMESTAMP OFF
               )
 
       add_custom_target(trigger_${target})
