@@ -26,9 +26,10 @@ struct CPUsurfData {
   using SurfData_t     = SurfData<Real_t>;
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
+  using EllipData_t    = EllipData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
   using SphData_t      = SphData<Real_t>;
-  using Arb4Data_t      = Arb4Data<Real_t>;
+  using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
   using ZPhiMask_t     = ZPhiMask<Real_t>;
@@ -42,6 +43,7 @@ struct CPUsurfData {
   std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
   std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
   std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
+  std::vector<EllipData_t> fEllipData;        ///< data for elliptical surfaces
   std::vector<TorusData_t> fTorusData;        ///< data for torus surfaces
   std::vector<Arb4Data_t> fArb4Data;          ///< data for Arb4 surfaces
   std::vector<Transformation> fLocalTrans;    ///< local transformations
@@ -83,6 +85,7 @@ public:
     std::vector<QuadMask_t>().swap(fQuadMasks);
     std::vector<CylData_t>().swap(fCylSphData);
     std::vector<ConeData_t>().swap(fConeData);
+    std::vector<EllipData_t>().swap(fEllipData);
     std::vector<TorusData_t>().swap(fTorusData);
     std::vector<Transformation>().swap(fLocalTrans);
     std::vector<Transformation>().swap(fGlobalTrans);

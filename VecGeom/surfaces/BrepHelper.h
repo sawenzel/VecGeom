@@ -47,6 +47,7 @@ class BrepHelper {
   using SurfData_t     = SurfData<Real_t>;
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
+  using EllipData_t    = EllipData<Real_t>;
   using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
   using Arb4Data_t     = Arb4Data<Real_t>;
@@ -93,6 +94,8 @@ public:
     fSurfData->fCylSphData = nullptr;
     delete[] fSurfData->fConeData;
     fSurfData->fConeData = nullptr;
+    delete[] fSurfData->fEllipData;
+    fSurfData->fEllipData = nullptr;
     delete[] fSurfData->fTorusData;
     fSurfData->fTorusData = nullptr;
     delete[] fSurfData->fArb4Data;
@@ -413,6 +416,7 @@ public:
              surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
       break;
     }
+    case SurfaceType::kElliptical:
     case SurfaceType::kSpherical:
     case SurfaceType::kTorus:
     case SurfaceType::kArb4:
@@ -459,6 +463,7 @@ public:
                extL.slope);
         break;
       }
+      case SurfaceType::kElliptical:
       case SurfaceType::kSpherical:
       case SurfaceType::kTorus:
       case SurfaceType::kArb4:
@@ -1355,6 +1360,11 @@ private:
     fSurfData->fConeData = new ConeData_t[fCPUdata.fConeData.size()];
     for (size_t i = 0; i < fCPUdata.fConeData.size(); ++i)
       fSurfData->fConeData[i] = fCPUdata.fConeData[i];
+
+    fSurfData->fNellip    = fCPUdata.fEllipData.size();
+    fSurfData->fEllipData = new EllipData_t[fCPUdata.fEllipData.size()];
+    for (size_t i = 0; i < fCPUdata.fEllipData.size(); ++i)
+      fSurfData->fEllipData[i] = fCPUdata.fEllipData[i];
 
     fSurfData->fNtorus    = fCPUdata.fTorusData.size();
     fSurfData->fTorusData = new TorusData_t[fCPUdata.fTorusData.size()];

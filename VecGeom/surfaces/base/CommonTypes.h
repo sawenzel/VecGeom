@@ -51,8 +51,9 @@ struct LogicExpression {
 ///< kConical       <- conical half-space around z-axis, having the normals pointing outwards
 ///< kSpherical     <- sphere centered in origin, normals pointing outwards
 ///< kTorus         <- toroidal surface hafing the median circle in the xy plane, cenetred in origin
+///< kElliptical    <- elliptical half-space around the z-axis, having the normals pointing outwards
 ///< kArb4          <- twisted surface defined by 4 non co-planar vertices
-enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kArb4 };
+enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kElliptical, kArb4 };
 
 ///< Supported frame types
 ///< kNoFrame       <- no frame, used for Inside only
@@ -110,6 +111,45 @@ struct ConeData {
   Real_s RadiusZ(Real_s z) const { return Radius() + z * slope; }
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
+};
+
+/// @brief Data for conical surfaces
+/// @tparam Real_t Storage type
+/// @tparam Real_s Interface type
+template <typename Real_t, typename Real_s = Real_t>
+struct EllipData {
+  Real_t Rx{0}; ///< semi-axis in x
+  Real_t Ry{0}; ///< semi-axis in y
+  Real_t dz{0}; ///< half height of the elliptical tube, so it extends from -dz to dz
+  Real_t R{0};  ///< radius after rescaling to circle
+
+  // Precalculated cached values
+  //
+  Real_t fRsph; ///< Radius of bounding sphere
+  Real_t fDDx;  ///< Dx squared
+  Real_t fDDy;  ///< Dy squared
+  Real_t fSx;   ///< X scale factor
+  Real_t fSy;   ///< Y scale factor
+  Real_t fQ1;   ///< Coefficient in the approximation of dist = Q1*(x^2+y^2) - Q2
+  Real_t fQ2;   ///< Coefficient in the approximation of dist = Q1*(x^2+y^2) - Q2
+
+  EllipData() = default;
+  EllipData(Real_s radx, Real_s rady, Real_s half_z) : Rx(radx), Ry(rady), dz(half_z)
+  {
+
+    R = vecCore::math::Min(Rx, Ry);
+
+    // Precalculated values
+    fRsph = vecCore::math::Sqrt(Rx * Rx + Ry * Ry + dz * dz);
+    fDDx  = Rx * Rx;
+    fDDy  = Ry * Ry;
+    fSx   = R / Rx;
+    fSy   = R / Ry;
+
+    // Coefficient for approximation of distance : Q1 * (x^2 + y^2) - Q2
+    fQ1 = 0.5 / R;
+    fQ2 = 0.5 * (R + vecgeom::kHalfTolerance * vecgeom::kHalfTolerance / R);
+  }
 };
 
 /// @brief Data for Arb4 surfaces

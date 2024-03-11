@@ -108,6 +108,11 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fConeData, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fConeData, surfData.fConeData, sizeInBytes, cudaMemcpyHostToDevice));
 
+    fSurfDataStaging.fNellip = surfData.fNellip;
+    sizeInBytes              = sizeof(surfData.fEllipData[0]) * surfData.fNellip;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fEllipData, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fEllipData, surfData.fEllipData, sizeInBytes, cudaMemcpyHostToDevice));
+
     fSurfDataStaging.fNtorus = surfData.fNtorus;
     sizeInBytes              = sizeof(surfData.fTorusData[0]) * surfData.fNtorus;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTorusData, sizeInBytes));
@@ -234,6 +239,8 @@ public:
     fSurfDataStaging.fCylSphData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fConeData));
     fSurfDataStaging.fConeData = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fEllipData));
+    fSurfDataStaging.fEllipData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fTorusData));
     fSurfDataStaging.fTorusData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fArb4Data));

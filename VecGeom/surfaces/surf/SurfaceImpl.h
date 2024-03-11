@@ -3,6 +3,7 @@
 
 #include <VecGeom/surfaces/surf/PlanarImpl.h>
 #include <VecGeom/surfaces/surf/CylindricalImpl.h>
+#include <VecGeom/surfaces/surf/EllipticalImpl.h>
 #include <VecGeom/surfaces/surf/ConicalImpl.h>
 #include <VecGeom/surfaces/surf/SphericalImpl.h>
 #include <VecGeom/surfaces/surf/TorusImpl.h>

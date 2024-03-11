@@ -18,6 +18,9 @@ UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, 
   case SurfaceType::kSpherical:
     cpudata.fCylSphData.push_back({data[0], flip});
     return UnplacedSurface(type, cpudata.fCylSphData.size() - 1);
+  case SurfaceType::kElliptical:
+    cpudata.fEllipData.push_back({data[0], data[1], data[2]});
+    return UnplacedSurface(type, cpudata.fEllipData.size() - 1);
   case SurfaceType::kConical:
     cpudata.fConeData.push_back({data[0], data[1], flip});
     return UnplacedSurface(type, cpudata.fConeData.size() - 1);

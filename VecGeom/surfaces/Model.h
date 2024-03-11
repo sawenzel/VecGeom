@@ -49,6 +49,8 @@ struct UnplacedSurface {
       return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point);
     case SurfaceType::kConical:
       return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id)).Inside(point);
+    case SurfaceType::kElliptical:
+      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id)).Inside(point);
     case SurfaceType::kSpherical:
       return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
     case SurfaceType::kTorus:
@@ -79,6 +81,9 @@ struct UnplacedSurface {
           .Intersect(point, dir, left_side, distance);
     case SurfaceType::kConical:
       return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
+          .Intersect(point, dir, left_side, distance);
+    case SurfaceType::kElliptical:
+      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id))
           .Intersect(point, dir, left_side, distance);
     case SurfaceType::kSpherical:
       return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
@@ -113,6 +118,9 @@ struct UnplacedSurface {
           .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kConical:
       return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
+          .Safety(point, left_side, distance, onsurf);
+    case SurfaceType::kElliptical:
+      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id))
           .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kSpherical:
       return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
@@ -460,6 +468,7 @@ struct SurfData {
 
   using CylData_t      = CylData<Real_t>;
   using ConeData_t     = ConeData<Real_t>;
+  using EllipData_t    = EllipData<Real_t>;
   using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
   using Arb4Data_t     = Arb4Data<Real_t>;
@@ -476,6 +485,7 @@ struct SurfData {
   int fNglobalSurf{0};
   int fNcylsph{0};
   int fNcone{0};
+  int fNellip{0};
   int fNtorus{0};
   int fNarb4{0};
   int fNcommonSurf{0};
@@ -508,6 +518,7 @@ struct SurfData {
   /// Cylindrical surface data (radius)
   CylData_t *fCylSphData{nullptr};  ///< Cyl and sphere data
   ConeData_t *fConeData{nullptr};   ///< Cone data
+  EllipData_t *fEllipData{nullptr}; ///< Elliptical data
   TorusData_t *fTorusData{nullptr}; ///< Torus data
   Arb4Data_t *fArb4Data{nullptr};   ///< Arb4 data
 
@@ -561,6 +572,12 @@ struct SurfData {
   ConeData_t const &GetConeData(int id) const
   {
     return fConeData[id];
+  }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  EllipData_t const &GetEllipData(int id) const
+  {
+    return fEllipData[id];
   }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
