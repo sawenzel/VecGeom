@@ -31,7 +31,6 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
   auto txz = trap.GetTanThetaCosPhi();
   auto tyz = trap.GetTanThetaSinPhi();
 
-  const bool use_surf_safety = true;
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3 & 4 & 5
   vecgeom::Transformation3D transformation;
@@ -47,12 +46,12 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
 
   // surface at -dx:
   vert  = {corners[0], corners[1], corners[5], corners[4]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) logic.push_back(isurf);
 
   // surface at +dx:
   vert  = {corners[2], corners[3], corners[7], corners[6]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
     logic.push_back(land);
     logic.push_back(isurf);
@@ -60,7 +59,7 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
 
   // surface at -dy:
   vert  = {corners[3], corners[0], corners[4], corners[7]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
     logic.push_back(land);
     logic.push_back(isurf);
@@ -68,7 +67,7 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
 
   // surface at +dy:
   vert  = {corners[1], corners[2], corners[6], corners[5]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
     logic.push_back(land);
     logic.push_back(isurf);
@@ -76,7 +75,7 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
 
   // surface at -dz:
   vert  = {corners[0], corners[3], corners[2], corners[1]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
     logic.push_back(land);
     logic.push_back(isurf);
@@ -84,7 +83,7 @@ bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical
 
   // surface at +dz:
   vert  = {corners[4], corners[5], corners[6], corners[7]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
     logic.push_back(land);
     logic.push_back(isurf);

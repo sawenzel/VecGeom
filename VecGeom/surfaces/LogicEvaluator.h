@@ -93,7 +93,6 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
                                               Precision safe_max = vecgeom::InfinityLength<Real_t>())
 {
   ///< Lambda to get the safety for individual framed surfaces of the same logical volume
-  bool compute_onsurf;
   Vector3D<Real_t> onsurf_crt;
   auto safetySurf = [&](int isurf, Real_t &safety_surf) {
     // Convert point from volume to local surface coordinates
@@ -102,9 +101,8 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
     auto const &framedsurf = surfdata.fLocalSurf[isurf];
     bool flipped           = framedsurf.fLogicId < 0;
     auto const &unplaced   = framedsurf.fSurface;
-    compute_onsurf         = exiting ? !framedsurf.fUseSurfSafety : true;
 
-    bool can_compute = unplaced.Safety(local, exiting ^ flipped, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+    bool can_compute = unplaced.Safety(local, exiting ^ flipped, surfdata, safety_surf, onsurf_crt);
     return can_compute;
   };
 
@@ -177,7 +175,7 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
       bool valid       = can_compute && safety > -vecgeom::kToleranceDist<Real_t> && safety <= safe_max;
       safety           = vecCore::math::Max(safety, Real_t(0));
       // If needed, compute safety to the frame
-      if (valid && compute_onsurf) valid = safetyFrame(int(item), safety);
+      if (valid) valid = safetyFrame(int(item), safety);
       if (valid) {
         if (crt_valid && crt_op)
           crt_safety = safety_reduction(crt_safety, safety, (crt_op > 0) ^ exiting);

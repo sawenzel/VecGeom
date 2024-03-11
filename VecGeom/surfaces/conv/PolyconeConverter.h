@@ -33,7 +33,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
-  bool use_surf_safety = true;
   int isurf;
   Real_t surfdata[2];
 
@@ -65,9 +64,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
     // do virtual end caps of the section
     // virtual surface at z2
     if (rmax2 - rmin2 > vecgeom::kTolerance && (i != nSect - 1)) {
-      isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-          builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                  Frame{FrameType::kNoFrame},
+                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       logic.push_back(isurf);
       logic.push_back(land);
@@ -75,9 +74,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
     // virtual surface at z1
     if (rmax1 - rmin1 > vecgeom::kTolerance && (i != 0)) {
-      isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-          builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}), use_surf_safety);
+      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                  Frame{FrameType::kNoFrame},
+                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}));
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       logic.push_back(isurf);
       logic.push_back(land);
@@ -100,14 +99,14 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmin_prev, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       }
       if (has_outer_ring) {
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_prev, rmax1, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       }
     }
@@ -123,14 +122,14 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmin_next, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       }
       if (has_outer_ring) {
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_next, rmax2, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       }
     }
@@ -142,7 +141,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         logic.push_back(isurf);
         logic.push_back(land);
@@ -156,7 +155,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}), use_surf_safety);
+            builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         logic.push_back(isurf);
         logic.push_back(land);
@@ -174,7 +173,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
           builder::CreateUnplacedSurface<Real_t>(stype, surfdata, /*flipped=*/true),
           builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                        ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, sphi, ephi, rmin1, rmin2}),
-          builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}), use_surf_safety);
+          builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}));
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       logic.push_back(isurf);
       logic.push_back(land);
@@ -187,7 +186,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         builder::CreateUnplacedSurface<Real_t>(stype, surfdata),
         builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                      ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, sphi, ephi, rmax1, rmax2}),
-        builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}), use_surf_safety);
+        builder::CreateLocalTransformation<Real_t>({0, 0, z_shift, 0, 0, 0}));
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     logic.push_back(isurf);
 
@@ -200,7 +199,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
       // plane cap at sphi
       vert  = {corners[0], corners[1], corners[2], corners[3]};
-      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       assert(isurf >= 0);
       logic.push_back(land);
       logic.push_back(lplus); // '('
@@ -208,7 +207,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
       // plane cap at sphi+dphi
       vert  = {corners[4], corners[5], corners[6], corners[7]};
-      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+      isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       assert(isurf >= 0);
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);

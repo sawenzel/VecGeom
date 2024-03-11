@@ -606,18 +606,14 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     // - negative safety (coming from the wrong side)
     // - exiting framed surfaces for which fUseSurfSafety is true
     // To test if on GPU is better to compute the projection systematically
-    // bool compute_onsurf = exiting ? !exit_side.GetSurface(candExiting.fFrameInd[icand], surfdata).fUseSurfSafety :
-    // true;
     // auto const &check_side = left_side ? surf.fLeftSide : surf.fRightSide;
-    bool compute_onsurf = true; // !check_side.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
-    bool can_compute    = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+    bool can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     if (!can_compute && check_both_sides) {
       // Left side already checked, now check right side
       // Note: only one side can have a valid safety
-      left_side  = false;
-      visibility = flipped;
-      // compute_onsurf = !surf.fRightSide.GetSurface(cand.fFrameInd[icand], surfdata).fUseSurfSafety;
-      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+      left_side   = false;
+      visibility  = flipped;
+      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     }
 
     if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
@@ -678,15 +674,14 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     // - negative safety (coming from the wrong side)
     // - exiting framed surfaces for which fUseSurfSafety is true
     // To test if on GPU is better to compute the projection systematically
-    bool compute_onsurf = true;
-    bool can_compute    = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+    bool can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
 
     if (!can_compute && check_both_sides) {
       // Left side already checked, now check right side
       // Note: only one side can have a valid safety
       left_side   = false;
       visibility  = !flipped;
-      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, compute_onsurf, onsurf_crt);
+      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     }
     if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
 

@@ -27,7 +27,6 @@ bool CreateParallelepipedSurfaces(vecgeom::UnplacedParallelepiped const &para, i
   auto txz = para.GetTanThetaCosPhi();
   auto tyz = para.GetTanThetaSinPhi();
 
-  const bool use_surf_safety = true;
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3 & 4 & 5
   vecgeom::Transformation3D transformation;
@@ -43,36 +42,36 @@ bool CreateParallelepipedSurfaces(vecgeom::UnplacedParallelepiped const &para, i
 
   // surface at -dx:
   vert  = {corners[1], corners[0], corners[4], corners[5]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(isurf);
 
   // surface at +dx:
   vert  = {corners[3], corners[2], corners[6], corners[7]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface at -dy:
   vert  = {corners[0], corners[3], corners[7], corners[4]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface at +dy:
   vert  = {corners[2], corners[1], corners[5], corners[6]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface at -dz:
   vert  = {corners[0], corners[1], corners[2], corners[3]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface at +dz:
   vert  = {corners[7], corners[6], corners[5], corners[4]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
   builder::AddLogicToShell<Real_t>(logical_id, logic);

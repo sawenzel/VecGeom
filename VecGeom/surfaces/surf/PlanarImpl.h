@@ -41,11 +41,9 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
   /// @param point Point in local surface coordinates
   /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param distance Computed isotropic safety
-  /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
   /// @return Validity of the calculation
-  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, bool compute_onsurf,
-              Vector3D<Real_t> &onsurf) const
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf) const
   {
     distance = left_side ? -point[2] : point[2];
     // Computing onsurf is cheap

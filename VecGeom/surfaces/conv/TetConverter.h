@@ -20,7 +20,6 @@ bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id)
   using Vector3D   = vecgeom::Vector3D<Real_t>;
 
   const auto &tetstr = tet.GetStruct();
-  const bool use_surf_safety = true;
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3
   vecgeom::Transformation3D transf;
@@ -34,27 +33,27 @@ bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id)
 
   // surface 1:
   vert   = {corners[0], corners[1], corners[2]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertFace(isurf);
   logic.push_back(isurf);
 
   // surface 2:
   vert   = {corners[0], corners[2], corners[3]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface 3:
   vert   = {corners[0], corners[3], corners[1]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface 4:
   vert   = {corners[1], corners[3], corners[2]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);

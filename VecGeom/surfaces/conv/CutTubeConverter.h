@@ -49,9 +49,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
 
   assert(dphi > vecgeom::kTolerance);
 
-  bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
-  bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
-  bool use_surf_safety = true;
+  bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
+  bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
   Real_t surfdata[2];
@@ -75,7 +74,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}), use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}));
   auto &surf = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -89,8 +88,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow,
                                    WindowMask_t{tube.rmax(), tube.rmax() / cos(vecgeom::kPi - bottom_normal.Theta())}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}),
-      use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}));
   auto &surf2 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -103,7 +101,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
-        /*identity transformation*/ 0, use_surf_safety);
+        /*identity transformation*/ 0);
     auto &surf3 = cpudata.fLocalSurfaces[isurf];
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     // Make the surface "logical"
@@ -116,7 +114,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, use_surf_safety);
+      /*identity transformation*/ 0);
   auto &surf4 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -146,7 +144,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   vert[1].Set(rmax * csphi, rmax * ssphi, zmin1);
   vert[2].Set(rmax * csphi, rmax * ssphi, zmax1);
   vert[3].Set(rmin * csphi, rmin * ssphi, zmax1);
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assert(isurf >= 0);
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
@@ -159,7 +157,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   vert[1].Set(rmin * cephi, rmin * sephi, zmin2);
   vert[2].Set(rmin * cephi, rmin * sephi, zmax2);
   vert[3].Set(rmax * cephi, rmax * sephi, zmax2);
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety && smallerPi);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assert(isurf >= 0);
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;

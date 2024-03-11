@@ -29,9 +29,8 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
 
   assert(rtor - rmin > -vecgeom::kTolerance);
 
-  bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
-  bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
-  bool use_surf_safety = true;
+  bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
+  bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
   Real_t surfdata[4];
@@ -50,7 +49,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kTorus, surfdata, /*flipped=*/true),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmin, rtor + rmin, fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, use_surf_safety, /*never_check=*/true);
+      /*identity transformation*/ 0, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
 
@@ -62,7 +61,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kTorus, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmax, rtor + rmax, fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, use_surf_safety, /*never_check=*/true);
+      /*identity transformation*/ 0, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(isurf);
@@ -76,8 +75,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
-      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}),
-      use_surf_safety && smallerPi);
+      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(lplus); // '('
@@ -87,8 +85,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
-      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}),
-      use_surf_safety && smallerPi);
+      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);

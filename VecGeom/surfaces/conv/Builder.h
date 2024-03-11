@@ -88,12 +88,11 @@ int CreateLocalTransformation(Transformation const &trans)
 }
 
 template <typename Real_t>
-int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool use_surf_safety,
-                       bool never_check = false)
+int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool never_check = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   int id        = cpudata.fLocalSurfaces.size();
-  cpudata.fLocalSurfaces.push_back({unplaced, frame, trans, use_surf_safety, /*NavIndex=*/0, never_check});
+  cpudata.fLocalSurfaces.push_back({unplaced, frame, trans, /*NavIndex=*/0, never_check});
   return id;
 }
 
@@ -203,7 +202,7 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
 /// @param points Vertices vector
 /// @return Index of created local surface
 template <typename Real_t, typename Container>
-int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_surf_safety)
+int CreateLocalSurfaceFromVertices(Container &points, int logical_id)
 {
   // helper function to find non-coplanar surfaces (Arb4)
   using Vector3      = vecgeom::Vector3D<Real_t>;
@@ -247,8 +246,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
   auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
   if (vertices.size() != 4 || PointsOnPlane(vertices)) {
     auto itrans = CreateLocalTransformation<Real_t>(transformation);
-    isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans,
-                                                use_surf_safety);
+    isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans);
   } else { // creating Arb4 surface
     Real_t surfdata[10];
     surfdata[0] = points[0].x();
@@ -263,7 +261,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id, bool use_s
     surfdata[9] = points[3].y();
     // we are using the frame above although it is never used for the Arb4
     isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kArb4, surfdata), frame,
-                                                /*identity transformation*/ 0, use_surf_safety, /*never_check=*/1);
+                                                /*identity transformation*/ 0, /*never_check=*/1);
   }
   AddSurfaceToShell<Real_t>(logical_id, isurf);
   return isurf;

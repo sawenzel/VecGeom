@@ -99,31 +99,30 @@ struct UnplacedSurface {
   /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param surfdata Surface data storage
   /// @param distance Computed isotropic safety
-  /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
   /// @return
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE bool Safety(Vector3D<Real_t> const &point, bool left_side, SurfData<Real_t> const &surfdata,
-                                      Real_t &distance, bool compute_onsurf, Vector3D<Real_t> &onsurf) const
+                                      Real_t &distance, Vector3D<Real_t> &onsurf) const
   {
     switch (type) {
     case SurfaceType::kPlanar:
-      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Safety(point, left_side, distance, compute_onsurf, onsurf);
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Safety(point, left_side, distance, onsurf);
     case SurfaceType::kCylindrical:
       return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
-          .Safety(point, left_side, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kConical:
       return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
-          .Safety(point, left_side, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kSpherical:
       return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
-          .Safety(point, left_side, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
-          .Safety(point, left_side, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kArb4:
       return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
-          .Safety(point, left_side, distance, compute_onsurf, onsurf);
+          .Safety(point, left_side, distance, onsurf);
     };
     return false;
   }
@@ -225,27 +224,24 @@ struct Frame {
 /// @brief A placed surface on a scene having a frame and a navigation state associated to a touchable
 struct FramedSurface {
   using NavState_t = vecgeom::NavigationState::Value_t;
-  UnplacedSurface fSurface;   ///< Surface identifier
-  Frame fFrame;               ///< Frame
-  int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fParent{-1};            ///< Topmost parent frame index on the common surface
-  int fLogicId{0};            ///< Logic flag for surface:
-                              ///<   0        = non-Bool
-                              ///<   positive = true logic surface
-                              ///<   negative = negated logic surface
-  int fSceneCS{0};            ///< The frame may belong to a daughter scene common surface
-  int fSceneCSind{0};         ///< Index of the corresponding frame on the scene CS
-  unsigned fSurfIndex{0};     ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
-  NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
-  bool fUseSurfSafety{false}; ///< The surface has virtual intersections with the 3D shape. Use just the surface safety
-                              ///< to outside in the minimization procedure
-  bool fNeverCheck{false};    ///< This frames should never be checked
+  UnplacedSurface fSurface; ///< Surface identifier
+  Frame fFrame;             ///< Frame
+  int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fParent{-1};          ///< Topmost parent frame index on the common surface
+  int fLogicId{0};          ///< Logic flag for surface:
+                            ///<   0        = non-Bool
+                            ///<   positive = true logic surface
+                            ///<   negative = negated logic surface
+  int fSceneCS{0};          ///< The frame may belong to a daughter scene common surface
+  int fSceneCSind{0};       ///< Index of the corresponding frame on the scene CS
+  unsigned fSurfIndex{0};   ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
+  NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
+  bool fNeverCheck{false};  ///< This frames should never be checked
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool surfsafety, NavIndex_t index = 0,
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,
                 const bool never_check = 0)
-      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fUseSurfSafety(surfsafety),
-        fNeverCheck(never_check)
+      : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fNeverCheck(never_check)
   {
   }
 

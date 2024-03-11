@@ -157,8 +157,6 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
 
   // Assign logic id to each surface
   for (auto id : cpudata.fShells[logical_id].fSurfaces) {
-    // All frames of Boolean surfaces must be checked
-    cpudata.fLocalSurfaces[id].fUseSurfSafety = false;
     // Set the logic id for Boolean surfaces
     if (logichelper::is_negated(id, crtlogic))
       cpudata.fLocalSurfaces[id].fLogicId = -id;

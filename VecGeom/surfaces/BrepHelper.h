@@ -627,8 +627,7 @@ public:
         fCPUdata.fGlobalTrans.push_back(surftrans);
         // Create the surface in the current scene using the local navigation index in the scene
         int id_surf = fCPUdata.fFramedSurf.size();
-        fCPUdata.fFramedSurf.push_back(
-            {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, nav_ind, lsurf.fNeverCheck});
+        fCPUdata.fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, nav_ind, lsurf.fNeverCheck});
         auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
         framed_surf.fLogicId   = lsurf.fLogicId;
         framed_surf.fSurfIndex = lsurf.fSurfIndex;
@@ -653,7 +652,7 @@ public:
             trans_id = fCPUdata.fGlobalTrans.size();
             fCPUdata.fGlobalTrans.push_back(fCPUdata.fLocalTrans[lsurf.fTrans]);
             fCPUdata.fFramedSurf.push_back(
-                {lsurf.fSurface, lsurf.fFrame, trans_id, lsurf.fUseSurfSafety, 0 /*top in scene*/, lsurf.fNeverCheck});
+                {lsurf.fSurface, lsurf.fFrame, trans_id, 0 /*top in scene*/, lsurf.fNeverCheck});
             fCPUdata.fFramedSurf.back().fLogicId   = lsurf.fLogicId;
             fCPUdata.fFramedSurf.back().fSurfIndex = lsurf.fSurfIndex;
             auto isurf_scene                       = CreateCommonSurface(id_surf_new, ivol, newscene_id, iframe, iside);

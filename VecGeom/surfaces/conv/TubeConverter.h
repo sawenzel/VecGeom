@@ -33,9 +33,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
 
   assert(Rdiff > 0);
 
-  bool fullCirc        = ApproxEqual(dphi, vecgeom::kTwoPi);
-  bool smallerPi       = dphi < (vecgeom::kPi - vecgeom::kTolerance);
-  bool use_surf_safety = true;
+  bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
+  bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
   Real_t surfdata[2];
@@ -48,14 +47,14 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), 0, 0, 0}), use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
   // surface at -dz
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), 0, 180, -sphid - ephid}), use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), 0, 180, -sphid - ephid}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(isurf);
@@ -65,7 +64,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-        /*identity transformation*/ 0, use_surf_safety);
+        /*identity transformation*/ 0);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     logic.push_back(land);
     logic.push_back(isurf);
@@ -75,7 +74,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, use_surf_safety);
+      /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(isurf);
@@ -88,8 +87,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
-      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}),
-      use_surf_safety && smallerPi);
+      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(lplus); // '('
@@ -99,8 +97,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
-      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}),
-      use_surf_safety && smallerPi);
+      builder::CreateLocalTransformation<Real_t>({Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);

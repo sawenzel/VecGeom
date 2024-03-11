@@ -17,8 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
 {
-  using Vector3              = vecgeom::Vector3D<Real_t>;
-  const bool use_surf_safety = true;
+  using Vector3 = vecgeom::Vector3D<Real_t>;
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3 & 4 & 5
 
@@ -37,32 +36,32 @@ bool CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
   std::vector<Vector3> vert;
   // surface at -dx:
   vert  = {corners[3], corners[0], corners[4], corners[7]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(isurf);
   // surface at +dx:
   vert  = {corners[1], corners[2], corners[6], corners[5]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
   // surface at -dy:
   vert  = {corners[0], corners[1], corners[5], corners[4]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
   // surface at +dy:
   vert  = {corners[2], corners[3], corners[7], corners[6]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   logic.push_back(land);
   logic.push_back(isurf);
   // surface at -dz:
   vert  = {corners[0], corners[3], corners[2], corners[1]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertWindow(isurf);
   logic.push_back(land);
   logic.push_back(isurf);
   // surface at +dz:
   vert  = {corners[4], corners[5], corners[6], corners[7]};
-  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id, use_surf_safety);
+  isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assertWindow(isurf);
   logic.push_back(land);
   logic.push_back(isurf);

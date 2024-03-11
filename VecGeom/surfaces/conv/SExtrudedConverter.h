@@ -220,7 +220,6 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   const auto vertx = vertices_poly.x();
   const auto verty = vertices_poly.y();
 
-  const bool use_surf_safety = true;
   LogicExpressionCPU logic;
   int isurf;
 
@@ -270,13 +269,13 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
 
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
-          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
         } else {
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
-          isurf          = builder::CreateLocalSurface<Real_t>(
-              builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-              builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
+          isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                      Frame{FrameType::kNoFrame},
+                                                      builder::CreateLocalTransformation<Real_t>(transformation));
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         }
 
@@ -314,13 +313,13 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
 
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
-          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+          isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
         } else {
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
-          isurf          = builder::CreateLocalSurface<Real_t>(
-              builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-              builder::CreateLocalTransformation<Real_t>(transformation), use_surf_safety);
+          isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                      Frame{FrameType::kNoFrame},
+                                                      builder::CreateLocalTransformation<Real_t>(transformation));
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         }
         logic.push_back(isurf);
@@ -409,18 +408,18 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
     // bottom triangles
     vertices = {section_origin1 + section_scale1 * triangle_var[2], section_origin1 + section_scale1 * triangle_var[1],
                 section_origin1 + section_scale1 * triangle_var[0]};
-    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
 
     // top triangles
     vertices = {section_origin2 + section_scale2 * triangle_var[0], section_origin2 + section_scale2 * triangle_var[1],
                 section_origin2 + section_scale2 * triangle_var[2]};
-    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id, use_surf_safety);
+    isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
   }
 
   // bottom virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetLowerZ(), 0, 180, 0}), use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetLowerZ(), 0, 180, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
   logic.push_back(land);
@@ -428,7 +427,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   // top virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetUpperZ(), 0, 0, 0}), use_surf_safety);
+      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetUpperZ(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
 
