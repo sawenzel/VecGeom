@@ -75,25 +75,25 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
       if (iseg > 0) logic.push_back(lor); // `OR` between sections
       logic.push_back(lplus);             // '(' begin section logic
     }
-    // Add section Z planes as limiters
-    isurf = isurfZlast;
-    if (isurf < 0) {
-      isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-          builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg], 0, 0, 0}));
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-    }
 
+    // Add section Z planes as limiters
+    // the logic is as follows: the first/last segments have a real surface on the bottom/top
+    // only for the middle segments that are real, virtual Z planes as limiters are needed.
+    isurf = isurfZlast;
     if (realSeg) {
-      logic.push_back(lnot);
-      logic.push_back(isurf);
-      logic.push_back(land);
-      isurf = builder::CreateLocalSurface<Real_t>(
-          builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-          builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-      logic.push_back(isurf);
-      isurfZlast = isurf;
+      if (iseg > 0) {
+        logic.push_back(lnot);
+        logic.push_back(isurf);
+      }
+      if (iseg != (nseg - 1)) {
+        isurf = builder::CreateLocalSurface<Real_t>(
+            builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
+            builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        if (iseg > 0) logic.push_back(land);
+        logic.push_back(isurf);
+        isurfZlast = isurf;
+      }
     }
 
     // outer surfaces
@@ -107,7 +107,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg + 1] * conv * csphi, rMax[iseg + 1] * conv * ssphi, z2}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
         if (realSeg) {
-          logic.push_back(land);
+          if (nseg > 1 || iside > 0) logic.push_back(land);
           logic.push_back(isurf);
         }
       }
@@ -167,6 +167,8 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1},
                     {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        logic.push_back(land);
+        logic.push_back(isurf);
       }
 
       // Add top frames
@@ -176,6 +178,8 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
                     {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        logic.push_back(land);
+        logic.push_back(isurf);
       }
     }
 

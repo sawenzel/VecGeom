@@ -386,13 +386,15 @@ struct CommonSurface {
   NavState_t fDefaultState{0};             ///< The default state for this surface (deepest mother)
   Side fLeftSide;                          ///< Left-side (behind normal)
   Side fRightSide;                         ///< Right-side (alongside normal)
+  bool fFlipped;                           ///< whether the common surface is flipped due to boolean negation
 
   CommonSurface() = default;
 
-  CommonSurface(SurfaceType type, int global_surf) : fType(type)
+  CommonSurface(SurfaceType type, int global_surf, bool flipped) : fType(type)
   {
     // Add by default the first surface to the left side
     fLeftSide.AddSurface(global_surf);
+    fFlipped = flipped;
   };
 
   VECCORE_ATT_HOST_DEVICE
@@ -628,7 +630,7 @@ struct SurfData {
   UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
   {
     FramedSurface const &surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
-    flipped                         = surf_frame.fLogicId < 0;
+    flipped                         = fCommonSurfaces[isurf].fFlipped;
     return surf_frame.fSurface;
   }
 

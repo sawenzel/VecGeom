@@ -1009,7 +1009,11 @@ private:
       }
 
       // Check if the surfaces may be flipped because of Boolean negation
-      flip_bool = s1.fLogicId * s2.fLogicId < 0;
+      if (s1.fLogicId * s2.fLogicId == 0) {
+        flip_bool = (s1.fLogicId < 0) || (s2.fLogicId < 0);
+      } else {
+        flip_bool = s1.fLogicId * s2.fLogicId < 0;
+      }
 
       // Check if the 2 surfaces are parallel
       Transformation const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
@@ -1137,13 +1141,13 @@ private:
     auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
     bool found_dup_surf = false;
     int id              = -1;
-    flip ^= flip_bool;
     // check duplicates only for valid hashes
     if (hash != 0) {
       for (auto it = range.first; it != range.second; ++it) {
         const auto &other_id = fCPUdata.fCommonSurfaces[it->second].fLeftSide.fSurfaces[0];
 
         if (approxEqual(other_id, idglob)) {
+          flip ^= flip_bool;
           // Do not allow surfaces of the same volume on different sides of the same common surface, otherwise the
           // surface will be missed when coming from the entering side. if (flip && othersurf.VolumeId() == volId)
           // continue;
@@ -1178,7 +1182,7 @@ private:
       // Construct a new common surface from the current placed global surface
       // Set the common state to be the parent of the idglob surface state
       id = fCPUdata.fCommonSurfaces.size();
-      fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob});
+      fCPUdata.fCommonSurfaces.push_back({fCPUdata.fFramedSurf[idglob].fSurface.type, idglob, surf.fLogicId < 0});
       iside             = kLside;
       iframe            = 0;
       auto parent_state = fCPUdata.fFramedSurf[idglob].fState;

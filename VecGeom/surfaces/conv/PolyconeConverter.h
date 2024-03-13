@@ -61,27 +61,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
     assert(rmax1 - rmin1 > -vecgeom::kTolerance);
     assert(rmax2 - rmin2 > -vecgeom::kTolerance);
 
-    // do virtual end caps of the section
-    // virtual surface at z2
-    if (rmax2 - rmin2 > vecgeom::kTolerance && (i != nSect - 1)) {
-      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-                                                  Frame{FrameType::kNoFrame},
-                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-      logic.push_back(isurf);
-      logic.push_back(land);
-    }
-
-    // virtual surface at z1
-    if (rmax1 - rmin1 > vecgeom::kTolerance && (i != 0)) {
-      isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-                                                  Frame{FrameType::kNoFrame},
-                                                  builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}));
-      builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
-      logic.push_back(isurf);
-      logic.push_back(land);
-    }
-
     // construct top and bottom surfaces:
     // if there are previous or following sections, the top and bottom surface consist
     // of up to two rings (inner and outer ring). All of those are real surfaces
@@ -101,6 +80,8 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmin_prev, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
       if (has_outer_ring) {
         isurf = builder::CreateLocalSurface<Real_t>(
@@ -108,6 +89,18 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_prev, rmax1, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, -sphid - ephid}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
+      }
+
+      // add virtual surface at z1 if there is no real one
+      if (!has_inner_ring && !has_outer_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                    Frame{FrameType::kNoFrame},
+                                                    builder::CreateLocalTransformation<Real_t>({0, 0, z1, 0, 180, 0}));
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
     }
     // adjusted top rings in case there is a following section
@@ -124,6 +117,8 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmin_next, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
       if (has_outer_ring) {
         isurf = builder::CreateLocalSurface<Real_t>(
@@ -131,6 +126,18 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_next, rmax2, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
+      }
+
+      // add virtual surface at z2 if there is no real one
+      if (!has_inner_ring && !has_outer_ring) {
+        isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                    Frame{FrameType::kNoFrame},
+                                                    builder::CreateLocalTransformation<Real_t>({0, 0, z2, 0, 0, 0}));
+        builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        logic.push_back(isurf);
+        logic.push_back(land);
       }
     }
 
