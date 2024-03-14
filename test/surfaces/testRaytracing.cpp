@@ -265,20 +265,26 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
       exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
       if (exit_surf == -1) {
-        VECGEOM_LOG(critical) << std::setprecision(16) << "No exiting surface for ray " << i
-                              << " at num_cross = " << num_cross;
-        std::cout << std::setprecision(16) << "   starting point " << points[i] << " and direction " << dirs[i]
-                  << "\n   state for failing step : ";
+        // Most likely extruding overlap detected, relocating to correct state
+        
+        VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
+                            << " at num_cross = " << num_cross << "\n   starting point "
+                            << points[i] << " and direction " << dirs[i] << "\n   state for failing step : ";
         start_state.Print();
+
         // Find true location for the crossing point
         NavigationState true_state;
         vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pt, true_state, true, start_state.Top());
         std::cout << "   crossing point : " << pt << " was located in : ";
         true_state.Print();
 
-        // Now replay the failure before exiting
-        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
-        return;
+        // Now replay to get correct distance
+        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exit_surf);
+        if (distance == 0 || distance == vecgeom::InfinityLength<Precision>()) {
+          VECGEOM_LOG(critical) << std::setprecision(16) << "After relocation, still no exiting surface for ray " << i
+                                << " at num_cross = " << num_cross << "\n Terminating raytracing!";
+          return;
+        }
       }
       if (idebug >= 0) {
         std::cout << std::setprecision(16) << "     dist = " << distance << "  surf = " << exit_surf << "\n   "
