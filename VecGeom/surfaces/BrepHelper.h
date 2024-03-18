@@ -780,6 +780,9 @@ public:
     // Set transformation of first surface on left to identity
     fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = 0;
 
+    // Set flip status of common surface based on first framed surface after sorting
+    fCPUdata.fCommonSurfaces[idsurf].fFlipped = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fLogicId < 0 ? 1 : 0;
+
     Transformation tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
 
     // Skip first surface on left side

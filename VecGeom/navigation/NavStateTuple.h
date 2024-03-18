@@ -107,6 +107,10 @@ struct NavTuple {
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  bool operator!=(NavIndex_t navind) const { return !operator==(navind); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   void Clear()
   {
     fLevel     = 0;
@@ -170,13 +174,22 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeCopy(NavStateTuple const &other) { return new NavStateTuple(other); }
+  static NavStateTuple *MakeCopy(NavStateTuple const &other)
+  {
+    return new NavStateTuple(other);
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeInstanceAt(int, void *addr) { return new (addr) NavStateTuple(); }
+  static NavStateTuple *MakeInstanceAt(int, void *addr)
+  {
+    return new (addr) NavStateTuple();
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeCopy(NavStateTuple const &other, void *addr) { return new (addr) NavStateTuple(other); }
+  static NavStateTuple *MakeCopy(NavStateTuple const &other, void *addr)
+  {
+    return new (addr) NavStateTuple(other);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   static void ReleaseInstance(NavStateTuple *state)
@@ -206,20 +219,35 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  NavIndex_t GetNavIndex() const { return fNavTuple.Top(); }
+  NavIndex_t GetNavIndex() const
+  {
+    return fNavTuple.Top();
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  NavTuple_t const &GetState() const { return fNavTuple; }
+  NavTuple_t const &GetState() const
+  {
+    return fNavTuple;
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  int GetObjectSize() const { return (int)sizeof(NavStateTuple); }
+  int GetObjectSize() const
+  {
+    return (int)sizeof(NavStateTuple);
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOf(size_t) { return sizeof(NavStateTuple); }
+  static size_t SizeOf(size_t)
+  {
+    return sizeof(NavStateTuple);
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  void CopyTo(NavStateTuple *other) const { *other = *this; }
+  void CopyTo(NavStateTuple *other) const
+  {
+    *other = *this;
+  }
 
   // copies a fixed and predetermined number of bytes
   // might be useful for specialized navigators which know the depth + SizeOf in advance
@@ -261,7 +289,10 @@ public:
   /// @return Navigation index stored at the requested index
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static NavIndex_t NavInd(NavIndex_t i) { return *NavIndAddr(i); }
+  static NavIndex_t NavInd(NavIndex_t i)
+  {
+    return *NavIndAddr(i);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -299,12 +330,18 @@ public:
   /// @brief Implementation for getting the number of daughters for a given navigation index
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static unsigned int GetLogicalIdImpl(NavTuple_t const &nav_tuple) { return GetLogicalIdImpl(nav_tuple.Top()); }
+  static unsigned int GetLogicalIdImpl(NavTuple_t const &nav_tuple)
+  {
+    return GetLogicalIdImpl(nav_tuple.Top());
+  }
 
   /// @brief Implementation for getting the number of daughters for a given navigation tuple
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static unsigned int GetNdaughtersImpl(NavTuple_t const &nav_tuple) { return NavInd(NavInd(nav_tuple.Top() + 3) + 1); }
+  static unsigned int GetNdaughtersImpl(NavTuple_t const &nav_tuple)
+  {
+    return NavInd(NavInd(nav_tuple.Top() + 3) + 1);
+  }
 
   /// @brief Implementation for getting the scene id for a given navigation index
   VECCORE_ATT_HOST_DEVICE
@@ -341,7 +378,10 @@ public:
   /// @brief Implementation for getting the scene level for a given navigation tuple
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static unsigned int GetSceneLevelImpl(NavTuple_t const &nav_tuple) { return nav_tuple.fLevel; }
+  static unsigned int GetSceneLevelImpl(NavTuple_t const &nav_tuple)
+  {
+    return nav_tuple.fLevel;
+  }
 
   /// @brief Implementation for getting the parent scene id
   VECCORE_ATT_HOST_DEVICE
@@ -395,7 +435,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  static NavIndex_t GetIdImpl(NavIndex_t nav_ind) { return (nav_ind > 0) ? NavInd(nav_ind + 2) : 0; }
+  static NavIndex_t GetIdImpl(NavIndex_t nav_ind)
+  {
+    return (nav_ind > 0) ? NavInd(nav_ind + 2) : 0;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -535,39 +578,66 @@ public:
   // Intrerface methods
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  VPlacedVolume const *GetLastExited() const { return TopImpl(fLastExited); }
+  VPlacedVolume const *GetLastExited() const
+  {
+    return TopImpl(fLastExited);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void SetLastExited() { fLastExited = fNavTuple; }
+  void SetLastExited()
+  {
+    fLastExited = fNavTuple;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void SetNavIndex(NavTuple_t const &nav_tuple) { fNavTuple = nav_tuple; }
+  void SetNavIndex(NavTuple_t const &nav_tuple)
+  {
+    fNavTuple = nav_tuple;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void SetNavIndex(NavIndex_t const &nav_index) { fNavTuple.Set(nav_index); }
+  void SetNavIndex(NavIndex_t const &nav_index)
+  {
+    fNavTuple.Set(nav_index);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  unsigned int GetLogicalId() const { return GetLogicalIdImpl(fNavTuple); }
+  unsigned int GetLogicalId() const
+  {
+    return GetLogicalIdImpl(fNavTuple);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  bool IsScene() const { return IsSceneImpl(fNavTuple); }
+  bool IsScene() const
+  {
+    return IsSceneImpl(fNavTuple);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  bool IsDescendent(NavTuple_t const &parent) const { return IsDescendentImpl(fNavTuple, parent); }
+  bool IsDescendent(NavTuple_t const &parent) const
+  {
+    return IsDescendentImpl(fNavTuple, parent);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  unsigned int GetNdaughters() const { return GetNdaughtersImpl(fNavTuple); }
+  unsigned int GetNdaughters() const
+  {
+    return GetNdaughtersImpl(fNavTuple);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  NavIndex_t GetId() const { return GetIdImpl(fNavTuple.Top()); }
+  NavIndex_t GetId() const
+  {
+    return GetIdImpl(fNavTuple.Top());
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -585,15 +655,24 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  unsigned int GetSceneLevel() const { return GetSceneLevelImpl(fNavTuple); }
+  unsigned int GetSceneLevel() const
+  {
+    return GetSceneLevelImpl(fNavTuple);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  unsigned short GetParentScene() const { return GetParentSceneImpl(fNavTuple); }
+  unsigned short GetParentScene() const
+  {
+    return GetParentSceneImpl(fNavTuple);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Push(VPlacedVolume const *v) { PushImpl(fNavTuple, v); }
+  void Push(VPlacedVolume const *v)
+  {
+    PushImpl(fNavTuple, v);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -605,7 +684,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Pop() { PopImpl(fNavTuple); }
+  void Pop()
+  {
+    PopImpl(fNavTuple);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -616,7 +698,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  VPlacedVolume const *Top() const { return TopImpl(fNavTuple); }
+  VPlacedVolume const *Top() const
+  {
+    return TopImpl(fNavTuple);
+  }
 
   /**
    * returns the number of FILLED LEVELS such that
@@ -624,19 +709,28 @@ public:
    */
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  unsigned char GetLevel() const { return GetLevelImpl(fNavTuple); }
+  unsigned char GetLevel() const
+  {
+    return GetLevelImpl(fNavTuple);
+  }
 
   /** Compatibility getter for NavigationState interface */
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  unsigned char GetCurrentLevel() const { return GetLevel() + 1; }
+  unsigned char GetCurrentLevel() const
+  {
+    return GetLevel() + 1;
+  }
 
   /**
    * Returns the navigation index for a level smaller/equal than the current level.
    */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  NavTuple_t GetNavTuple(int level) const { return GetNavTupleImpl(fNavTuple, level); }
+  NavTuple_t GetNavTuple(int level) const
+  {
+    return GetNavTupleImpl(fNavTuple, level);
+  }
 
   /**
    * Returns the placed volume at a evel smaller/equal than the current level.
@@ -661,13 +755,22 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  void TopMatrix(Transformation3D &trans) const { TopMatrixImpl(fNavTuple, trans); }
+  void TopMatrix(Transformation3D &trans) const
+  {
+    TopMatrixImpl(fNavTuple, trans);
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  void TopInSceneMatrix(Transformation3D &trans) const { TopInSceneMatrixImpl(fNavTuple, trans); }
+  void TopInSceneMatrix(Transformation3D &trans) const
+  {
+    TopInSceneMatrixImpl(fNavTuple, trans);
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  void SceneMatrix(Transformation3D &trans) const { SceneMatrixImpl(fNavTuple, trans); }
+  void SceneMatrix(Transformation3D &trans) const
+  {
+    SceneMatrixImpl(fNavTuple, trans);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(int tolevel, Transformation3D &trans) const
@@ -926,11 +1029,17 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  void Dump() const { Print(); }
+  void Dump() const
+  {
+    Print();
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  bool HasSamePathAsOther(NavStateTuple const &other) const { return (fNavTuple == other.fNavTuple); }
+  bool HasSamePathAsOther(NavStateTuple const &other) const
+  {
+    return (fNavTuple == other.fNavTuple);
+  }
 
   void printValueSequence(std::ostream & = std::cerr) const;
 
@@ -950,15 +1059,24 @@ public:
   */
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  bool IsOutside() const { return (fNavTuple.Top() == 0); }
+  bool IsOutside() const
+  {
+    return (fNavTuple.Top() == 0);
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  bool IsOnBoundary() const { return fOnBoundary; }
+  bool IsOnBoundary() const
+  {
+    return fOnBoundary;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void SetBoundaryState(bool b) { fOnBoundary = b; }
+  void SetBoundaryState(bool b)
+  {
+    fOnBoundary = b;
+  }
 };
 
 /**
