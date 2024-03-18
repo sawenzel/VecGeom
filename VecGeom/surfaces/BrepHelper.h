@@ -1056,8 +1056,8 @@ private:
         if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
         break;
       case SurfaceType::kConical:
-        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].RadiusZ(-t1.Translation()[2]) -
-                     fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-t2.Translation()[2])) > vecgeom::kTolerance) {
+        if (std::abs(fCPUdata.fConeData[s1.fSurface.id].RadiusZ(-Abs(t1.Translation()[2])) -
+                     fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-Abs(t2.Translation()[2]))) > vecgeom::kTolerance) {
           return false;
         }
         if (std::abs(fCPUdata.fConeData[s1.fSurface.id].slope - fCPUdata.fConeData[s2.fSurface.id].slope) >
@@ -1120,7 +1120,7 @@ private:
       case SurfaceType::kConical:
         // use radius at origin, slope, and normal for hashing
         hash = hash_combine(
-            hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-trans.Translation()[2]) / tolerance));
+          hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance));
         hash = hash_combine(hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance));
         for (int i = 0; i < 3; i++) {
           hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
