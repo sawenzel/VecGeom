@@ -48,13 +48,30 @@ struct QuadrilateralMask {
     }
   }
 
+  /// @brief Fills the 3D extent of the quadrilateral
+  /// @param window Extent window to be filled
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    aMin.Set(vecgeom::InfinityLength<Real_t>());
+    aMax.Set(-vecgeom::InfinityLength<Real_t>());
+    aMin.z() = aMax.z() = Real_t(0);
+    for (int i = 0; i < 4; ++i) {
+      aMin.x() = vecCore::math::Min(aMin.x(), p_[i].x());
+      aMax.x() = vecCore::math::Max(aMax.x(), p_[i].x());
+      aMin.y() = vecCore::math::Min(aMin.y(), p_[i].y());
+      aMax.y() = vecCore::math::Max(aMax.y(), p_[i].y());
+    }
+  }
+
   /// @brief Returns the extent of the quadrilateral
   /// @param window Extent window to be filled
   void GetExtent(WindowMask<Real_t> &window) const
   {
     window.rangeU.Set(p_[0].x());
     window.rangeV.Set(p_[0].y());
-    for (int i = 1; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i) {
       window.rangeU.Set(vecCore::math::Min(window.rangeU[0], p_[i].x()),
                         vecCore::math::Max(window.rangeU[1], p_[i].x()));
       window.rangeV.Set(vecCore::math::Min(window.rangeV[0], p_[i].y()),

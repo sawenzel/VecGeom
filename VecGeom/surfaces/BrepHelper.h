@@ -320,7 +320,7 @@ public:
   }
 
   // Computes bounding extent on a side of cylindrical surface
-  void ComputeCylinderExtent(Side &side)
+  bool ComputeCylinderExtent(Side &side)
   {
     // Setting initial extent mask
     side.fExtent.type  = FrameType::kZPhi;
@@ -334,47 +334,57 @@ public:
       ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
       auto extFrame              = extLocal.InverseTransform(fSurfData->fGlobalTrans[framed_surf.fTrans]);
       // Combine with current extent
-      sideext.CombineWith(extFrame);
+      bool success = sideext.CombineWith(extFrame);
+      if (!success) {
+        VECGEOM_LOG(critical) << "ComputeCylinderExtent error";
+        return false;
+      }
     }
 
     // Add new extent mask to the vector
     int id = fCPUdata.fZPhiMasks.size();
     fCPUdata.fZPhiMasks.push_back(sideext);
     side.fExtent.id = id;
+    return true;
   }
 
-  void ComputeExtents()
+  bool ComputeExtents()
   {
     // Lambda for computing the extent of a single side
     auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
+      bool success = true;
       switch (type) {
       case SurfaceType::kPlanar:
         ComputePlaneExtent(side);
         break;
       case SurfaceType::kCylindrical:
       case SurfaceType::kConical:
-        ComputeCylinderExtent(side);
+        success = ComputeCylinderExtent(side);
         break;
       default:
         VECGEOM_LOG(debug) << "Computing side extents dropped to default";
         break;
       }
+      return success;
     };
 
     // Compute extents for all sides on all surfaces
     for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
+      bool success = true;
       if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf) {
-        computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-                                fSurfData->fCommonSurfaces[common_id].fLeftSide);
+        success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
+                                          fSurfData->fCommonSurfaces[common_id].fLeftSide);
       }
       if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf) {
-        computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-                                fSurfData->fCommonSurfaces[common_id].fRightSide);
+        success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
+                                          fSurfData->fCommonSurfaces[common_id].fRightSide);
       }
+      if (!success) return false;
     }
 
     // We created new masks, update them.
     UpdateMaskData();
+    return true;
   }
 
   // Printing is ugly currently and scales badly with the new data structure.

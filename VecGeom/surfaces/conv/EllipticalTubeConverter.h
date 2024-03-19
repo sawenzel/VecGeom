@@ -59,9 +59,11 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   surfdata[0] = tube.GetDx();
   surfdata[1] = tube.GetDy();
   surfdata[2] = tube.GetDz();
+  auto rmax   = vecCore::math::Max(tube.GetDx(), tube.GetDy());
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kElliptical, surfdata),
-      builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-surfdata[2], surfdata[2], /* full_circle=*/1, 0, 360}),
+      builder::CreateFrame<Real_t>(FrameType::kZPhi,
+                                   ZPhiMask_t{-surfdata[2], surfdata[2], /* full_circle=*/1, rmax, rmax, 0, 360}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"

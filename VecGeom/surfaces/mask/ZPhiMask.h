@@ -1,6 +1,7 @@
 #ifndef VECGEOM_SURFACE_ZPHIMASK_H
 #define VECGEOM_SURFACE_ZPHIMASK_H
 
+#include <VecGeom/management/Logger.h>
 #include <VecGeom/surfaces/base/CommonTypes.h>
 
 namespace vgbrep {
@@ -15,45 +16,101 @@ struct ZPhiMask {
   //// vecSPhi, vecEPhi   -> Cartesian coordinates of vectors that delimit phi-cut
 
   Range<Real_t> rangeZ;        ///< Limits on the z-axis.
+  Real_t r0;                   ///< Radius at z = 0
   Real_t invcalf;              ///< Inverse of the cosine of the surface angle with respect to z axis
   AngleVector<Real_t> vecSPhi; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
   AngleVector<Real_t> vecEPhi; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
   bool isFullCirc;             ///< Does the phi cut exist here?
 
   ZPhiMask() = default;
-  ZPhiMask(Real_t zmin, Real_t zmax, bool isFullCircle, Real_t sphi = Real_t{0}, Real_t ephi = Real_t{0},
-           Real_t rbottom = Real_t{0}, Real_t rtop = Real_t{0})
+  ZPhiMask(Real_t zmin, Real_t zmax, bool isFullCircle, Real_t rbottom, Real_t rtop, Real_t sphi = Real_t{0},
+           Real_t ephi = Real_t{0})
       : rangeZ(zmin, zmax), isFullCirc(isFullCircle)
   {
+    r0       = 0.5 * (rbottom + rtop);
     Real_t t = (rtop - rbottom) / (zmax - zmin);
-    invcalf  = vecCore::math::Abs(vecCore::math::Sqrt(Real_t(1) + t * t));
+    invcalf  = (t == Real_t(0)) ? Real_t(1) : vecCore::math::Sqrt(Real_t(1) + t * t);
     // If there is no Phi cut, we needn't worry about phi vectors.
     if (isFullCirc) return;
     vecSPhi.Set(vecgeom::Cos(sphi), vecgeom::Sin(sphi));
     vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
   };
 
-  void GetMask(ZPhiMask<Real_t> &mask)
+  /// @brief Fills extents in X and Y for the ZPhi mask
+  /// @param xmin Minimum of the extent in X
+  /// @param xmax Maximum of the extent in X
+  /// @param ymin Minimum of the extent in Y
+  /// @param ymax Maximum of the extent in Y
+  void GetXYextent(Real_t &xmin, Real_t &xmax, Real_t &ymin, Real_t &ymax) const
   {
-    mask.rangeZ.Set(rangeZ[0], rangeZ[1]);
-    mask.isFullCirc = isFullCirc;
-    if (isFullCirc) return;
-    mask.vecSPhi.Set(vecSPhi[0], vecSPhi[1]);
-    mask.vecEPhi.Set(vecEPhi[0], vecEPhi[1]);
+    auto const rmax = vecCore::math::Max(Radius(rangeZ[0]), Radius(rangeZ[1]));
+    xmin            = -rmax;
+    xmax            = rmax;
+    ymin            = -rmax;
+    ymax            = rmax;
+    // The axis vector has to be between Rmin and Rmax and cannot be unit vector anymore
+    Vector2D<Real_t> axis{1, 0};
+    if (!isFullCirc) {
+      // Projections of points that delimit vertices of the phi-cut ring
+      Real_t x1, x2, x3, x4, y1, y2, y3, y4;
+
+      auto const rmin = vecCore::math::Min(Radius(rangeZ[0]), Radius(rangeZ[1]));
+
+      x1 = rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      x2 = rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      x3 = rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      x4 = rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+      axis.Set(0, 1);
+      y1 = rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      y2 = rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      y3 = rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      y4 = rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+
+      xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
+      ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
+      xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
+      ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
+      // If the axes lie within the circle
+      if (InsidePhi(1, 0)) xmax = rmax;
+      if (InsidePhi(0, 1)) ymax = rmax;
+      if (InsidePhi(-1, 0)) xmin = -rmax;
+      if (InsidePhi(0, -1)) ymin = -rmax;
+    }
+  }
+
+  /// @brief Fills the 3D extent of the mask
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    Real_t xmin, xmax, ymin, ymax;
+    GetXYextent(xmin, xmax, ymin, ymax);
+    aMin.Set(xmin, ymin, rangeZ[0]);
+    aMax.Set(xmax, ymax, rangeZ[1]);
+  }
+
+  /// @brief Get radius of the mask dependent on z
+  /// @param z Z value
+  /// @return Radius of the mask
+  Real_t Radius(Real_t z) const
+  {
+    Real_t t = vecCore::math::Sqrt((invcalf - Real_t(1)) * (invcalf + Real_t(1)));
+    return r0 + t * (z - 0.5 * (rangeZ[0] + rangeZ[1]));
   }
 
   /// @brief Check if local point is in the phi range
-  /// @param local Point in local coordinates
+  /// @param x Local x coordinate
+  /// @param y Local y coordinate
   /// @return Point inside phi
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool InsidePhi(Real_t x, Real_t y, Real_t tolerance = vecgeom::kTolerance) const
+  bool InsidePhi(Real_t const &x, Real_t const &y) const
   {
     if (isFullCirc) return true;
     AngleVector<Real_t> localAngle{x, y};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
-    auto in1    = vecSPhi.CrossZ(localAngle) > -tolerance;
-    auto in2    = localAngle.CrossZ(vecEPhi) > -tolerance;
+    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
     return convex ? in1 && in2 : in1 || in2;
   }
 
@@ -76,14 +133,14 @@ struct ZPhiMask {
   /// @return Transformed mask
   ZPhiMask<Real_t> InverseTransform(Transformation const &trans) const
   {
-    ZPhiMask<Real_t> frame;
+    ZPhiMask<Real_t> frame(*this);
     // Convert rangeZ
     Vector3D<Real_t> local;
-    local            = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[0]});
-    frame.rangeZ[0]  = local[2];
-    local            = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[1]});
-    frame.rangeZ[1]  = local[2];
-    frame.isFullCirc = isFullCirc;
+    local           = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[0]});
+    frame.rangeZ[0] = local[2];
+    local           = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[1]});
+    frame.rangeZ[1] = local[2];
+
     if (!isFullCirc) {
       // Convert phi range
       local = trans.InverseTransformDirection(Vector3D<Real_t>{vecSPhi[0], vecSPhi[1], 0});
@@ -96,83 +153,87 @@ struct ZPhiMask {
 
   /// @brief Combine this mask (1,2) with another (3,4) and get the resulting extent.
   /// @param other Another ZPhi frame mask
-  void CombineWith(ZPhiMask<Real_t> const &other)
+  bool CombineWith(ZPhiMask<Real_t> const &other)
   {
+    // Check compatibility of frames
+    if (vecCore::math::Abs(invcalf - other.invcalf) > vecgeom::kTolerance) return false;
+    if (vecCore::math::Abs(Radius(0) - other.Radius(0)) > vecgeom::kTolerance) return false;
+
     rangeZ[0] = vecCore::math::Min(rangeZ[0], other.rangeZ[0]);
     rangeZ[1] = vecCore::math::Max(rangeZ[1], other.rangeZ[1]);
     isFullCirc |= other.isFullCirc;
-    if (!isFullCirc) {
-      // intersect the phi ranges
-      // Matching start-start (1==3)
-      if (ApproxEqualVector2(vecSPhi, other.vecSPhi)) {
-        if (!InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) vecEPhi = other.vecEPhi;
-        return;
-      }
-      // Matching end-end (2==4)
-      if (ApproxEqualVector2(vecEPhi, other.vecEPhi)) {
-        if (!InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) vecSPhi = other.vecSPhi;
-        return;
-      }
-      // Matching end-start ranges (2==3)
-      if (ApproxEqualVector2(vecEPhi, other.vecSPhi)) {
-        if (InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) {
-          vecEPhi    = vecSPhi;
-          isFullCirc = true;
-        } else {
-          vecEPhi = other.vecEPhi;
-        }
-        return;
-      }
-      // Matching start-end ranges (1==4)
-      if (ApproxEqualVector2(vecSPhi, other.vecEPhi)) {
-        if (InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) {
-          vecEPhi    = vecSPhi;
-          isFullCirc = true;
-        } else {
-          vecSPhi = vecEPhi;
-          vecEPhi = other.vecSPhi;
-        }
-        return;
-      }
-      // non-matching ends
-      bool in1 = other.InsidePhi(vecSPhi[0], vecSPhi[1]);       // 1 inside (3,4)
-      bool in2 = other.InsidePhi(vecEPhi[0], vecEPhi[1]);       // 2 inside (3,4)
-      bool in3 = InsidePhi(other.vecSPhi[0], other.vecSPhi[1]); // 3 inside (1,2)
-      bool in4 = InsidePhi(other.vecEPhi[0], other.vecEPhi[1]); // 4 inside (1,2)
-
-      if (!(in1 || in2 || in3 || in4)) {
-        if ((vecSPhi - other.vecEPhi).Mag2() > (other.vecSPhi - vecEPhi).Mag2())
-          vecEPhi = other.vecEPhi;
-        else
-          vecSPhi = other.vecSPhi;
-        return;
-      }
-
-      if (in1 && in2 && in3 && in4) {
+    if (isFullCirc) return true;
+    // intersect the phi ranges
+    // Matching start-start (1==3)
+    if (ApproxEqualVector2(vecSPhi, other.vecSPhi)) {
+      if (!InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) vecEPhi = other.vecEPhi;
+      return true;
+    }
+    // Matching end-end (2==4)
+    if (ApproxEqualVector2(vecEPhi, other.vecEPhi)) {
+      if (!InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) vecSPhi = other.vecSPhi;
+      return true;
+    }
+    // Matching end-start ranges (2==3)
+    if (ApproxEqualVector2(vecEPhi, other.vecSPhi)) {
+      if (InsidePhi(other.vecEPhi[0], other.vecEPhi[1])) {
         vecEPhi    = vecSPhi;
         isFullCirc = true;
-        return;
-      }
-
-      if (!(in1 || in2)) return;
-
-      if (!(in3 || in4)) {
-        vecSPhi = other.vecSPhi;
+      } else {
         vecEPhi = other.vecEPhi;
-        return;
       }
-
-      if (!in1 && in2) {
-        vecEPhi = other.vecEPhi;
-        return;
-      }
-
-      if (in1 && !in2) {
-        vecSPhi = other.vecSPhi;
-        return;
-      }
-      assert(0 && "wrong logic for ZPhiMask::IntersectExtent");
+      return true;
     }
+    // Matching start-end ranges (1==4)
+    if (ApproxEqualVector2(vecSPhi, other.vecEPhi)) {
+      if (InsidePhi(other.vecSPhi[0], other.vecSPhi[1])) {
+        vecEPhi    = vecSPhi;
+        isFullCirc = true;
+      } else {
+        vecSPhi = vecEPhi;
+        vecEPhi = other.vecSPhi;
+      }
+      return true;
+    }
+    // non-matching ends
+    bool in1 = other.InsidePhi(vecSPhi[0], vecSPhi[1]);       // 1 inside (3,4)
+    bool in2 = other.InsidePhi(vecEPhi[0], vecEPhi[1]);       // 2 inside (3,4)
+    bool in3 = InsidePhi(other.vecSPhi[0], other.vecSPhi[1]); // 3 inside (1,2)
+    bool in4 = InsidePhi(other.vecEPhi[0], other.vecEPhi[1]); // 4 inside (1,2)
+
+    if (!(in1 || in2 || in3 || in4)) {
+      if ((vecSPhi - other.vecEPhi).Mag2() > (other.vecSPhi - vecEPhi).Mag2())
+        vecEPhi = other.vecEPhi;
+      else
+        vecSPhi = other.vecSPhi;
+      return true;
+    }
+
+    if (in1 && in2 && in3 && in4) {
+      vecEPhi    = vecSPhi;
+      isFullCirc = true;
+      return true;
+    }
+
+    if (!(in1 || in2)) return true;
+
+    if (!(in3 || in4)) {
+      vecSPhi = other.vecSPhi;
+      vecEPhi = other.vecEPhi;
+      return true;
+    }
+
+    if (!in1 && in2) {
+      vecEPhi = other.vecEPhi;
+      return true;
+    }
+
+    if (in1 && !in2) {
+      vecSPhi = other.vecSPhi;
+      return true;
+    }
+    VECGEOM_LOG(critical) << "CombineWith: wrong logic";
+    return false;
   }
 
   /// @brief Computes safe distance to the frame combining surface and frame safeties

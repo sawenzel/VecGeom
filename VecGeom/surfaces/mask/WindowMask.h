@@ -20,6 +20,15 @@ struct WindowMask {
   WindowMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
   WindowMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
 
+  /// @brief Fills the 3D extent of the window
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    aMin.Set(rangeU[0], rangeV[0], Real_t(0));
+    aMax.Set(rangeU[1], rangeV[1], Real_t(0));
+  }
+
   /// @brief Returns the extent of the window
   /// @param window Extent window to be filled
   void GetExtent(WindowMask<Real_t> &window) const

@@ -63,7 +63,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
     surfdata[0] = tube.rmin();
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
-        builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+        builder::CreateFrame<Real_t>(FrameType::kZPhi,
+                                     ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmin(), tube.rmin(), sphi, ephi}),
         /*identity transformation*/ 0);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     logic.push_back(land);
@@ -73,7 +74,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
   surfdata[0] = tube.rmax();
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
-      builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-tube.z(), tube.z(), fullCirc, sphi, ephi}),
+      builder::CreateFrame<Real_t>(FrameType::kZPhi,
+                                   ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmax(), tube.rmax(), sphi, ephi}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);

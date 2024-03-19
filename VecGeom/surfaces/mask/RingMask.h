@@ -24,42 +24,65 @@ struct RingMask {
     vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
   };
 
-  /// @brief Returns the extent of the window
-  /// @param window Extent window to be filled
-  void GetExtent(WindowMask<Real_t> &window) const
+  /// @brief Fills extents in X and Y for the ring mask
+  /// @param xmin Minimum of the extent in X
+  /// @param xmax Maximum of the extent in X
+  /// @param ymin Minimum of the extent in Y
+  /// @param ymax Maximum of the extent in Y
+  void GetXYextent(Real_t &xmin, Real_t &xmax, Real_t &ymin, Real_t &ymax) const
   {
-    auto const &Rmax = rangeR[1];
-    Real_t xmin{-Rmax}, xmax{Rmax}, ymin{-Rmax}, ymax{Rmax};
+    auto const &rmax = rangeR[1];
+    xmin             = -rmax;
+    xmax             = rmax;
+    ymin             = -rmax;
+    ymax             = rmax;
     // The axis vector has to be between Rmin and Rmax and cannot be unit vector anymore
-    auto const Rmean = (rangeR[0] + Rmax) * 0.5;
     Vector2D<Real_t> axis{1, 0};
     if (!isFullCirc) {
       // Projections of points that delimit vertices of the phi-cut ring
       Real_t x1, x2, x3, x4, y1, y2, y3, y4;
 
-      auto Rmin = rangeR[0];
+      auto const &rmin = rangeR[0];
 
-      x1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
-      x2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
-      x3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
-      x4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+      x1 = rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      x2 = rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      x3 = rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      x4 = rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
       axis.Set(0, 1);
-      y1 = Rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
-      y2 = Rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
-      y3 = Rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
-      y4 = Rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
+      y1 = rmax * axis.Dot(vecSPhi); //< (sphi, Rmax)_x
+      y2 = rmax * axis.Dot(vecEPhi); //< (ephi, Rmax)_x
+      y3 = rmin * axis.Dot(vecSPhi); //< (sphi, Rmin)_x
+      y4 = rmin * axis.Dot(vecEPhi); //< (ephi, Rmin)_x
 
       xmax = vecgeom::Max(vecgeom::Max(x1, x2), vecgeom::Max(x3, x4));
       ymax = vecgeom::Max(vecgeom::Max(y1, y2), vecgeom::Max(y3, y4));
       xmin = vecgeom::Min(vecgeom::Min(x1, x2), vecgeom::Min(x3, x4));
       ymin = vecgeom::Min(vecgeom::Min(y1, y2), vecgeom::Min(y3, y4));
       // If the axes lie within the circle
-      if (Inside(Vector3D<Real_t>(Rmean, 0, 0))) xmax = Rmax;
-      if (Inside(Vector3D<Real_t>(0, Rmean, 0))) ymax = Rmax;
-      if (Inside(Vector3D<Real_t>(-Rmean, 0, 0))) xmin = -Rmax;
-      if (Inside(Vector3D<Real_t>(0, -Rmean, 0))) ymin = -Rmax;
+      if (InsidePhi(1, 0)) xmax = rmax;
+      if (InsidePhi(0, 1)) ymax = rmax;
+      if (InsidePhi(-1, 0)) xmin = -rmax;
+      if (InsidePhi(0, -1)) ymin = -rmax;
     }
+  }
 
+  /// @brief Fills the 3D extent of the ring
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    Real_t xmin, xmax, ymin, ymax;
+    GetXYextent(xmin, xmax, ymin, ymax);
+    aMin.Set(xmin, ymin, Real_t(0));
+    aMax.Set(xmax, ymax, Real_t(0));
+  }
+
+  /// @brief Returns the window extent of the ring
+  /// @param window Extent window to be filled
+  void GetExtent(WindowMask<Real_t> &window) const
+  {
+    Real_t xmin, xmax, ymin, ymax;
+    GetXYextent(xmin, xmax, ymin, ymax);
     window.rangeU.Set(xmin, xmax);
     window.rangeV.Set(ymin, ymax);
   }
@@ -80,14 +103,15 @@ struct RingMask {
   }
 
   /// @brief Check if local point is in the phi range
-  /// @param local Point in local coordinates
+  /// @param x Local x coordinate
+  /// @param y Local y coordinate
   /// @return Point inside phi
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool InsidePhi(Vector3D<Real_t> const &local) const
+  bool InsidePhi(Real_t const &x, Real_t const &y) const
   {
     if (isFullCirc) return true;
-    AngleVector<Real_t> localAngle{local[0], local[1]};
+    AngleVector<Real_t> localAngle{x, y};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
     auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
     auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
@@ -102,7 +126,7 @@ struct RingMask {
   /// @return Inside the mask or not
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool Inside(Vector3D<Real_t> const &local) const { return InsideR(local) && InsidePhi(local); }
+  bool Inside(Vector3D<Real_t> const &local) const { return InsideR(local) && InsidePhi(local[0], local[1]); }
 
   /// @brief Computes safe distance to the frame combining surface and frame safeties (under-estimate)
   /// @details Computes first the maximum signed distance to each edge on a single axis. Two versions
@@ -115,7 +139,7 @@ struct RingMask {
     valid       = true;
     Real_t rho  = local.Perp(); // still a square root, but less registers/branching
     Real_t safR = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
-    if (isFullCirc || InsidePhi(local))
+    if (isFullCirc || InsidePhi(local[0], local[1]))
 #ifdef SURF_ACCURATE_SAFETY
       return vecCore::math::Sqrt(safetySurf * safetySurf + safR * safR);
 #else
