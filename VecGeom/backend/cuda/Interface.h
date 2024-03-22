@@ -458,15 +458,9 @@ void allocateAndCopyToGpu(std::unordered_map<const void *, void *> &cpuToGpuMapp
   cpuToGpuMapping[hostMem] = deviceMem;
   CopyToGpu(hostMem, deviceMem, nByte);
 
-#if __cplusplus >= 201703L
   if constexpr (sizeof...(Args_t) > 0) {
     allocateAndCopyToGpu(cpuToGpuMapping, nElement, restToCopy...);
   }
-#else
-  // C++11 "fold expression" hack. Please remove once VecGeom moves to c++17.
-  int expandParameterPack[] = {0, ((void)allocateAndCopyToGpu(cpuToGpuMapping, nElement, restToCopy), 0)...};
-  (void)expandParameterPack[0]; // Make nvcc happy
-#endif
 }
 
 } // namespace CudaInterfaceHelpers
