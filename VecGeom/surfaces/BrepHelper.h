@@ -325,6 +325,8 @@ public:
     // Setting initial extent mask
     side.fExtent.type  = FrameType::kZPhi;
     ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
+    auto sideext_local =
+        sideext.InverseTransform(fSurfData->fGlobalTrans[fSurfData->fFramedSurf[side.fSurfaces[0]].fTrans]);
 
     // loop over remaining frames on the side
     for (int i = 1; i < side.fNsurf; ++i) {
@@ -334,7 +336,7 @@ public:
       ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
       auto extFrame              = extLocal.InverseTransform(fSurfData->fGlobalTrans[framed_surf.fTrans]);
       // Combine with current extent
-      bool success = sideext.CombineWith(extFrame);
+      bool success = sideext_local.CombineWith(extFrame);
       if (!success) {
         VECGEOM_LOG(critical) << "ComputeCylinderExtent error";
         return false;
@@ -343,7 +345,7 @@ public:
 
     // Add new extent mask to the vector
     int id = fCPUdata.fZPhiMasks.size();
-    fCPUdata.fZPhiMasks.push_back(sideext);
+    fCPUdata.fZPhiMasks.push_back(sideext_local);
     side.fExtent.id = id;
     return true;
   }
@@ -414,16 +416,21 @@ public:
     }
     case SurfaceType::kCylindrical: {
       ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-      printf(
-          "\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, %g}}\n",
-          surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
-          extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1]);
+      CylData_t const &cyld  = fSurfData->fCylSphData[fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.id];
+      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
+             "%g}}, {radius{%g}}\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
+             extL.rangeZ[1], extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1], cyld.radius);
       break;
     }
     case SurfaceType::kConical: {
-      ConeData_t const &extL = fSurfData->fConeData[surf.fLeftSide.fExtent.id - fSurfData->fNcone];
-      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
-             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.radius, extL.slope);
+      ZPhiMask_t const &extL  = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
+      ConeData_t const &coned = fSurfData->fConeData[fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.id];
+      printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d:  {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
+             "%g}}, {radius{%g}, slope{%g}}\n",
+             surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0],
+             extL.rangeZ[1], extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1], coned.radius,
+             coned.slope);
       break;
     }
     case SurfaceType::kElliptical:
@@ -467,10 +474,11 @@ public:
         break;
       }
       case SurfaceType::kConical: {
-        ConeData_t const &extL = fSurfData->fConeData[surf.fRightSide.fExtent.id - fSurfData->fNcone];
-        printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {radius{%g}, slope{%g}}\n",
-               surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extL.radius,
-               extL.slope);
+        ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
+        printf("\n   \x1B[31mright\x1B[0m: %d surfaces, num_parents=%d, extent %d:  {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
+               "%g}}\n",
+               surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeZ[0],
+               extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
         break;
       }
       case SurfaceType::kElliptical:
@@ -1130,7 +1138,7 @@ private:
       case SurfaceType::kConical:
         // use radius at origin, slope, and normal for hashing
         hash = hash_combine(
-          hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance));
+            hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance));
         hash = hash_combine(hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance));
         for (int i = 0; i < 3; i++) {
           hash = hash_combine(hash, std::roundl(normal[i] / tolerance));

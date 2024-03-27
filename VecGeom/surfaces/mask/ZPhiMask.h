@@ -95,7 +95,7 @@ struct ZPhiMask {
   Real_t Radius(Real_t z) const
   {
     Real_t t = vecCore::math::Sqrt((invcalf - Real_t(1)) * (invcalf + Real_t(1)));
-    return r0 + t * (z - 0.5 * (rangeZ[0] + rangeZ[1]));
+    return r0 + t * z;
   }
 
   /// @brief Check if local point is in the phi range
@@ -140,6 +140,9 @@ struct ZPhiMask {
     frame.rangeZ[0] = local[2];
     local           = trans.InverseTransform(Vector3D<Real_t>{0, 0, rangeZ[1]});
     frame.rangeZ[1] = local[2];
+
+    // Convert radius at 0
+    frame.r0 = Radius(-trans.Translation()[2]);
 
     if (!isFullCirc) {
       // Convert phi range
