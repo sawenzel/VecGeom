@@ -32,7 +32,7 @@ struct ReducedPoly {
 
   bool IsRightSided(Vector3 v1, Vector3 v2, Vector3 v3) const
   {
-    double dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
+    Real_t dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
     return (dot < -vecgeom::kTolerance) ? false : true;
   };
 
@@ -40,7 +40,7 @@ struct ReducedPoly {
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
   /// @return If the ReducedPoly polygon is convex
-  bool IsConvex(const double *vertx, const double *verty)
+  bool IsConvex(const Real_t *vertx, const Real_t *verty)
   {
     if (Nvert == 3) return true;
     int j, k;
@@ -61,7 +61,7 @@ struct ReducedPoly {
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
   /// @return If the ReducedPoly polygon is convex
-  bool IsSegConvex(const double *vertx, const double *verty, int i1, int i2 = -1)
+  bool IsSegConvex(const Real_t *vertx, const Real_t *verty, int i1, int i2 = -1)
   {
     if (i2 < 0) i2 = (i1 + 1) % Nvert;
 
@@ -100,7 +100,7 @@ struct ReducedPoly {
   ///        and creates the list of gaps, which contains the list of concave indices per gap
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
-  void GetConvIndices(const double *vertx, const double *verty)
+  void GetConvIndices(const Real_t *vertx, const Real_t *verty)
   {
     int iseg = 0;
     int ivnew;
@@ -231,8 +231,8 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
 
   Vector3 section_origin1(0, 0, shell.GetLowerZ());
   Vector3 section_origin2(0, 0, shell.GetUpperZ());
-  double section_scale1 = 1;
-  double section_scale2 = 1;
+  Real_t section_scale1 = 1;
+  Real_t section_scale2 = 1;
 
   // recursive function to generate side surfaces of the extruded from a polygon
   std::function<void(const ReducedPoly<Real_t> &, int)> GenerateSurfaces = [&](ReducedPoly<Real_t> input_poly,

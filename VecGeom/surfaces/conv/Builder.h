@@ -139,7 +139,7 @@ Frame CreateFrameFromVertices(Container &points, Transformation &trans)
     // Check for rectangular frame
     // The 0->1 vector is aligned with the local Ox
     bool rectangle = ApproxEqualVector(points[1] - points[0], points[2] - points[3]);
-    rectangle &= ApproxEqual((points[1] - points[0]).Dot(points[3] - points[0]), 0.);
+    rectangle &= ApproxEqual((points[1] - points[0]).Dot(points[3] - points[0]), Real_t(0.));
     if (rectangle) {
       auto dx = 0.5 * (points[1] - points[0]).Mag();
       auto dy = 0.5 * (points[3] - points[0]).Mag();
