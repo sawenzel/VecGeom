@@ -175,6 +175,8 @@ public:
       for (auto parent_ind = top_parent; parent_ind >= 0; --parent_ind) {
         auto &parent_frame = fCPUdata.fFramedSurf[side.fSurfaces[parent_ind]];
         if (parent_frame.fParent < 0) num_parents++;
+        // Non-embedding frames cannot be considered parents
+        if (!parent_frame.fEmbedding) continue;
         auto parent_navind = parent_frame.fState;
         // loop remaining frames
         for (int i = 0; i < parent_ind; ++i) {
@@ -570,9 +572,11 @@ public:
   /// @return Success of operation
   bool CreateCommonSurfacesScenes()
   {
-    int nphysical = 0;
-    int maxscene  = -1;
-    int numscenes = 0;
+    constexpr char kLside = 0x01;
+    constexpr char kRside = 0x02;
+    int nphysical         = 0;
+    int maxscene          = -1;
+    int numscenes         = 0;
     vecgeom::NavigationState state;
     int ntot = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
     std::vector<bool> visited(ntot, false);
@@ -654,6 +658,7 @@ public:
         auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
         framed_surf.fLogicId   = lsurf.fLogicId;
         framed_surf.fSurfIndex = lsurf.fSurfIndex;
+        framed_surf.fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
         assert(lsurf.fSurfIndex < nsurf_local);
 
         char iside = 0;
@@ -670,15 +675,16 @@ public:
           // Create the surface once also in the new scene if the shell belongs to one
           if (!visited[ivol]) {
             // Make a new top framed surface in the new scene
-            int id_surf_new = fCPUdata.fFramedSurf.size();
+            int id_surf_scene = fCPUdata.fFramedSurf.size();
             // Store the local transformation of the scene volume surface
             trans_id = fCPUdata.fGlobalTrans.size();
             fCPUdata.fGlobalTrans.push_back(fCPUdata.fLocalTrans[lsurf.fTrans]);
             fCPUdata.fFramedSurf.push_back(
                 {lsurf.fSurface, lsurf.fFrame, trans_id, 0 /*top in scene*/, lsurf.fNeverCheck});
-            fCPUdata.fFramedSurf.back().fLogicId   = lsurf.fLogicId;
-            fCPUdata.fFramedSurf.back().fSurfIndex = lsurf.fSurfIndex;
-            auto isurf_scene                       = CreateCommonSurface(id_surf_new, ivol, newscene_id, iframe, iside);
+            fCPUdata.fFramedSurf[id_surf_scene].fLogicId   = lsurf.fLogicId;
+            fCPUdata.fFramedSurf[id_surf_scene].fSurfIndex = lsurf.fSurfIndex;
+            fCPUdata.fFramedSurf[id_surf_scene].fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
+            auto isurf_scene = CreateCommonSurface(id_surf_scene, ivol, newscene_id, iframe, iside);
 
             // This assert was to ensure that the first surface of a new volume must be on the left side
             // For booleans, this is not strictly true, so we remove this as a consequence of !1075
@@ -687,20 +693,23 @@ public:
 
             // Add the CS pointer to the frame in the parent scene. So if a track enters the frame it is relocated in
             // this frame, it checs the info on the scene CS
-            framed_surf.fSceneCS                                          = isurf_scene;
-            framed_surf.fSceneCSind                                       = iframe;
+            framed_surf.fSceneCS = isurf_scene;
+            // Frames on sides are sorted after, so store the global surface index for now
+            // After sorting we change this index the the index of the frame on the side
+            framed_surf.fSceneCSind = (iside == kLside) ? id_surf_scene : -id_surf_scene;
             fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex] = id_surf;
             if (fVerbose > 0) {
-              VECGEOM_LOG(info) << "scene " << newscene_id << ": top framed surface " << id_surf_new << " on CS "
+              VECGEOM_LOG(info) << "scene " << newscene_id << ": top framed surface " << id_surf_scene << " on CS "
                                 << isurf_scene;
-              std::cout << fCPUdata.fLocalTrans[lsurf.fTrans] << "\n";
+              //std::cout << fCPUdata.fLocalTrans[lsurf.fTrans] << "\n";
+              VECGEOM_LOG(info) << "  linked to CS " << isurf << " surf_index=" << lsurf.fSurfIndex;
             }
           } else {
             // We need to assign the scene CS pointer to the framed surface
-            int id_surf_new         = fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex];
-            auto &framed_surf_scene = fCPUdata.fFramedSurf[id_surf_new];
-            framed_surf.fSceneCS    = framed_surf_scene.fSceneCS;
-            framed_surf.fSceneCSind = framed_surf_scene.fSceneCSind;
+            int id_surf_first       = fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex];
+            auto &framed_surf_first = fCPUdata.fFramedSurf[id_surf_first];
+            framed_surf.fSceneCS    = framed_surf_first.fSceneCS;
+            framed_surf.fSceneCSind = framed_surf_first.fSceneCSind;
           }
         }
       }
@@ -713,6 +722,57 @@ public:
       }
       visited[ivol] = is_scene;
       state.Pop();
+    };
+
+    auto checkExitingCandidates = [&](unsigned short scene_id, int state_id, size_t nsurf) {
+      auto &candidatesExiting = fCPUdata.GetCandidatesExiting(scene_id, state_id);
+      int ivol                = state.GetLogicalId();
+      auto &shell             = fCPUdata.fShells[ivol];
+      for (size_t isurf = 0; isurf < nsurf; ++isurf) {
+        auto surf = fCPUdata.fLocalSurfaces[shell.fSurfaces[isurf]];
+        if ((surf.fFrame.type == FrameType::kNoFrame && candidatesExiting[isurf] > 0) ||
+            (surf.fFrame.type != FrameType::kNoFrame && candidatesExiting[isurf] == 0)) {
+          std::cout << "=== Wrong candidates for state:\n";
+          state.Print();
+          printf("   candExiting:   ");
+          int j = 0;
+          for (auto candidate : candidatesExiting)
+            printf("  %d: %d ", j++, candidate);
+          printf("\n");
+          return false;
+        }
+      }
+      return true;
+    };
+
+    // recursive geometry visitor lambda validating exiting candidates
+    typedef std::function<void(vecgeom::VPlacedVolume const *)> funcValidate_t;
+    funcValidate_t validateExitingCandidates = [&](vecgeom::VPlacedVolume const *pvol) {
+      state.Push(pvol);
+      const auto vol          = pvol->GetLogicalVolume();
+      auto ivol               = vol->id();
+      auto daughters          = vol->GetDaughters();
+      int nd                  = daughters.size();
+      unsigned short scene_id = 0, newscene_id = 0;
+      bool is_scene               = state.GetSceneId(scene_id, newscene_id);
+      auto state_id               = state.GetId();
+      VolumeShellCPU const &shell = fCPUdata.fShells[ivol];
+      auto nsurf_local            = shell.fSurfaces.size();
+
+      if (!checkExitingCandidates(scene_id, state_id, nsurf_local)) return false;
+      if (is_scene && !visited[ivol]) {
+        if (!checkExitingCandidates(newscene_id, 0, nsurf_local)) return false;
+      }
+
+      bool do_daughters = is_scene ? (!visited[ivol]) : true;
+      if (do_daughters) {
+        for (int id = 0; id < nd; ++id) {
+          validateExitingCandidates(daughters[id]);
+        }
+      }
+      visited[ivol] = is_scene;
+      state.Pop();
+      return true;
     };
 
     // add identity first in the list of global transformations
@@ -754,8 +814,34 @@ public:
       ConvertTransformations(isurf);
     }
 
+    // Adjust scene frame index pointers
+    // Lambda adjusting fSceneCSind
+    auto adjustFrameIndex = [&](int isurf, char iside, int iglob) {
+      auto const &surf = fCPUdata.fCommonSurfaces[isurf];
+      Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+      for (int i = 0; i < side.fNsurf; ++i) {
+        if (side.fSurfaces[i] == std::abs(iglob)) return (iglob > 0) ? i + 1 : -(i + 1);
+      }
+      return 0;
+    };
+
+    for (size_t iframe = 0; iframe < fCPUdata.fFramedSurf.size(); ++iframe) {
+      auto &framed_surf = fCPUdata.fFramedSurf[iframe];
+      if (framed_surf.fSceneCS > 0) {
+        auto iglob = framed_surf.fSceneCSind;
+        auto index = adjustFrameIndex(framed_surf.fSceneCS, kLside, iglob);
+        if (index == 0) index = adjustFrameIndex(framed_surf.fSceneCS, kRside, iglob);
+        if (index != 0) framed_surf.fSceneCSind = index;
+      }
+    }
+
     // Create the full surface candidate list for each navigation state
     CreateCandidateLists();
+
+    // Validate exiting candidates
+    std::fill(visited.begin(), visited.end(), false);
+    state.Clear();
+    validateExitingCandidates(world);
 
     // Now update the surface data structure used for navigation
     UpdateSurfData();
@@ -839,6 +925,7 @@ public:
     auto addSurfToSideStates = [&](int isurf, char iside) {
       auto const &surf = fCPUdata.fCommonSurfaces[isurf];
       Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+      auto scene_id    = surf.GetSceneId();
       for (int i = 0; i < side.fNsurf; ++i) {
         int idglob             = side.fSurfaces[i];
         auto const &framedsurf = fCPUdata.fFramedSurf[idglob];
@@ -846,16 +933,16 @@ public:
         auto state_id = state.GetId();
         auto surf_ind = framedsurf.fSurfIndex;
 
-        auto &candidatesExiting = fCPUdata.GetCandidatesExiting(surf.GetSceneId(), state_id);
-        auto &frameIndExiting   = fCPUdata.GetFrameIndExiting(surf.GetSceneId(), state_id);
-        auto &sidesExiting      = fCPUdata.GetSidesExiting(surf.GetSceneId(), state_id);
+        auto &candidatesExiting = fCPUdata.GetCandidatesExiting(scene_id, state_id);
+        auto &frameIndExiting   = fCPUdata.GetFrameIndExiting(scene_id, state_id);
+        auto &sidesExiting      = fCPUdata.GetSidesExiting(scene_id, state_id);
         // We need to store the surface candidate and the frame index for the slot matching the local surface index
         candidatesExiting[surf_ind] = isurf;
         frameIndExiting[surf_ind]   = i;
         // Exiting frames may exist on both sides
         sidesExiting[surf_ind] |= iside;
         if (fVerbose > 0) {
-          printf("  added to exiting of state on scene %d: ", surf.GetSceneId());
+          printf("  added to exiting of state on scene %d: ", scene_id);
           state.PrintTop();
           int j = 0;
           printf("candExiting:   ");

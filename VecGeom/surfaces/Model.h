@@ -244,7 +244,8 @@ struct FramedSurface {
   int fSceneCSind{0};       ///< Index of the corresponding frame on the scene CS
   unsigned fSurfIndex{0};   ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
-  bool fNeverCheck{false};  ///< This frames should never be checked
+  bool fNeverCheck{false};  ///< The frame should never be checked
+  bool fEmbedding{true};    ///< The frame always embeds daughter state frames in on the same CS
 
   FramedSurface() = default;
   FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,
@@ -559,70 +560,37 @@ struct SurfData {
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData_t const &GetCylData(int id) const
-  {
-    return fCylSphData[id];
-  }
+  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  SphData_t const &GetSphData(int id) const
-  {
-    return fCylSphData[id];
-  }
+  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ConeData_t const &GetConeData(int id) const
-  {
-    return fConeData[id];
-  }
+  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  EllipData_t const &GetEllipData(int id) const
-  {
-    return fEllipData[id];
-  }
+  EllipData_t const &GetEllipData(int id) const { return fEllipData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TorusData_t const &GetTorusData(int id) const
-  {
-    return fTorusData[id];
-  }
+  TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Arb4Data_t const &GetArb4Data(int id) const
-  {
-    return fArb4Data[id];
-  }
+  Arb4Data_t const &GetArb4Data(int id) const { return fArb4Data[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  WindowMask_t const &GetWindowMask(int id) const
-  {
-    return fWindowMasks[id];
-  }
+  WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  RingMask_t const &GetRingMask(int id) const
-  {
-    return fRingMasks[id];
-  }
+  RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ZPhiMask_t const &GetZPhiMask(int id) const
-  {
-    return fZPhiMasks[id];
-  }
+  ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TriangleMask_t const &GetTriangleMask(int id) const
-  {
-    return fTriangleMasks[id];
-  }
+  TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  QuadMask_t const &GetQuadMask(int id) const
-  {
-    return fQuadMasks[id];
-  }
+  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE

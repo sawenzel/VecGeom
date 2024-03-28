@@ -119,6 +119,18 @@ struct NavTuple {
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  bool IsOutside() const { return (fLevel == 0) && (fNavInd[0] == 0); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void Push(NavIndex_t value)
+  {
+    if (!IsOutside()) fLevel++;
+    fNavInd[fLevel] = value;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   void Set(NavIndex_t value) { fNavInd[fLevel] = value; }
 
   VECGEOM_FORCE_INLINE
@@ -363,6 +375,12 @@ public:
   VECGEOM_FORCE_INLINE
   static bool GetSceneIdImpl(NavTuple_t const &nav_tuple, unsigned short &scene_id, unsigned short &newscene_id)
   {
+    auto top = nav_tuple.Top();
+    if (top == 0) {
+      scene_id    = GetParentNewSceneImpl(nav_tuple);
+      newscene_id = scene_id;
+      return true;
+    }
     return GetSceneIdImpl(nav_tuple.Top(), scene_id, newscene_id);
   }
 
@@ -388,9 +406,20 @@ public:
   VECGEOM_FORCE_INLINE
   static unsigned short GetParentSceneImpl(NavTuple_t const &nav_tuple)
   {
-    if (nav_tuple.fLevel <= 1) return 0;
+    if (nav_tuple.fLevel < 1) return 0;
     auto top_parent = nav_tuple[nav_tuple.fLevel - 1];
     return *reinterpret_cast<const unsigned short *>(NavIndAddr(top_parent + 4));
+  }
+
+  /// @brief Implementation for getting the parent scene id
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static unsigned short GetParentNewSceneImpl(NavTuple_t const &nav_tuple)
+  {
+    if (nav_tuple.fLevel < 1) return 0;
+    auto top_parent = nav_tuple[nav_tuple.fLevel - 1];
+    auto scenes     = reinterpret_cast<const unsigned short *>(NavIndAddr(top_parent + 4));
+    return scenes[1];
   }
 
   /// @brief Implementation for getting the local level associated with a navigation index in the current scene
@@ -962,25 +991,27 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void Print() const
   {
-    if (fNavTuple.Top() == 0) {
+    if (fNavTuple.Top() == 0 && fNavTuple.fLevel == 0) {
       printf("navInd=0, id=0, path=outside\n");
       return;
     }
+    NavTuple_t nav_tuple;
     auto level = GetLevel();
     printf("navInd=");
     for (unsigned i = 0; i <= fNavTuple.fLevel; ++i) {
       unsigned short scene_id = 0, newscene_id = 0;
-      GetSceneIdImpl(fNavTuple[i], scene_id, newscene_id);
+      nav_tuple.Push(fNavTuple[i]);
+      GetSceneIdImpl(nav_tuple, scene_id, newscene_id);
       printf("s%u:%u", scene_id, fNavTuple[i]);
-      if (i + 1 < fNavTuple.fLevel) printf(" | ");
+      if (i < fNavTuple.fLevel) printf(" | ");
     }
     printf(", id=%u, level=%u/%u,  onBoundary=%s, path=<", GetId(), level, GetMaxLevel(),
            (fOnBoundary ? "true" : "false"));
     int last_scene = 0;
+    nav_tuple.Clear();
     for (int i = 0; i <= level; ++i) {
-      auto nav_tuple = GetNavTupleImpl(fNavTuple, i);
-      if (nav_tuple.Top() == 0) continue;
       unsigned short scene_id = 0, newscene_id = 0;
+      nav_tuple = GetNavTupleImpl(fNavTuple, i);
       GetSceneIdImpl(nav_tuple, scene_id, newscene_id);
       if (scene_id > last_scene) {
         printf(" | ");
@@ -988,7 +1019,7 @@ public:
       }
 #ifndef VECCORE_CUDA
       auto vol = At(i);
-      printf("/%s", vol ? vol->GetLabel().c_str() : "NULL");
+      printf("/%s", vol ? vol->GetLabel().c_str() : "TOP_SCENE");
 #else
       printf("/%u", nav_tuple.Top());
 #endif
@@ -1007,7 +1038,7 @@ public:
     printf("navInd=");
     auto top                = fNavTuple.Top();
     unsigned short scene_id = 0, newscene_id = 0;
-    GetSceneIdImpl(top, scene_id, newscene_id);
+    GetSceneIdImpl(fNavTuple, scene_id, newscene_id);
     printf("s%u:%u", scene_id, top);
 
     printf(", id=%u, level=%u/%u,  onBoundary=%s, path=<", GetId(), level, GetMaxLevel(),
@@ -1015,12 +1046,11 @@ public:
     int top_scene = scene_id;
     for (int i = 0; i <= level; ++i) {
       auto nav_tuple = GetNavTupleImpl(fNavTuple, i);
-      if (nav_tuple.Top() == 0) continue;
       GetSceneIdImpl(nav_tuple, scene_id, newscene_id);
       if (scene_id < top_scene) continue;
 #ifndef VECCORE_CUDA
       auto vol = At(i);
-      printf("/%s", vol ? vol->GetLabel().c_str() : "NULL");
+      printf("/%s", vol ? vol->GetLabel().c_str() : "TOP_SCENE");
 #else
       printf("/%u", nav_tuple.Top());
 #endif

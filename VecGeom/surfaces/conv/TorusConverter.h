@@ -30,6 +30,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   assert(rtor - rmin > -vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
+  bool halfCut   = ApproxEqual(dphi, vecgeom::kPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
@@ -76,6 +77,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
       builder::CreateLocalTransformation<Real_t>({rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
+  if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(lplus); // '('
@@ -86,6 +88,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
       builder::CreateLocalTransformation<Real_t>({rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
+  if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);

@@ -100,6 +100,14 @@ int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int 
 }
 
 template <typename Real_t>
+FramedSurface &GetSurface(int isurf)
+{
+  auto &cpudata = CPUsurfData<Real_t>::Instance();
+  assert(size_t(isurf) < cpudata.fLocalSurfaces.size());
+  return cpudata.fLocalSurfaces[isurf];
+}
+
+template <typename Real_t>
 int AddSurfaceToShell(int logical_id, int isurf)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
