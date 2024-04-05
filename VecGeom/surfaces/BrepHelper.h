@@ -143,27 +143,11 @@ public:
 
   void SortSides(int common_id)
   {
-    // lambda to remove a surface from a side
-    /*
-    auto removeSurface = [&](Side &side, int ind) {
-      for (int i = ind + 1; i < side.fNsurf; ++i)
-        side.fSurfaces[i - 1] = side.fSurfaces[i];
-      if (ind < side.fNsurf) side.fNsurf--;
-    };
-    */
-
     // lambda to detect surfaces on a side that have identical frame
-    auto sortAndRemoveCommonFrames = [&](Side &side) {
+    auto sortFrames = [&](Side &side) {
       if (!side.fNsurf) return;
       std::sort(side.fSurfaces, side.fSurfaces + side.fNsurf,
                 [&](int i, int j) { return fCPUdata.fFramedSurf[i] < fCPUdata.fFramedSurf[j]; });
-      /*
-      for (int i = 0; i < side.fNsurf - 1; ++i) {
-        for (int j = side.fNsurf - 1; j > i; --j) {
-          if (EqualFrames(side, i, j)) removeSurface(side, j);
-        }
-      }
-      */
     };
 
     // lambda to find all parent frames on one side
@@ -175,10 +159,13 @@ public:
       for (auto parent_ind = top_parent; parent_ind >= 0; --parent_ind) {
         auto &parent_frame = fCPUdata.fFramedSurf[side.fSurfaces[parent_ind]];
         if (parent_frame.fParent < 0) num_parents++;
-        // Non-embedding frames cannot be considered parents
-        if (!parent_frame.fEmbedding) continue;
+        // Non-embedding frames may be several on the side
         auto parent_navind = parent_frame.fState;
-        // loop remaining frames
+        if (!parent_frame.fEmbedding) {
+          // Check if the frame before has the same state
+          if (parent_ind > 0 && fCPUdata.fFramedSurf[side.fSurfaces[parent_ind - 1]].fState == parent_navind) continue;
+        }
+        // re-parent frames before if they have descendent states
         for (int i = 0; i < parent_ind; ++i) {
           auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
@@ -189,8 +176,8 @@ public:
       assert(num_parents > 0);
     };
 
-    sortAndRemoveCommonFrames(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
-    sortAndRemoveCommonFrames(fCPUdata.fCommonSurfaces[common_id].fRightSide);
+    sortFrames(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
+    sortFrames(fCPUdata.fCommonSurfaces[common_id].fRightSide);
     findParentFramedSurf(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
     findParentFramedSurf(fCPUdata.fCommonSurfaces[common_id].fRightSide);
   }
@@ -391,6 +378,64 @@ public:
     return true;
   }
 
+  void PrintFramedSurface(FramedSurface const &surf)
+  {
+    // get frame data
+    std::stringstream framedata;
+    framedata << "FS: " << to_cstring(surf.fFrame.type);
+    switch (surf.fFrame.type) {
+    case FrameType::kRing: {
+      auto const &data = fCPUdata.fRingMasks[surf.fFrame.id];
+      framedata << " { rangeR{" << data.rangeR[0] << ", " << data.rangeR[1] << "}, isFullCirc{"
+                << (data.isFullCirc ? "true" : "false") << "}, vecSPhi{" << data.vecSPhi << "}, vecEPhi{"
+                << data.vecEPhi << "}}";
+    } break;
+    case FrameType::kZPhi: {
+      auto const &data = fCPUdata.fZPhiMasks[surf.fFrame.id];
+      framedata << " { rangeZ{" << data.rangeZ[0] << ", " << data.rangeZ[1] << "}, alpha{"
+                << vecCore::math::ACos(1. / data.invcalf) * vecgeom::kRadToDeg << "}, vecSPhi{" << data.vecSPhi
+                << "}, vecEPhi{" << data.vecEPhi << "}, isFullCirc{" << (data.isFullCirc ? "true" : "false") << "}}";
+
+    } break;
+    case FrameType::kWindow: {
+      auto const &data = fCPUdata.fWindowMasks[surf.fFrame.id];
+      framedata << " { rangeU{" << data.rangeU[0] << ", " << data.rangeU[1] << "}, rangeV{" << data.rangeV[0] << ", "
+                << data.rangeV[1] << "}}";
+    } break;
+    // TODO: Support these
+    case FrameType::kTriangle: {
+      auto const &data = fCPUdata.fTriangleMasks[surf.fFrame.id];
+      framedata << " { p{ 0:{" << data.p_[0] << "}, 1:{" << data.p_[1] << "}, 2:{" << data.p_[2] << "}, n0:{"
+                << data.n_[0] << "}, n1:{" << data.n_[1] << "}, n2:{" << data.n_[2] << "}}";
+    } break;
+    case FrameType::kQuadrilateral: {
+      auto const &data = fCPUdata.fQuadMasks[surf.fFrame.id];
+      framedata << " { p{ 0:{" << data.p_[0] << "}, 1:{" << data.p_[1] << "}, 2:{" << data.p_[2] << "}, 3:{"
+                << data.p_[3] << "}, n0:{" << data.n_[0] << "}, n1:{" << data.n_[1] << "}, n2:{" << data.n_[2]
+                << "}, n3:{" << data.n_[3] << "}}";
+    } break;
+    case FrameType::kNoFrame:
+    case FrameType::kRangeZ:
+      // return (local[2] > vecgeom::MakeMinusTolerant<true>(u[0]) &&
+      //        local[2] < vecgeom::MakePlusTolerant<true>(u[1]));
+    case FrameType::kRangeSph:
+      // return (rsq > vecgeom::MakeMinusTolerantSquare<true>(u[0]) &&
+      //        rsq < vecgeom::MakePlusTolerantSquare<true>(u[1]));
+      break;
+    default:
+      // unhandled
+      framedata << " { no such frame type }";
+    };
+
+    framedata << "    fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{"
+              << surf.fNeverCheck << "} ";
+    if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
+    if (surf.fFrame.type != FrameType::kNoFrame) framedata << "fSurfIndex{" << surf.fSurfIndex << "} ";
+    std::cout << framedata.str() << "\n    fState: ";
+    vecgeom::NavigationState state(surf.fState);
+    state.Print();
+  }
+
   // Printing is ugly currently and scales badly with the new data structure.
   // Perhaps each mask should have its own print() method that returns a string.
   void PrintCommonSurface(int common_id)
@@ -445,16 +490,8 @@ public:
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
-      fSurfData->fGlobalTrans[placed.fTrans].Print();
-      printf("\n    ");
-      if (placed.fFrame.type == FrameType::kWindow) {
-        WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
-        printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
-               mask.rangeV[1]);
-      }
-      vecgeom::NavigationState state(placed.fState);
-      state.Print();
+      printf("%d: iframe=%d ", i, idglob);
+      PrintFramedSurface(placed);
     }
     if (surf.fRightSide.fNsurf > 0) {
       switch (surf.fType) {
@@ -497,16 +534,8 @@ public:
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob         = surf.fRightSide.fSurfaces[i];
       auto const &placed = fSurfData->fFramedSurf[idglob];
-      printf("    surf %d: logic_id: %d parent: %d trans: ", idglob, placed.fLogicId, placed.fParent);
-      fSurfData->fGlobalTrans[placed.fTrans].Print();
-      printf("\n    ");
-      if (placed.fFrame.type == FrameType::kWindow) {
-        WindowMask_t const &mask = fSurfData->fWindowMasks[placed.fFrame.id];
-        printf("  frame %d: {u{%g, %g}, v{%g, %g}}", placed.fFrame.id, mask.rangeU[0], mask.rangeU[1], mask.rangeV[0],
-               mask.rangeV[1]);
-      }
-      vecgeom::NavigationState state(placed.fState);
-      state.Print();
+      printf("%d: iframe=%d ", i, idglob);
+      PrintFramedSurface(placed);
     }
   }
 
@@ -643,7 +672,6 @@ public:
       auto nsurf_local = shell.fSurfaces.size();
       allocateExitingCandidates(scene_id, state_id, nsurf_local);
       if (is_scene && !visited[ivol]) allocateExitingCandidates(newscene_id, 0, nsurf_local);
-
       for (int lsurf_id : shell.fSurfaces) {
         FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         // Ignore 'inside' helper surfaces having no frame
@@ -681,6 +709,8 @@ public:
             fCPUdata.fGlobalTrans.push_back(fCPUdata.fLocalTrans[lsurf.fTrans]);
             fCPUdata.fFramedSurf.push_back(
                 {lsurf.fSurface, lsurf.fFrame, trans_id, 0 /*top in scene*/, lsurf.fNeverCheck});
+            // Watchout: evil bug: cannot use the framed_surf reference after this point, because after
+            // inserting a new frame the array may be re-allocated internally by the vector
             fCPUdata.fFramedSurf[id_surf_scene].fLogicId   = lsurf.fLogicId;
             fCPUdata.fFramedSurf[id_surf_scene].fSurfIndex = lsurf.fSurfIndex;
             fCPUdata.fFramedSurf[id_surf_scene].fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
@@ -692,16 +722,15 @@ public:
             // assert(iside == kLside);
 
             // Add the CS pointer to the frame in the parent scene. So if a track enters the frame it is relocated in
-            // this frame, it checs the info on the scene CS
-            framed_surf.fSceneCS = isurf_scene;
+            // this frame, it checks the info on the scene CS
+            fCPUdata.fFramedSurf[id_surf].fSceneCS = isurf_scene;
             // Frames on sides are sorted after, so store the global surface index for now
             // After sorting we change this index the the index of the frame on the side
-            framed_surf.fSceneCSind = (iside == kLside) ? id_surf_scene : -id_surf_scene;
+            fCPUdata.fFramedSurf[id_surf].fSceneCSind = (iside == kLside) ? id_surf_scene : -id_surf_scene;
             fCPUdata.fSceneShells[ivol].fSurfaces[framed_surf.fSurfIndex] = id_surf;
             if (fVerbose > 0) {
               VECGEOM_LOG(info) << "scene " << newscene_id << ": top framed surface " << id_surf_scene << " on CS "
                                 << isurf_scene;
-              //std::cout << fCPUdata.fLocalTrans[lsurf.fTrans] << "\n";
               VECGEOM_LOG(info) << "  linked to CS " << isurf << " surf_index=" << lsurf.fSurfIndex;
             }
           } else {
@@ -848,7 +877,6 @@ public:
 
     // Compute extents for all sides of common surfaces
     ComputeExtents();
-
     if (fVerbose > 0) {
       for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf)
         PrintCommonSurface(isurf);

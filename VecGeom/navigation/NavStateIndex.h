@@ -509,6 +509,9 @@ public:
   void Print() const;
 
   VECCORE_ATT_HOST_DEVICE
+  static void PrintTopImpl(NavIndex_t nav_ind) { NavStateIndex(nav_ind).Print(); }
+
+  VECCORE_ATT_HOST_DEVICE
   void PrintTop() const { Print(); }
 
   VECCORE_ATT_HOST_DEVICE

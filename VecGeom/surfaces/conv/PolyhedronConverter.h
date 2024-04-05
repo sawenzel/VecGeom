@@ -174,9 +174,12 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1},
                     {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
-        builder::GetSurface<Real_t>(isurf).fEmbedding = false;
-        logic.push_back(land);
-        logic.push_back(isurf);
+        // the bottom surface may be degenerated
+        if (isurf >= 0) {
+          builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+          logic.push_back(land);
+          logic.push_back(isurf);
+        }
       }
 
       // Add top frames
@@ -186,9 +189,12 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
                     {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
-        builder::GetSurface<Real_t>(isurf).fEmbedding = false;
-        logic.push_back(land);
-        logic.push_back(isurf);
+        // the top surface may be degenerated
+        if (isurf >= 0) {
+          builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+          logic.push_back(land);
+          logic.push_back(isurf);
+        }
       }
     }
 

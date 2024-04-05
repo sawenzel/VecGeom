@@ -84,7 +84,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   logic.push_back(land);
 
   // surface at -dz
-  assert(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta()) > vecgeom::kTolerance)); // assert before division
+  assert(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta())) > vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow,
@@ -101,7 +101,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
     surfdata[0] = tube.rmin();
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
-        builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
+        builder::CreateFrame<Real_t>(FrameType::kZPhi,
+                                     ZPhiMask_t{aMin[2], aMax[2], fullCirc, tube.rmin(), tube.rmin(), sphi, ephi}),
         /*identity transformation*/ 0);
     auto &surf3 = cpudata.fLocalSurfaces[isurf];
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -114,7 +115,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   surfdata[0] = tube.rmax();
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
-      builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{aMin[2], aMax[2], fullCirc, sphi, ephi}),
+      builder::CreateFrame<Real_t>(FrameType::kZPhi,
+                                   ZPhiMask_t{aMin[2], aMax[2], fullCirc, tube.rmax(), tube.rmax(), sphi, ephi}),
       /*identity transformation*/ 0);
   auto &surf4 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);

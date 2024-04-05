@@ -703,7 +703,7 @@ bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
   int scene_id = 0;
   int ierr     = visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
 #else
-  int ierr = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  int ierr       = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
   NavStatePath::ReleaseInstance(state);
   if (ierr > 0) return false;
@@ -738,8 +738,8 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
     NavState::PushImpl(nav_ind, pdaughter);
     unsigned short dscene_id = 0, dnewscene_id = 0;
     NavState::GetSceneIdImpl(nav_ind, dscene_id, dnewscene_id);
-    if (scene && (dscene_id <= scene_id)) {
-      VECGEOM_LOG(critical) << "Validate: incompatible scene index " << dscene_id << " was supposed larger than "
+    if (scene && (dscene_id == scene_id)) {
+      VECGEOM_LOG(critical) << "Validate: incompatible scene index " << dscene_id << " was supposed different than "
                             << scene_id << " for " << state->At(i - 1)->id() << "/" << pdaughter->id();
       error = 1;
       return 0;

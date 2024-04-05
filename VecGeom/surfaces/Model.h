@@ -235,7 +235,7 @@ struct FramedSurface {
   UnplacedSurface fSurface; ///< Surface identifier
   Frame fFrame;             ///< Frame
   int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fParent{-1};          ///< Topmost parent frame index on the common surface
+  int fParent{-1};          ///< Index of the first parent frame on the common surface
   int fLogicId{0};          ///< Logic flag for surface:
                             ///<   0        = non-Bool
                             ///<   positive = true logic surface
@@ -260,11 +260,13 @@ struct FramedSurface {
     using vecgeom::NavigationState;
     auto level1 = NavigationState::GetLevelImpl(fState);
     auto level2 = NavigationState::GetLevelImpl(other.fState);
-    if (level1 > level2)
-      return true;
-    else if (level1 < level2)
-      return false;
+    if (level1 > level2) return true;
+    if (level1 < level2) return false;
     if (fState < other.fState) return true;
+    if (fState > other.fState) return false;
+    // If states are identical, sort by fSurfIndex
+    if (fSurfIndex == other.fSurfIndex) VECGEOM_LOG(critical) << "### Found frames with same state and surface index";
+    if (fSurfIndex < other.fSurfIndex) return true;
     return false;
   }
 
@@ -277,6 +279,10 @@ struct FramedSurface {
     // We may need to cache the logical volume id in the surface directly
     return vecgeom::NavigationState::GetLogicalIdImpl(fState);
   }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECCORE_FORCE_NOINLINE
+  void PrintState() const { vecgeom::NavigationState::PrintTopImpl(fState); }
 
   /// Transform point and direction to the local frame
   template <typename Real_t>

@@ -84,16 +84,15 @@ VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecge
     if (framedsurf.fNeverCheck) return ind;
     // If this frame has the same state as the exited state (this can happen in Booleans
     // having internal surfaces), it means that the current touchable has an internal common
-    // surface being crossed, so this surface must be ignored
-    if (framedsurf.fState == in_navind) continue;
+    // surface being crossed, so this surface must be ignored.
+    // NOTE: this is NOT the case if a new scene is entered
+    if (!common_surface.IsSceneSurface() && framedsurf.fState == in_navind) continue;
     auto inframe = framedsurf.InsideFrame(onsurf_local, surfdata);
     if (!inframe) continue;
     if (framedsurf.fLogicId) {
-      auto pushedPoint        = point + (distance + kPushDistance) * direction;
-      auto checked_state      = in_state;
-      unsigned short scene_id = 0, newscene_id = 0;
-      in_state.GetSceneId(scene_id, newscene_id);
-      if (common_surface.fSceneId > scene_id)
+      auto pushedPoint   = point + (distance + kPushDistance) * direction;
+      auto checked_state = in_state;
+      if (common_surface.IsSceneSurface())
         checked_state.PushScene(framedsurf.fState);
       else
         checked_state.SetNavIndex(framedsurf.fState);
@@ -222,6 +221,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   auto const &new_cand     = *new_cand_ptr;
   bool found               = false;
   bool exiting             = false;
+  bool is_scene_surface    = false;
+  bool exiting_scene       = false;
   bool relocated           = false;
   bool relocated_left_side = false;
   bool recompute_onsurf    = false;
@@ -273,7 +274,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     std::cout << " to out -> surface " << isurf << " hit at dist = " << dist << " -> ";
 #endif
     Vector3D<Real_t> onsurf_crt = local + dist * localdir;
-
+    is_scene_surface            = surf.IsSceneSurface();
     // We need to check frame intersection
     // This is an exiting surface for in_state
     // First check the frame of the current state on this surface
@@ -288,34 +289,31 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
       if (framedsurf.fState != in_navind) continue;
       inframe = framedsurf.fNeverCheck ? true : framedsurf.InsideFrame(onsurf_crt, surfdata);
+      if (inframe && framedsurf.fLogicId) {
+        // Frame cross does not guarantee a real surface cross in case of Booleans
+        // For a real exiting, the post-crossing point must be outside the Boolean
+        auto pushedPoint = point + (dist + kPushDistance) * direction;
+        // The logic for the frame that is exited can be set to false without a numerical check
+        auto inside = LogicInside(pushedPoint, in_state, surfdata, framedsurf.fLogicId, false);
+        if (inside) inframe = false;
+      }
       if (inframe) {
         // Find the appropriate surface index
-        surf_index       = framedsurf.fSurfIndex;
-        int parent_frame = framedsurf.fParent;
-        while (parent_frame > 0) {
-          surf_index   = exit_side.GetSurface(parent_frame, surfdata).fSurfIndex;
-          parent_frame = exit_side.GetSurface(parent_frame, surfdata).fParent;
-        }
-        if (framedsurf.fLogicId) {
-          auto pushedPoint = point + (dist + kPushDistance) * direction;
-          // The logic for the frame that is exited can be set to false without a numerical check
-          auto inside = LogicInside(pushedPoint, in_state, surfdata, framedsurf.fLogicId, false);
-#if SURF_NAV_DEBUG > 0
-          if (inside) std::cout << " logic exiting still inside -> ";
-#endif
-          // Frame cross does not guarantee a real surface cross in case of Booleans
-          // For a real exiting, the post-crossing point must be outside the Boolean
-          if (inside) inframe = false;
+        surf_index     = framedsurf.fSurfIndex;
+        int parent_ind = framedsurf.fParent;
+        if (is_scene_surface) {
+          // If this is a scene surface, we, need to navigate to parents to find the correct exiting frame
+          exiting_scene = framedsurf.fState == 0;
+          while (parent_ind >= 0) {
+            auto const &exiting_framedsurf = exit_side.GetSurface(parent_ind, surfdata);
+            parent_ind                     = exiting_framedsurf.fParent;
+            surf_index                     = exiting_framedsurf.fSurfIndex;
+            exiting_scene                  = exiting_framedsurf.fState == 0;
+          }
         }
         break;
       }
     }
-#if SURF_NAV_DEBUG > 0
-    if (inframe)
-      std::cout << " HIT\n";
-    else
-      std::cout << " NOT HIT\n";
-#endif
     if (!inframe) continue;
 
     // the current state is correctly exited, so there is a transition on this surface
@@ -333,27 +331,42 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // the default next navigation index is the one of the common state for the surface
     out_state.SetNavIndex(vecgeom::NavigationState(surf.fDefaultState).GetNavIndex());
     out_state.SetBoundaryState(true);
-    // Check if a scene is exited on this surface
-    bool is_scene_surface = surf.IsSceneSurface();
-    while (is_scene_surface) {
+    // Check if a scene surface was crossed
+    while (exiting_scene) {
       // exiting a scene volume, we need to find the matching surface in the parent scene
       // this is the surface among the parent state exiting candidates at surf_index
-      // Move to parent scene reference frame
+      //
+      // Move to parent scene state
       out_state.PopScene();
+      // Get parent scene and state id's
       unsigned short parent_scene_id = 0, dummy_id = 0;
       out_state.GetSceneId(parent_scene_id, dummy_id);
-      auto parent_state_id    = out_state.GetId();
+      auto parent_state_id = out_state.GetId();
+      // Get crossed parent scene common surface and side from the exiting candidates (ordered by the surf_index of the
+      // scene volume surface)
       auto const &cand_scene  = surfdata.GetCandidates(parent_scene_id, parent_state_id);
       isurfcross              = cand_scene[surf_index];
       char sides_scene        = cand_scene.fSides[surf_index];
       relocated_left_side     = (sides_scene & kLside) == 0;
       auto const &parent_surf = surfdata.fCommonSurfaces[isurfcross];
-      // need to convert the onsurf point in the parent scene coordinate system
+      // need to schedule converting the onsurf point in the parent scene coordinate system
       recompute_onsurf = true;
+      exiting_scene    = false;
+      // Is this still a scene surface?
       is_scene_surface = parent_surf.IsSceneSurface();
-      if (is_scene_surface)
-        // Still on a parent scene surface, need to find the parent frame on the left side
-        surf_index = parent_surf.fLeftSide.Top(surfdata).fSurfIndex;
+      if (is_scene_surface) {
+        // Find the first parent frame exited on the side
+        auto const &parent_side = relocated_left_side ? parent_surf.fLeftSide : parent_surf.fRightSide;
+        int parent_ind          = cand_scene.fFrameInd[surf_index];
+        // The parent frame index should be non-negative
+        assert(parent_ind >= 0 && "Found negative parent frame index while exiting scene");
+        while (parent_ind >= 0) {
+          auto const &parent_framedsurf = parent_side.GetSurface(parent_ind, surfdata);
+          surf_index                    = parent_framedsurf.fSurfIndex;
+          parent_ind                    = parent_framedsurf.fParent;
+          exiting_scene                 = parent_framedsurf.fState == 0;
+        }
+      }
     }
     continue; // there may be closer surfaces being crossed
   }
@@ -459,7 +472,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       // Check if this is a portal
       if (framedsurf.fSceneCS > 0) {
         isurfcross             = framedsurf.fSceneCS;
-        relocated_left_side    = true; // a portal frame is always on the left side
+        relocated_left_side    = framedsurf.fSceneCSind > 0 ? true : false;
         auto const &scene_surf = surfdata.fCommonSurfaces[isurfcross];
         // If there are only parent frames on the left side, we can complete relocation
         auto const &scene_side = scene_surf.fLeftSide;
@@ -517,24 +530,28 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
           out_state.PushScene(framedsurf.fState);
         else
           out_state.SetNavIndex(framedsurf.fState);
-        // We may have entered a new scene, so we need to search the scene surface
         relocated = true;
         if (framedsurf.fSceneCS > 0) {
+          // We have entered a new scene, first get to the TOP_SCENE frame
           isurfcross             = framedsurf.fSceneCS;
-          relocated_left_side    = true; // a portal frame is always on the left side
+          relocated_left_side    = framedsurf.fSceneCSind > 0 ? true : false;
           auto const &scene_surf = surfdata.fCommonSurfaces[isurfcross];
           // If there are only parent frames on the left side, we can complete relocation
-          auto const &scene_side = scene_surf.fLeftSide;
-          if (scene_side.fNumParents < scene_side.fNsurf) {
-            // We need to search the daughter frames only
+          auto const &scene_side = relocated_left_side ? scene_surf.fLeftSide : scene_surf.fRightSide;
+
+          // We need to search the daughter states only, if none we have already the solution
+          // If the crossed scene frame is non-embedding, daughter frames will not be parented to it
+          // but they need to be checked nonetheless
+          if (!framedsurf.fEmbedding || scene_side.fNumParents < scene_side.fNsurf) {
             relocated = false;
             // Recompute onsurf
             scene_trans.Clear();
             out_state.TopMatrix(scene_trans);
             local_scene = scene_trans.Transform(point + distance * direction);
             onsurf      = surfdata.fGlobalTrans[scene_surf.fTrans].Transform(local_scene);
-            iframe = CheckFramesEntering(isurfcross, relocated_left_side, in_state, in_navind, kCheckChildren, distance,
-                                         point, direction, onsurf, surfdata);
+            // Need to check frames up to the index of the first frame pointing to the parent state
+            iframe = CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, kCheckChildren,
+                                         distance, point, direction, onsurf, surfdata);
           }
         }
       }

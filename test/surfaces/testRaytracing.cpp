@@ -240,7 +240,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
 }
 //==================================================================================
 void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                       NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1)
+                       NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1)
 {
   int ilast  = nrays;
   int istart = 0;
@@ -258,7 +258,11 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
     auto const &dir = dirs[i];
     crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     do {
-      exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+      exit_surf = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+      if (idebug >= 0 && int(crossings[i].GetNsteps()) == idebug_step) {
+        std::cout << "Debugging step " << idebug_step << " starting from state:\n";
+        start_state.Print();
+      }
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
       if (exit_surf == -1) {
         // Most likely extruding overlap detected, relocating to correct state
@@ -301,6 +305,11 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
   int istep_err       = 0;
   for (auto i = 0; i < nrays; ++i) {
     bool error_dist = !crossings[i].IsEqual(ref_crossings[i], istep_err, /*acceptZeros=*/false);
+    if (error_dist && !debug && num_errors_dist < 10) {
+      std::cout << std::setprecision(16) << "=== error for ray " << i << " at step " << istep_err << "/"
+                << ref_crossings[i].GetNsteps() << ": p{" << points[i] << "} d{" << dirs[i] << "}\n";
+      if (num_errors_dist == 9) std::cout << "=== Only first 10 errors are shown\n";
+    }
     num_errors_dist += error_dist;
     if (debug && error_dist && (num_errors_dist == 1)) {
       // replay first error
@@ -313,7 +322,7 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
         crossings[i].fStates[istep_err].Print();
       }
       PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i);
-      PropagateRaysSurf(nrays, points, dirs, in_states, crossings, i);
+      PropagateRaysSurf(nrays, points, dirs, in_states, crossings, i, istep_err);
     }
   }
   return num_errors_dist;
