@@ -780,7 +780,6 @@ endforeach()
 list(APPEND VECGEOM_EXPORT_VARIABLES "\n# Hints for upstream dependencies")
 foreach(_key
   CUDAToolkit_BIN_DIR VecCore_DIR XercesC_DIR
-  XercesC_LIBRARY XercesC_INCLUDE_DIR
 )
   set(_val "${${_key}}")
   if(_val)
