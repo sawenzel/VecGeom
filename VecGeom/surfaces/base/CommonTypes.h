@@ -334,15 +334,16 @@ struct TorusData {
   /// @return Point inside phi
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool InsidePhi(Vector3D<Real_t> const &local) const
+  bool InsidePhi(Vector3D<Real_t> const &local, bool flip) const
   {
     if (vecSPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance &&
         vecEPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance)
       return true;
+    int flipsign = flip ? -1 : 1;
     AngleVector<Real_t> localAngle{local[0], local[1]};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
-    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
-    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    auto in1    = vecSPhi.CrossZ(localAngle) > -flipsign * vecgeom::kTolerance;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -flipsign * vecgeom::kTolerance;
     return convex ? in1 && in2 : in1 || in2;
   }
 

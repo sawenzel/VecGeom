@@ -17,7 +17,7 @@
 #endif
 
 using namespace vecgeom;
-using Vec3D  = vecgeom::Vector3D<vecgeom::Precision>;
+using Vec3D      = vecgeom::Vector3D<vecgeom::Precision>;
 using BrepHelper = vgbrep::BrepHelper<vecgeom::Precision>;
 using SurfData   = vgbrep::SurfData<vecgeom::Precision>;
 
@@ -55,10 +55,10 @@ static void CreateVecGeomWorld()
   worldLogic->PlaceDaughter(trdLogic, &trdPlacement);
 
   // add a tetrahedron
-  Vector3D<double> v0( 0, 0, 2);
-  Vector3D<double> v1(-1, 1,-2);
-  Vector3D<double> v2(-1,-1,-2);
-  Vector3D<double> v3( 1,-1,-2);
+  Vector3D<double> v0(0, 0, 2);
+  Vector3D<double> v1(-1, 1, -2);
+  Vector3D<double> v2(-1, -1, -2);
+  Vector3D<double> v3(1, -1, -2);
   auto tetSolid = new UnplacedTet(v0, v1, v2, v3);
   auto tetLogic = new LogicalVolume("Tet", tetSolid);
   Transformation3D tetPlacement(-5, 5, 5);
@@ -101,22 +101,21 @@ static void TestHost(Vector3D<Precision> pos, Vector3D<Precision> dir)
 
   vecgeom::Precision distance, dist1, safety;
   auto kPush = 1000 * vecgeom::kToleranceDist<vecgeom::Precision>;
-  auto *nav = NewSimpleNavigator<>::Instance();
+  auto *nav  = NewSimpleNavigator<>::Instance();
   nav->FindNextBoundaryAndStep(pos, dir, state, out, kInfLength, distance);
-  dist1 = LoopNavigator::ComputeStepAndPropagatedState(pos, dir, kInfLength, state, out, kPush);
+  dist1  = LoopNavigator::ComputeStepAndPropagatedState(pos, dir, kInfLength, state, out, kPush);
   safety = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, state);
   printf("VecGeom (NewSimp, LoopNav): dists = %f %f, safety = %f\n", distance, dist1, safety);
 
-  int exit = 0;
+  ExitSurfState exit;
   distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exit);
-  safety   = vgbrep::protonav::ComputeSafety(pos, state, exit);
+  safety   = vgbrep::protonav::ComputeSafety(pos, state, exit.common_id);
   printf("surf@HOST: distance = %f, safety = %f\n", distance, safety);
 }
 
 // In testCUDA.cu
-void TestCUDA(const SurfData &surfData,
-    Precision px, Precision py, Precision pz,
-    Precision dx, Precision dy, Precision dz);
+void TestCUDA(const SurfData &surfData, Precision px, Precision py, Precision pz, Precision dx, Precision dy,
+              Precision dz);
 
 int main(int argc, char *argv[])
 {
@@ -130,11 +129,10 @@ int main(int argc, char *argv[])
   Vec3D vdir = {dir[0], dir[1], dir[2]};
   GeoManager::Instance().SetMinPerScene(1000);
 
-  if(gdml_name.length() >0) {
+  if (gdml_name.length() > 0) {
     printf("Using GDML file: %s\n", gdml_name.c_str());
     CreateVecGeomWorldFromGDML();
-  }
-  else {
+  } else {
     printf("Using programmatic geometry...\n");
     CreateVecGeomWorld();
   }

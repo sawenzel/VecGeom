@@ -38,25 +38,27 @@ struct UnplacedSurface {
   /// @brief A local point is inside if behind the normal within tolerance
   /// @tparam Real_t Floating-point precision type
   /// @param point Point in the local surface coordinates
+  /// @param surfdata data container with the surface data
+  /// @param flip flipping the tolerance for inside (needed for negated booleans)
   /// @return Inside half-space
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata, bool flip) const
   {
     switch (type) {
     case SurfaceType::kPlanar:
-      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point);
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point, flip);
     case SurfaceType::kCylindrical:
-      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point, flip);
     case SurfaceType::kConical:
-      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id)).Inside(point, flip);
     case SurfaceType::kElliptical:
-      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id)).Inside(point, flip);
     case SurfaceType::kSpherical:
-      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point, flip);
     case SurfaceType::kTorus:
-      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point, flip);
     case SurfaceType::kArb4:
-      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id)).Inside(point);
+      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id)).Inside(point, flip);
     };
     return false;
   }
@@ -246,6 +248,7 @@ struct FramedSurface {
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
   bool fNeverCheck{false};  ///< The frame should never be checked
   bool fEmbedding{true};    ///< The frame always embeds daughter state frames in on the same CS
+  bool fOverlapping{false}; ///< The frame is overlapping another frame and requires a relocation after crossing
 
   FramedSurface() = default;
   FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,
@@ -364,8 +367,8 @@ struct Side {
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasExtent() const { return fExtent.id >= 0; }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &GetSurface(int index,
-                                                                               SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface &GetSurface(int index,
+                                                                         SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
   }

@@ -23,12 +23,12 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
   auto reset_bit = [](unsigned &bset, int bit) { bset &= ~(unsigned(1) << bit); };
   auto swap_bit  = [](unsigned &bset, int bit) { bset ^= unsigned(1) << bit; };
   ///< Lambda to get the inside for individual unplaced surfaces of the same logical volume
-  auto insideSurf = [&](int isurf) {
+  auto insideSurf = [&](int isurf, bool flip) {
     // Convert point from volume to local surface coordinates
     auto itrans                 = surfdata.fLocalSurf[isurf].fTrans;
     Vector3D<Real_t> plocalSurf = surfdata.fLocalTrans[itrans].Transform(plocalVol);
     auto const &unplaced        = surfdata.fLocalSurf[isurf].fSurface;
-    return unplaced.Inside(plocalSurf, surfdata);
+    return unplaced.Inside(plocalSurf, surfdata, flip);
   };
   unsigned stack  = 0;
   unsigned negate = 0;
@@ -66,8 +66,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
       break;
     default:
       // This is an operand
-      result = insideSurf(int(logic[i]));
-      result = logic[i] == logic_id ? is_inside : insideSurf(int(logic[i]));
+      result = logic[i] == logic_id ? is_inside : insideSurf(int(logic[i]), bool(negate));
       result ^= test_bit(negate, depth);
       reset_bit(negate, depth);
       // We can ignore the previous value because of short-circuiting

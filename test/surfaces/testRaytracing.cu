@@ -126,7 +126,8 @@ __device__ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vect
 }
 //==================================================================================
 __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                 NavigationState const *in_states, Precision *length_over_crossings, const VPlacedVolume *world, bool debug = false)
+                                 NavigationState const *in_states, Precision *length_over_crossings,
+                                 const VPlacedVolume *world, bool debug = false)
 {
   if (debug) {
     printf("PropagateRaysSurf debug ray %d:\n", i);
@@ -135,26 +136,27 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vecto
   }
   NavigationState start_state = in_states[i];
   NavigationState out_state;
-  int num_cross   = 0;
-  int exit_surf   = 0;
+  int num_cross = 0;
+  ExitSurfState exit_surf;
   double dist_tot = 0;
   auto pt         = points[i];
   auto const &dir = dirs[i];
   do {
-    exit_surf     = 0; // need to reset because the same inner tube surface can be crossed twice in a row
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
-    if (exit_surf == -1) {
-        // Extruding overlap detected, relocating to correct starting state
-        // Find true location for the crossing point
-        NavigationState true_state;
-        vgbrep::protonav::LocatePointIn(world, pt, true_state, true, start_state.Top());
+    exit_surf.common_id = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+    auto distance       = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
+    if (exit_surf.common_id == -1) {
+      // Extruding overlap detected, relocating to correct starting state
+      // Find true location for the crossing point
+      NavigationState true_state;
+      vgbrep::protonav::LocatePointIn(world, pt, true_state, true, start_state.Top());
 
-        // Now replay to get correct distance
-        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exit_surf);
-        assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() && "Distance after relocation shouldn't be 0 or infinity");
+      // Now replay to get correct distance
+      distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exit_surf);
+      assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
+             "Distance after relocation shouldn't be 0 or infinity");
     }
     if (debug) {
-      printf("     dist = %.16f  surf = %d\n", distance, exit_surf);
+      printf("     dist = %.16f  surf = %d\n", distance, exit_surf.common_id);
       printf("   ");
       out_state.Print();
     }
@@ -177,7 +179,8 @@ __global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points,
 }
 //==================================================================================
 __global__ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                  NavigationState const *in_states, Precision *length_over_crossings, const VPlacedVolume *world)
+                                  NavigationState const *in_states, Precision *length_over_crossings,
+                                  const VPlacedVolume *world)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
     PropagateRaySurf(i, points, dirs, in_states, length_over_crossings, world);
@@ -326,7 +329,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   auto time_traverse_surf = timer.Stop();
 
   ValidateTraversal<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings,
-                                                          refLength_over_crossings, num_errors_dist_d, debug, world_dev);
+                                                 refLength_over_crossings, num_errors_dist_d, debug, world_dev);
   BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
 

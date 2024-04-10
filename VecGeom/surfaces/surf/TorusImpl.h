@@ -19,18 +19,19 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point)
+  bool Inside(Vector3D<Real_t> const &point, bool flip = false)
   {
-    if (!fTorusData->InsidePhi(point)) return false;
+    if (!fTorusData->InsidePhi(point, flip)) return false;
 
+    int flipsign = (flip ^ fTorusData->IsFlipped()) ? -1 : 1;
     bool flipped = fTorusData->IsFlipped() ? 1 : 0;
     Real_t rho   = Sqrt(point.x() * point.x() + point.y() * point.y());
     Real_t rTor  = fTorusData->Radius();
     Real_t rTube = fTorusData->RadiusTube();
 
-    bool check1 = (rho - (rTor - rTube)) > -vecgeom::kTolerance;
-    bool check2 = (rho - (rTor + rTube)) < vecgeom::kTolerance;
-    bool check3 = Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube < vecgeom::kTolerance;
+    bool check1 = (rho - (rTor - rTube)) > -flipsign * vecgeom::kTolerance;
+    bool check2 = (rho - (rTor + rTube)) < flipsign * vecgeom::kTolerance;
+    bool check3 = Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube < flipsign * vecgeom::kTolerance;
 
     if (!flipped) {
       return check1 && check2 && check3;
@@ -57,8 +58,8 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
     Real_t tubeDistance = 0;
 
     // if point is outside bounding tube of the torus, propagate to the bounding tube.
-    if (!(SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Inside(localpoint) &&
-          SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint)) ||
+    if (!(SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Inside(localpoint, false) &&
+          SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint, false)) ||
         (Abs(localpoint[2]) > Abs(RadTube_R0 + vecgeom::kTolerance))) {
 
       Real_t tmp   = vecgeom::kInfLength;
@@ -178,7 +179,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       Vector3D<Real_t> onsurf = localpoint + distance * dir;
 
       // apply phi cut
-      if (!fTorusData->InsidePhi(onsurf)) continue;
+      if (!fTorusData->InsidePhi(onsurf, false)) continue;
 
       // calculate normal
       // note: using the normal before the Newton refinement could be dangerous but has proven safe so far.
@@ -236,7 +237,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   /// @return Validity of the calculation
   bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf) const
   {
-    if (!fTorusData->InsidePhi(point)) {
+    if (!fTorusData->InsidePhi(point, false)) {
       // If the point is not in the phi range, there are other surfaces closer than this one
       distance = vecgeom::InfinityLength<Real_t>();
       return true;

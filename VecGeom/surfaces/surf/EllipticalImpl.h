@@ -19,13 +19,11 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point)
+  bool Inside(Vector3D<Real_t> const &point, bool flip)
   {
-    // int flipsign = fCylData->IsFlipped() ? -1 : 1;
-    // Real_t cylR  = fCylData->Radius();
-    // Real_t rho   = point.Perp();
+    int flipsign = !flip ? 1 : -1;
     return (point.x() * point.x() / fEllipData->fDDx + point.y() * point.y() / fEllipData->fDDy <
-            1 + vecgeom::kTolerance);
+            1 + flipsign * vecgeom::kTolerance);
   }
 
   VECGEOM_FORCE_INLINE

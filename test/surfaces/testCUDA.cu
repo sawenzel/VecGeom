@@ -7,23 +7,22 @@
 
 using namespace vecgeom;
 using BrepCudaManager = vgbrep::BrepCudaManager<vecgeom::Precision>;
-using SurfData = vgbrep::SurfData<vecgeom::Precision>;
+using SurfData        = vgbrep::SurfData<vecgeom::Precision>;
 
 static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, NavigationState const state)
 {
-  int exit = 0;
+  ExitSurfState exit;
   NavigationState out;
   vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exit);
-  vecgeom::Precision safety = vgbrep::protonav::ComputeSafety(pos, state, exit);
+  vecgeom::Precision safety   = vgbrep::protonav::ComputeSafety(pos, state, exit.common_id);
   printf("Surf@DEVICE: distance = %f, safety = %f\n", distance, safety);
 }
 
 // In testCUDA.cpp
 NavigationState Locate(Precision x, Precision y, Precision z);
 
-void TestCUDA(const SurfData &surfData,
-   Precision px, Precision py, Precision pz,
-   Precision dx, Precision dy, Precision dz)
+void TestCUDA(const SurfData &surfData, Precision px, Precision py, Precision pz, Precision dx, Precision dy,
+              Precision dz)
 {
   Vector3D<Precision> pos(px, py, pz);
   Vector3D<Precision> dir(dx, dy, dz);

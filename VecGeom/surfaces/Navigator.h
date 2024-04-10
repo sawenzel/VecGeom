@@ -175,10 +175,186 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPl
         path.Pop();
       }
     }
-
     // Only exclude the placed volume once since we could enter it again via a
     // different volume history.
     exclude = nullptr;
+  } while (godeeper);
+
+  return currentvolume;
+}
+
+/// @brief Check whether
+/// @tparam Real_t Floating point type
+/// @param path Path pointing to the top volume to check
+/// @param exit_surf data structure holding the information of the last exited surface
+/// @return Placed volume pointer containing the point
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE bool VolumeHasCommonSurface(vecgeom::NavigationState &path, vecgeom::ExitSurfState exit_surf)
+{
+
+  // always included in outside
+  if (path.GetNavIndex() == 0) return false;
+  // for extruding overlaps no common surface needs to be excluded
+  if (exit_surf.common_id == -1) return false;
+
+  auto const &surfdata  = SurfData<Real_t>::Instance();
+  auto const &surf      = surfdata.fCommonSurfaces[exit_surf.common_id];
+  auto const &exit_side = exit_surf.left_side ? surf.fLeftSide : surf.fRightSide;
+
+  auto state_id = path.GetNavIndex();
+
+  // loop over all states of the exited common surface and exclude volumes of that state
+  // NOTE: this might not be correct for booleans
+  for (int isurf = 0; isurf < exit_side.fNsurf; isurf++) {
+    if (surfdata.fFramedSurf[exit_side.fSurfaces[isurf]].fState == state_id) return true;
+  }
+  return false;
+}
+
+/// @brief Locate a point in a volume sub-hierarchy
+/// @tparam Real_t Floating point type
+/// @param starting_path initial path before the ComputeStepAndHit
+/// @param point Point in local volume coordinates
+/// @param path Path pointing to the top volume to check
+/// @param exit_surf data structure holding the information of the last exited surface
+/// @return Placed volume pointer containing the point
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::NavigationState &starting_path,
+                                                                      vecgeom::Vector3D<Real_t> const &point,
+                                                                      vecgeom::NavigationState &path,
+                                                                      vecgeom::ExitSurfState exit_surf)
+{
+  using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
+  auto const &surfdata     = SurfData<Real_t>::Instance();
+
+  // set path to be starting path to check for daughters
+  path                             = starting_path;
+  VPlacedVolumePtr_t currentvolume = starting_path.Top();
+
+  // first, check daughter volumes of the current path to find if the point lies within any of the daughters
+  bool godeeper;
+  bool inside_daughter = false;
+  if (exit_surf.common_id != -1) { // if not exiting surface was found, we don't need to check for children
+    do {
+      godeeper = false;
+      for (auto *daughter : currentvolume->GetDaughters()) {
+        path.Push(daughter);
+        bool inside = LogicInside(point, path, surfdata);
+
+        if (inside) {
+          inside_daughter = true;
+          currentvolume   = daughter;
+          godeeper        = true;
+          break;
+        } else {
+          path.Pop();
+        }
+      }
+    } while (godeeper);
+  }
+
+  // if point was located in daughter and this is not the previous starting path, return
+  if (inside_daughter && !path.HasSamePathAsOther(starting_path)) return currentvolume;
+
+  // else, reset to initial output path
+  path = starting_path;
+
+  int surf_index;
+  // if there is an common exit surface, navigate to the highest parent of the exited framed surface
+  if (exit_surf.common_id != -1) {
+    auto const &surf      = surfdata.fCommonSurfaces[exit_surf.common_id];
+    auto const &exit_side = exit_surf.left_side ? surf.fLeftSide : surf.fRightSide;
+    int frame_id          = exit_surf.frame_id;
+
+    // // navigate to highest parent frame
+    auto const &framedsurf = exit_side.GetSurface(frame_id, surfdata);
+    // Find the appropriate surface index
+    surf_index       = framedsurf.fSurfIndex;
+    int parent_frame = framedsurf.fParent;
+    while (parent_frame > 0) {
+      surf_index   = exit_side.GetSurface(parent_frame, surfdata).fSurfIndex;
+      parent_frame = exit_side.GetSurface(parent_frame, surfdata).fParent;
+      path.Pop();
+      path.SetLastExited();
+    }
+
+    // if we are in a scene surface, we need to further pop until we reach the highest frame after popping all scenes
+    bool is_scene_surface = surf.IsSceneSurface();
+    while (is_scene_surface) {
+      // exiting a scene volume, we need to find the matching surface in the parent scene
+      // this is the surface among the parent state exiting candidates at surf_index
+      //
+      // Move to parent scene state
+      path.Pop();
+      unsigned short parent_scene_id = 0, dummy_id = 0;
+      // Get parent scene and state id's
+      path.GetSceneId(parent_scene_id, dummy_id);
+      auto parent_state_id = path.GetId();
+      // Get crossed parent scene common surface and side from exiting candidates
+      auto const &cand_scene  = surfdata.GetCandidates(parent_scene_id, parent_state_id);
+      int isurf_scene         = cand_scene[surf_index];
+      auto const &parent_surf = surfdata.fCommonSurfaces[isurf_scene];
+      // need to schedule converting the onsurf point in the parent scene coordinate system
+      // Is this still a scene surface?
+      is_scene_surface = parent_surf.IsSceneSurface();
+    }
+  }
+
+  // exclude volume of the highest parent of the exited framed surface
+  if (path.GetNavIndex() > 1) path.SetLastExited();
+  VPlacedVolumePtr_t prev_volume = path.GetLastExited();
+
+  // navigate one level higher to search for inside
+  if (path.GetNavIndex() > 1) path.Pop(); // go one level higher, unless we are in the top volume
+  currentvolume = path.Top();
+
+  // check whether the point is in the parent volume, otherwise go higher until it is found
+  bool gohigher = false;
+
+  bool inside;
+  do {
+    gohigher     = false;
+    auto same_cs = VolumeHasCommonSurface<Real_t>(path, exit_surf);
+    if (same_cs) {
+      inside = false;
+    } else {
+      inside = LogicInside(point, path, surfdata);
+    }
+
+    if (inside == false) {
+      prev_volume = currentvolume;
+      path.Pop();
+      currentvolume = path.Top();
+      gohigher      = true;
+    }
+  } while (gohigher);
+
+  do {
+    godeeper = false;
+    for (auto *daughter : currentvolume->GetDaughters()) {
+      if (daughter == prev_volume) {
+        // Only exclude the placed volume once since we could enter it again via a
+        // different volume history.
+        prev_volume = nullptr;
+        continue;
+      }
+      unsigned short scene_id = 0, newscene_id = 0;
+      bool is_scene = path.GetSceneId(scene_id, newscene_id);
+      path.Push(daughter);
+      auto same_cs = VolumeHasCommonSurface<Real_t>(path, exit_surf);
+      if (same_cs && !is_scene) {
+        inside = false;
+      } else {
+        inside = LogicInside(point, path, surfdata);
+      }
+      if (inside) {
+        currentvolume = daughter;
+        godeeper      = true;
+        break;
+      } else {
+        path.Pop();
+      }
+    }
   } while (godeeper);
 
   return currentvolume;
@@ -191,15 +367,14 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPl
 /// @param in_state Input navigation state before crossing
 /// @param out_state Output navigation state after crossing
 /// @param surfdata Surface data storage
-/// @param exit_surf Input: surface to be skipped, output: crossed surface index.
-///                  If zero, there is no surface crossing closer than stepmax
-///                  If negative, there is a geometry error
+/// @param exit_surf data container storing the exited common surface, the side, the frame id, and whether there is an overlap
+/// @param stepmax maximum step
 /// @return Distance to next surface.
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point,
                                                  vecgeom::Vector3D<Real_t> const &direction,
                                                  vecgeom::NavigationState const &in_state,
-                                                 vecgeom::NavigationState &out_state, int &exit_surf,
+                                                 vecgeom::NavigationState &out_state, vecgeom::ExitSurfState &exit_surf,
                                                  Real_t stepmax = vecgeom::InfinityLength<Real_t>())
 {
   constexpr char kLside         = 1;
@@ -231,8 +406,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   Vector3D<Real_t> onsurf;
   out_state = in_state;
   out_state.SetBoundaryState(false);
-  auto skip_surf = exit_surf;
-  exit_surf      = 0;
+  auto skip_surf      = exit_surf.common_id;
+  exit_surf.common_id = 0;
 
   // Convert the point and direction to the scene coordinate system
   vecgeom::Transformation3D scene_trans;
@@ -311,6 +486,11 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
             exiting_scene                  = exiting_framedsurf.fState == 0;
           }
         }
+        // safe exit surf information for exiting surfaces of the lowest frame exited
+        exit_surf.frame_id  = ind;
+        exit_surf.left_side = left_side ? 1 : 0;
+        exit_surf.overlap   = framedsurf.fOverlapping ? 1 : 0;
+        exit_surf.common_id = isurf;
         break;
       }
     }
@@ -372,7 +552,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   }
   // If there is no physics step limitation, an exiting surface must be found
   if (!found && stepmax == vecgeom::InfinityLength<Real_t>()) {
-    exit_surf = -1;
+    exit_surf.common_id = -1;
     // This can happen if the exit point is outside the mother volume (extrusion)
     // To recover, one can return the mother state as output and a zero distance
     return stepmax;
@@ -451,6 +631,12 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 #endif
     if (iframe >= 0) {
       auto const &framedsurf = entry_side.GetSurface(iframe, surfdata);
+      // safe exit surf information for entering surfaces of the lowest frame exited
+      exit_surf.frame_id  = iframe;
+      exit_surf.left_side = left_side ? 1 : 0;
+      exit_surf.overlap   = framedsurf.fOverlapping ? 1 : 0;
+      exit_surf.common_id = isurf;
+
       // This surface is certainly hit because the parent frame is hit
       found               = true;
       exiting             = false;
@@ -490,7 +676,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   }
 
   if (found) {
-    exit_surf = isurfcross;
     if (!relocated) {
       // do the relocation on the entering side
       auto const &surf_check = surfdata.fCommonSurfaces[isurfcross];
@@ -516,8 +701,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         if (exiting) {
           if ((top_ind == 0) && (surf_check.GetSceneId() > 0))
             out_state.PopScene();
-          else
+          else {
             out_state.SetNavIndex(top_ind);
+          }
         }
       }
 
@@ -526,10 +712,13 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         auto const &surf       = surfdata.fCommonSurfaces[isurfcross];
         auto const &entry_side = relocated_left_side ? surf.fLeftSide : surf.fRightSide;
         auto const &framedsurf = entry_side.GetSurface(iframe, surfdata);
+        if (framedsurf.fOverlapping) exit_surf.overlap = 1; // mark for overlap
         if (surf.IsSceneSurface())
           out_state.PushScene(framedsurf.fState);
-        else
+        else {
           out_state.SetNavIndex(framedsurf.fState);
+        }
+        // We may have entered a new scene, so we need to search the scene surface
         relocated = true;
         if (framedsurf.fSceneCS > 0) {
           // We have entered a new scene, first get to the TOP_SCENE frame

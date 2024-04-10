@@ -240,10 +240,12 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
 }
 //==================================================================================
 void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                       NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1)
+                       NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1,
+                       bool detect_overlaps = false)
 {
-  int ilast  = nrays;
-  int istart = 0;
+  int ilast        = nrays;
+  int istart       = 0;
+  int num_overlaps = 0;
   if (idebug >= 0) {
     std::cout << "PropagateRaysSurf debug ray " << idebug << "\n   start : ";
     in_states[idebug].Print();
@@ -253,18 +255,65 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
   for (auto i = istart; i < ilast; ++i) {
     NavigationState start_state = in_states[i];
     NavigationState out_state;
-    int exit_surf   = 0;
+    ExitSurfState exit_surf;
     auto pt         = points[i];
     auto const &dir = dirs[i];
     crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     do {
-      exit_surf = 0; // need to reset because the same inner tube surface can be crossed twice in a row
+      exit_surf.common_id = 0; // need to reset because the same inner tube surface can be crossed twice in a row
       if (idebug >= 0 && int(crossings[i].GetNsteps()) == idebug_step) {
         std::cout << "Debugging step " << idebug_step << " starting from state:\n";
         start_state.Print();
       }
       auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
-      if (exit_surf == -1) {
+      if (detect_overlaps && !exit_surf.overlap && out_state.GetState() != 0) {
+        NavigationState true_state;
+        if (exit_surf.common_id != -1) {
+          true_state = out_state;
+          vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, true_state, exit_surf);
+        }
+
+        // overlap if the output state and the true state disagree (and the outstate is not outside) or if extruding
+        // overlap, which is handled separately
+        if ((out_state.GetState() != true_state.GetState()) || exit_surf.common_id == -1) {
+          num_overlaps++;
+
+          // get framed surface data to mark surface as overlapping
+          auto const &surfdata = BrepHelper::Instance().GetSurfData();
+          ;
+          auto const &surf        = surfdata.fCommonSurfaces[exit_surf.common_id];
+          auto const &exit_side   = exit_surf.left_side ? surf.fLeftSide : surf.fRightSide;
+          auto &framedsurf        = exit_side.GetSurface(exit_surf.frame_id, surfdata);
+          int surf_index          = framedsurf.fSurfIndex;
+          framedsurf.fOverlapping = true;
+
+          // loop over all parents and mark them as overlapping as well.
+          int parent_frame = framedsurf.fParent;
+          while (parent_frame > 0) {
+            framedsurf              = exit_side.GetSurface(parent_frame, surfdata);
+            framedsurf.fOverlapping = true;
+            parent_frame            = exit_side.GetSurface(parent_frame, surfdata).fParent;
+          }
+
+          VECGEOM_LOG(warning) << std::setprecision(16) << num_overlaps << " overlap detected for ray " << i
+                               << " at num_cross = " << crossings[i].GetNsteps() << "\n   starting point " << points[i]
+                               << " and direction " << dirs[i] << "\n   Overlapping surface:  " << exit_surf.common_id
+                               << " side " << exit_surf.left_side << " frameid " << exit_surf.frame_id
+                               << " local problem side: " << surf_index;
+          std::cout << " out_state.Print() " << std::endl;
+          out_state.Print();
+          std::cout << " true_state.Print() " << std::endl;
+          true_state.Print();
+          // set out state to true state after printing
+          out_state = true_state;
+        }
+      }
+      // exiting framed surface marked as overlapping, need to relocate
+      if (exit_surf.overlap && exit_surf.common_id != -1) {
+        vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, out_state, exit_surf);
+        exit_surf.overlap = 0;
+      }
+      if (exit_surf.common_id == -1) {
         // Most likely extruding overlap detected, relocating to correct state
 
         VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
@@ -274,22 +323,29 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
 
         // Find true location for the crossing point
         NavigationState true_state;
-        vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pt, true_state, true, start_state.Top());
+        // note that here we use the previous point pt and not pt + distance * dir because the distance is inf!
+        vgbrep::protonav::ReLocatePointIn(start_state, pt, true_state, exit_surf);
         std::cout << "   crossing point : " << pt << " was located in : ";
         true_state.Print();
 
         // Now replay to get correct distance
         distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exit_surf);
+        // if corrected distance is still incorrect, abort
         if (distance == 0 || distance == vecgeom::InfinityLength<Precision>()) {
           VECGEOM_LOG(critical) << std::setprecision(16) << "After relocation, still no exiting surface for ray " << i
                                 << " at num_cross = " << crossings[i].GetNsteps() << "\n Terminating raytracing!";
           return;
         }
+        // exiting framed surface marked as overlapping, need to relocate
+        if (exit_surf.overlap) {
+          vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, out_state, exit_surf);
+          exit_surf.overlap = 0;
+        }
       }
       auto num_cross = crossings[i].SetNextCrossing(distance, out_state);
       if (idebug >= 0) {
-        std::cout << std::setprecision(16) << "     dist = " << distance << "  surf = " << exit_surf << "\n   "
-                  << num_cross << " : ";
+        std::cout << std::setprecision(16) << "     dist = " << distance << "  surf = " << exit_surf.common_id
+                  << "\n   " << num_cross << " : ";
         out_state.Print();
       }
       pt += distance * dir;
@@ -329,7 +385,7 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 }
 //==================================================================================
 int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug,
-                       Precision safety_tolerance)
+                       Precision safety_tolerance, bool detect_overlaps = false)
 {
   // allocate storage
   NavigationState *origStates   = new NavigationState[nrays];
@@ -416,7 +472,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Distance computation + relocation for surface model
   timer.Start();
-  PropagateRaysSurf(nrays, points, dirs, origStates, crossings, idebug);
+  PropagateRaysSurf(nrays, points, dirs, origStates, crossings, idebug, /*idebug_step=*/-1, detect_overlaps);
   auto time_traverse_surf = timer.Stop();
 
   // Corectness for traversal
@@ -453,6 +509,7 @@ int main(int argc, char *argv[])
   OPTION_INT(verbosity, 0);
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
+  OPTION_BOOL(detect_overlaps, 0);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -534,7 +591,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio);
+  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU

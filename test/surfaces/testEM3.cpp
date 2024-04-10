@@ -143,7 +143,7 @@ double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const 
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavigationState in_state, out_state;
-  int exit_surf   = 0;
+  ExitSurfState exit_surf;
   double dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
   auto pt = point;
@@ -151,11 +151,11 @@ double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const 
   in_state.Print();
   do {
     auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exit_surf);
-    if (exit_surf != 0) {
+    if (exit_surf.common_id != 0) {
       dist_tot += distance;
       pt += distance * direction;
     }
-    printf("surface %d at dist = %g: ", exit_surf, distance);
+    printf("surface %d at dist = %g: ", exit_surf.common_id, distance);
     out_state.Print();
     in_state = out_state;
   } while (!out_state.IsOutside());
@@ -205,7 +205,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
     if (safecheck) refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
 
     // shoot the same ray in the surface model
-    int exit_surf = 0;
+    ExitSurfState exit_surf;
     NavigationState out_state, locate_state;
     double distance = 0, safety = 0;
     bool safesafe = true;
@@ -213,7 +213,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
 
     if (distcheck) distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
     if (safecheck) {
-      safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf);
+      safety = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf.common_id);
       if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
       num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
       num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
@@ -328,7 +328,7 @@ void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, 
       // Vector3D<Precision> pos(points[i] + pt);
       Vector3D<Precision> const &pos = points[i];
       Vector3D<Precision> const &dir = dirs[i];
-      int exit_surf                  = 0;
+      ExitSurfState exit_surf;
       distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
       // out_state.Print();
     }

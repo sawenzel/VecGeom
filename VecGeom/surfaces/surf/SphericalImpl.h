@@ -19,12 +19,13 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point)
+  bool Inside(Vector3D<Real_t> const &point, bool flip)
   {
-    int flipsign = fSphData->IsFlipped() ? -1 : 1;
-    Real_t sphR  = fSphData->Radius();
-    Real_t rho   = point.Mag();
-    return flipsign * (rho - sphR) < vecgeom::kTolerance;
+    int flipsign      = fSphData->IsFlipped() ? -1 : 1;
+    int bool_flipsign = !flip ? 1 : -1;
+    Real_t sphR       = fSphData->Radius();
+    Real_t rho        = point.Mag();
+    return flipsign * (rho - sphR) < bool_flipsign * vecgeom::kTolerance;
   }
 
   VECGEOM_FORCE_INLINE

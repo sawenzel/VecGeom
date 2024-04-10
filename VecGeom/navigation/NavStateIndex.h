@@ -543,6 +543,19 @@ public:
   void SetBoundaryState(bool b) { fOnBoundary = b; }
 };
 
+struct ExitSurfState {
+  int common_id;
+  int frame_id;
+  bool left_side;
+  bool overlap;
+
+  VECCORE_ATT_HOST_DEVICE
+  ExitSurfState(int common_surf = 0, int frame = 0, bool ls = 0, bool ol = 0)
+      : common_id(common_surf), frame_id(frame), left_side(ls), overlap(ol)
+  {
+  }
+};
+
 /**
  * encodes the geometry path as a concatenated string of ( Value_t ) present in fPath
  */
