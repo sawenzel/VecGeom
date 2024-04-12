@@ -364,9 +364,13 @@ struct Side {
     return fNsurf - 1;
   }
 
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetTopSurfaceIndex() const
+  {
+    return (fNsurf > 0) ? GetSurfaceIndex(fNsurf - 1) : -1;
+  }
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetSurfaceIndex(int isurf) const { return fSurfaces[isurf]; }
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetTopSurfaceIndex() const { return GetSurfaceIndex(fNsurf - 1); }
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasExtent() const { return fExtent.id >= 0; }
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasChildren() const { return fNsurf > fNumParents; }
 
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface &GetSurface(int index,

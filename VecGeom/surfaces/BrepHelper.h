@@ -987,34 +987,58 @@ public:
       }
     };
 
-    // loop over all common surfaces and add their index in the appropriate list
-    for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf) {
-      auto const &surf = fCPUdata.fCommonSurfaces[isurf];
-      if (fVerbose > 0) printf("===== CS %ld:\n", isurf);
-      if (!surf.IsSceneSurface()) {
-        //  Add surface as entering candidate for the default surface state
-        vecgeom::NavigationState state(surf.fDefaultState);
-        int state_id             = state.GetId();
-        auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
-        auto &frameIndEntering   = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
-        auto &sidesEntering      = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
-        // Check which sides contain surfaces of daughters
-        char sides = 0;
-        if (surf.fLeftSide.fNsurf) sides |= kLside;
-        if (surf.fRightSide.fNsurf) sides |= kRside;
+    // Lambda for adding the surface to the entering candidates of a state
+    auto addSurfToEnteringCand = [&](int isurf, NavIndex_t state) {
+      auto const &surf = fCPUdata.fCommonSurfaces[std::abs(isurf)];
+      if (fVerbose > 0) printf("===== CS %d:\n", isurf);
+      //  Add surface as entering candidate for the provided state
+      int state_id             = vecgeom::NavigationState::GetIdImpl(state);
+      auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
+      // The surface may be already added in the list of candidates, check that
+      // if (std::find(candidatesEntering.begin(), candidatesEntering.end(), isurf) != candidatesEntering.end()) {
+      auto &frameIndEntering = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
+      auto &sidesEntering    = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
+      // Check which sides contain surfaces of daughters
+      char sides = 0;
+      if (surf.fLeftSide.fNsurf) sides |= kLside;
+      if (surf.fRightSide.fNsurf) sides |= kRside;
+      if (isurf < 0 && candidatesEntering.size() > 0 && std::abs(candidatesEntering.back()) == std::abs(isurf)) {
+        candidatesEntering.back() = isurf;
+      } else {
         candidatesEntering.push_back(isurf);
         frameIndEntering.push_back(-1); // means this state is the default for isurf
         sidesEntering.push_back(sides);
-        if (fVerbose > 0) {
-          printf("  added to entering of def state on scene %d: ", surf.GetSceneId());
-          state.PrintTop();
-          int j = 0;
-          printf("candEntering:   ");
-          for (auto candidate : candidatesEntering)
-            printf("  %d: %d ", j++, candidate);
-          printf("\n");
-        }
       }
+      if (fVerbose > 0) {
+        if (state == surf.fDefaultState)
+          printf("  added to entering of def state on scene %d: ", surf.GetSceneId());
+        else
+          printf("  added to entering of top Boolean state on scene %d: ", surf.GetSceneId());
+        vecgeom::NavigationState::PrintTopImpl(state);
+        int j = 0;
+        printf("candEntering:   ");
+        for (auto candidate : candidatesEntering)
+          printf("  %d: %d ", j++, candidate);
+        printf("\n");
+      }
+    };
+
+    // loop over all common surfaces and add their index in the appropriate list
+    for (int isurf = 1; isurf < int(fCPUdata.fCommonSurfaces.size()); ++isurf) {
+      auto const &surf        = fCPUdata.fCommonSurfaces[isurf];
+      auto const &topSurfLeft = fCPUdata.fFramedSurf[surf.fLeftSide.GetTopSurfaceIndex()];
+      // The surface is an entering candidate for the default state, if the default state
+      // is different than the top surface state
+      if (topSurfLeft.fState != surf.fDefaultState) addSurfToEnteringCand(isurf, surf.fDefaultState);
+      // In case the top framed surface defining the common surface is Boolean, there may be
+      // non-embedded daughter frames on it visible from the corresponding Boolean volume.
+      if (topSurfLeft.fLogicId && surf.fLeftSide.HasChildren()) addSurfToEnteringCand(-isurf, topSurfLeft.fState);
+      // Check for a top surface on the right side
+      if (surf.fRightSide.HasChildren()) {
+        auto const &topSurfRight = fCPUdata.fFramedSurf[surf.fRightSide.GetTopSurfaceIndex()];
+        if (topSurfRight.fLogicId) addSurfToEnteringCand(-isurf, topSurfRight.fState);
+      }
+
       // Add to side states
       addSurfToSideStates(isurf, kLside);
       addSurfToSideStates(isurf, kRside);
