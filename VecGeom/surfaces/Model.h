@@ -364,6 +364,8 @@ struct Side {
     return fNsurf - 1;
   }
 
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetSurfaceIndex(int isurf) const { return fSurfaces[isurf]; }
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetTopSurfaceIndex() const { return GetSurfaceIndex(fNsurf - 1); }
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasExtent() const { return fExtent.id >= 0; }
 
   template <typename Real_t>
@@ -374,7 +376,7 @@ struct Side {
   }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &Top(SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &TopSurface(SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[fNsurf - 1]];
   }
@@ -389,11 +391,10 @@ struct Side {
 
 /// @brief A common surface made of two sides, having a global transformation.
 struct CommonSurface {
-  using NavState_t = vecgeom::NavigationState::Value_t;
   SurfaceType fType{SurfaceType::kPlanar}; ///< Type of surface
   int fSceneId{0};                         ///< Scene id. if negative, it is a top scene id
   int fTrans{-1};                          ///< Transformation of the first left frame
-  NavState_t fDefaultState{0};             ///< The default state for this surface (deepest mother)
+  NavIndex_t fDefaultState{0};             ///< The default state for this surface (deepest mother)
   Side fLeftSide;                          ///< Left-side (behind normal)
   Side fRightSide;                         ///< Right-side (alongside normal)
   bool fFlipped;                           ///< whether the common surface is flipped due to boolean negation

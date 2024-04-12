@@ -35,6 +35,13 @@ char const *to_cstring<SurfaceType>(SurfaceType type)
 }
 
 template <>
+char const *to_cstring<bool>(bool type)
+{
+  if (type) return "true";
+  return "false";
+}
+
+template <>
 char const *to_cstring<FrameType>(FrameType type)
 {
   static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
@@ -185,17 +192,16 @@ public:
   void ComputeDefaultStates(int common_id)
   {
     using vecgeom::NavigationState;
-    using NavInd_t = NavigationState::Value_t;
     // Computes the default states for each side of a common surface
     Side &left  = fCPUdata.fCommonSurfaces[common_id].fLeftSide;
     Side &right = fCPUdata.fCommonSurfaces[common_id].fRightSide;
     assert(left.fNsurf > 0 || right.fNsurf > 0);
 
-    NavInd_t default_ind = 0;
+    NavIndex_t default_ind = 0;
 
     // A lambda that finds the deepest common ancestor between 2 states
-    auto getCommonState = [&](NavInd_t const &s1, NavInd_t const &s2) {
-      NavInd_t a1(s1), a2(s2);
+    auto getCommonState = [&](NavIndex_t const &s1, NavIndex_t const &s2) {
+      NavIndex_t a1(s1), a2(s2);
       // Bring both states at the same level
       while (NavigationState::GetLevelImpl(a1) > NavigationState::GetLevelImpl(a2))
         NavigationState::PopImpl(a1);
@@ -430,10 +436,10 @@ public:
     framedata << "    fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{"
               << surf.fNeverCheck << "} ";
     if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
+    framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
     if (surf.fFrame.type != FrameType::kNoFrame) framedata << "fSurfIndex{" << surf.fSurfIndex << "} ";
     std::cout << framedata.str() << "\n    fState: ";
-    vecgeom::NavigationState state(surf.fState);
-    state.Print();
+    surf.PrintState();
   }
 
   // Printing is ugly currently and scales badly with the new data structure.
