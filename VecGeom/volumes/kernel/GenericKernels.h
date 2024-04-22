@@ -21,19 +21,15 @@ struct GenericKernels {
 }; // End struct GenericKernels
 
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakePlusTolerant(T const &x, vecCore::Scalar<T> halftol = kHalfTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakePlusTolerant(T const &x, vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
-  return (tolerant) ? x + halftol : x;
+  return (tolerant) ? x + tol : x;
 }
 
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakeMinusTolerant(T const &x, vecCore::Scalar<T> halftol = kHalfTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakeMinusTolerant(T const &x, vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
-  return (tolerant) ? x - T(halftol) : x;
+  return (tolerant) ? x - T(tol) : x;
 }
 
 /// @brief Utilities to compute tolerance value for cross products. Length should be an overestimate
@@ -43,26 +39,23 @@ T MakeMinusTolerant(T const &x, vecCore::Scalar<T> halftol = kHalfTolerance)
 /// The distance from point P to segment AB is cross/|AB|, hence the tolerance of cross is kTolerance * |AB|
 /// One needs to pass length > |AB| to the method.
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakePlusTolerantCrossProduct(T const &x, T const &length, vecCore::Scalar<T> halftol = kHalfTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakePlusTolerantCrossProduct(T const &x, T const &length,
+                                                                            vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
-  return (tolerant) ? x + length * T(halftol) : x;
+  return (tolerant) ? x + length * T(tol) : x;
 }
 
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakeMinusTolerantCrossProduct(T const &x,  T const &length, vecCore::Scalar<T> halftol = kHalfTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakeMinusTolerantCrossProduct(T const &x, T const &length,
+                                                                             vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
-  return (tolerant) ? x - length * T(halftol) : x;
+  return (tolerant) ? x - length * T(tol) : x;
 }
 
 /// @brief Utility to compute (x + tol)^2 for proper account of tolerances when comparing squares.
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakePlusTolerantSquare(T const &x, vecCore::Scalar<T> tol = kTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakePlusTolerantSquare(T const &x,
+                                                                      vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
   // calculate (x + halftol) * (x + halftol) which should always >= 0;
   // in order to be fast, we neglect the + tol * tol term (since it should be negligible)
@@ -71,9 +64,8 @@ T MakePlusTolerantSquare(T const &x, vecCore::Scalar<T> tol = kTolerance)
 
 /// @brief Utility to compute (x - tol)^2 for proper account of tolerances when comparing squares.
 template <bool tolerant, typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T MakeMinusTolerantSquare(T const &x, vecCore::Scalar<T> tol = kTolerance)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakeMinusTolerantSquare(T const &x,
+                                                                       vecCore::Scalar<T> tol = kToleranceDist<T>)
 {
   // calculate (x - halftol) * (x - halftol) which should always >= 0;
   // in order to be fast, we neglect the + tol * tol term (since it should be negligible)
@@ -104,16 +96,12 @@ struct Flip;
 template <>
 struct Flip<true> {
   template <class T>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static T FlipSign(T const &value)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static T FlipSign(T const &value)
   {
     return -value;
   }
   template <class T>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static T FlipLogical(T const &value)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static T FlipLogical(T const &value)
   {
     return !value;
   }
@@ -122,25 +110,20 @@ struct Flip<true> {
 template <>
 struct Flip<false> {
   template <class T>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static T FlipSign(T const &value)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static T FlipSign(T const &value)
   {
     return value;
   }
   template <class T>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static T FlipLogical(T const &value)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static T FlipLogical(T const &value)
   {
     return value;
   }
 };
 
 template <class Backend>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-typename Backend::precision_v NormalizeAngle(typename Backend::precision_v a)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::precision_v NormalizeAngle(
+    typename Backend::precision_v a)
 {
   return a + kTwoPi * ((a < 0) - typename Backend::int_v(a / kTwoPi));
 }
@@ -150,10 +133,8 @@ typename Backend::precision_v NormalizeAngle(typename Backend::precision_v a)
 // \return Shortest distance from the point to the three dimensional line
 //         segment represented by the two input points.
 template <class Backend>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-typename Backend::precision_v DistanceToLineSegmentSquared(Vector3D<Precision> corner0, Vector3D<Precision> corner1,
-                                                           Vector3D<typename Backend::precision_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::precision_v DistanceToLineSegmentSquared(
+    Vector3D<Precision> corner0, Vector3D<Precision> corner1, Vector3D<typename Backend::precision_v> const &point)
 {
 
   typedef typename Backend::precision_v Float_t;
@@ -185,10 +166,9 @@ typename Backend::precision_v DistanceToLineSegmentSquared(Vector3D<Precision> c
 // \return Shortest distance from the point to the three dimensional line
 //         segment represented by the two input points.
 template <typename Real_v>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Real_v DistanceToLineSegmentSquared1(Vector3D<Precision> corner0, Vector3D<Precision> corner1,
-                                     Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToLineSegmentSquared1(Vector3D<Precision> corner0,
+                                                                                  Vector3D<Precision> corner1,
+                                                                                  Vector3D<Real_v> const &point)
 {
 
   using Bool_v = vecCore::Mask_v<Real_v>;
@@ -219,10 +199,10 @@ Real_v DistanceToLineSegmentSquared1(Vector3D<Precision> corner0, Vector3D<Preci
 // \return Shortest distance from the point to the three dimensional set of line
 //         segments represented by the input corners.
 template <typename Real_v>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Real_v DistanceToLineSegmentSquared2(Vector3D<Real_v> const &corner0, Vector3D<Real_v> const &corner1,
-                                     Vector3D<Real_v> const &point, vecCore::Mask_v<Real_v> const &mask)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToLineSegmentSquared2(Vector3D<Real_v> const &corner0,
+                                                                                  Vector3D<Real_v> const &corner1,
+                                                                                  Vector3D<Real_v> const &point,
+                                                                                  vecCore::Mask_v<Real_v> const &mask)
 {
 
   using Bool_v = vecCore::Mask_v<Real_v>;
@@ -248,8 +228,8 @@ Real_v DistanceToLineSegmentSquared2(Vector3D<Real_v> const &corner0, Vector3D<R
   return result;
 }
 
-} // End inline namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
 
-} // End global namespace
+} // namespace vecgeom
 
 #endif // VECGEOM_VOLUMES_KERNEL_GENERICKERNELS_H_

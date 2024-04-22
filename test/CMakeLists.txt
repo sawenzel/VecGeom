@@ -120,6 +120,7 @@ if (VECGEOM_USE_NAVINDEX OR VECGEOM_USE_NAVTUPLE)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testEM3.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testTubeSurfaces.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testTrdSurfaces.cpp)
+  list(APPEND TEST_EXECUTABLES_CORE surfaces/testEmbedding.cpp)
 
   if (VECGEOM_GDML)
     if (VECGEOM_ENABLE_CUDA)

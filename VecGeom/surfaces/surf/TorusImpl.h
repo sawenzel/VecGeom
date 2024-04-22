@@ -131,9 +131,10 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
     }
 
     QuarticCoef<Real_t> coef;
-    Real_t roots[4]          = {vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength};
+    Real_t roots[4]          = {vecgeom::InfinityLength<Real_t>(), vecgeom::InfinityLength<Real_t>(),
+                                vecgeom::InfinityLength<Real_t>(), vecgeom::InfinityLength<Real_t>()};
     int numroots             = 0;
-    Real_t s                 = vecgeom::kInfLength;
+    Real_t s                 = vecgeom::InfinityLength<Real_t>();
     VECGEOM_CONST Real_t tol = 100. * vecgeom::kTolerance;
 
     bool flip_exiting = left_side ^ fTorusData->IsFlipped();

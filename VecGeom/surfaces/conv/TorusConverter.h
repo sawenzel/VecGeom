@@ -34,7 +34,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
-  Real_t surfdata[4];
+  vecgeom::Precision surfdata[4];
 
   // We need angles in degrees for transformations
   auto sphid = vecgeom::kRadToDeg * sphi;
@@ -75,8 +75,11 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   // ring cap at Sphi
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-      builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
-      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
+      builder::CreateFrame<Real_t>(FrameType::kRing,
+                                   RingMask_t{rmin, rmax, /*fullcircle=*/true, static_cast<vecgeom::Precision>(0),
+                                              static_cast<vecgeom::Precision>(360)}),
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
+          {rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
   if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
@@ -86,8 +89,11 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
   // ring cap at Sphi+Dphi
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-      builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin, rmax, /*fullcircle=*/true, 0, 360}),
-      builder::CreateLocalTransformation<Real_t>({rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
+      builder::CreateFrame<Real_t>(FrameType::kRing,
+                                   RingMask_t{rmin, rmax, /*fullcircle=*/true, static_cast<vecgeom::Precision>(0),
+                                              static_cast<vecgeom::Precision>(360)}),
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
+          {rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
   if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);

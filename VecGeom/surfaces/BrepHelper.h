@@ -20,35 +20,6 @@
 
 namespace vgbrep {
 
-template <typename T>
-char const *to_cstring(T type)
-{
-  return nullptr;
-}
-
-template <>
-char const *to_cstring<SurfaceType>(SurfaceType type)
-{
-  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "arb4"};
-  assert(size_t(type) * sizeof(const char *) < sizeof(data));
-  return data[static_cast<int>(type)];
-}
-
-template <>
-char const *to_cstring<bool>(bool type)
-{
-  if (type) return "true";
-  return "false";
-}
-
-template <>
-char const *to_cstring<FrameType>(FrameType type)
-{
-  static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
-  assert(size_t(type) * sizeof(const char *) < sizeof(data));
-  return data[static_cast<int>(type)];
-}
-
 template <typename Real_t>
 class BrepHelper {
   using SurfData_t     = SurfData<Real_t>;
@@ -138,7 +109,8 @@ public:
     if (fSurfData) ClearData();
   }
 
-  bool ApproxEqualTransformation(Transformation const &t1, Transformation const &t2)
+  bool ApproxEqualTransformation(vecgeom::Transformation3DMP<Real_t> const &t1,
+                                 vecgeom::Transformation3DMP<Real_t> const &t2)
   {
     if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
     for (int i = 0; i < 9; ++i)
@@ -176,7 +148,14 @@ public:
         for (int i = 0; i < parent_ind; ++i) {
           auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
-          if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) child_frame.fParent = parent_ind;
+          if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) {
+            // Check if the frame is embedded in the parent
+            if (fCPUdata.IsEmbedding(parent_frame, child_frame)) {
+              child_frame.fParent = parent_ind;
+            }
+            // For the moment setting the parent anyway
+            child_frame.fParent = parent_ind;
+          }
         }
       }
       side.fNumParents = num_parents;
@@ -558,7 +537,7 @@ public:
   bool CreateLocalSurfaces()
   {
     // add identity first in the list of local transformations
-    Transformation identity;
+    TransformationMP<Real_t> identity;
     assert(fCPUdata.fLocalTrans.size() == 0);
     fCPUdata.fLocalTrans.push_back(identity);
     //  Iterate logical volumes and create local surfaces
@@ -670,7 +649,7 @@ public:
       auto &nperscene = fCPUdata.fSceneTouchables;
       nphysical++;
       nperscene[scene_id]++;
-      Transformation trans;
+      TransformationMP<Real_t> trans;
       // only consider the surface transformation in its scene
       state.TopInSceneMatrix(trans);
       VolumeShellCPU const &shell = fCPUdata.fShells[ivol];
@@ -682,7 +661,7 @@ public:
         FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         // Ignore 'inside' helper surfaces having no frame
         if (lsurf.fFrame.type == FrameType::kNoFrame) continue;
-        Transformation surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
+        TransformationMP<Real_t> surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
         surftrans *= trans;
         int trans_id = fCPUdata.fGlobalTrans.size();
         fCPUdata.fGlobalTrans.push_back(surftrans);
@@ -811,7 +790,7 @@ public:
     };
 
     // add identity first in the list of global transformations
-    Transformation identity;
+    TransformationMP<Real_t> identity;
     fCPUdata.fGlobalTrans.push_back(identity);
     // add a dummy common surface since index 0 is not allowed for correctly handling sides
     fCPUdata.fCommonSurfaces.push_back({});
@@ -921,13 +900,13 @@ public:
     // Set flip status of common surface based on first framed surface after sorting
     fCPUdata.fCommonSurfaces[idsurf].fFlipped = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fLogicId < 0 ? 1 : 0;
 
-    Transformation tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
+    TransformationMP<Real_t> tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
 
     // Skip first surface on left side
     for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob = surf.fLeftSide.fSurfaces[i];
       auto &surf = fCPUdata.fFramedSurf[idglob];
-      Transformation tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+      TransformationMP<Real_t> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
       tnew *= tsurfinv;
       if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
@@ -940,7 +919,7 @@ public:
     for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
       int idglob = surf.fRightSide.fSurfaces[i];
       auto &surf = fCPUdata.fFramedSurf[idglob];
-      Transformation tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+      TransformationMP<Real_t> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
       tnew *= tsurfinv;
       if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
         surf.fTrans = 0;
@@ -1182,8 +1161,8 @@ private:
       }
 
       // Check if the 2 surfaces are parallel
-      Transformation const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-      Transformation const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+      vecgeom::Transformation3DMP<Real_t> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+      vecgeom::Transformation3DMP<Real_t> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
       // Check if the rotations are matching. The z axis inverse-transformed
       // with the two rotations should end up as aligned vectors. This is
       // true for planes (Z is the normal) but also for tubes/cones where
@@ -1249,8 +1228,8 @@ private:
 
     auto surfHash = [&](int idglobal, double tolerance = 100 * vecgeom::kTolerance) {
       // Compute hash for the surface rotation and translation
-      FramedSurface const &surf   = fCPUdata.fFramedSurf[idglobal];
-      Transformation const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
+      FramedSurface const &surf                        = fCPUdata.fFramedSurf[idglobal];
+      vecgeom::Transformation3DMP<Real_t> const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
 
       // get normal vector of surface
       vecgeom::Vector3D<Real_t> normal;
@@ -1372,9 +1351,9 @@ private:
     FramedSurface const &s2 = fCPUdata.fFramedSurf[side.fSurfaces[i2]];
     if (s1.fFrame.type != s2.fFrame.type) return false;
     // Get displacement vector between the 2 frame centers and check if it has null length
-    Transformation const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-    Transformation const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
-    Vector3D tdiff           = t1.Translation() - t2.Translation();
+    vecgeom::Transformation3DMP<Real_t> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+    vecgeom::Transformation3DMP<Real_t> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+    Vector3D tdiff                                = t1.Translation() - t2.Translation();
     // TODO: Check if this has to always hold with the new mask types!!
     if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
 
@@ -1496,13 +1475,13 @@ private:
     // Create and copy surface data
     // Local transformations (per volume local surfaces)
     fSurfData->fNlocalTrans = fCPUdata.fLocalTrans.size();
-    fSurfData->fLocalTrans  = new Transformation[fCPUdata.fLocalTrans.size()];
+    fSurfData->fLocalTrans  = new TransformationMP<Real_t>[fCPUdata.fLocalTrans.size()];
     for (size_t i = 0; i < fCPUdata.fLocalTrans.size(); ++i)
       fSurfData->fLocalTrans[i] = fCPUdata.fLocalTrans[i];
 
     // Global transformations (used for placed surfaces)
     fSurfData->fNglobalTrans = fCPUdata.fGlobalTrans.size();
-    fSurfData->fGlobalTrans  = new Transformation[fCPUdata.fGlobalTrans.size()];
+    fSurfData->fGlobalTrans  = new TransformationMP<Real_t>[fCPUdata.fGlobalTrans.size()];
     for (size_t i = 0; i < fCPUdata.fGlobalTrans.size(); ++i)
       fSurfData->fGlobalTrans[i] = fCPUdata.fGlobalTrans[i];
 

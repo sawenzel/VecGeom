@@ -17,7 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreateTrapezoidSurfaces(vecgeom::UnplacedTrapezoid const &trap, int logical_id)
 {
-  using Vector3D = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
   auto dx1 = trap.GetDx1();
   auto dx2 = trap.GetDx2();

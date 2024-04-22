@@ -30,6 +30,23 @@ void NavStateIndex::DeltaTransformation(NavStateIndex const &other, Transformati
   delta.FixZeroes();
 }
 
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE void NavStateIndex::DeltaTransformation(NavStateIndex const &other,
+                                                                Transformation3DMP<Real_t> &delta) const
+{
+  Transformation3DMP<Real_t> g2;
+  Transformation3DMP<Real_t> g1;
+  other.TopMatrix(g2);
+  this->TopMatrix(g1);
+  delta = g1.Inverse();
+  // Trans/rot properties already correctly set
+  // g2.SetProperties();
+  // delta.SetProperties();
+  delta.FixZeroes();
+  delta.MultiplyFromRight(g2);
+  delta.FixZeroes();
+}
+
 void NavStateIndex::GetPathAsListOfIndices(std::list<uint> &indices) const
 {
   indices.clear();

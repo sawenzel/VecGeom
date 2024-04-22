@@ -39,7 +39,15 @@ constexpr Real_t kToleranceDist = Real_t(0);
 template <>
 inline constexpr double kToleranceDist<double> = double(1e-9);
 template <>
-inline constexpr double kToleranceDist<float> = float(1e-3);
+inline constexpr float kToleranceDist<float> = float(1e-3);
+
+template <typename Real_t>
+constexpr Real_t kToleranceDistSquared = Real_t(0);
+
+template <>
+inline constexpr double kToleranceDistSquared<double> = kToleranceDist<double> *kToleranceDist<double>;
+template <>
+inline constexpr float kToleranceDistSquared<float> = kToleranceDist<float> *kToleranceDist<float>;
 
 using namespace vecCore::math;
 
@@ -47,19 +55,19 @@ VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;
 VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
 // VECGEOM_CONST Precision kInfinity         = std::numeric_limits<Precision>::infinity();
 // a special constant to indicate a "miss" length
-VECGEOM_CONST Precision kInfLength         = vecCore::NumericLimits<Precision>::Max();
-VECGEOM_CONST Precision kMaximum           = vecCore::NumericLimits<Precision>::Max();
-VECGEOM_CONST Precision kMinimum           = vecCore::NumericLimits<Precision>::Min();
-VECGEOM_CONST Precision kPi                = 3.14159265358979323846;
-VECGEOM_CONST Precision kHalfPi            = 0.5 * kPi;
-VECGEOM_CONST Precision kTwoPi             = 2. * kPi;
-VECGEOM_CONST Precision kTwoPiInv          = 1. / kTwoPi;
-VECGEOM_CONST Precision kDegToRad          = kPi / 180.;
-VECGEOM_CONST Precision kRadToDeg          = 180. / kPi;
-VECGEOM_CONST Precision kRadTolerance      = 1e-9;
-VECGEOM_CONST Precision kTiny              = 1e-30;
-VECGEOM_CONST Precision kHalfTolerance     = 0.5 * kTolerance;
-VECGEOM_CONST Precision kToleranceSquared  = kTolerance * kTolerance;
+VECGEOM_CONST Precision kInfLength        = vecCore::NumericLimits<Precision>::Max();
+VECGEOM_CONST Precision kMaximum          = vecCore::NumericLimits<Precision>::Max();
+VECGEOM_CONST Precision kMinimum          = vecCore::NumericLimits<Precision>::Min();
+VECGEOM_CONST Precision kPi               = 3.14159265358979323846;
+VECGEOM_CONST Precision kHalfPi           = 0.5 * kPi;
+VECGEOM_CONST Precision kTwoPi            = 2. * kPi;
+VECGEOM_CONST Precision kTwoPiInv         = 1. / kTwoPi;
+VECGEOM_CONST Precision kDegToRad         = kPi / 180.;
+VECGEOM_CONST Precision kRadToDeg         = 180. / kPi;
+VECGEOM_CONST Precision kRadTolerance     = 1e-9;
+VECGEOM_CONST Precision kTiny             = 1e-30;
+VECGEOM_CONST Precision kHalfTolerance    = 0.5 * kTolerance;
+VECGEOM_CONST Precision kToleranceSquared = kTolerance * kTolerance;
 
 template <typename T>
 struct Tiny {

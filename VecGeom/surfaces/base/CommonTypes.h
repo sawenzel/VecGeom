@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <VecGeom/base/Transformation3D.h>
+#include <VecGeom/base/Transformation3DMP.h>
 #include <VecGeom/base/Vector2D.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/volumes/kernel/GenericKernels.h>
@@ -16,6 +17,8 @@ using Vector3D = vecgeom::Vector3D<Real_t>;
 template <typename Real_t>
 using Vector2D       = vecgeom::Vector2D<Real_t>;
 using Transformation = vecgeom::Transformation3D;
+template <typename Real_t>
+using TransformationMP = vecgeom::Transformation3DMP<Real_t>;
 
 using logic_int = int;
 
@@ -66,6 +69,9 @@ enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTo
 ///< kQuadrilateral <- planar quadrilateral in xy-plane
 enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindow, kTriangle, kQuadrilateral };
 
+///< Segment-segment intersection types
+enum class SegmentIntersect : char { kNoIntersect, kEmbedding, kEmbedded, kOverlap, kIntersect, kEqual };
+
 // Aliases for different usages of Vec2D.
 template <typename Real_t>
 using Range = Vector2D<Real_t>;
@@ -76,39 +82,142 @@ using AngleVector = Vector2D<Real_t>;
 template <typename Real_t>
 using Point2D = Vector2D<Real_t>;
 
+template <typename Real_t>
+struct Circle2D {
+  Real_t fR;          ///< Circle radius
+  Point2D<Real_t> fC; ///< Center
+  Circle2D(Real_t r, Point2D<Real_t> const &center) : fR{r}, fC{center} {}
+};
+
+template <typename Real_t>
+struct Segment2D {
+  Point2D<Real_t> fP1;
+  Point2D<Real_t> fP2;
+  Vector2D<Real_t> fV;
+  bool fDegen{false};
+
+  Segment2D(Point2D<Real_t> const &p1, Point2D<Real_t> const &p2)
+  {
+    fP1    = p1;
+    fP2    = p2;
+    fV     = fP2 - fP1;
+    fDegen = fV.Mag2() < vecgeom::kToleranceDistSquared<Real_t>;
+  }
+
+  /// @brief Segment intersection with a circle.
+  /// @param circle Circle to check against
+  /// @return Intersection result. Can be kEmbedded, kIntersect or kNoIntersect
+  SegmentIntersect Intersect(Circle2D<Real_t> const &circle)
+  {
+    Vector2D<Real_t> v1 = circle.fC - fP1;
+    Vector2D<Real_t> v2 = circle.fC - fP2;
+    bool inside1        = false;
+    bool inside2        = false;
+    if (v1.Dot(fV) < vecgeom::MakePlusTolerant<true, Real_t>(0) ||
+        v2.Dot(fV) > vecgeom::MakeMinusTolerant<true, Real_t>(0)) {
+      // One of the segment points is the closest to the circle center (includes the degen case)
+      // Check the inside of each point and compare them
+      inside1 = v1.Mag() < vecgeom::MakeMinusTolerant<true, Real_t>(circle.fR);
+      inside2 = v2.Mag() < vecgeom::MakeMinusTolerant<true, Real_t>(circle.fR);
+      if (inside1 && inside2) return SegmentIntersect::kEmbedded;
+      if (inside1 ^ inside2) return SegmentIntersect::kIntersect;
+      return SegmentIntersect::kNoIntersect;
+    }
+    // There is a point on the segment closest to the center (no degen here)
+    auto saf = std::abs(v1.CrossZ(fV)) / fV.Mag();
+    if (saf > vecgeom::MakeMinusTolerant<true, Real_t>(circle.fR)) return SegmentIntersect::kNoIntersect;
+    // The closest point is inside the circle
+    inside1 = v1.Mag() < vecgeom::MakeMinusTolerant<true, Real_t>(circle.fR);
+    inside2 = v2.Mag() < vecgeom::MakeMinusTolerant<true, Real_t>(circle.fR);
+    if (inside1 && inside2) return SegmentIntersect::kEmbedded;
+    return SegmentIntersect::kIntersect;
+  }
+
+  /// @brief Intersection with another segment
+  /// @param other Other segment
+  /// @return Intersection type
+  SegmentIntersect Intersect(Segment2D<Real_t> const &other)
+  {
+    // Return kNoIntersect if one of the segments is degenerated
+    if (fDegen || other.fDegen) return SegmentIntersect::kNoIntersect;
+    auto v12  = other.fP2 - fP1;
+    auto s    = v12.CrossZ(other.fV);
+    auto t    = v12.CrossZ(fV);
+    auto norm = fV.CrossZ(other.fV);
+    if (std::abs(norm) < vecgeom::kToleranceDist<Real_t>) {
+      // the segments are parallel
+      if (std::abs(s) < vecgeom::kToleranceDist<Real_t>) {
+        // the segments are colinear
+        auto inv_vsq = Real_t(1) / fV.Dot(fV);
+        auto t1      = inv_vsq * fV.Dot(other.fP1 - fP1);
+        auto t2      = inv_vsq * fV.Dot(other.fP2 - fP1);
+        if (t1 > t2) std::swap(t1, t2);
+        if (t1 > vecgeom::MakeMinusTolerant<true, Real_t>(1) || t2 < vecgeom::MakePlusTolerant<true, Real_t>(0))
+          return SegmentIntersect::kNoIntersect;
+        if (std::abs(t1) < vecgeom::kToleranceDist<Real_t> &&
+            std::abs(t2 - Real_t(1)) < vecgeom::kToleranceDist<Real_t>)
+          return SegmentIntersect::kEqual;
+        if (t1 > vecgeom::MakeMinusTolerant<true, Real_t>(0) && t2 < vecgeom::MakePlusTolerant<true, Real_t>(1))
+          return SegmentIntersect::kEmbedding;
+        if (t1 < vecgeom::MakePlusTolerant<true, Real_t>(0) && t2 > vecgeom::MakeMinusTolerant<true, Real_t>(1))
+          return SegmentIntersect::kEmbedded;
+        return SegmentIntersect::kOverlap;
+      } else
+        // The segments are parallel
+        return SegmentIntersect::kNoIntersect;
+    }
+    s /= norm;
+    t /= norm;
+    if (s > vecgeom::MakePlusTolerant<true, Real_t>(0) && s < vecgeom::MakeMinusTolerant<true, Real_t>(1) &&
+        t > vecgeom::MakePlusTolerant<true, Real_t>(0) && t < vecgeom::MakeMinusTolerant<true, Real_t>(1))
+      // The segments are crossing in range
+      return SegmentIntersect::kIntersect;
+    // No intersection in range
+    return SegmentIntersect::kNoIntersect;
+  }
+};
+
 /// @brief Data for cylindrical and spherical surfaces
 /// @tparam Real_t Storage type
-/// @tparam Real_s Interface type
-template <typename Real_t, typename Real_s = Real_t>
+template <typename Real_t>
 struct CylData {
   Real_t radius{0}; ///< Cylinder radius. Stored negative if flipped.
 
   CylData() = default;
-  CylData(Real_s rad, bool flip = false) : radius(flip ? -rad : rad) {}
+  /// @tparam Real_i precision type of inputs
+  template <typename Real_i>
+  CylData(Real_i rad, bool flip = false) : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad))
+  {
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  Real_s Radius() const { return std::abs(Real_s(radius)); }
+  Real_t Radius() const { return std::abs(Real_t(radius)); }
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
 };
 
-template <typename Real_t, typename Real_s = Real_t>
-using SphData = CylData<Real_t, Real_s>;
+template <typename Real_t>
+using SphData = CylData<Real_t>;
 
 /// @brief Data for conical surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type
-template <typename Real_t, typename Real_s = Real_t>
+template <typename Real_t>
 struct ConeData {
   Real_t radius{0}; ///< Cone radus at Z = 0: 0.5 * (rbottom + rup) Stored negative if flipped.
   Real_t slope{0};  ///< Cone slope  0.5 * (rtop - rbottom)/dz --> for cyl extension this would be 0
 
   ConeData() = default;
-  ConeData(Real_s rad, Real_s slope, bool flip = false) : radius(flip ? -rad : rad), slope(slope) {}
+  /// @tparam Real_i precision type of inputs
+  template <typename Real_i>
+  ConeData(Real_i rad, Real_i slope, bool flip = false)
+      : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad)), slope(static_cast<Real_t>(slope))
+  {
+  }
   VECCORE_ATT_HOST_DEVICE
-  Real_s Radius() const { return std::abs(Real_s(radius)); }
+  Real_t Radius() const { return std::abs(Real_t(radius)); }
   VECCORE_ATT_HOST_DEVICE
-  Real_s RadiusZ(Real_s z) const { return Radius() + z * slope; }
+  Real_t RadiusZ(Real_t z) const { return Radius() + z * slope; }
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return radius < 0; }
 };
@@ -116,7 +225,7 @@ struct ConeData {
 /// @brief Data for conical surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type
-template <typename Real_t, typename Real_s = Real_t>
+template <typename Real_t>
 struct EllipData {
   Real_t Rx{0}; ///< semi-axis in x
   Real_t Ry{0}; ///< semi-axis in y
@@ -134,7 +243,10 @@ struct EllipData {
   Real_t fQ2;   ///< Coefficient in the approximation of dist = Q1*(x^2+y^2) - Q2
 
   EllipData() = default;
-  EllipData(Real_s radx, Real_s rady, Real_s half_z) : Rx(radx), Ry(rady), dz(half_z)
+  /// @tparam Real_i precision type of inputs
+  template <typename Real_i>
+  EllipData(Real_i radx, Real_i rady, Real_i half_z)
+      : Rx(static_cast<Real_t>(radx)), Ry(static_cast<Real_t>(rady)), dz(static_cast<Real_t>(half_z))
   {
 
     R = vecCore::math::Min(Rx, Ry);
@@ -155,7 +267,7 @@ struct EllipData {
 /// @brief Data for Arb4 surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type
-template <typename Real_t, typename Real_s = Real_t>
+template <typename Real_t>
 struct Arb4Data {
   using Vector3D = vecgeom::Vector3D<Real_t>;
 
@@ -185,19 +297,22 @@ struct Arb4Data {
 #endif
 
   Arb4Data() = default;
-  Arb4Data(Real_s v0_0, Real_s v0_1, Real_s v0_2, Real_s v1_0, Real_s v1_1, Real_s v2_0, Real_s v2_1, Real_s v2_2,
-           Real_s v3_0, Real_s v3_1)
-      : halfH(0.5 * (v2_2 - v0_2)), halfH_inv(1. / halfH)
+  /// @tparam Real_i precision type of inputs
+  template <typename Real_i>
+  Arb4Data(Real_i v0_0, Real_i v0_1, Real_i v0_2, Real_i v1_0, Real_i v1_1, Real_i v2_0, Real_i v2_1, Real_i v2_2,
+           Real_i v3_0, Real_i v3_1)
+      : halfH(0.5 * static_cast<Real_t>(v2_2 - v0_2)), halfH_inv(1. / halfH)
   {
 
-    verticesX[0] = v0_0;
-    verticesX[1] = v1_0;
-    verticesX[2] = v3_0; // note the flip here to stick to the convention of GenTrapImplementation in the solid model
-    verticesX[3] = v2_0;
-    verticesY[0] = v0_1;
-    verticesY[1] = v1_1;
-    verticesY[2] = v3_1;
-    verticesY[3] = v2_1;
+    verticesX[0] = static_cast<Real_t>(v0_0);
+    verticesX[1] = static_cast<Real_t>(v1_0);
+    verticesX[2] = static_cast<Real_t>(
+        v3_0); // note the flip here to stick to the convention of GenTrapImplementation in the solid model
+    verticesX[3] = static_cast<Real_t>(v2_0);
+    verticesY[0] = static_cast<Real_t>(v0_1);
+    verticesY[1] = static_cast<Real_t>(v1_1);
+    verticesY[2] = static_cast<Real_t>(v3_1);
+    verticesY[3] = static_cast<Real_t>(v2_1);
 
     for (int i = 0; i < 2; ++i) {
       connecting_compX[i] = verticesX[i] - verticesX[i + 2];
@@ -316,18 +431,18 @@ VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = Tolera
 /// @brief Data for torus surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type
-template <typename Real_t, typename Real_s = Real_t>
+template <typename Real_t>
 struct TorusData {
   Real_t rTor{0};  ///< radius to the center the torus.
   Real_t rTube{0}; ///< radius of the tube around the torus center, if negative, the torus is flipped
-  AngleVector<Real_t> vecSPhi{
-      vecgeom::kInfLength,
-      vecgeom::kInfLength}; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
-  AngleVector<Real_t> vecEPhi{
-      vecgeom::kInfLength,
-      vecgeom::kInfLength};                ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
-  CylData<Real_t, Real_t> inner_cycl_data; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
-  CylData<Real_t, Real_t> outer_cycl_data; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
+  AngleVector<Real_t> vecSPhi{vecCore::NumericLimits<Real_t>::Max(),
+                              vecCore::NumericLimits<Real_t>::Max()}; ///< Cartesian coordinates of vectors that
+                                                                      ///< represents the start of the phi-cut.
+  AngleVector<Real_t> vecEPhi{vecCore::NumericLimits<Real_t>::Max(),
+                              vecCore::NumericLimits<Real_t>::Max()}; ///< Cartesian coordinates of vectors that
+                                                                      ///< represents the end of the phi-cut.
+  CylData<Real_t> inner_cycl_data; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
+  CylData<Real_t> outer_cycl_data; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
 
   /// @brief Check if local point is in the phi range
   /// @param local Point in local coordinates
@@ -348,23 +463,27 @@ struct TorusData {
   }
 
   TorusData() = default;
-  TorusData(Real_s rad, Real_s rad_tube, Real_s sphi = Real_s{0}, Real_s ephi = Real_s{0}, bool flip = false)
-      : rTor(rad), rTube(flip ? -rad_tube : rad_tube), vecSPhi(vecgeom::Cos(sphi), vecgeom::Sin(sphi)),
-        vecEPhi(vecgeom::Cos(ephi), vecgeom::Sin(ephi)), inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
+  /// @tparam Real_i precision type of inputs
+  template <typename Real_i>
+  TorusData(Real_i rad, Real_i rad_tube, Real_i sphi = Real_i{0}, Real_i ephi = Real_i{0}, bool flip = false)
+      : rTor(static_cast<Real_t>(rad)), rTube(flip ? static_cast<Real_t>(-rad_tube) : static_cast<Real_t>(rad_tube)),
+        vecSPhi(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi))),
+        vecEPhi(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi))),
+        inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
         outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false){};
   VECCORE_ATT_HOST_DEVICE
-  Real_s Radius() const { return std::abs(Real_s(rTor)); }
+  Real_t Radius() const { return std::abs(Real_t(rTor)); }
   VECCORE_ATT_HOST_DEVICE
-  Real_s RadiusTube() const { return std::abs(Real_s(rTube)); }
+  Real_t RadiusTube() const { return std::abs(Real_t(rTube)); }
   VECCORE_ATT_HOST_DEVICE
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return rTube < 0; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData<Real_t, Real_t> const &GetInnerCylData() const { return inner_cycl_data; }
+  CylData<Real_t> const &GetInnerCylData() const { return inner_cycl_data; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData<Real_t, Real_t> const &GetOuterCylData() const { return outer_cycl_data; }
+  CylData<Real_t> const &GetOuterCylData() const { return outer_cycl_data; }
 };
 
 } // namespace vgbrep

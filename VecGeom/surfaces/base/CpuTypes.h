@@ -2,8 +2,38 @@
 #define VECGEOM_SURFACE_CPUTYPES_H
 
 #include <VecGeom/surfaces/base/CommonTypes.h>
+#include <VecGeom/surfaces/Model.h>
 
 namespace vgbrep {
+
+template <typename T>
+char const *to_cstring(T type)
+{
+  return nullptr;
+}
+
+template <>
+char const *to_cstring<SurfaceType>(SurfaceType type)
+{
+  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "arb4"};
+  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  return data[static_cast<int>(type)];
+}
+
+template <>
+char const *to_cstring<bool>(bool type)
+{
+  if (type) return "true";
+  return "false";
+}
+
+template <>
+char const *to_cstring<FrameType>(FrameType type)
+{
+  static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
+  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  return data[static_cast<int>(type)];
+}
 
 using LogicExpressionCPU = std::vector<logic_int>;
 
@@ -40,19 +70,19 @@ struct CPUsurfData {
   std::vector<RingMask_t> fRingMasks;     ///< ring masks
   std::vector<ZPhiMask_t> fZPhiMasks;     ///< cylindrical masks
   std::vector<TriangleMask_t> fTriangleMasks;
-  std::vector<QuadMask_t> fQuadMasks;         ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;         ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;          ///< data for conical surfaces
-  std::vector<EllipData_t> fEllipData;        ///< data for elliptical surfaces
-  std::vector<TorusData_t> fTorusData;        ///< data for torus surfaces
-  std::vector<Arb4Data_t> fArb4Data;          ///< data for Arb4 surfaces
-  std::vector<Transformation> fLocalTrans;    ///< local transformations
-  std::vector<Transformation> fGlobalTrans;   ///< global transformations for surfaces in the scene
-  std::vector<FramedSurface> fLocalSurfaces;  ///< local surfaces per logical volume
-  std::vector<FramedSurface> fFramedSurf;     ///< global surfaces
-  std::vector<CommonSurface> fCommonSurfaces; ///< common surfaces
-  std::vector<VolumeShellCPU> fShells;        ///< vector of local volume surfaces
-  std::vector<VolumeShellCPU> fSceneShells;   ///< vector of scene volume surfaces
+  std::vector<QuadMask_t> fQuadMasks;                 ///< quadrilateral masks
+  std::vector<CylData_t> fCylSphData;                 ///< data for cyl surfaces
+  std::vector<ConeData_t> fConeData;                  ///< data for conical surfaces
+  std::vector<EllipData_t> fEllipData;                ///< data for elliptical surfaces
+  std::vector<TorusData_t> fTorusData;                ///< data for torus surfaces
+  std::vector<Arb4Data_t> fArb4Data;                  ///< data for Arb4 surfaces
+  std::vector<TransformationMP<Real_t>> fLocalTrans;  ///< local transformations
+  std::vector<TransformationMP<Real_t>> fGlobalTrans; ///< global transformations for surfaces in the scene
+  std::vector<FramedSurface> fLocalSurfaces;          ///< local surfaces per logical volume
+  std::vector<FramedSurface> fFramedSurf;             ///< global surfaces
+  std::vector<CommonSurface> fCommonSurfaces;         ///< common surfaces
+  std::vector<VolumeShellCPU> fShells;                ///< vector of local volume surfaces
+  std::vector<VolumeShellCPU> fSceneShells;           ///< vector of scene volume surfaces
 
   VecInt_t fSceneStartIndex;            ///< Start indices for data indexed by state id (per scene)
   VecInt_t fSceneTouchables;            ///< Number of touchables (per scene)
@@ -87,8 +117,8 @@ public:
     std::vector<ConeData_t>().swap(fConeData);
     std::vector<EllipData_t>().swap(fEllipData);
     std::vector<TorusData_t>().swap(fTorusData);
-    std::vector<Transformation>().swap(fLocalTrans);
-    std::vector<Transformation>().swap(fGlobalTrans);
+    std::vector<TransformationMP<Real_t>>().swap(fLocalTrans);
+    std::vector<TransformationMP<Real_t>>().swap(fGlobalTrans);
     std::vector<FramedSurface>().swap(fLocalSurfaces);
     std::vector<FramedSurface>().swap(fFramedSurf);
     std::vector<CommonSurface>().swap(fCommonSurfaces);
@@ -133,6 +163,164 @@ public:
   VecChar_t &GetSidesExiting(int scene_id, int state_id)
   {
     return fSidesExiting[fSceneStartIndex[scene_id] + state_id];
+  }
+
+  void GetMask(int id, WindowMask_t const *&mask) { mask = &fWindowMasks[id]; }
+  void GetMask(int id, RingMask_t const *&mask) { mask = &fRingMasks[id]; }
+  void GetMask(int id, ZPhiMask_t const *&mask) { mask = &fZPhiMasks[id]; }
+  void GetMask(int id, TriangleMask_t const *&mask) { mask = &fTriangleMasks[id]; }
+  void GetMask(int id, QuadMask_t const *&mask) { mask = &fQuadMasks[id]; }
+
+  /// @brief Trampoline function to to the frame embedding checker
+  /// @param f1 Parent framed surface
+  /// @param f2 Child framed surface
+  /// @return Child is embedded in parent
+  bool IsEmbedding(FramedSurface const &f1, FramedSurface const &f2)
+  {
+    auto log_not_supported = [&]() {
+      VECGEOM_LOG(error) << "Embedding check " << to_cstring(f1.fFrame.type) << " - " << to_cstring(f2.fFrame.type)
+                         << " not supported";
+    };
+    TransformationMP<Real_t> const &t1 = fGlobalTrans[f1.fTrans];
+    TransformationMP<Real_t> const &t2 = fGlobalTrans[f2.fTrans];
+    TransformationMP<Real_t> trans     = t2 * t1.Inverse();
+    trans.SetProperties();
+
+    switch (f1.fFrame.type) {
+    case FrameType::kRing: {
+      RingMask_t const *mask1 = nullptr;
+      GetMask(f1.fFrame.id, mask1);
+      switch (f2.fFrame.type) {
+      case FrameType::kRing: {
+        RingMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, RingMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kWindow: {
+        WindowMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, RingMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kTriangle: {
+        TriangleMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, RingMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kQuadrilateral: {
+        QuadMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, RingMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      default:
+        log_not_supported();
+      };
+      break;
+    }
+    case FrameType::kZPhi: {
+      ZPhiMask_t const *mask1 = nullptr;
+      GetMask(f1.fFrame.id, mask1);
+      switch (f2.fFrame.type) {
+      case FrameType::kZPhi: {
+        ZPhiMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, ZPhiMask_t, ZPhiMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      default:
+        log_not_supported();
+      };
+      break;
+    }
+    case FrameType::kWindow: {
+      WindowMask_t const *mask1 = nullptr;
+      GetMask(f1.fFrame.id, mask1);
+      switch (f2.fFrame.type) {
+      case FrameType::kRing: {
+        RingMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, WindowMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kWindow: {
+        WindowMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, WindowMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kTriangle: {
+        TriangleMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, WindowMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kQuadrilateral: {
+        QuadMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, WindowMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      default:
+        log_not_supported();
+      };
+      break;
+    }
+    case FrameType::kTriangle: {
+      TriangleMask_t const *mask1 = nullptr;
+      GetMask(f1.fFrame.id, mask1);
+      switch (f2.fFrame.type) {
+      case FrameType::kRing: {
+        RingMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, TriangleMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kWindow: {
+        WindowMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, TriangleMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kTriangle: {
+        TriangleMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, TriangleMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kQuadrilateral: {
+        QuadMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, TriangleMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      default:
+        log_not_supported();
+      };
+      break;
+    }
+    case FrameType::kQuadrilateral: {
+      QuadMask_t const *mask1 = nullptr;
+      GetMask(f1.fFrame.id, mask1);
+      switch (f2.fFrame.type) {
+      case FrameType::kRing: {
+        RingMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, QuadMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kWindow: {
+        WindowMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, QuadMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kTriangle: {
+        TriangleMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, QuadMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      case FrameType::kQuadrilateral: {
+        QuadMask_t const *mask2 = nullptr;
+        GetMask(f2.fFrame.id, mask2);
+        return FrameChecker<Real_t, QuadMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+      }
+      default:
+        log_not_supported();
+      };
+      break;
+    }
+    default:
+      log_not_supported();
+    };
+    return false;
   }
 };
 

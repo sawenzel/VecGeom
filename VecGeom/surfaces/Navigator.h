@@ -44,7 +44,7 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<
 {
   // Convert point in local VolumeShell coordinates
   Vector3D<Real_t> localpoint;
-  Transformation trans;
+  vecgeom::Transformation3DMP<Real_t> trans;
   in_state.TopMatrix(trans);
   trans.Transform(point, localpoint);
   auto vol    = in_state.Top();
@@ -124,7 +124,7 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LogicSafety(vecgeom::Vector3
 {
   // Convert point in local VolumeShell coordinates
   Vector3D<Real_t> localpoint;
-  Transformation trans;
+  vecgeom::Transformation3DMP<Real_t> trans;
   in_state.TopMatrix(trans);
   trans.Transform(point, localpoint);
   auto vol          = in_state.Top();
@@ -403,7 +403,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
     // Left side already checked, now check right side
     // Note: only one side can have a valid exiting
     left_side  = false;
-    visibility = flipped;
+    visibility = !exiting ^ flipped;
     surfhit    = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
   }
   if (surfhit) onsurf = local + dist * localdir;
@@ -427,8 +427,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
                                                  vecgeom::NavigationState &out_state, vecgeom::ExitSurfState &exit_surf,
                                                  Real_t stepmax = vecgeom::InfinityLength<Real_t>())
 {
-  constexpr char kLside         = 1;
-  constexpr char kRside         = 2;
+  constexpr char kLside = 1;
+  // constexpr char kRside         = 2;
   constexpr char kCheckAll      = 0;
   constexpr char kCheckChildren = 1;
   constexpr char kCheckParents  = 2;
@@ -462,7 +462,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   exit_surf.common_id = 0;
 
   // Convert the point and direction to the scene coordinate system
-  vecgeom::Transformation3D scene_trans;
+  vecgeom::Transformation3DMP<Real_t> scene_trans;
   in_state.SceneMatrix(scene_trans);
   Vector3D<Real_t> local_scene    = scene_trans.Transform(point);
   Vector3D<Real_t> localdir_scene = scene_trans.TransformDirection(direction);
@@ -477,7 +477,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // Compute distance to the unplaced surface
     auto dist =
         DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, true, left_side, surfhit, onsurf_crt);
-    if (!surfhit || dist < -vecgeom::kTolerance || dist >= distance) continue;
+    if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
     auto const &surf = surfdata.fCommonSurfaces[isurf];
     is_scene_surface = surf.IsSceneSurface();
     // We need to check frame intersection
@@ -631,39 +631,23 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     int isurf          = vecCore::math::Abs(new_cand[icand]);
     bool self_entering = new_cand[icand] < 0;
     if (isurf == skip_surf) continue;
-    auto const &surf = surfdata.fCommonSurfaces[isurf];
-    char sides       = new_cand.fSides[icand];
+    char sides = new_cand.fSides[icand];
 
-    // Convert point and direction to surface frame
-    auto const &trans         = surfdata.fGlobalTrans[surf.fTrans];
-    Vector3D<Real_t> local    = trans.Transform(local_scene);
-    Vector3D<Real_t> localdir = trans.TransformDirection(localdir_scene);
+    bool left_side, surfhit;
+    Vector3D<Real_t> onsurf_crt;
+    // Compute distance to the unplaced surface
+    auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/false, left_side,
+                                   surfhit, onsurf_crt);
 
-    // Compute distance to surface
-    Real_t dist;
-    bool flipped          = false;
-    auto unplaced         = surfdata.GetUnplaced(isurf, flipped);
-    bool left_side        = (sides & kLside) > 0;
-    bool right_side       = (sides & kRside) > 0;
-    bool check_both_sides = left_side && right_side;
-    bool visibility       = !left_side ^ flipped;
-    bool surfhit          = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
-    if (!surfhit && check_both_sides) {
-      // Left side already checked, now check right side
-      // Note: only one side can have a valid entering
-      left_side  = false;
-      visibility = !flipped;
-      surfhit    = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
-    }
-    if (!surfhit || dist < -vecgeom::kTolerance || dist >= distance) continue;
+    if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
     // Temporary ugly solution to avoid self-entering the volume at 0 distance on the same surface
-    if (self_entering && vecCore::math::Abs(dist) < vecgeom::kTolerance) continue;
-    Vector3D<Real_t> onsurf_crt = local + dist * localdir;
+    if (self_entering && vecCore::math::Abs(dist) < vecgeom::kToleranceDist<Real_t>) continue;
 
     // This is an entering surface for in_state
     // First check if there is a parent frame on the entry side. If this is the case
     // and it is missed, then we have a virtual hit so we skip
 
+    auto const &surf       = surfdata.fCommonSurfaces[isurf];
     auto const &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
     // first check the extent of the entry side using onsurf
     if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
@@ -893,7 +877,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
       can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     }
 
-    if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
+    if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t> || safety_surf >= safety) continue;
 
     // This is an exiting surface for in_state
     // Only check the frame of the current state on this surface
@@ -960,7 +944,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
       visibility  = !flipped;
       can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     }
-    if (!can_compute || safety_surf < -vecgeom::kTolerance || safety_surf >= safety) continue;
+    if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t> || safety_surf >= safety) continue;
 
     // Entering side. We only check the parent frames on the side
     auto const &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;

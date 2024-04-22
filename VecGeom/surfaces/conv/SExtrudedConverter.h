@@ -11,9 +11,8 @@
 namespace vgbrep {
 namespace conv {
 
-template <typename Real_t>
 struct ReducedPoly {
-  using Vector3 = vecgeom::Vector3D<Real_t>;
+  using Vector3 = vecgeom::Vector3D<vecgeom::Precision>;
 
   int Nconvex;              // number of convex vertices
   int Nvert;                // total number of vertices
@@ -32,7 +31,7 @@ struct ReducedPoly {
 
   bool IsRightSided(Vector3 v1, Vector3 v2, Vector3 v3) const
   {
-    Real_t dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
+    vecgeom::Precision dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
     return (dot < -vecgeom::kTolerance) ? false : true;
   };
 
@@ -40,7 +39,7 @@ struct ReducedPoly {
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
   /// @return If the ReducedPoly polygon is convex
-  bool IsConvex(const Real_t *vertx, const Real_t *verty)
+  bool IsConvex(const vecgeom::Precision *vertx, const vecgeom::Precision *verty)
   {
     if (Nvert == 3) return true;
     int j, k;
@@ -61,7 +60,7 @@ struct ReducedPoly {
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
   /// @return If the ReducedPoly polygon is convex
-  bool IsSegConvex(const Real_t *vertx, const Real_t *verty, int i1, int i2 = -1)
+  bool IsSegConvex(const vecgeom::Precision *vertx, const vecgeom::Precision *verty, int i1, int i2 = -1)
   {
     if (i2 < 0) i2 = (i1 + 1) % Nvert;
 
@@ -100,7 +99,7 @@ struct ReducedPoly {
   ///        and creates the list of gaps, which contains the list of concave indices per gap
   /// @param vertx vertices in x of original, global polygon
   /// @param verty vertices in y of original, global polygon
-  void GetConvIndices(const Real_t *vertx, const Real_t *verty)
+  void GetConvIndices(const vecgeom::Precision *vertx, const vecgeom::Precision *verty)
   {
     int iseg = 0;
     int ivnew;
@@ -204,7 +203,7 @@ struct ReducedPoly {
 template <typename Real_t>
 bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logical_id)
 {
-  using Vector3 = vecgeom::Vector3D<Real_t>;
+  using Vector3 = vecgeom::Vector3D<vecgeom::Precision>;
 
   auto const &shell         = xtru.GetStruct();
   int n_vertices            = shell.GetPolygon().GetNVertices();
@@ -214,7 +213,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   std::vector<int> idx_vec(n_vertices);
   std::iota(idx_vec.begin(), idx_vec.end(), 0);
 
-  auto poly = ReducedPoly<Real_t>(idx_vec);
+  auto poly = ReducedPoly(idx_vec);
 
   // arrays of global vertices
   const auto vertx = vertices_poly.x();
@@ -223,7 +222,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   LogicExpressionCPU logic;
   int isurf;
 
-  vecgeom::Transformation3D transformation;
+  vecgeom::Transformation3DMP<Real_t> transformation;
   std::vector<Vector3> vertices;
   std::vector<Vector3> triangle_var;
   Vector3 vert1 = {0., 0., 0.};
@@ -235,8 +234,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   Real_t section_scale2 = 1;
 
   // recursive function to generate side surfaces of the extruded from a polygon
-  std::function<void(const ReducedPoly<Real_t> &, int)> GenerateSurfaces = [&](ReducedPoly<Real_t> input_poly,
-                                                                               int level = 0) {
+  std::function<void(const ReducedPoly &, int)> GenerateSurfaces = [&](ReducedPoly input_poly, int level = 0) {
     logic.push_back(lplus); // use parenthesis around each polygon
     if (input_poly.IsConvex(vertx, verty)) {
 
@@ -342,7 +340,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
 
       for (auto j = 0u; j < input_poly.list_of_gaps.size(); ++j) {
         // creating the concave polygone that needs to be subtracted
-        auto subpoly = ReducedPoly<Real_t>(input_poly.list_of_gaps[j]);
+        auto subpoly = ReducedPoly(input_poly.list_of_gaps[j]);
         GenerateSurfaces(subpoly, level + 1);
         // the addition of gaps is their union
         if (j < input_poly.list_of_gaps.size() - 1) logic.push_back(lor);
@@ -425,7 +423,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   // bottom virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetLowerZ(), 0, 180, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetLowerZ(), 0, 180, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
   logic.push_back(land);
@@ -433,7 +431,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   // top virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t>({0, 0, shell.GetUpperZ(), 0, 0, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetUpperZ(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
 

@@ -17,7 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreateTrdSurfaces(vecgeom::UnplacedTrd const &trd, int logical_id)
 {
-  using Vector3 = vecgeom::Vector3D<Real_t>;
+  using Vector3 = vecgeom::Vector3D<vecgeom::Precision>;
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3 & 4 & 5
 

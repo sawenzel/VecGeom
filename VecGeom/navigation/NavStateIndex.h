@@ -8,6 +8,7 @@
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Transformation3D.h"
+#include "VecGeom/base/Transformation3DMP.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/management/GeoManager.h"
 
@@ -254,6 +255,41 @@ public:
     return (nav_ind > 0) ? ToPlacedVolume(NavInd(nav_ind + 2)) : nullptr;
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void TopMatrixImpl(NavIndex_t nav_ind, Transformation3DMP<Real_t> &trans)
+  {
+    constexpr unsigned int kOffsetHasm = 3 * sizeof(NavIndex_t) + 1;
+
+    unsigned char hasm;
+    while (true) {
+      if (nav_ind == 0) return;
+      hasm            = *((unsigned char *)(NavIndAddr(nav_ind)) + kOffsetHasm);
+      bool has_matrix = (hasm & 0x04) > 0;
+      if (has_matrix) break;
+      // note that the surface model should always have a matrix and never do the following multiplication
+      auto const &t = *TopImpl(nav_ind)->GetTransformation();
+      trans *= t;
+      nav_ind = NavInd(nav_ind);
+    }
+
+    if ((hasm & 0x03) == 0) return;
+    bool has_trans = (hasm & 0x02) > 0;
+    bool has_rot   = (hasm & 0x01) > 0;
+    auto nd        = GetNdaughtersImpl(nav_ind);
+
+    // Potentially skip one NavIndex_t to ensure alignment of transformation data
+    auto transformationDataIndex     = nav_ind + 4 + nd + ((nd + 1) & 1);
+    const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
+    transformationDataIndex += unsigned{padTransformationData};
+
+    const auto address = reinterpret_cast<const Precision *>(NavIndAddr(transformationDataIndex));
+    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0);
+
+    Transformation3DMP<Real_t> t;
+    t.Set(address, address + 3, has_trans, has_rot);
+    trans *= t;
+  }
+
   VECCORE_ATT_HOST_DEVICE
   static void TopMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans)
   {
@@ -288,6 +324,13 @@ public:
     trans *= t;
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void TopInSceneMatrixImpl(NavIndex_t nav_ind, Transformation3DMP<Real_t> &trans)
+  {
+    // Get transformation of the node in the top scene
+    TopMatrixImpl(nav_ind, trans);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   static void TopInSceneMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans)
   {
@@ -295,8 +338,24 @@ public:
     TopMatrixImpl(nav_ind, trans);
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void SceneMatrixImpl(NavIndex_t const & /*nav_tuple*/,
+                                                      Transformation3DMP<Real_t> & /*trans*/)
+  {
+  }
+
   VECCORE_ATT_HOST_DEVICE
   static void SceneMatrixImpl(NavIndex_t const & /*nav_tuple*/, Transformation3D & /*trans*/) {}
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static Vector3D<Real_t> GlobalToLocalImpl(NavIndex_t nav_ind,
+                                                                    Vector3D<Real_t> const &globalpoint)
+  {
+    Transformation3DMP<Real_t> trans;
+    TopMatrixImpl(nav_ind, trans);
+    Vector3D<Real_t> local = trans.Transform(globalpoint);
+    return local;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   static Vector3D<Precision> GlobalToLocalImpl(NavIndex_t nav_ind, Vector3D<Precision> const &globalpoint)
@@ -423,8 +482,20 @@ public:
     return (parent > 0) ? (size_t)NavInd(parent + 2) : 0;
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopMatrix(Transformation3DMP<Real_t> &trans) const
+  {
+    TopMatrixImpl(fNavInd, trans);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(Transformation3D &trans) const { TopMatrixImpl(fNavInd, trans); }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopMatrix(int tolevel, Transformation3DMP<Real_t> &trans) const
+  {
+    TopMatrixImpl(GetNavIndexImpl(fNavInd, tolevel), trans);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(int tolevel, Transformation3D &trans) const
@@ -432,8 +503,19 @@ public:
     TopMatrixImpl(GetNavIndexImpl(fNavInd, tolevel), trans);
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopInSceneMatrix(Transformation3DMP<Real_t> &trans) const
+  {
+    TopInSceneMatrixImpl(fNavInd, trans);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   void TopInSceneMatrix(Transformation3D &trans) const { TopInSceneMatrixImpl(fNavInd, trans); }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void SceneMatrix(Transformation3DMP<Real_t> & /*trans*/) const
+  {
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void SceneMatrix(Transformation3D & /*trans*/) const {}
@@ -441,6 +523,9 @@ public:
   // returning a "delta" transformation that can transform
   // coordinates given in reference frame of this->Top() to the reference frame of other->Top()
   // simply with otherlocalcoordinate = delta.Transform( thislocalcoordinate )
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void DeltaTransformation(NavStateIndex const &other, Transformation3DMP<Real_t> &delta) const;
+
   VECCORE_ATT_HOST_DEVICE
   void DeltaTransformation(NavStateIndex const &other, Transformation3D &delta) const;
 

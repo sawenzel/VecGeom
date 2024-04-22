@@ -17,7 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreateParallelepipedSurfaces(vecgeom::UnplacedParallelepiped const &para, int logical_id)
 {
-  using Vector3D = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
   auto dx = para.GetX(); // half length in x
   auto dy = para.GetY(); // half length in y

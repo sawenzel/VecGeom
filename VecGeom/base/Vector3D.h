@@ -366,16 +366,18 @@ VECTOR3D_BINARY_OP(*, *=)
 VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
+template <typename Type>
 VECGEOM_FORCE_INLINE
 VECCORE_ATT_HOST_DEVICE
-bool operator==(Vector3D<Precision> const &lhs, Vector3D<Precision> const &rhs)
+bool operator==(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
 {
-  return Abs(lhs[0] - rhs[0]) < kTolerance && Abs(lhs[1] - rhs[1]) < kTolerance && Abs(lhs[2] - rhs[2]) < kTolerance;
+  return Abs(lhs[0] - rhs[0]) < kToleranceDist<Type> && Abs(lhs[1] - rhs[1]) < kToleranceDist<Type> && Abs(lhs[2] - rhs[2]) < kToleranceDist<Type>;
 }
 
+template <typename Type>
 VECGEOM_FORCE_INLINE
 VECCORE_ATT_HOST_DEVICE
-bool operator!=(Vector3D<Precision> const &lhs, Vector3D<Precision> const &rhs)
+bool operator!=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
 {
   return !(lhs == rhs);
 }

@@ -202,7 +202,8 @@ VECCORE_ATT_HOST_DEVICE void QuarticSolver(QuarticCoef<Real_t> const &coef, Real
   Real_t f = coef.c + coef.a * coef.a * coef.a / 8. - 0.5 * coef.a * coef.b;
   Real_t g =
       coef.d - 3. * coef.a * coef.a * coef.a * coef.a / 256. + coef.a * coef.a * coef.b / 16. - coef.a * coef.c / 4.;
-  Real_t xx[4] = {vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength};
+  Real_t xx[4] = {vecgeom::InfinityLength<Real_t>(), vecgeom::InfinityLength<Real_t>(),
+                  vecgeom::InfinityLength<Real_t>(), vecgeom::InfinityLength<Real_t>()};
   Real_t delta;
   Real_t h = 0.;
   numroots = 0;

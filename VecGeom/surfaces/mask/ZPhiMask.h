@@ -23,17 +23,18 @@ struct ZPhiMask {
   bool isFullCirc;             ///< Does the phi cut exist here?
 
   ZPhiMask() = default;
-  ZPhiMask(Real_t zmin, Real_t zmax, bool isFullCircle, Real_t rbottom, Real_t rtop, Real_t sphi = Real_t{0},
-           Real_t ephi = Real_t{0})
-      : rangeZ(zmin, zmax), isFullCirc(isFullCircle)
+  template <typename Real_i>
+  ZPhiMask(Real_i zmin, Real_i zmax, bool isFullCircle, Real_i rbottom, Real_i rtop, Real_i sphi = Real_i{0},
+           Real_i ephi = Real_i{0})
+      : rangeZ(static_cast<Real_t>(zmin), static_cast<Real_t>(zmax)), isFullCirc(isFullCircle)
   {
-    r0       = 0.5 * (rbottom + rtop);
-    Real_t t = (rtop - rbottom) / (zmax - zmin);
+    r0       = static_cast<Real_t>(0.5 * (rbottom + rtop));
+    Real_t t = static_cast<Real_t>((rtop - rbottom) / (zmax - zmin));
     invcalf  = (t == Real_t(0)) ? Real_t(1) : vecCore::math::Sqrt(Real_t(1) + t * t);
     // If there is no Phi cut, we needn't worry about phi vectors.
     if (isFullCirc) return;
-    vecSPhi.Set(vecgeom::Cos(sphi), vecgeom::Sin(sphi));
-    vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
+    vecSPhi.Set(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi)));
+    vecEPhi.Set(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi)));
   };
 
   /// @brief Fills extents in X and Y for the ZPhi mask
@@ -131,7 +132,7 @@ struct ZPhiMask {
   /// @brief Transform a ZPhi mask from a local reference defined by trans to the parent reference
   /// @param trans Transformation of the ZPhi mask with respect to the parent reference
   /// @return Transformed mask
-  ZPhiMask<Real_t> InverseTransform(Transformation const &trans) const
+  ZPhiMask<Real_t> InverseTransform(TransformationMP<Real_t> const &trans) const
   {
     ZPhiMask<Real_t> frame(*this);
     // Convert rangeZ

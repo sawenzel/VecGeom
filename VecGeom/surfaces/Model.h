@@ -522,8 +522,8 @@ struct SurfData {
   int *fSceneTouchables{nullptr}; ///< Number of touchables (per scene)
 
   /// Transformations.
-  Transformation *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
-  Transformation *fGlobalTrans{nullptr}; ///< Touchable global transformations
+  TransformationMP<Real_t> *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
+  TransformationMP<Real_t> *fGlobalTrans{nullptr}; ///< Touchable global transformations
 
   /// Volume shells, indexed by the logical volume id
   VolumeShell *fShells{nullptr}; ///< volume shells

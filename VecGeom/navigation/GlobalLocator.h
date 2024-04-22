@@ -228,6 +228,15 @@ inline bool HasSamePath(Vector3D<Precision> const &globalpoint, NavigationState 
   return HasSamePath(globalpoint, m, currentstate, newstate);
 }
 
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE inline bool HasSamePath(Vector3D<Real_t> const &globalpoint,
+                                                NavigationState const &currentstate, NavigationState &newstate)
+{
+  Transformation3DMP<Real_t> m;
+  currentstate.TopMatrix(m);
+  return HasSamePath(globalpoint, m, currentstate, newstate);
+}
+
 } // namespace GlobalLocator
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

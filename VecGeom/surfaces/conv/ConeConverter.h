@@ -19,7 +19,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
 {
   using RingMask_t = RingMask<Real_t>;
   using ZPhiMask_t = ZPhiMask<Real_t>;
-  using Vector3D   = vecgeom::Vector3D<Real_t>;
+  using Vector3D   = vecgeom::Vector3D<vecgeom::Precision>;
 
   LogicExpressionCPU logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
   auto rmin1 = cone.GetRmin1();
@@ -40,7 +40,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
-  Real_t surfdata[2];
+  vecgeom::Precision surfdata[2];
 
   // We need angles in degrees for transformations
   auto sphid = vecgeom::kRadToDeg * sphi;
@@ -50,14 +50,14 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, dz, 0, 0, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, dz, 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(isurf);
   // surface at -Dz
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -dz, 0, 180, -sphid - ephid}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -dz, 0, 180, -sphid - ephid}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(isurf);

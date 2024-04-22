@@ -3,12 +3,14 @@
 
 #include <VecGeom/surfaces/base/CpuTypes.h>
 
+#include <initializer_list>
+
 namespace vgbrep {
 
 namespace builder {
 
 template <typename Real_t>
-UnplacedSurface CreateUnplacedSurface(SurfaceType type, Real_t *data = nullptr, bool flip = false)
+UnplacedSurface CreateUnplacedSurface(SurfaceType type, vecgeom::Precision *data = nullptr, bool flip = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   switch (type) {
@@ -81,8 +83,18 @@ Frame CreateFrame(FrameType type, TriangleMask<Real_t> const &mask)
   return Frame(type, id);
 }
 
+template <typename Real_t, typename Real_i>
+int CreateLocalTransformation(std::initializer_list<Real_i> values)
+{
+  TransformationMP<Real_t> trans(values);
+  auto &cpudata = CPUsurfData<Real_t>::Instance();
+  int id        = cpudata.fLocalTrans.size();
+  cpudata.fLocalTrans.push_back(trans);
+  return id;
+}
+
 template <typename Real_t>
-int CreateLocalTransformation(Transformation const &trans)
+int CreateLocalTransformation(TransformationMP<Real_t> const &trans)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   int id        = cpudata.fLocalTrans.size();
@@ -138,7 +150,7 @@ void AddLogicToShell(int logical_id, LogicExpressionCPU &logic)
 /// @param points Vector of points
 /// @return Created frame. If this has the type kNoFrame, the user must abort framed surface creation
 template <typename Real_t, typename Container>
-Frame CreateFrameFromVertices(Container &points, Transformation &trans)
+Frame CreateFrameFromVertices(Container &points, TransformationMP<Real_t> &trans)
 {
   if (points.size() == 3)
     return CreateFrame<Real_t>(FrameType::kTriangle, TriangleMask<Real_t>{points[0].x(), points[0].y(), points[1].x(),
@@ -147,7 +159,8 @@ Frame CreateFrameFromVertices(Container &points, Transformation &trans)
     // Check for rectangular frame
     // The 0->1 vector is aligned with the local Ox
     bool rectangle = ApproxEqualVector(points[1] - points[0], points[2] - points[3]);
-    rectangle &= ApproxEqual((points[1] - points[0]).Dot(points[3] - points[0]), Real_t(0.));
+    rectangle &=
+        ApproxEqual(static_cast<Real_t>((points[1] - points[0]).Dot(points[3] - points[0])), static_cast<Real_t>(0.));
     if (rectangle) {
       auto dx = 0.5 * (points[1] - points[0]).Mag();
       auto dy = 0.5 * (points[3] - points[0]).Mag();
@@ -169,7 +182,7 @@ Frame CreateFrameFromVertices(Container &points, Transformation &trans)
 /// @return Transformation moving a surface from the (XOY) plane to the final position. The container will hold the
 /// input points transformed with the inverse transformation, lying in the (XOY) plane
 template <typename Real_t, typename Container>
-vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
+vecgeom::Transformation3DMP<Real_t> TransformationFromPlanarPoints(Container &points)
 {
   using Vector3 = vecgeom::Vector3D<Real_t>;
 
@@ -185,20 +198,21 @@ vecgeom::Transformation3D TransformationFromPlanarPoints(Container &points)
     auto b          = points[(i + 2) % npoints] - points[(i + 1) % npoints];
     auto a_cross_b  = a.Cross(b);
     auto cross_mag2 = a_cross_b.Mag2();
-    if (cross_mag2 > cross_mag2_max) {
+    if (cross_mag2 > cross_mag2_max + cross_mag2_max * vecgeom::kToleranceDistSquared<Real_t>) {
       normal         = a_cross_b.Unit();
       istart         = i;
       cross_mag2_max = cross_mag2;
     }
   }
-  assert(cross_mag2_max > vecgeom::kToleranceSquared && "TransformationFromPlanarPoints: degenerated polygon");
+  assert(cross_mag2_max > vecgeom::kToleranceDistSquared<Real_t> &&
+         "TransformationFromPlanarPoints: degenerated polygon");
   center *= 1. / npoints;
 
   Vector3 zref = normal;
   Vector3 xref = (points[(istart + 1) % npoints] - points[istart]).Unit();
   Vector3 yref = zref.Cross(xref);
-  vecgeom::Transformation3D transformation(center[0], center[1], center[2], xref[0], yref[0], zref[0], xref[1], yref[1],
-                                           zref[1], xref[2], yref[2], zref[2]);
+  vecgeom::Transformation3DMP<Real_t> transformation(center[0], center[1], center[2], xref[0], yref[0], zref[0],
+                                                     xref[1], yref[1], zref[1], xref[2], yref[2], zref[2]);
   // Convert points to the local frame
   for (int i = 0; i < npoints; ++i) {
     Vector3 local = transformation.Transform(points[i]);
@@ -259,7 +273,7 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id)
     auto itrans = CreateLocalTransformation<Real_t>(transformation);
     isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans);
   } else { // creating Arb4 surface
-    Real_t surfdata[10];
+    vecgeom::Precision surfdata[10];
     surfdata[0] = points[0].x();
     surfdata[1] = points[0].y();
     surfdata[2] = points[0].z();

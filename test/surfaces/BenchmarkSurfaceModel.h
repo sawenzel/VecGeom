@@ -20,7 +20,7 @@
 using BrepHelper = vgbrep::BrepHelper<vecgeom::Precision>;
 using namespace vecgeom;
 
-bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, double safety, int nsamples)
+bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, Precision safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
   // all of them are located in in_state
@@ -31,8 +31,8 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
   for (int i = 0; i < nsamples; ++i) {
     new_state.Clear();
     Vector3D<Precision> safepoint(point);
-    double phi = rng.uniform(0, kTwoPi);
-    double the = std::acos(2 * rng.uniform() - 1);
+    Precision phi = rng.uniform(0, kTwoPi);
+    Precision the = std::acos(2 * rng.uniform() - 1);
     Vector3D<Precision> ranpoint(std::sin(the) * std::cos(phi), std::sin(the) * std::sin(phi), std::cos(the));
     safepoint += safety * ranpoint;
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, new_state, true);
@@ -43,14 +43,14 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
   return is_safe;
 }
 
-double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
-                    vecgeom::Vector3D<vecgeom::Precision> const &direction,
-                    vgbrep::SurfData<vecgeom::Precision> const &surfdata)
+Precision PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
+                       vecgeom::Vector3D<vecgeom::Precision> const &direction,
+                       vgbrep::SurfData<vecgeom::Precision> const &surfdata)
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavigationState in_state, out_state;
   ExitSurfState exit_surf;
-  double dist_tot = 0;
+  Precision dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
   auto pt = point;
   printf("start: ");
@@ -69,9 +69,9 @@ double PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
   return dist_tot;
 }
 
-bool ValidateNavigation(int npoints, double worldX, double worldY, double worldZ, double scale)
+bool ValidateNavigation(int npoints, Precision worldX, Precision worldY, Precision worldZ, Precision scale)
 {
-  constexpr double tolerance = 10 * vecgeom::kTolerance;
+  constexpr Precision tolerance = 10 * vecgeom::kTolerance;
 
   int num_errors        = 0;
   int num_better_safety = 0;
@@ -144,11 +144,11 @@ bool ValidateNavigation(int npoints, double worldX, double worldY, double worldZ
   return num_errors == 0;
 }
 
-bool ShootOneParticle(double px, double py, double pz, double dx, double dy, double dz)
+bool ShootOneParticle(Precision px, Precision py, Precision pz, Precision dx, Precision dy, Precision dz)
 {
   // Very hacky, as I don't know how all the backend stuff works. -DC
 
-  constexpr double tolerance = 10 * vecgeom::kTolerance;
+  constexpr Precision tolerance = 10 * vecgeom::kTolerance;
 
   int num_errors = 0;
   SOA3D<Precision> points(1);
@@ -194,7 +194,7 @@ bool ShootOneParticle(double px, double py, double pz, double dx, double dy, dou
   return num_errors == 0;
 }
 
-void TestPerformance(double worldX, double worldY, double worldZ, double scale, int npoints, int nbLayers)
+void TestPerformance(Precision worldX, Precision worldY, Precision worldZ, Precision scale, int npoints, int nbLayers)
 {
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);
@@ -240,14 +240,14 @@ void TestPerformance(double worldX, double worldY, double worldZ, double scale, 
 }
 
 // Not updated
-void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
+void TestAndSavePerformance(Precision worldRadius, int npoints, int nbLayers)
 {
-  const double CalorSizeR        = worldRadius;
-  const double GapThickness      = 2.3;
-  const double AbsorberThickness = 5.7;
+  const Precision CalorSizeR        = worldRadius;
+  const Precision GapThickness      = 2.3;
+  const Precision AbsorberThickness = 5.7;
 
-  const double LayerThickness = GapThickness + AbsorberThickness;
-  const double CalorThickness = nbLayers * LayerThickness;
+  const Precision LayerThickness = GapThickness + AbsorberThickness;
+  const Precision CalorThickness = nbLayers * LayerThickness;
 
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> dirs(npoints);

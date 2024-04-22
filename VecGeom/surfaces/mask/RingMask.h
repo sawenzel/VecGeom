@@ -15,13 +15,14 @@ struct RingMask {
   AngleVector<Real_t> vecEPhi; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
 
   RingMask() = default;
-  RingMask(Real_t rmin, Real_t rmax, bool isFullCircle, Real_t sphi = Real_t{0}, Real_t ephi = Real_t{0})
-      : rangeR(rmin, rmax), isFullCirc(isFullCircle)
+  template <typename Real_i>
+  RingMask(Real_i rmin, Real_i rmax, bool isFullCircle, Real_i sphi = Real_i{0}, Real_i ephi = Real_i{0})
+      : rangeR(static_cast<Real_t>(rmin), static_cast<Real_t>(rmax)), isFullCirc(isFullCircle)
   {
     // If there is no Phi cut, we needn't wotty about phi vectors.
     if (isFullCirc) return;
-    vecSPhi.Set(vecgeom::Cos(sphi), vecgeom::Sin(sphi));
-    vecEPhi.Set(vecgeom::Cos(ephi), vecgeom::Sin(ephi));
+    vecSPhi.Set(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi)));
+    vecEPhi.Set(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi)));
   };
 
   /// @brief Fills extents in X and Y for the ring mask
@@ -87,6 +88,14 @@ struct RingMask {
     window.rangeV.Set(ymin, ymax);
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool HasRmin() const { return rangeR[0] > vecgeom::MakePlusTolerant<true, Real_t>(0); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsConvex() const { return !HasRmin() && vecSPhi.CrossZ(vecEPhi) > Real_t(0); }
+
   /// @brief Check if local point is in the radius range
   /// @param local Point in local coordinates
   /// @return Point inside range
@@ -96,8 +105,8 @@ struct RingMask {
   {
     Real_t rsq = local[0] * local[0] + local[1] * local[1];
     // The point must be inside the ring:
-    if ((rsq < rangeR[0] * rangeR[0] + 2 * vecgeom::kToleranceSquared * rangeR[0]) ||
-        (rsq > rangeR[1] * rangeR[1] - 2 * vecgeom::kToleranceSquared * rangeR[1]))
+    if ((rsq < rangeR[0] * rangeR[0] + 2 * vecgeom::kToleranceDist<Real_t> * rangeR[0]) ||
+        (rsq > rangeR[1] * rangeR[1] - 2 * vecgeom::kToleranceDist<Real_t> * rangeR[1]))
       return false;
     return true;
   }
@@ -138,7 +147,7 @@ struct RingMask {
   {
     valid       = true;
     Real_t rho  = local.Perp(); // still a square root, but less registers/branching
-    Real_t safR = vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]);
+    Real_t safR = HasRmin() ? vecCore::math::Max(rangeR[0] - rho, rho - rangeR[1]) : rho - rangeR[1];
     if (isFullCirc || InsidePhi(local[0], local[1]))
 #ifdef SURF_ACCURATE_SAFETY
       return vecCore::math::Sqrt(safetySurf * safetySurf + safR * safR);
@@ -152,6 +161,25 @@ struct RingMask {
 #else
     return vecCore::math::Max(safetySurf, safR, safPhi);
 #endif
+  }
+
+  /// @brief Safe distance from a point assumed inside the window
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyInside(Vector3D<Real_t> const &local) const
+  {
+    Real_t rho  = local.Perp();
+    Real_t safR = HasRmin() ? vecCore::math::Min(rangeR[1] - rho, rho - rangeR[0]) : rangeR[1] - rho;
+    safR        = vecCore::math::Max(safR, Real_t(0));
+    if (isFullCirc) return safR;
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    auto saf1     = (vecSPhi.Dot(localAngle) > Real_t(0)) ? vecCore::math::Max(vecSPhi.CrossZ(localAngle), Real_t(0))
+                                                          : vecgeom::InfinityLength<Real_t>();
+    auto saf2     = (vecEPhi.Dot(localAngle) > Real_t(0)) ? vecCore::math::Max(localAngle.CrossZ(vecEPhi), Real_t(0))
+                                                          : vecgeom::InfinityLength<Real_t>();
+    Real_t safPhi = vecCore::math::Min(saf1, saf2);
+    return vecCore::math::Min(safR, safPhi);
   }
 };
 

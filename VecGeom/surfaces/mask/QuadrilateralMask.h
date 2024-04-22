@@ -20,17 +20,19 @@ struct QuadrilateralMask {
   /**
    * @brief Construct a new Quadrilateral Mask object.
    *
+   * @tparam Real_i Precision type of inputs
    * @param x1 is the x coordinate of the lower left corner of the quadrilateral mask.
    * @param y1 is the y coordinate of the lower left corner of the quadrilateral mask.
    * @details The rest of the points should be entered counter-clockwise
    * starting from the lower left corner.
    */
-  QuadrilateralMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3, Real_t x4, Real_t y4)
+  template <typename Real_i>
+  QuadrilateralMask(Real_i x1, Real_i y1, Real_i x2, Real_i y2, Real_i x3, Real_i y3, Real_i x4, Real_i y4)
   {
-    p_[0].Set(x1, y1);
-    p_[1].Set(x2, y2);
-    p_[2].Set(x3, y3);
-    p_[3].Set(x4, y4);
+    p_[0].Set(static_cast<Real_t>(x1), static_cast<Real_t>(y1));
+    p_[1].Set(static_cast<Real_t>(x2), static_cast<Real_t>(y2));
+    p_[2].Set(static_cast<Real_t>(x3), static_cast<Real_t>(y3));
+    p_[3].Set(static_cast<Real_t>(x4), static_cast<Real_t>(y4));
 
     // Compute outward normals
     for (int i = 0; i < 4; ++i) {
@@ -38,7 +40,7 @@ struct QuadrilateralMask {
       auto k      = (i + 2) % 4;
       auto seg_ij = p_[j] - p_[i];
       auto seg_ik = p_[k] - p_[i];
-      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared);
+      assert(seg_ij.Mag2() > vecgeom::kToleranceDistSquared<Real_t>);
       // normal in XY plane
       n_[i].Set(seg_ij.y(), -seg_ij.x());
       // flip the normal so point k is 'backwards'
@@ -121,7 +123,7 @@ struct QuadrilateralMask {
     }
     if (withinBound[0] && withinBound[1] && withinBound[2] && withinBound[3]) return safetySurf;
 
-    Precision dseg_squared = vecgeom::InfinityLength<Real_t>();
+    Real_t dseg_squared = vecgeom::InfinityLength<Real_t>();
     for (int i = 0; i < 4; ++i) {
       if (!withinBound[i]) {
         dseg_squared = vecCore::math::Min(dseg_squared, distanceToSegmentSquared(i));

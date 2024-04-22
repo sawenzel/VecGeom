@@ -23,7 +23,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   LogicExpressionCPU logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
 
   int isurf;
-  Real_t surfdata[3];
+  vecgeom::Precision surfdata[3];
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
 
@@ -35,7 +35,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, tube.GetDz(), 0, 0, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.GetDz(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
   assert(isurf >= 0);
@@ -47,7 +47,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.GetDz(), 0, 180, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -tube.GetDz(), 0, 180, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
   assert(isurf >= 0);
@@ -62,8 +62,9 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   auto rmax   = vecCore::math::Max(tube.GetDx(), tube.GetDy());
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kElliptical, surfdata),
-      builder::CreateFrame<Real_t>(FrameType::kZPhi,
-                                   ZPhiMask_t{-surfdata[2], surfdata[2], /* full_circle=*/1, rmax, rmax, 0, 360}),
+      builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-surfdata[2], surfdata[2], /* full_circle=*/1, rmax,
+                                                                rmax, static_cast<vecgeom::Precision>(0),
+                                                                static_cast<vecgeom::Precision>(360)}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"

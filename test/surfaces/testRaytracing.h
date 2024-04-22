@@ -6,6 +6,8 @@
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/surfaces/Model.h>
 
+using Real_t = double;
+
 /// @brief Structure holding boundary crossing info for a single ray
 struct CrossingSeq {
   double fStart[6];                              ///< Start position and direction components
@@ -55,7 +57,7 @@ struct CrossingSeq {
   VECCORE_ATT_HOST_DEVICE
   bool IsEqual(CrossingSeq const &other, int &istep_err, bool accept_zeros = false)
   {
-    using vecgeom::kTolerance;
+    auto kTolerance    = vecgeom::kToleranceDist<Real_t>;
     size_t istep       = 0;
     size_t istep_other = 0;
     istep_err          = 0;
@@ -77,7 +79,7 @@ struct CrossingSeq {
       // Now the steps must be in sync
       if (fStates[istep].GetState() != other.fStates[istep_other].GetState() ||
           vecCore::math::Abs(fSteps[istep] - other.fSteps[istep_other]) >
-              vgbrep::RoundingError(other.fSteps[istep_other], 100 * kTolerance)) {
+              vgbrep::RoundingError(static_cast<Real_t>(other.fSteps[istep_other]), 100 * kTolerance)) {
         istep_err = istep;
         return false;
       }
@@ -87,5 +89,16 @@ struct CrossingSeq {
     return true;
   }
 };
+
+template <typename InputPrecision, typename OutputPrecision>
+vecgeom::Vector3D<OutputPrecision> *convertVectorArray(vecgeom::Vector3D<InputPrecision> *inputArray, int size)
+{
+  vecgeom::Vector3D<OutputPrecision> *outputArray = new vecgeom::Vector3D<OutputPrecision>[size];
+  for (int i = 0; i < size; ++i) {
+    // Constructing vecgeom::Vector3D<OutputPrecision> from vecgeom::Vector3D<InputPrecision>
+    outputArray[i] = vecgeom::Vector3D<OutputPrecision>(inputArray[i]);
+  }
+  return outputArray;
+}
 
 #endif

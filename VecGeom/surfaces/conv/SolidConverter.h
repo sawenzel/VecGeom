@@ -31,7 +31,8 @@ namespace conv {
 /// @param localtrans Local transformation, used only for Boolean volumes
 /// @return Conversion success
 template <typename Real_t>
-bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Transformation *localtrans = nullptr)
+bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
+                         TransformationMP<Real_t> *localtrans = nullptr)
 {
   bool success{true};
   auto &cpudata     = CPUsurfData<Real_t>::Instance();
@@ -99,7 +100,7 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId, Trans
     auto isurf_last = shell.fSurfaces.size();
     for (size_t i = isurf_first; i < isurf_last; ++i) {
       auto &surf = cpudata.fLocalSurfaces[shell.fSurfaces[i]];
-      Transformation trans(*localtrans);
+      TransformationMP<Real_t> trans(*localtrans);
       if (surf.fTrans) {
         trans.MultiplyFromRight(cpudata.fLocalTrans[surf.fTrans]);
         cpudata.fLocalTrans[surf.fTrans] = trans;
@@ -123,7 +124,7 @@ template <typename Real_t>
 bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logical_id)
 {
   auto const &vec_scale = scaled.GetScale().Scale();
-  if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<Real_t>{1, 1, -1})) {
+  if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<vecgeom::Precision>{1, 1, -1})) {
     VECGEOM_LOG(error) << "UnplacedScaledShape having scale " << vec_scale << " not supported";
     return false;
   }
@@ -135,9 +136,9 @@ bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logica
     FramedSurface const &lsurf = cpudata.fLocalSurfaces[lsurf_id];
     auto const &trans          = cpudata.fLocalTrans[lsurf.fTrans];
     // Reflect the framed surface
-    Transformation scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
-    Transformation refl_trans         = trans * scalez;
-    cpudata.fLocalTrans[lsurf.fTrans] = refl_trans;
+    TransformationMP<Real_t> scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
+    TransformationMP<Real_t> refl_trans = trans * scalez;
+    cpudata.fLocalTrans[lsurf.fTrans]   = refl_trans;
   }
   return success;
 }
@@ -150,7 +151,7 @@ bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logica
 template <typename Real_t>
 bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id)
 {
-  Transformation trans;
+  TransformationMP<Real_t> trans;
   if (!AppendLogicTo<Real_t>(bstruct, trans, logical_id)) return false;
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
@@ -175,7 +176,7 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
 }
 
 template <typename Real_t>
-bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &trans, int logical_id)
+bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, TransformationMP<Real_t> const &trans, int logical_id)
 {
   bool success  = true;
   auto &cpudata = CPUsurfData<Real_t>::Instance();
@@ -183,7 +184,7 @@ bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &
   // left node
   // open parenthesis
   logic.push_back(lplus);
-  vecgeom::Transformation3D tr_left(trans);
+  vecgeom::Transformation3DMP<Real_t> tr_left(trans);
   tr_left.MultiplyFromRight(*bstruct.fLeftVolume->GetTransformation());
   auto const unplaced_left = bstruct.fLeftVolume->GetUnplacedVolume();
   auto bstruct_left        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_left);
@@ -212,7 +213,7 @@ bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, Transformation const &
   // right node
   // open parenthesis
   logic.push_back(lplus);
-  vecgeom::Transformation3D tr_right(trans);
+  vecgeom::Transformation3DMP<Real_t> tr_right(trans);
   tr_right.MultiplyFromRight(*bstruct.fRightVolume->GetTransformation());
   auto const unplaced_right = bstruct.fRightVolume->GetUnplacedVolume();
   auto bstruct_right        = vecgeom::BooleanHelper::GetBooleanStruct(unplaced_right);

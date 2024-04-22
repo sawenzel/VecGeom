@@ -17,7 +17,7 @@ namespace conv {
 template <typename Real_t>
 bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logical_id)
 {
-  using Vector3D = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
   int isurf;
   std::vector<Vector3D> vertices;
@@ -34,13 +34,13 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
   auto const &rMin    = poly.fRMin;
   auto const &rMax    = poly.fRMax;
   auto const &zPlanes = poly.fZPlanes;
-  Real_t csphi, ssphi, cephi, sephi;
+  vecgeom::Precision csphi, ssphi, cephi, sephi;
 
   if (sideCount == 1) assert(smallerPi && "Polyhedron with one segment cannot have angle larger than pi!");
 
-  auto sidePhi         = phiDelta / sideCount;
-  auto cosHalfDeltaPhi = vecCore::math::Cos(0.5 * sidePhi);
-  Real_t conv          = 1. / cosHalfDeltaPhi;
+  auto sidePhi            = phiDelta / sideCount;
+  auto cosHalfDeltaPhi    = vecCore::math::Cos(0.5 * sidePhi);
+  vecgeom::Precision conv = 1. / cosHalfDeltaPhi;
 
   // lambda to get the phi angle of the current side
   auto getPhi = [&](size_t side) {
@@ -50,7 +50,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
     return vecgeom::NormalizeAngle<vecgeom::kScalar>(phiStart + side * sidePhi);
   };
 
-  auto getSinCos = [&](Real_t sphi, Real_t ephi) {
+  auto getSinCos = [&](vecgeom::Precision sphi, vecgeom::Precision ephi) {
     csphi = vecCore::math::Cos(sphi);
     ssphi = vecCore::math::Sin(sphi);
     cephi = vecCore::math::Cos(ephi);
@@ -89,7 +89,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
       if (iseg != (nseg - 1)) {
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-            builder::CreateLocalTransformation<Real_t>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
+            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (iseg > 0) logic.push_back(land);
         logic.push_back(isurf);

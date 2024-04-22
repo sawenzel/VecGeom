@@ -17,8 +17,14 @@ struct WindowMask {
   Range<Real_t> rangeV; ///< Rectangle limits on y axis.
 
   WindowMask() = default;
-  WindowMask(Real_t u1, Real_t u2, Real_t v1, Real_t v2) : rangeU(u1, u2), rangeV(v1, v2){};
-  WindowMask(Real_t u, Real_t v) : rangeU(-u, u), rangeV(-v, v){};
+  template <typename Real_i>
+  WindowMask(Real_i u1, Real_i u2, Real_i v1, Real_i v2)
+      : rangeU(static_cast<Real_t>(u1), static_cast<Real_t>(u2)),
+        rangeV(static_cast<Real_t>(v1), static_cast<Real_t>(v2)){};
+  template <typename Real_i>
+  WindowMask(Real_i u, Real_i v)
+      : rangeU(static_cast<Real_t>(-u), static_cast<Real_t>(u)),
+        rangeV(static_cast<Real_t>(-v), static_cast<Real_t>(v)){};
 
   /// @brief Fills the 3D extent of the window
   /// @param aMin Bottom extent corner
@@ -40,10 +46,10 @@ struct WindowMask {
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
-    return (local[0] > vecgeom::MakeMinusTolerant<true>(rangeU[0]) &&
-            local[0] < vecgeom::MakePlusTolerant<true>(rangeU[1]) &&
-            local[1] > vecgeom::MakeMinusTolerant<true>(rangeV[0]) &&
-            local[1] < vecgeom::MakePlusTolerant<true>(rangeV[1]));
+    return (local[0] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeU[0]) &&
+            local[0] < vecgeom::MakePlusTolerant<true, Real_t>(rangeU[1]) &&
+            local[1] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeV[0]) &&
+            local[1] < vecgeom::MakePlusTolerant<true, Real_t>(rangeV[1]));
   }
 
   /// @brief Computes safe distance to the frame combining surface and frame safeties.
@@ -70,6 +76,17 @@ struct WindowMask {
       // The VecGeom box version just returns the maximum
       return vecCore::math::Max(sx, sy, safetySurf);
     }
+  }
+
+  /// @brief Safe distance from a point assumed inside the window
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyInside(Vector3D<Real_t> const &local) const
+  {
+    Real_t sx = vecCore::math::Min(local[0] - rangeU[0], rangeU[1] - local[0]);
+    Real_t sy = vecCore::math::Max(local[1] - rangeV[0], rangeV[1] - local[1]);
+    return vecCore::math::Min(sx, sy);
   }
 };
 

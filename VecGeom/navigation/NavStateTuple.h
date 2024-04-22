@@ -8,6 +8,7 @@
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Transformation3D.h"
+#include "VecGeom/base/Transformation3DMP.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/management/GeoManager.h"
 
@@ -517,6 +518,24 @@ public:
     trans.Set(address, address + int{has_trans} * 3, has_trans, has_rot);
   }
 
+  // FIXME THIS WILL BE A PROBLEM BECAUSE OF THE PRECISION REINTERPRET CAST
+  template <typename Real_t>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ReadTransformation(NavIndex_t nav_ind,
+                                                                              Transformation3DMP<Real_t> &trans)
+  {
+    assert(trans.IsIdentity() && "ReadTransformation: destination must be an identity");
+    auto record       = NavIndAddr(nav_ind);
+    auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 5);
+    bool has_trans    = *(content_lhtr + 2) > 0;
+    bool has_rot      = *(content_lhtr + 3) > 0;
+    if (!(has_trans | has_rot)) return; // identity
+    auto offset  = *(content_lhtr + 1);
+    auto address = reinterpret_cast<const Precision *>(record + offset);
+    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0 &&
+           "ReadTransformation: transformation storage not aligned");
+    trans.Set(address, address + int{has_trans} * 3, has_trans, has_rot);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   static void TopMatrixImpl(NavTuple_t const &nav_tuple, Transformation3D &trans)
   {
@@ -531,6 +550,32 @@ public:
       ReadTransformation(top, scene_trans);
       trans *= scene_trans;
     }
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void TopMatrixImpl(NavTuple_t const &nav_tuple, Transformation3DMP<Real_t> &trans)
+  {
+    // Get the multiplication of all parent scenes transformations, then multiply with the current
+    // m_0 * m_1 * ... * m_n
+    auto top = nav_tuple.Top();
+    if (!top) return;
+    ReadTransformation(top, trans);
+    for (int ituple = nav_tuple.fLevel - 1; ituple >= 0; --ituple) {
+      Transformation3DMP<Real_t> scene_trans;
+      top = nav_tuple[ituple];
+      ReadTransformation(top, scene_trans);
+      trans *= scene_trans;
+    }
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void TopInSceneMatrixImpl(NavTuple_t const &nav_tuple,
+                                                           Transformation3DMP<Real_t> &trans)
+  {
+    // Get transformation of the node in the top scene
+    auto top = nav_tuple.Top();
+    if (!top) return;
+    ReadTransformation(top, trans);
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -556,12 +601,36 @@ public:
     }
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static void SceneMatrixImpl(NavTuple_t const &nav_tuple, Transformation3DMP<Real_t> &trans)
+  {
+    // Get the top scene transformation
+    auto top = nav_tuple.Top();
+    if (!top) return;
+    for (int ituple = nav_tuple.fLevel - 1; ituple >= 0; --ituple) {
+      Transformation3DMP<Real_t> scene_trans;
+      top = nav_tuple[ituple];
+      ReadTransformation(top, scene_trans);
+      trans *= scene_trans;
+    }
+  }
+
   VECCORE_ATT_HOST_DEVICE
   static Vector3D<Precision> GlobalToLocalImpl(NavTuple_t const &nav_tuple, Vector3D<Precision> const &globalpoint)
   {
     Transformation3D trans;
     TopMatrixImpl(nav_tuple, trans);
     Vector3D<Precision> local = trans.Transform(globalpoint);
+    return local;
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE static Vector3D<Real_t> GlobalToLocalImpl(NavTuple_t const &nav_tuple,
+                                                                    Vector3D<Real_t> const &globalpoint)
+  {
+    Transformation3DMP<Real_t> trans;
+    TopMatrixImpl(nav_tuple, trans);
+    Vector3D<Real_t> local = trans.Transform(globalpoint);
     return local;
   }
 
@@ -696,14 +765,38 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(Transformation3D &trans) const { TopMatrixImpl(fNavTuple, trans); }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopMatrix(Transformation3DMP<Real_t> &trans) const
+  {
+    TopMatrixImpl(fNavTuple, trans);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   void TopInSceneMatrix(Transformation3D &trans) const { TopInSceneMatrixImpl(fNavTuple, trans); }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopInSceneMatrix(Transformation3DMP<Real_t> &trans) const
+  {
+    TopInSceneMatrixImpl(fNavTuple, trans);
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void SceneMatrix(Transformation3D &trans) const { SceneMatrixImpl(fNavTuple, trans); }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void SceneMatrix(Transformation3DMP<Real_t> &trans) const
+  {
+    SceneMatrixImpl(fNavTuple, trans);
+  }
+
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(int tolevel, Transformation3D &trans) const
+  {
+    TopMatrixImpl(GetNavTupleImpl(fNavTuple, tolevel), trans);
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void TopMatrix(int tolevel, Transformation3DMP<Real_t> &trans) const
   {
     TopMatrixImpl(GetNavTupleImpl(fNavTuple, tolevel), trans);
   }
@@ -716,6 +809,22 @@ public:
   {
     Transformation3D g2;
     Transformation3D g1;
+    other.TopMatrix(g2);
+    this->TopMatrix(g1);
+    delta = g1.Inverse();
+    // Trans/rot properties already correctly set
+    // g2.SetProperties();
+    // delta.SetProperties();
+    delta.FixZeroes();
+    delta.MultiplyFromRight(g2);
+    delta.FixZeroes();
+  }
+
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void DeltaTransformation(NavStateTuple const &other, Transformation3DMP<Real_t> &delta) const
+  {
+    Transformation3DMP<Real_t> g2;
+    Transformation3DMP<Real_t> g1;
     other.TopMatrix(g2);
     this->TopMatrix(g1);
     delta = g1.Inverse();

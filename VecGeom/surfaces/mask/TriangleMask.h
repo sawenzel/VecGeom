@@ -13,11 +13,12 @@ struct TriangleMask {
   Point2D<Real_t> n_[3] = {Real_t(0)}; ///< 2D coordinates of the outwards normals to segments
 
   TriangleMask() = default;
-  TriangleMask(Real_t x1, Real_t y1, Real_t x2, Real_t y2, Real_t x3, Real_t y3)
+  template <typename Real_i>
+  TriangleMask(Real_i x1, Real_i y1, Real_i x2, Real_i y2, Real_i x3, Real_i y3)
   {
-    p_[0].Set(x1, y1);
-    p_[1].Set(x2, y2);
-    p_[2].Set(x3, y3);
+    p_[0].Set(static_cast<Real_t>(x1), static_cast<Real_t>(y1));
+    p_[1].Set(static_cast<Real_t>(x2), static_cast<Real_t>(y2));
+    p_[2].Set(static_cast<Real_t>(x3), static_cast<Real_t>(y3));
 
     // Compute outward normals
     for (int i = 0; i < 3; ++i) {
@@ -108,7 +109,7 @@ struct TriangleMask {
     }
     if (withinBound[0] && withinBound[1] && withinBound[2]) return safetySurf;
 
-    Precision dseg_squared = vecgeom::InfinityLength<Real_t>();
+    Real_t dseg_squared = vecgeom::InfinityLength<Real_t>();
     for (int i = 0; i < 3; ++i) {
       if (!withinBound[i]) {
         dseg_squared = vecCore::math::Min(dseg_squared, distanceToSegmentSquared(i));

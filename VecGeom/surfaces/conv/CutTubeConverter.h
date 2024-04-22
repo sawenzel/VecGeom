@@ -26,7 +26,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
 {
   using ZPhiMask_t   = ZPhiMask<Real_t>;
   using WindowMask_t = WindowMask<Real_t>;
-  using Vector3      = vecgeom::Vector3D<Real_t>;
+  using Vector3      = vecgeom::Vector3D<vecgeom::Precision>;
 
   LogicExpressionCPU logic; // top & bottom & [rmin] & rmax & (dphi < 180) ? sphi * ephi : sphi | ephi
   auto sphi  = tube.sphi();
@@ -54,7 +54,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
-  Real_t surfdata[2];
+  vecgeom::Precision surfdata[2];
 
   // We need angles in degrees for transformations
   auto thetad_top    = top_normal.Theta() * vecgeom::kRadToDeg;
@@ -75,7 +75,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}));
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}));
   auto &surf = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
@@ -87,9 +87,14 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   assert(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta())) > vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-      builder::CreateFrame<Real_t>(FrameType::kWindow,
-                                   WindowMask_t{tube.rmax(), tube.rmax() / cos(vecgeom::kPi - bottom_normal.Theta())}),
-      builder::CreateLocalTransformation<Real_t>({0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}));
+      builder::CreateFrame<Real_t>(
+          FrameType::kWindow,
+          WindowMask_t{
+              tube.rmax(),
+              static_cast<vecgeom::Precision>(
+                  tube.rmax() / cos(vecgeom::kPi - bottom_normal.Theta()))}), // static_cast since cos returns double
+      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
+          {0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}));
   auto &surf2 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   // Make the surface "logical"
