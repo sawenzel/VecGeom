@@ -24,18 +24,6 @@
 class TGeoMatrix;
 #endif
 
-typedef int RotationCode;
-typedef int TranslationCode;
-
-namespace vecgeom {
-namespace rotation {
-enum RotationId { kGeneric = -1, kDiagonal = 0x111, kIdentity = 0x200 };
-}
-namespace translation {
-enum TranslationId { kGeneric = -1, kIdentity = 0 };
-}
-} // namespace vecgeom
-
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE(class Transformation3D;);
@@ -152,14 +140,6 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   Transformation3D(const Vector3D<Precision> &axis, bool inverse = true);
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Transformation3D(Transformation3D const &other) = default;
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Transformation3D &operator=(Transformation3D const &rhs) = default;
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -363,14 +343,6 @@ public:
     fIdentity       = !fHasTranslation && !fHasRotation;
   }
 
-  // Generation of template parameter codes
-
-  VECCORE_ATT_HOST_DEVICE
-  RotationCode GenerateRotationCode() const;
-
-  VECCORE_ATT_HOST_DEVICE
-  TranslationCode GenerateTranslationCode() const;
-
 private:
   // Templated rotation and translation methods which inline and compile to
   // optimized versions.
@@ -532,7 +504,10 @@ public:
   // Utility and CUDA
 
 #ifdef VECGEOM_CUDA_INTERFACE
-  size_t DeviceSizeOf() const { return DevicePtr<cuda::Transformation3D>::SizeOf(); }
+  size_t DeviceSizeOf() const
+  {
+    return DevicePtr<cuda::Transformation3D>::SizeOf();
+  }
   DevicePtr<cuda::Transformation3D> CopyToGpu() const;
   DevicePtr<cuda::Transformation3D> CopyToGpu(DevicePtr<cuda::Transformation3D> const gpu_ptr) const;
   static void CopyManyToGpu(const std::vector<Transformation3D const *> &trafos,

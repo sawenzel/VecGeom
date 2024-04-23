@@ -107,7 +107,7 @@ bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = tru
     }
     step = vecCore::math::Max(step, kTolerance);
 
-    p = p + step * dir;
+    p = p + (step + 10 * kTolerance) * dir;
 
     std::swap(curr, next);
   }

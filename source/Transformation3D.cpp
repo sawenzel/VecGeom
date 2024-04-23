@@ -152,9 +152,7 @@ void Transformation3D::PrintG4() const
   constexpr double deviationTolerance = 1.0e-05;
   printf("  Transformation: \n");
 
-  bool hasRotation = (GenerateRotationCode() == rotation::kIdentity) ? false : true;
-
-  bool UnitTr            = !hasRotation;
+  bool UnitTr            = !fHasRotation;
   double diagDeviation   = Max(Abs(rxx_ - 1.0), Abs(ryy_ - 1.0), Abs(rzz_ - 1.0));
   double offdDeviationUL = Max(Abs(rxy_), Abs(rxz_), Abs(ryx_));
   double offdDeviationDR = Max(Abs(ryz_), Abs(rzx_), Abs(rzy_));
@@ -267,7 +265,9 @@ VECCORE_ATT_HOST_DEVICE
 void Transformation3D::SetProperties()
 {
   fHasTranslation = (fabs(tx_) > kTolerance || fabs(ty_) > kTolerance || fabs(tz_) > kTolerance) ? true : false;
-  fHasRotation    = (GenerateRotationCode() == rotation::kIdentity) ? false : true;
+  fHasRotation    = (fabs(rxx_ -1.) > kTolerance) || (fabs(ryx_) > kTolerance) || (fabs(rzx_) > kTolerance) ||
+                         (fabs(rxy_) > kTolerance) || (fabs(ryy_ -1.) > kTolerance) || (fabs(rzy_) > kTolerance) ||
+                         (fabs(rxz_) > kTolerance) || (fabs(ryz_) > kTolerance) || (fabs(rzz_ -1.) > kTolerance);
   fIdentity       = !fHasTranslation && !fHasRotation;
 }
 
@@ -314,37 +314,6 @@ void Transformation3D::SetRotation(const Precision xx, const Precision yx, const
   rxz_ = xz;
   ryz_ = yz;
   rzz_ = zz;
-}
-
-VECCORE_ATT_HOST_DEVICE
-RotationCode Transformation3D::GenerateRotationCode() const
-{
-  int code = 0;
-  code |= (1 << 0) * (fabs(rxx_) > kTolerance);
-  code |= (1 << 1) * (fabs(ryx_) > kTolerance);
-  code |= (1 << 2) * (fabs(rzx_) > kTolerance);
-  code |= (1 << 3) * (fabs(rxy_) > kTolerance);
-  code |= (1 << 4) * (fabs(ryy_) > kTolerance);
-  code |= (1 << 5) * (fabs(rzy_) > kTolerance);
-  code |= (1 << 6) * (fabs(rxz_) > kTolerance);
-  code |= (1 << 7) * (fabs(ryz_) > kTolerance);
-  code |= (1 << 8) * (fabs(rzz_) > kTolerance);
-  if (code == rotation::kDiagonal && (rxx_ == 1. && ryy_ == 1. && rzz_ == 1.)) {
-    code = rotation::kIdentity;
-  }
-  return code;
-}
-
-/**
- * Very simple translation code. Kept as an integer in case other cases are to
- * be implemented in the future.
- * /return The transformation's translation code, which is 0 for transformations
- *         without translation and 1 otherwise.
- */
-VECCORE_ATT_HOST_DEVICE
-TranslationCode Transformation3D::GenerateTranslationCode() const
-{
-  return (fHasTranslation) ? translation::kGeneric : translation::kIdentity;
 }
 
 VECCORE_ATT_HOST_DEVICE
