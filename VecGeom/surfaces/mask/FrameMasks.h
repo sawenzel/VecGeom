@@ -65,10 +65,10 @@ struct FrameChecker<Real_t, RingMask<Real_t>, WindowMask<Real_t>> {
   static bool IsEmbedding(RingMask<Real_t> const &frame1, WindowMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
-    Vector3D<Real_t> vlocal[4] = {{-frame2.rangeU[0], -frame2.rangeV[0], 0},
-                                  {-frame2.rangeU[0], frame2.rangeV[0], 0},
-                                  {frame2.rangeU[0], frame2.rangeV[0], 0},
-                                  {frame2.rangeU[0], -frame2.rangeV[0], 0}};
+    Vector3D<Real_t> vlocal[4] = {{frame2.rangeU[0], frame2.rangeV[0], 0},
+                                  {frame2.rangeU[0], frame2.rangeV[1], 0},
+                                  {frame2.rangeU[1], frame2.rangeV[1], 0},
+                                  {frame2.rangeU[1], frame2.rangeV[0], 0}};
 
     Vector3D<Real_t> v[4];
     // If any vertex is not embedded, the frame is not embedded
@@ -108,6 +108,39 @@ struct FrameChecker<Real_t, RingMask<Real_t>, TriangleMask<Real_t>> {
   static bool IsEmbedding(RingMask<Real_t> const &frame1, TriangleMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    Vector3D<Real_t> vlocal[3] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                                  {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                                  {frame2.p_[2].x(), frame2.p_[2].y(), 0}};
+
+    Vector3D<Real_t> v[3];
+    // If any vertex is not embedded, the frame is not embedded
+    for (auto i = 0; i < 3; ++i) {
+      v[i] = trans.InverseTransform(vlocal[i]);
+      if (!frame1.Inside(v[i])) return false;
+    }
+    // Less than 180 deg ring having Rmin = 0 (convex)
+    if (frame1.IsConvex()) return true;
+    // General case: All segments of frame2 must not cross frame1 edges, and the center of frame1 must not be contained
+    // in frame2
+    for (size_t i = 0; i < 3; ++i) {
+      Segment2D<Real_t> seg2({v[i].x(), v[i].y()}, {v[(i + 1) % 3].x(), v[(i + 1) % 3].y()});
+      if (frame1.HasRmin()) {
+        auto embedded = seg2.Intersect(Circle2D<Real_t>{frame1.rangeR[0], {Real_t(0), Real_t{0}}});
+        if (embedded == SegmentIntersect::kEmbedded || embedded == SegmentIntersect::kIntersect) return false;
+      }
+      if (!frame1.isFullCirc) {
+        Segment2D<Real_t> seg1_phi1({frame1.rangeR[0] * frame1.vecSPhi}, {frame1.rangeR[1] * frame1.vecSPhi});
+        Segment2D<Real_t> seg1_phi2({frame1.rangeR[0] * frame1.vecEPhi}, {frame1.rangeR[1] * frame1.vecEPhi});
+        auto embedded = seg1_phi1.Intersect(seg2);
+        if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
+        embedded = seg1_phi2.Intersect(seg2);
+        if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
+      }
+    }
+    // The center of the circle must not be inside the frame
+    auto center = trans.Transform(Vector3D<Real_t>{});
+    if (frame2.Inside(center)) return false;
+
     return true;
   }
 };
@@ -117,6 +150,40 @@ struct FrameChecker<Real_t, RingMask<Real_t>, QuadrilateralMask<Real_t>> {
   static bool IsEmbedding(RingMask<Real_t> const &frame1, QuadrilateralMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    Vector3D<Real_t> vlocal[4] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                                  {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                                  {frame2.p_[2].x(), frame2.p_[2].y(), 0},
+                                  {frame2.p_[3].x(), frame2.p_[3].y(), 0}};
+
+    Vector3D<Real_t> v[4];
+    // If any vertex is not embedded, the frame is not embedded
+    for (auto i = 0; i < 4; ++i) {
+      v[i] = trans.InverseTransform(vlocal[i]);
+      if (!frame1.Inside(v[i])) return false;
+    }
+    // Less than 180 deg ring having Rmin = 0 (convex)
+    if (frame1.IsConvex()) return true;
+    // General case: All segments of frame2 must not cross frame1 edges, and the center of frame1 must not be contained
+    // in frame2
+    for (size_t i = 0; i < 4; ++i) {
+      Segment2D<Real_t> seg2({v[i].x(), v[i].y()}, {v[(i + 1) % 4].x(), v[(i + 1) % 4].y()});
+      if (frame1.HasRmin()) {
+        auto embedded = seg2.Intersect(Circle2D<Real_t>{frame1.rangeR[0], {Real_t(0), Real_t{0}}});
+        if (embedded == SegmentIntersect::kEmbedded || embedded == SegmentIntersect::kIntersect) return false;
+      }
+      if (!frame1.isFullCirc) {
+        Segment2D<Real_t> seg1_phi1({frame1.rangeR[0] * frame1.vecSPhi}, {frame1.rangeR[1] * frame1.vecSPhi});
+        Segment2D<Real_t> seg1_phi2({frame1.rangeR[0] * frame1.vecEPhi}, {frame1.rangeR[1] * frame1.vecEPhi});
+        auto embedded = seg1_phi1.Intersect(seg2);
+        if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
+        embedded = seg1_phi2.Intersect(seg2);
+        if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
+      }
+    }
+    // The center of the circle must not be inside the frame
+    auto center = trans.Transform(Vector3D<Real_t>{});
+    if (frame2.Inside(center)) return false;
+
     return true;
   }
 };
@@ -126,6 +193,24 @@ struct FrameChecker<Real_t, ZPhiMask<Real_t>, ZPhiMask<Real_t>> {
   static bool IsEmbedding(ZPhiMask<Real_t> const &frame1, ZPhiMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // embedding in Z must be transformed in z
+    Vector3D<Real_t> zmin(0., 0., frame1.rangeZ[0]);
+    Vector3D<Real_t> zmax(0., 0., frame1.rangeZ[1]);
+
+    zmin = trans.InverseTransform(zmin);
+    zmax = trans.InverseTransform(zmax);
+
+    // Z embedding
+    if (frame2.rangeZ[0] < vecgeom::MakeMinusTolerant<true, Real_t>(zmin[2]) ||
+        frame2.rangeZ[1] > vecgeom::MakePlusTolerant<true, Real_t>(zmax[2]))
+      return false;
+
+    // Phi embedding (does not require transformation since transformations for
+    // zphi masks on the same common surface are only allowed along z)
+    if (!frame1.InsidePhi(frame2.vecSPhi[0], frame2.vecSPhi[1]) ||
+        !frame1.InsidePhi(frame2.vecEPhi[0], frame2.vecEPhi[1]))
+      return false;
+
     return true;
   }
 };
@@ -139,7 +224,7 @@ struct FrameChecker<Real_t, WindowMask<Real_t>, RingMask<Real_t>> {
     // NOTE: for now checking only if the full circle is embedded
     Vector3D<Real_t> center;
     Real_t safety = frame1.SafetyInside(trans.InverseTransform(center));
-    return safety > frame2.rangeR[1];
+    return safety > frame2.rangeR[1] - vecgeom::kToleranceDist<Real_t> * frame2.rangeR[1];
   }
 };
 
@@ -149,10 +234,10 @@ struct FrameChecker<Real_t, WindowMask<Real_t>, WindowMask<Real_t>> {
                           TransformationMP<Real_t> const &trans)
   {
     // Convert all vertices of the child in the parent frame, and check if they are contained
-    Vector3D<Real_t> v[4] = {{-frame2.rangeU[0], -frame2.rangeV[0], 0},
-                             {-frame2.rangeU[0], frame2.rangeV[0], 0},
-                             {frame2.rangeU[0], frame2.rangeV[0], 0},
-                             {frame2.rangeU[0], -frame2.rangeV[0], 0}};
+    Vector3D<Real_t> v[4] = {{frame2.rangeU[0], frame2.rangeV[0], 0},
+                             {frame2.rangeU[0], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[0], 0}};
 
     for (auto i = 0; i < 4; ++i) {
       if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
@@ -199,7 +284,11 @@ struct FrameChecker<Real_t, TriangleMask<Real_t>, RingMask<Real_t>> {
   static bool IsEmbedding(TriangleMask<Real_t> const &frame1, RingMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
-    return true;
+    // Compute SafetyInside for the center of the circle
+    // NOTE: for now checking only if the full circle is embedded
+    Vector3D<Real_t> center;
+    Real_t safety = frame1.SafetyInside(trans.InverseTransform(center));
+    return safety > frame2.rangeR[1] - vecgeom::kToleranceDist<Real_t> * frame2.rangeR[1];
   }
 };
 
@@ -208,6 +297,15 @@ struct FrameChecker<Real_t, TriangleMask<Real_t>, WindowMask<Real_t>> {
   static bool IsEmbedding(TriangleMask<Real_t> const &frame1, WindowMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[4] = {{frame2.rangeU[0], frame2.rangeV[0], 0},
+                             {frame2.rangeU[0], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[0], 0}};
+
+    for (auto i = 0; i < 4; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };
@@ -217,6 +315,13 @@ struct FrameChecker<Real_t, TriangleMask<Real_t>, TriangleMask<Real_t>> {
   static bool IsEmbedding(TriangleMask<Real_t> const &frame1, TriangleMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[3] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                             {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                             {frame2.p_[2].x(), frame2.p_[2].y(), 0}};
+    for (auto i = 0; i < 3; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };
@@ -226,6 +331,14 @@ struct FrameChecker<Real_t, TriangleMask<Real_t>, QuadrilateralMask<Real_t>> {
   static bool IsEmbedding(TriangleMask<Real_t> const &frame1, QuadrilateralMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[4] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                             {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                             {frame2.p_[2].x(), frame2.p_[2].y(), 0},
+                             {frame2.p_[3].x(), frame2.p_[3].y(), 0}};
+    for (auto i = 0; i < 4; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };
@@ -235,7 +348,11 @@ struct FrameChecker<Real_t, QuadrilateralMask<Real_t>, RingMask<Real_t>> {
   static bool IsEmbedding(QuadrilateralMask<Real_t> const &frame1, RingMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
-    return true;
+    // Compute SafetyInside for the center of the circle
+    // NOTE: for now checking only if the full circle is embedded
+    Vector3D<Real_t> center;
+    Real_t safety = frame1.SafetyInside(trans.InverseTransform(center));
+    return safety > frame2.rangeR[1] - vecgeom::kToleranceDist<Real_t> * frame2.rangeR[1];
   }
 };
 
@@ -244,6 +361,15 @@ struct FrameChecker<Real_t, QuadrilateralMask<Real_t>, WindowMask<Real_t>> {
   static bool IsEmbedding(QuadrilateralMask<Real_t> const &frame1, WindowMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[4] = {{frame2.rangeU[0], frame2.rangeV[0], 0},
+                             {frame2.rangeU[0], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[1], 0},
+                             {frame2.rangeU[1], frame2.rangeV[0], 0}};
+
+    for (auto i = 0; i < 4; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };
@@ -253,6 +379,13 @@ struct FrameChecker<Real_t, QuadrilateralMask<Real_t>, TriangleMask<Real_t>> {
   static bool IsEmbedding(QuadrilateralMask<Real_t> const &frame1, TriangleMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[3] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                             {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                             {frame2.p_[2].x(), frame2.p_[2].y(), 0}};
+    for (auto i = 0; i < 3; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };
@@ -262,6 +395,14 @@ struct FrameChecker<Real_t, QuadrilateralMask<Real_t>, QuadrilateralMask<Real_t>
   static bool IsEmbedding(QuadrilateralMask<Real_t> const &frame1, QuadrilateralMask<Real_t> const &frame2,
                           TransformationMP<Real_t> const &trans)
   {
+    // Convert all vertices of the child in the parent frame, and check if they are contained
+    Vector3D<Real_t> v[4] = {{frame2.p_[0].x(), frame2.p_[0].y(), 0},
+                             {frame2.p_[1].x(), frame2.p_[1].y(), 0},
+                             {frame2.p_[2].x(), frame2.p_[2].y(), 0},
+                             {frame2.p_[3].x(), frame2.p_[3].y(), 0}};
+    for (auto i = 0; i < 4; ++i) {
+      if (!frame1.Inside(trans.InverseTransform(v[i]))) return false;
+    }
     return true;
   }
 };

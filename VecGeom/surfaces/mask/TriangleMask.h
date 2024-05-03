@@ -75,10 +75,10 @@ struct TriangleMask {
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
-    // TODO: Do we need a tolerance-aware version?
     Vector2D<Real_t> const local2D(local.x(), local.y());
-    return (n_[0].Dot(local2D - p_[0]) < Real_t(0) && n_[1].Dot(local2D - p_[1]) < Real_t(0) &&
-            n_[2].Dot(local2D - p_[2]) < Real_t(0));
+    return (n_[0].Dot(local2D - p_[0]) < vecgeom::kToleranceDist<Real_t> &&
+            n_[1].Dot(local2D - p_[1]) < vecgeom::kToleranceDist<Real_t> &&
+            n_[2].Dot(local2D - p_[2]) < vecgeom::kToleranceDist<Real_t>);
   }
 
   /// @brief Computes the closest distance from a point in XY plane and the triangle.
@@ -93,7 +93,7 @@ struct TriangleMask {
 
     // lambda to compute distance to segment i (common to triangles and quads, to be moved?)
     auto distanceToSegmentSquared = [&](int i) {
-      int j     = (i + 1) % 4;
+      int j     = (i + 1) % 3;
       auto line = p_[j] - p_[i];
       auto pvec = local2D - p_[i];
       auto dot0 = line.Dot(pvec);
@@ -118,6 +118,35 @@ struct TriangleMask {
     safety = vecCore::math::Sqrt(dseg_squared + safetySurf * safetySurf);
 
     return safety;
+  }
+
+  /// @brief Safe distance from a point assumed inside the window
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyInside(Vector3D<Real_t> const &local) const
+  {
+    if (Inside(local) == false) return -vecgeom::InfinityLength<Real_t>();
+
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+
+    // lambda to compute distance to segment i (common to triangles and quads, to be moved?)
+    auto distanceToSegmentSquared = [&](int i) {
+      int j     = (i + 1) % 3;
+      auto line = p_[j] - p_[i];
+      auto pvec = local2D - p_[i];
+      auto dot0 = line.Dot(pvec);
+      if (dot0 <= 0) return pvec.Mag2();
+      auto dot1 = line.Mag2();
+      if (dot1 <= dot0) return (local2D - p_[j]).Mag2();
+      return ((dot0 / dot1) * line - pvec).Mag2();
+    };
+
+    Real_t safety_squared = vecgeom::InfinityLength<Real_t>();
+    for (int i = 0; i < 3; ++i) {
+      safety_squared = vecCore::math::Min(safety_squared, distanceToSegmentSquared(i));
+    }
+    return vecCore::math::Sqrt(safety_squared);
   }
 };
 
