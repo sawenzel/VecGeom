@@ -72,6 +72,28 @@ enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindo
 ///< Segment-segment intersection types
 enum class SegmentIntersect : char { kNoIntersect, kEmbedding, kEmbedded, kOverlap, kIntersect, kEqual };
 
+/// @brief Framed surface locator
+struct FSlocator {
+  int common_id{0}; ///< Common surface id (positive = left side, negative = right side)
+  int frame_id{-1}; ///< frame index on the side
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  FSlocator(int csind, int iframe, bool left) : common_id{(2 * int(left) - 1) * csind}, frame_id{iframe} {}
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int GetCSindex() const { return vecCore::math::Abs(common_id); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsLeftSide() const { return common_id > 0; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int GetFSindex() const { return frame_id; }
+};
+
 // Aliases for different usages of Vec2D.
 template <typename Real_t>
 using Range = Vector2D<Real_t>;
