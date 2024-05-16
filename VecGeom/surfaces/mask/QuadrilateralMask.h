@@ -29,25 +29,35 @@ struct QuadrilateralMask {
   template <typename Real_i>
   QuadrilateralMask(Real_i x1, Real_i y1, Real_i x2, Real_i y2, Real_i x3, Real_i y3, Real_i x4, Real_i y4)
   {
-    p_[0].Set(static_cast<Real_t>(x1), static_cast<Real_t>(y1));
-    p_[1].Set(static_cast<Real_t>(x2), static_cast<Real_t>(y2));
-    p_[2].Set(static_cast<Real_t>(x3), static_cast<Real_t>(y3));
-    p_[3].Set(static_cast<Real_t>(x4), static_cast<Real_t>(y4));
+    // temporary points and normals in vecgeom Precision for calculation and degeneracy check
+    Point2D<vecgeom::Precision> p[4] = {vecgeom::Precision(0)};
+    Point2D<vecgeom::Precision> n[4] = {vecgeom::Precision(0)};
+    p[0].Set(x1, y1);
+    p[1].Set(x2, y2);
+    p[2].Set(x3, y3);
+    p[3].Set(x4, y4);
 
     // Compute outward normals
     for (int i = 0; i < 4; ++i) {
       auto j      = (i + 1) % 4;
       auto k      = (i + 2) % 4;
-      auto seg_ij = p_[j] - p_[i];
-      auto seg_ik = p_[k] - p_[i];
-      assert(seg_ij.Mag2() > vecgeom::kToleranceDistSquared<Real_t>);
+      auto seg_ij = p[j] - p[i];
+      auto seg_ik = p[k] - p[i];
+      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared); // use vecgeom tolerance since p is in vecgeom precision
       // normal in XY plane
-      n_[i].Set(seg_ij.y(), -seg_ij.x());
+      n[i].Set(seg_ij.y(), -seg_ij.x());
       // flip the normal so point k is 'backwards'
-      if (n_[i].Dot(seg_ik) > Real_t(0)) n_[i] *= Real_t(-1);
+      if (n[i].Dot(seg_ik) > Real_t(0)) n[i] *= Real_t(-1);
       // Normalize normal vector
-      n_[i].Normalize();
+      n[i].Normalize();
+      // set stored normal n_ in mixed precision
+      n_[i].Set(static_cast<Real_t>(n[i].x()), static_cast<Real_t>(n[i].y()));
     }
+    // static cast to mixed precision after normal calculation
+    p_[0].Set(static_cast<Real_t>(x1), static_cast<Real_t>(y1));
+    p_[1].Set(static_cast<Real_t>(x2), static_cast<Real_t>(y2));
+    p_[2].Set(static_cast<Real_t>(x3), static_cast<Real_t>(y3));
+    p_[3].Set(static_cast<Real_t>(x4), static_cast<Real_t>(y4));
   }
 
   /// @brief Fills the 3D extent of the quadrilateral

@@ -20,6 +20,24 @@ struct GenericKernels {
 
 }; // End struct GenericKernels
 
+// relative tolerance specializations
+template <typename Real_t>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real_t x)
+{
+  return Real_t(0);
+}
+
+template <>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x)
+{
+  return x * kToleranceDist<double>;
+}
+template <>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x)
+{
+  return x * kToleranceDist<float>;
+}
+
 template <bool tolerant, typename T>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakePlusTolerant(T const &x, vecCore::Scalar<T> tol = kToleranceDist<T>)
 {

@@ -90,7 +90,7 @@ struct RingMask {
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool HasRmin() const { return rangeR[0] > vecgeom::MakePlusTolerant<true, Real_t>(0); }
+  bool HasRmin() const { return rangeR[0] > vecgeom::kToleranceDist<Real_t>; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -105,8 +105,8 @@ struct RingMask {
   {
     Real_t rsq = local[0] * local[0] + local[1] * local[1];
     // The point must be inside the ring:
-    if ((rsq < rangeR[0] * rangeR[0] + 2 * vecgeom::kToleranceDist<Real_t> * rangeR[0]) ||
-        (rsq > rangeR[1] * rangeR[1] - 2 * vecgeom::kToleranceDist<Real_t> * rangeR[1]))
+    if ((rsq < rangeR[0] * rangeR[0] - 2 * vecgeom::kRelTolerance<Real_t>(rangeR[0])) ||
+        (rsq > rangeR[1] * rangeR[1] + 2 * vecgeom::kRelTolerance<Real_t>(rangeR[1])))
       return false;
     return true;
   }

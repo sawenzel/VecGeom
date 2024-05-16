@@ -986,7 +986,7 @@ public:
         auto &sidesEntering      = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
         // the surface may already be a candidate for the parent state
         if (candidatesEntering.size() && std::abs(candidatesEntering.back()) == isurf) {
-          candidatesEntering.back() = isurf;
+          candidatesEntering.back() = -isurf;
           sidesEntering.back() |= iside;
         } else {
           candidatesEntering.push_back(-isurf);
@@ -1171,10 +1171,10 @@ private:
       }
 
       // Check if the surfaces may be flipped because of Boolean negation
-      if (s1.fLogicId * s2.fLogicId == 0) {
+      if ((s1.fLogicId == 0) || (s2.fLogicId == 0)) {
         flip_bool = (s1.fLogicId < 0) || (s2.fLogicId < 0);
       } else {
-        flip_bool = s1.fLogicId * s2.fLogicId < 0;
+        flip_bool = (s1.fLogicId < 0) != (s2.fLogicId < 0);
       }
 
       // Check if the 2 surfaces are parallel

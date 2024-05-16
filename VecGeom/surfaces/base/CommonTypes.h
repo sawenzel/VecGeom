@@ -391,29 +391,10 @@ struct Arb4Data {
   };
 };
 
-///< Constants and tolerances
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE constexpr Real_t Tolerance()
-{
-  return 0;
-}
-
-template <>
-VECCORE_ATT_HOST_DEVICE constexpr double Tolerance()
-{
-  return 1.e-9;
-}
-
-template <>
-VECCORE_ATT_HOST_DEVICE constexpr float Tolerance()
-{
-  return 1.e-4;
-}
-
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool ApproxEqual(Real_t t1, Real_t t2)
 {
-  return std::abs(t1 - t2) <= Tolerance<Real_t>();
+  return std::abs(t1 - t2) <= vecgeom::kToleranceDist<Real_t>;
 }
 
 template <typename Real_t>
@@ -435,7 +416,7 @@ VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vect
 /// @param tolerance Tolerance with as many significant digits as the truncation result
 /// @return Truncated value
 template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = Tolerance<Real_t>())
+VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
 {
   auto div = std::abs(x);
   while (int(div) > 0) {
@@ -451,7 +432,7 @@ VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = Tolera
 /// @param tolerance Tolerance with as many significant digits as the truncation result
 /// @return Truncation error
 template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = Tolerance<Real_t>())
+VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
 {
   auto div = std::abs(x);
   while (int(div) > 0) {

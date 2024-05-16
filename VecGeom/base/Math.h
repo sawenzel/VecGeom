@@ -35,7 +35,6 @@ VECGEOM_CONST Precision kFarAway       = 1e10;
 // Tolerace distance constant specializations
 template <typename Real_t>
 constexpr Real_t kToleranceDist = Real_t(0);
-
 template <>
 inline constexpr double kToleranceDist<double> = double(1e-9);
 template <>
@@ -43,11 +42,17 @@ inline constexpr float kToleranceDist<float> = float(1e-3);
 
 template <typename Real_t>
 constexpr Real_t kToleranceDistSquared = Real_t(0);
-
 template <>
 inline constexpr double kToleranceDistSquared<double> = kToleranceDist<double> *kToleranceDist<double>;
 template <>
 inline constexpr float kToleranceDistSquared<float> = kToleranceDist<float> *kToleranceDist<float>;
+
+template <typename Real_t>
+constexpr Real_t kToleranceCone = Real_t(0);
+template <>
+inline constexpr double kToleranceCone<double> = double(1e-7);
+template <>
+inline constexpr float kToleranceCone<float> = float(1e-3);
 
 using namespace vecCore::math;
 

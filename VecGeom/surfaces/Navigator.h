@@ -601,6 +601,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   FSlocator exiting_FS;
 
   Vector3D<Real_t> onsurf, recomputed_onsurf;
+  vecgeom::NavigationState exited_state;
   out_state = in_state;
   out_state.SetBoundaryState(false);
   auto skip_surf      = exit_surf.common_id;
@@ -633,6 +634,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // the current state is correctly exited, so there is a transition on this surface
     found               = true;
     exiting             = true;
+    exited_state        = in_state;
     relocated           = false;
     relocated_left_side = !left_side; // opposite to exiting side
     recompute_onsurf    = false;
@@ -646,9 +648,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       out_state.PopScene();
       surfdata.SceneToTouchableLocator(out_state, surf_index, exiting_FS);
       // Find the topmost exit frame on the portal
-      inframe = CheckFramesExiting(exiting_FS, out_state, /*onscene=*/true, dist, point, direction, onsurf_crt,
-                                   recomputed_onsurf, surfdata, top_exit_state, exiting_scene, surf_index, exit_surf,
-                                   out_state);
+      exited_state = out_state;
+      inframe      = CheckFramesExiting(exiting_FS, exited_state, /*onscene=*/true, dist, point, direction, onsurf_crt,
+                                        recomputed_onsurf, surfdata, top_exit_state, exiting_scene, surf_index, exit_surf,
+                                        out_state);
       assert(inframe == true);
       isurfcross          = exiting_FS.GetCSindex();
       relocated_left_side = !exiting_FS.IsLeftSide();
@@ -774,7 +777,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         // Moving to a parent scene, we need to recompute the local point on surface
         scene_trans.Clear();
         if (exiting)
-          out_state.SceneMatrix(scene_trans);
+          exited_state.SceneMatrix(scene_trans);
         else
           out_state.TopMatrix(scene_trans);
         local_scene = scene_trans.Transform(point + distance * direction);

@@ -125,7 +125,9 @@ struct ZPhiMask {
   bool Inside(Vector3D<Real_t> const &local) const
   {
     // The point must be inside z-span:
-    if (local[2] < rangeZ[0] - vecgeom::kTolerance || local[2] > rangeZ[1] + vecgeom::kTolerance) return false;
+    if (local[2] < vecgeom::MakeMinusTolerant<true, Real_t>(rangeZ[0]) ||
+        local[2] > vecgeom::MakePlusTolerant<true, Real_t>(rangeZ[1]))
+      return false;
     return InsidePhi(local[0], local[1]);
   }
 

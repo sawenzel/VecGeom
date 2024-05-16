@@ -61,6 +61,11 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
     assert(rmax1 - rmin1 > -vecgeom::kTolerance);
     assert(rmax2 - rmin2 > -vecgeom::kTolerance);
 
+    // if rmax == rmin then for safety it is set to rmax = rmin + ConeTolerance already in the solid model
+    // For using mixed precision, the compiled tolerance must be replaced by the mixed tolerance
+    if (rmax1 - rmin1 == vecgeom::kConeTolerance) rmax1 = rmin1 + vecgeom::kToleranceCone<Real_t>;
+    if (rmax2 - rmin2 == vecgeom::kConeTolerance) rmax2 = rmin2 + vecgeom::kToleranceCone<Real_t>;
+
     // construct top and bottom surfaces:
     // if there are previous or following sections, the top and bottom surface consist
     // of up to two rings (inner and outer ring). All of those are real surfaces

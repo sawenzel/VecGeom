@@ -893,9 +893,9 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Transformation3DMP<Real_s> const &T
 
   fHasTranslation |= rhs.HasTranslation();
   if (fHasTranslation) {
-    auto tx = tx_ * rhs.Rotation()[0] + ty_ * rhs.Rotation()[3] + tz_ * rhs.Rotation()[6] + rhs.Translation(0);
-    auto ty = tx_ * rhs.Rotation()[1] + ty_ * rhs.Rotation()[4] + tz_ * rhs.Rotation()[7] + rhs.Translation(1);
-    auto tz = tx_ * rhs.Rotation()[2] + ty_ * rhs.Rotation()[5] + tz_ * rhs.Rotation()[8] + rhs.Translation(2);
+    auto tx = tx_ * rhs.Rotation()[0] + ty_ * rhs.Rotation()[1] + tz_ * rhs.Rotation()[2] + rhs.Translation(0);
+    auto ty = tx_ * rhs.Rotation()[3] + ty_ * rhs.Rotation()[4] + tz_ * rhs.Rotation()[5] + rhs.Translation(1);
+    auto tz = tx_ * rhs.Rotation()[6] + ty_ * rhs.Rotation()[7] + tz_ * rhs.Rotation()[8] + rhs.Translation(2);
     tx_     = static_cast<Real_s>(tx);
     ty_     = static_cast<Real_s>(ty);
     tz_     = static_cast<Real_s>(tz);
@@ -903,15 +903,15 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Transformation3DMP<Real_s> const &T
 
   fHasRotation |= rhs.HasRotation();
   if (rhs.HasRotation()) {
-    auto rxx = rxx_ * rhs.Rotation()[0] + rxy_ * rhs.Rotation()[3] + rxz_ * rhs.Rotation()[6];
-    auto ryx = ryx_ * rhs.Rotation()[0] + ryy_ * rhs.Rotation()[3] + ryz_ * rhs.Rotation()[6];
-    auto rzx = rzx_ * rhs.Rotation()[0] + rzy_ * rhs.Rotation()[3] + rzz_ * rhs.Rotation()[6];
-    auto rxy = rxx_ * rhs.Rotation()[1] + rxy_ * rhs.Rotation()[4] + rxz_ * rhs.Rotation()[7];
-    auto ryy = ryx_ * rhs.Rotation()[1] + ryy_ * rhs.Rotation()[4] + ryz_ * rhs.Rotation()[7];
-    auto rzy = rzx_ * rhs.Rotation()[1] + rzy_ * rhs.Rotation()[4] + rzz_ * rhs.Rotation()[7];
-    auto rxz = rxx_ * rhs.Rotation()[2] + rxy_ * rhs.Rotation()[5] + rxz_ * rhs.Rotation()[8];
-    auto ryz = ryx_ * rhs.Rotation()[2] + ryy_ * rhs.Rotation()[5] + ryz_ * rhs.Rotation()[8];
-    auto rzz = rzx_ * rhs.Rotation()[2] + rzy_ * rhs.Rotation()[5] + rzz_ * rhs.Rotation()[8];
+    auto rxx = rxx_ * rhs.Rotation()[0] + rxy_ * rhs.Rotation()[1] + rxz_ * rhs.Rotation()[2];
+    auto ryx = ryx_ * rhs.Rotation()[0] + ryy_ * rhs.Rotation()[1] + ryz_ * rhs.Rotation()[2];
+    auto rzx = rzx_ * rhs.Rotation()[0] + rzy_ * rhs.Rotation()[1] + rzz_ * rhs.Rotation()[2];
+    auto rxy = rxx_ * rhs.Rotation()[3] + rxy_ * rhs.Rotation()[4] + rxz_ * rhs.Rotation()[5];
+    auto ryy = ryx_ * rhs.Rotation()[3] + ryy_ * rhs.Rotation()[4] + ryz_ * rhs.Rotation()[5];
+    auto rzy = rzx_ * rhs.Rotation()[3] + rzy_ * rhs.Rotation()[4] + rzz_ * rhs.Rotation()[5];
+    auto rxz = rxx_ * rhs.Rotation()[6] + rxy_ * rhs.Rotation()[7] + rxz_ * rhs.Rotation()[8];
+    auto ryz = ryx_ * rhs.Rotation()[6] + ryy_ * rhs.Rotation()[7] + ryz_ * rhs.Rotation()[8];
+    auto rzz = rzx_ * rhs.Rotation()[6] + rzy_ * rhs.Rotation()[7] + rzz_ * rhs.Rotation()[8];
 
     rxx_ = static_cast<Real_s>(rxx);
     rxy_ = static_cast<Real_s>(rxy);
@@ -1036,13 +1036,13 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void Transformation3DMP<Real_s>::Mu
 
     // first row of matrix
     rxx_ = tmpx * static_cast<Real_s>(rhs.Rotation()[0]);
-    ryx_ = tmpx * static_cast<Real_s>(rhs.Rotation()[3]);
-    rzx_ = tmpx * static_cast<Real_s>(rhs.Rotation()[6]);
-    rxx_ += tmpy * static_cast<Real_s>(rhs.Rotation()[1]);
+    ryx_ = tmpx * static_cast<Real_s>(rhs.Rotation()[1]);
+    rzx_ = tmpx * static_cast<Real_s>(rhs.Rotation()[2]);
+    rxx_ += tmpy * static_cast<Real_s>(rhs.Rotation()[3]);
     ryx_ += tmpy * static_cast<Real_s>(rhs.Rotation()[4]);
-    rzx_ += tmpy * static_cast<Real_s>(rhs.Rotation()[7]);
-    rxx_ += tmpz * static_cast<Real_s>(rhs.Rotation()[2]);
-    ryx_ += tmpz * static_cast<Real_s>(rhs.Rotation()[5]);
+    rzx_ += tmpy * static_cast<Real_s>(rhs.Rotation()[5]);
+    rxx_ += tmpz * static_cast<Real_s>(rhs.Rotation()[6]);
+    ryx_ += tmpz * static_cast<Real_s>(rhs.Rotation()[7]);
     rzx_ += tmpz * static_cast<Real_s>(rhs.Rotation()[8]);
 
     tmpx = rxy_;
@@ -1051,13 +1051,13 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void Transformation3DMP<Real_s>::Mu
 
     // second row of matrix
     rxy_ = tmpx * static_cast<Real_s>(rhs.Rotation()[0]);
-    ryy_ = tmpx * static_cast<Real_s>(rhs.Rotation()[3]);
-    rzy_ = tmpx * static_cast<Real_s>(rhs.Rotation()[6]);
-    rxy_ += tmpy * static_cast<Real_s>(rhs.Rotation()[1]);
+    ryy_ = tmpx * static_cast<Real_s>(rhs.Rotation()[1]);
+    rzy_ = tmpx * static_cast<Real_s>(rhs.Rotation()[2]);
+    rxy_ += tmpy * static_cast<Real_s>(rhs.Rotation()[3]);
     ryy_ += tmpy * static_cast<Real_s>(rhs.Rotation()[4]);
-    rzy_ += tmpy * static_cast<Real_s>(rhs.Rotation()[7]);
-    rxy_ += tmpz * static_cast<Real_s>(rhs.Rotation()[2]);
-    ryy_ += tmpz * static_cast<Real_s>(rhs.Rotation()[5]);
+    rzy_ += tmpy * static_cast<Real_s>(rhs.Rotation()[5]);
+    rxy_ += tmpz * static_cast<Real_s>(rhs.Rotation()[6]);
+    ryy_ += tmpz * static_cast<Real_s>(rhs.Rotation()[7]);
     rzy_ += tmpz * static_cast<Real_s>(rhs.Rotation()[8]);
 
     tmpx = rxz_;
@@ -1066,13 +1066,13 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void Transformation3DMP<Real_s>::Mu
 
     // third row of matrix
     rxz_ = tmpx * static_cast<Real_s>(rhs.Rotation()[0]);
-    ryz_ = tmpx * static_cast<Real_s>(rhs.Rotation()[3]);
-    rzz_ = tmpx * static_cast<Real_s>(rhs.Rotation()[6]);
-    rxz_ += tmpy * static_cast<Real_s>(rhs.Rotation()[1]);
+    ryz_ = tmpx * static_cast<Real_s>(rhs.Rotation()[1]);
+    rzz_ = tmpx * static_cast<Real_s>(rhs.Rotation()[2]);
+    rxz_ += tmpy * static_cast<Real_s>(rhs.Rotation()[3]);
     ryz_ += tmpy * static_cast<Real_s>(rhs.Rotation()[4]);
-    rzz_ += tmpy * static_cast<Real_s>(rhs.Rotation()[7]);
-    rxz_ += tmpz * static_cast<Real_s>(rhs.Rotation()[2]);
-    ryz_ += tmpz * static_cast<Real_s>(rhs.Rotation()[5]);
+    rzz_ += tmpy * static_cast<Real_s>(rhs.Rotation()[5]);
+    rxz_ += tmpz * static_cast<Real_s>(rhs.Rotation()[6]);
+    ryz_ += tmpz * static_cast<Real_s>(rhs.Rotation()[7]);
     rzz_ += tmpz * static_cast<Real_s>(rhs.Rotation()[8]);
   }
 }
