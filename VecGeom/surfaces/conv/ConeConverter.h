@@ -36,7 +36,6 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   assert(rmax2 - rmin2 > -vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
-  bool halfCut   = ApproxEqual(dphi, vecgeom::kPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
@@ -108,7 +107,6 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   vert  = {corners[0], corners[1], corners[2], corners[3]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
-    if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
     logic.push_back(land);
     logic.push_back(lplus); // '('
     logic.push_back(isurf);
@@ -118,7 +116,6 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   vert  = {corners[4], corners[5], corners[6], corners[7]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (isurf >= 0) {
-    if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
     logic.push_back(smallerPi ? land : lor);
     logic.push_back(isurf);
     logic.push_back(lminus); // ')'

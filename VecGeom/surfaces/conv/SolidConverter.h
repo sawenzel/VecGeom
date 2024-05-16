@@ -19,6 +19,7 @@
 #include <VecGeom/surfaces/conv/BooleanConverter.h>
 #include <VecGeom/surfaces/conv/ScaledConverter.h>
 #include <VecGeom/surfaces/conv/TetConverter.h>
+#include <VecGeom/surfaces/conv/SphereConverter.h>
 #include <VecGeom/volumes/ScaledShape.h>
 
 namespace vgbrep {
@@ -87,6 +88,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
 
     auto bstruct = vecgeom::BooleanHelper::GetBooleanStruct(solid);
     if (bstruct) return conv::CreateBooleanSurfaces<Real_t>(*bstruct, volId);
+
+    auto sphere = dynamic_cast<vecgeom::UnplacedSphere const *>(solid);
+    if (sphere) return conv::CreateSphereSurfaces<Real_t>(*sphere, volId);
 
     VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid;
 

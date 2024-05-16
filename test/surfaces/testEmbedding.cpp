@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
   vecgeom::Transformation3DMP<Real_t> t8(15., 1., 0.);
   vecgeom::Transformation3DMP<Real_t> t9(-15., 0., 0.);
   vecgeom::Transformation3DMP<Real_t> t10(0., 0., 1.);
+  vecgeom::Transformation3DMP<Real_t> t11(-1., 1., 0.);
 
   // WindowMask-WindowMask
   WindowMask<Real_t> w1(20., 30.);
@@ -93,6 +94,9 @@ int main(int argc, char *argv[])
   // rmin embedded in frame
   bool embedded_r1_w5_id = FrameChecker<Real_t, RingMask<Real_t>, WindowMask<Real_t>>::IsEmbedding(r1, w5, identity);
   assert(!embedded_r1_w5_id);
+  // Corner of the window in the center of the ring
+  bool embedded_r4_w3_t11 = FrameChecker<Real_t, RingMask<Real_t>, WindowMask<Real_t>>::IsEmbedding(r4, w3, t11);
+  assert(embedded_r4_w3_t11);
 
   // TriangleMask - WindowMask
   //  TriangleMask<Real_t> tr1(-10., 10., -10., -10., 10., 0.);     // simple triangle

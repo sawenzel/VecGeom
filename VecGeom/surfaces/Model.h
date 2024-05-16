@@ -247,7 +247,7 @@ struct FramedSurface {
   unsigned fSurfIndex{0};   ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
   bool fNeverCheck{false};  ///< The frame should never be checked
-  bool fEmbedding{true};    ///< The frame always embeds daughter state frames in on the same CS
+  bool fEmbedded{true};     ///< The surface is embedded in the parent surface if any
   bool fOverlapping{false}; ///< The frame is overlapping another frame and requires a relocation after crossing
 
   FramedSurface() = default;
@@ -271,6 +271,19 @@ struct FramedSurface {
     if (fSurfIndex == other.fSurfIndex) VECGEOM_LOG(critical) << "### Found frames with same state and surface index";
     if (fSurfIndex < other.fSurfIndex) return true;
     return false;
+  }
+
+  /// @brief Get the parent state index for the framed surface
+  /// @param parent_state Parent state variable filled with the return value
+  /// @return True if there is a parent, false if this is a top scene surface
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool GetParentState(NavIndex_t &parent_state) const
+  {
+    using vecgeom::NavigationState;
+    parent_state = fState;
+    NavigationState::PopImpl(parent_state);
+    return (fState > 0);
   }
 
   /// @brief Get logical volume id for this frame
@@ -552,6 +565,8 @@ struct SurfData {
   logic_int *fLogicList{nullptr};          ///< list of logic expressions per volume
   int *fCandList{nullptr};                 ///< global list of candidate indices
 
+  SurfData() = default;
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   static SurfData<Real_t> &Instance()
@@ -611,13 +626,89 @@ struct SurfData {
   VECGEOM_FORCE_INLINE
   UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
   {
-    FramedSurface const &surf_frame = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
+    FramedSurface const &framedsurf = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
     flipped                         = fCommonSurfaces[isurf].fFlipped;
-    return surf_frame.fSurface;
+    return framedsurf.fSurface;
   }
 
-  // private:
-  SurfData() = default;
+  // Accessors by FSlocator
+
+  /// @brief Get framed surface pointed by a locator
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  FramedSurface const &GetFramedSurface(FSlocator const &locator) const
+  {
+    auto const &surf = fCommonSurfaces[locator.GetCSindex()];
+    auto const &side = locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
+    assert(locator.frame_id > 0 && locator.frame_id < side.fNsurf && "Wrong locator");
+    return fFramedSurf[side.fSurfaces[locator.frame_id]];
+  }
+
+  /// @brief Get common surface pointed by a locator
+  /// @param locator Frame locator
+  /// @return CS pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  CommonSurface const &GetCommonSurface(FSlocator const &locator) const
+  {
+    return fCommonSurfaces[locator.GetCSindex()];
+  }
+
+  /// @brief Get side on common surface pointed by a locator
+  /// @param locator Frame locator
+  /// @return Side pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Side const &GetSide(FSlocator const &locator)
+  {
+    auto const &surf = fCommonSurfaces[locator.GetCSindex()];
+    return locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
+  }
+
+  /// @brief Get opposite side on common surface pointed by a locator
+  /// @param locator Frame locator
+  /// @return Side opposite to the one pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Side const &GetOppositeSide(FSlocator const &locator) const
+  {
+    auto const &surf = fCommonSurfaces[locator.GetCSindex()];
+    return locator.IsLeftSide() ? surf.fRightSide : surf.fLeftSide;
+  }
+
+  /// @brief Get scene FSlocator from a touchable one
+  /// @param ltouchable Locator for the touchable framed surface
+  /// @param lscene Locator for the scene framed surface
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void TouchableToSceneLocator(FSlocator const &ltouchable, FSlocator &lscene) const
+  {
+    auto const &framedsurf = GetFramedSurface(ltouchable);
+    assert(framedsurf.fSceneCS > 0 && "Touchable locator not on a scene surface");
+    lscene.common_id = framedsurf.fSceneCS * (1 - 2 * int(framedsurf.fSceneCSind < 0));
+    lscene.frame_id  = vecCore::math::Abs(framedsurf.fSceneCSind) - 1;
+  }
+
+  /// @brief Get touchable FSlocator from a scene one
+  /// @param scene_state Global state for the scene surface in the parent scene
+  /// @param surf_index Local surface index for the touchable
+  /// @param ltouchable Locator for the touchable framed surface
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void SceneToTouchableLocator(vecgeom::NavigationState const &scene_state, int surf_index, FSlocator &ltouchable) const
+  {
+    constexpr char kLside          = 1;
+    unsigned short parent_scene_id = 0, dummy_id = 0;
+    scene_state.GetSceneId(parent_scene_id, dummy_id);
+    auto parent_state_id = scene_state.GetId();
+    // Get parent scene common surface and side from the exiting candidates (ordered by the surf_index of
+    // the scene volume surface)
+    auto const &cand_scene = GetCandidates(parent_scene_id, parent_state_id);
+    ltouchable.common_id   = cand_scene[surf_index] * (1 - 2 * int((cand_scene.fSides[surf_index] & kLside) == 0));
+    ltouchable.frame_id    = cand_scene.fFrameInd[surf_index];
+  }
 };
 
 } // namespace vgbrep

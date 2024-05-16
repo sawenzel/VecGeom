@@ -77,9 +77,19 @@ struct FSlocator {
   int common_id{0}; ///< Common surface id (positive = left side, negative = right side)
   int frame_id{-1}; ///< frame index on the side
 
+  FSlocator() = default;
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  FSlocator(int csind, int iframe, bool left) : common_id{(2 * int(left) - 1) * csind}, frame_id{iframe} {}
+  FSlocator(int csind, int iframe, bool left) { Set(csind, iframe, left); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void Set(int csind, int iframe, bool left)
+  {
+    common_id = (2 * int(left) - 1) * csind;
+    frame_id  = iframe;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE

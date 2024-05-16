@@ -80,6 +80,8 @@ struct FrameChecker<Real_t, RingMask<Real_t>, WindowMask<Real_t>> {
     if (frame1.IsConvex()) return true;
     // General case: All segments of frame2 must not cross frame1 edges, and the center of frame1 must not be contained
     // in frame2
+    Segment2D<Real_t> seg1_phi1({frame1.rangeR[0] * frame1.vecSPhi}, {frame1.rangeR[1] * frame1.vecSPhi});
+    Segment2D<Real_t> seg1_phi2({frame1.rangeR[0] * frame1.vecEPhi}, {frame1.rangeR[1] * frame1.vecEPhi});
     for (size_t i = 0; i < 4; ++i) {
       Segment2D<Real_t> seg2({v[i].x(), v[i].y()}, {v[(i + 1) % 4].x(), v[(i + 1) % 4].y()});
       if (frame1.HasRmin()) {
@@ -87,17 +89,17 @@ struct FrameChecker<Real_t, RingMask<Real_t>, WindowMask<Real_t>> {
         if (embedded == SegmentIntersect::kEmbedded || embedded == SegmentIntersect::kIntersect) return false;
       }
       if (!frame1.isFullCirc) {
-        Segment2D<Real_t> seg1_phi1({frame1.rangeR[0] * frame1.vecSPhi}, {frame1.rangeR[1] * frame1.vecSPhi});
-        Segment2D<Real_t> seg1_phi2({frame1.rangeR[0] * frame1.vecEPhi}, {frame1.rangeR[1] * frame1.vecEPhi});
         auto embedded = seg1_phi1.Intersect(seg2);
         if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
         embedded = seg1_phi2.Intersect(seg2);
         if (embedded != SegmentIntersect::kNoIntersect && embedded != SegmentIntersect::kEmbedding) return false;
       }
     }
-    // The center of the circle must not be inside the frame
-    auto center = trans.Transform(Vector3D<Real_t>{});
-    if (frame2.Inside(center)) return false;
+    if (frame1.isFullCirc && frame1.HasRmin()) {
+      // The center of the circle must not be inside the frame
+      auto center = trans.Transform(Vector3D<Real_t>{});
+      if (frame2.Inside(center)) return false;
+    }
 
     return true;
   }

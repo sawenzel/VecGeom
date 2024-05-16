@@ -31,7 +31,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
   assert(dphi > vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
-  bool halfCut   = ApproxEqual(dphi, vecgeom::kPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
 
   int isurf;
@@ -80,7 +79,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmin_prev, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, -sphid - ephid}));
-        builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         logic.push_back(isurf);
         logic.push_back(land);
@@ -90,7 +88,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_prev, rmax1, fullCirc, sphi, ephi}),
             builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, -sphid - ephid}));
-        builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         logic.push_back(isurf);
         logic.push_back(land);
@@ -211,7 +208,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
       vert  = {corners[0], corners[1], corners[2], corners[3]};
       isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       assert(isurf >= 0);
-      if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(land);
       logic.push_back(lplus); // '('
       logic.push_back(isurf);
@@ -220,7 +216,6 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
       vert  = {corners[4], corners[5], corners[6], corners[7]};
       isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       assert(isurf >= 0);
-      if (halfCut) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);
       logic.push_back(lminus); // ')'

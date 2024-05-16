@@ -140,21 +140,14 @@ public:
         if (parent_frame.fParent < 0) num_parents++;
         // Non-embedding frames may be several on the side
         auto parent_navind = parent_frame.fState;
-        if (!parent_frame.fEmbedding) {
-          // Check if the frame before has the same state
-          if (parent_ind > 0 && fCPUdata.fFramedSurf[side.fSurfaces[parent_ind - 1]].fState == parent_navind) continue;
-        }
         // re-parent frames before if they have descendent states
         for (int i = 0; i < parent_ind; ++i) {
           auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
           if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) {
             // Check if the frame is embedded in the parent
-            if (fCPUdata.IsEmbedding(parent_frame, child_frame)) {
-              child_frame.fParent = parent_ind;
-            }
-            // For the moment setting the parent anyway
-            child_frame.fParent = parent_ind;
+            child_frame.fEmbedded = fCPUdata.IsEmbedding(parent_frame, child_frame);
+            child_frame.fParent   = parent_ind;
           }
         }
       }
@@ -415,7 +408,7 @@ public:
     framedata << "    fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{"
               << surf.fNeverCheck << "} ";
     if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
-    framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
+    framedata << "fEmbedded{" << to_cstring(surf.fEmbedded) << "} ";
     if (surf.fFrame.type != FrameType::kNoFrame) framedata << "fSurfIndex{" << surf.fSurfIndex << "} ";
     std::cout << framedata.str() << "\n    fState: ";
     surf.PrintState();
@@ -425,6 +418,10 @@ public:
   // Perhaps each mask should have its own print() method that returns a string.
   void PrintCommonSurface(int common_id)
   {
+    if (common_id >= fSurfData->fNcommonSurf) {
+      VECGEOM_LOG(error) << "You are trying to print a non-existent common surface " << common_id;
+      return;
+    }
     auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
     vecgeom::Vector3D<Real_t> normal;
     const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
@@ -671,7 +668,6 @@ public:
         auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
         framed_surf.fLogicId   = lsurf.fLogicId;
         framed_surf.fSurfIndex = lsurf.fSurfIndex;
-        framed_surf.fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
         assert(lsurf.fSurfIndex < nsurf_local);
 
         char iside = 0;
@@ -698,7 +694,6 @@ public:
             // inserting a new frame the array may be re-allocated internally by the vector
             fCPUdata.fFramedSurf[id_surf_scene].fLogicId   = lsurf.fLogicId;
             fCPUdata.fFramedSurf[id_surf_scene].fSurfIndex = lsurf.fSurfIndex;
-            fCPUdata.fFramedSurf[id_surf_scene].fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
             auto isurf_scene = CreateCommonSurface(id_surf_scene, ivol, newscene_id, iframe, iside);
 
             // This assert was to ensure that the first surface of a new volume must be on the left side
@@ -934,7 +929,7 @@ public:
   {
     constexpr char kLside = 0x01;
     constexpr char kRside = 0x02;
-    // Lambda adding the surface id as candidate to all states from a side
+    // Lambda adding the surface id as exiting candidate to all states from a side
     auto addSurfToSideStates = [&](int isurf, char iside) {
       auto const &surf = fCPUdata.fCommonSurfaces[isurf];
       Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
@@ -966,39 +961,66 @@ public:
       }
     };
 
+    // Lambda adding the surface id as entering candidate to all parent states from a side
+    auto addSurfToSideParents = [&](int isurf, char iside) {
+      auto const &surf = fCPUdata.fCommonSurfaces[isurf];
+      Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+      for (int i = 0; i < side.fNsurf; ++i) {
+        int idglob             = side.fSurfaces[i];
+        auto const &framedsurf = fCPUdata.fFramedSurf[idglob];
+        // Skip parent frames, just make sure their parent state matches the default state
+        NavIndex_t parent_state = 0;
+        framedsurf.GetParentState(parent_state);
+        if (framedsurf.fParent < 0) {
+          assert(parent_state == surf.fDefaultState);
+          continue;
+        }
+        // If the frame is embedded in the parent frame, skip the frame
+        if (framedsurf.fEmbedded) continue;
+        // The frame is not embedded in the parent, so add the surface as candidate to the parent state
+        // assert(parent_state != surf.fDefaultState);
+        vecgeom::NavigationState state(parent_state);
+        auto state_id            = state.GetId();
+        auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
+        auto &frameIndEntering   = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
+        auto &sidesEntering      = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
+        // the surface may already be a candidate for the parent state
+        if (candidatesEntering.size() && std::abs(candidatesEntering.back()) == isurf) {
+          candidatesEntering.back() = isurf;
+          sidesEntering.back() |= iside;
+        } else {
+          candidatesEntering.push_back(-isurf);
+          frameIndEntering.push_back(i);
+          sidesEntering.push_back(iside);
+        }
+
+        if (fVerbose > 0) {
+          printf("  added %d to entering of non-embedding parent state on scene %d: ", candidatesEntering.back(),
+                 surf.GetSceneId());
+          vecgeom::NavigationState::PrintTopImpl(parent_state);
+        }
+      }
+    };
+
     // Lambda for adding the surface to the entering candidates of a state
-    auto addSurfToEnteringCand = [&](int isurf, NavIndex_t state) {
+    auto addSurfToDefaultEntering = [&](int isurf, NavIndex_t state) {
       auto const &surf = fCPUdata.fCommonSurfaces[std::abs(isurf)];
       if (fVerbose > 0) printf("===== CS %d:\n", isurf);
       //  Add surface as entering candidate for the provided state
       int state_id             = vecgeom::NavigationState::GetIdImpl(state);
       auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
-      // The surface may be already added in the list of candidates, check that
-      // if (std::find(candidatesEntering.begin(), candidatesEntering.end(), isurf) != candidatesEntering.end()) {
-      auto &frameIndEntering = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
-      auto &sidesEntering    = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
+      auto &frameIndEntering   = fCPUdata.GetFrameIndEntering(surf.GetSceneId(), state_id);
+      auto &sidesEntering      = fCPUdata.GetSidesEntering(surf.GetSceneId(), state_id);
       // Check which sides contain surfaces of daughters
       char sides = 0;
       if (surf.fLeftSide.fNsurf) sides |= kLside;
       if (surf.fRightSide.fNsurf) sides |= kRside;
-      if (isurf < 0 && candidatesEntering.size() > 0 && std::abs(candidatesEntering.back()) == std::abs(isurf)) {
-        candidatesEntering.back() = isurf;
-      } else {
-        candidatesEntering.push_back(isurf);
-        frameIndEntering.push_back(-1); // means this state is the default for isurf
-        sidesEntering.push_back(sides);
-      }
+      candidatesEntering.push_back(isurf);
+      frameIndEntering.push_back(-1); // means this state is the default for isurf
+      sidesEntering.push_back(sides);
       if (fVerbose > 0) {
-        if (state == surf.fDefaultState)
-          printf("  added to entering of def state on scene %d: ", surf.GetSceneId());
-        else
-          printf("  added to entering of top Boolean state on scene %d: ", surf.GetSceneId());
+        printf("  added %d to entering of def state on scene %d: ", candidatesEntering.back(), surf.GetSceneId());
         vecgeom::NavigationState::PrintTopImpl(state);
-        int j = 0;
-        printf("candEntering:   ");
-        for (auto candidate : candidatesEntering)
-          printf("  %d: %d ", j++, candidate);
-        printf("\n");
       }
     };
 
@@ -1008,17 +1030,12 @@ public:
       auto const &topSurfLeft = fCPUdata.fFramedSurf[surf.fLeftSide.GetTopSurfaceIndex()];
       // The surface is an entering candidate for the default state, if the default state
       // is different than the top surface state
-      if (topSurfLeft.fState != surf.fDefaultState) addSurfToEnteringCand(isurf, surf.fDefaultState);
-      // In case the top framed surface defining the common surface is Boolean, there may be
-      // non-embedded daughter frames on it visible from the corresponding Boolean volume.
-      if (topSurfLeft.fLogicId && surf.fLeftSide.HasChildren()) addSurfToEnteringCand(-isurf, topSurfLeft.fState);
-      // Check for a top surface on the right side
-      if (surf.fRightSide.HasChildren()) {
-        auto const &topSurfRight = fCPUdata.fFramedSurf[surf.fRightSide.GetTopSurfaceIndex()];
-        if (topSurfRight.fLogicId) addSurfToEnteringCand(-isurf, topSurfRight.fState);
-      }
+      if (topSurfLeft.fState != surf.fDefaultState) addSurfToDefaultEntering(isurf, surf.fDefaultState);
+      // Check if the surface is an entering candidate for any of the parent states on sides
+      addSurfToSideParents(isurf, kLside);
+      addSurfToSideParents(isurf, kRside);
 
-      // Add to side states
+      // Add surface to side states as exiting candidate
       addSurfToSideStates(isurf, kLside);
       addSurfToSideStates(isurf, kRside);
     }
