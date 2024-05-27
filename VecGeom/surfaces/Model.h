@@ -642,8 +642,57 @@ struct SurfData {
   {
     auto const &surf = fCommonSurfaces[locator.GetCSindex()];
     auto const &side = locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
-    assert(locator.frame_id > 0 && locator.frame_id < side.fNsurf && "Wrong locator");
+    assert((locator.frame_id >= 0 && locator.frame_id < side.fNsurf && "Wrong locator") || locator.GetCSindex() == 0);
     return fFramedSurf[side.fSurfaces[locator.frame_id]];
+  }
+
+  /// @brief Deduce overlap of framed surface from a locator
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsFSOverlapping(FSlocator const &locator) const
+  {
+    // frame surf id -1 indicates an extruding overlap, nonetheless, we must return false here,
+    // so the overlap can be detected properly and the true position can be found. // fixme maybe we can improve the
+    // logic in testRaytracing.cpp
+    if (locator.GetFSindex() == -1) return false;
+    auto const &framedsurf = GetFramedSurface(locator);
+    return framedsurf.fOverlapping;
+  }
+
+  /// @brief Deduce state of framed surface from a locator
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int FramedSurfaceState(FSlocator const &locator) const
+  {
+    auto const &framedsurf = GetFramedSurface(locator);
+    return framedsurf.fState;
+  }
+
+  /// @brief Deduce LogicId of framed surface from a locator
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int FramedSurfaceLogicId(FSlocator const &locator) const
+  {
+    if (locator.GetFSindex() == -1) return 0;
+    auto const &framedsurf = GetFramedSurface(locator);
+    return framedsurf.fLogicId;
+  }
+
+  /// @brief Check if framed surface from a locator is embedded
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsFramedSurfaceEmbedded(FSlocator const &locator) const
+  {
+    auto const &framedsurf = GetFramedSurface(locator);
+    return framedsurf.fEmbedded;
   }
 
   /// @brief Get common surface pointed by a locator

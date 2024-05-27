@@ -141,26 +141,26 @@ __device__ void PropagateRaySurf(int i, Vector3D<Real_t> const *points, Vector3D
   NavigationState start_state = in_states[i];
   NavigationState out_state;
   int num_cross = 0;
-  ExitSurfState exit_surf;
+  vgbrep::FSlocator exiting_FS;
   double dist_tot = 0;
   auto pt         = points[i];
   auto const &dir = dirs[i];
   do {
-    exit_surf.common_id = 0; // need to reset because the same inner tube surface can be crossed twice in a row
-    auto distance       = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exit_surf);
-    if (exit_surf.common_id == -1) {
+    exiting_FS.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exiting_FS);
+    if (exiting_FS.GetFSindex() == -1) {
       // Extruding overlap detected, relocating to correct starting state
       // Find true location for the crossing point
       NavigationState true_state;
       vgbrep::protonav::LocatePointIn(world, pt, true_state, true, start_state.Top());
 
       // Now replay to get correct distance
-      distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exit_surf);
+      distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exiting_FS);
       assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
              "Distance after relocation shouldn't be 0 or infinity");
     }
     if (debug) {
-      printf("     dist = %.16f  surf = %d\n", distance, exit_surf.common_id);
+      printf("     dist = %.16f  surf = %d\n", distance, exiting_FS.common_id);
       printf("   ");
       out_state.Print();
     }

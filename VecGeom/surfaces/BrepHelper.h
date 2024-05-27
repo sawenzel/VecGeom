@@ -1298,7 +1298,7 @@ private:
 
     FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
     bool is_scene_surf        = (scene_id > 0) && (surf.fState == 0);
-    auto hash                 = surfHash(idglob, 100 * vecgeom::kTolerance);
+    auto hash                 = surfHash(idglob, 1000 * vecgeom::kTolerance);
     // Get the compatible surfaces
     auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
     bool found_dup_surf = false;

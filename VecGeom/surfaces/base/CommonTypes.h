@@ -7,6 +7,7 @@
 #include <VecGeom/base/Vector2D.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/volumes/kernel/GenericKernels.h>
+#include <VecGeom/navigation/NavigationState.h>
 
 namespace vgbrep {
 
@@ -74,8 +75,9 @@ enum class SegmentIntersect : char { kNoIntersect, kEmbedding, kEmbedded, kOverl
 
 /// @brief Framed surface locator
 struct FSlocator {
-  int common_id{0}; ///< Common surface id (positive = left side, negative = right side)
-  int frame_id{-1}; ///< frame index on the side
+  int common_id{0};               ///< Common surface id (positive = left side, negative = right side)
+  int frame_id{-1};               ///< frame index on the side
+  vecgeom::NavigationState state; ///< full state associated to the frame
 
   FSlocator() = default;
 

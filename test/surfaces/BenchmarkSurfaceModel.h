@@ -49,19 +49,19 @@ Precision PropagateRay(vecgeom::Vector3D<vecgeom::Precision> const &point,
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavigationState in_state, out_state;
-  ExitSurfState exit_surf;
+  vgbrep::FSlocator exiting_FS;
   Precision dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
   auto pt = point;
   printf("start: ");
   in_state.Print();
   do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exit_surf);
-    if (exit_surf.common_id != 0) {
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exiting_FS);
+    if (exiting_FS.GetCSindex() != 0) {
       dist_tot += distance;
       pt += distance * direction;
     }
-    printf("surface %d at dist = %g: ", exit_surf.common_id, distance);
+    printf("surface %d at dist = %g: ", exiting_FS.GetCSindex(), distance);
     out_state.Print();
     in_state = out_state;
   } while (!out_state.IsOutside());
@@ -103,12 +103,13 @@ bool ValidateNavigation(int npoints, Precision worldX, Precision worldY, Precisi
     refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
 
     // shoot the same ray in the surface model
-    ExitSurfState exit_surf;
+    vgbrep::FSlocator exiting_FS;
     bool safesafe = true;
     NavigationState in_state, out_state, surflocate_state;
     vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, surflocate_state, true);
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
-    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], exit_surf.common_id);
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exiting_FS);
+    int common_id = exiting_FS.GetCSindex();
+    auto safety   = vgbrep::protonav::ComputeSafety(pos, *origStates[i], common_id);
     if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
     num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
     num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
@@ -176,9 +177,9 @@ bool ShootOneParticle(Precision px, Precision py, Precision pz, Precision dx, Pr
   nav->FindNextBoundaryAndStep(point, direction, *origStates[0], *outputStates[0], vecgeom::kInfLength, refSteps[0]);
 
   // shoot the same ray in the surface model
-  ExitSurfState exit_surf;
+  vgbrep::FSlocator exiting_FS;
   NavigationState out_state;
-  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, exit_surf);
+  auto distance = vgbrep::protonav::ComputeStepAndHit(point, direction, *origStates[0], out_state, exiting_FS);
   if (out_state.GetNavIndex() != outputStates[0]->GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
     num_errors++;
     std::cout << "ERROR." << std::endl;
@@ -231,8 +232,8 @@ void TestPerformance(Precision worldX, Precision worldY, Precision worldZ, Preci
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    ExitSurfState exit_surf;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
+    vgbrep::FSlocator exiting_FS;
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exiting_FS);
   }
   Precision time_surf = timer1.Stop();
 
@@ -284,8 +285,8 @@ void TestAndSavePerformance(Precision worldRadius, int npoints, int nbLayers)
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    ExitSurfState exit_surf;
-    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exit_surf);
+    vgbrep::FSlocator exiting_FS;
+    distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exiting_FS);
   }
   Precision time_surf = timer1.Stop();
 
