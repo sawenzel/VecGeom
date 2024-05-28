@@ -387,7 +387,6 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   auto const &surfdata     = SurfData<Real_t>::Instance();
 
   // set path to be starting path to check for daughters
-  auto model_out_state             = path;
   path                             = starting_path;
   VPlacedVolumePtr_t currentvolume = starting_path.Top();
   VPlacedVolumePtr_t prev_volume   = path.GetLastExited();

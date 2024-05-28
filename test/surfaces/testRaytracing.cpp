@@ -280,25 +280,17 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
 
         // overlap if the output state and the true state disagree (and the outstate is not outside) or if extruding
         // overlap, which is handled separately
-        if ((out_state.GetState() != true_state.GetState()) || exiting_FS.GetFSindex() == -1) {
+        if ((out_state.GetState() != true_state.GetState())) { // || exiting_FS.GetFSindex() == -1) {
           num_overlaps++;
 
           // fixme: if common_id = -1, then these accessors below are garbage. Recheck if this is needed or even
           // harmful.
+          // cannot use getter since the framedsurf must not be const here
           auto const &surf        = surfdata.fCommonSurfaces[exiting_FS.GetCSindex()];
           auto const &exit_side   = exiting_FS.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
           auto &framedsurf        = exit_side.GetSurface(exiting_FS.GetFSindex(), surfdata);
           int surf_index          = framedsurf.fSurfIndex;
           framedsurf.fOverlapping = true;
-
-          // loop over all parents and mark them as overlapping as well. // FIXME this needs to be fixed with embedded
-          // or just cut.
-          int parent_frame = framedsurf.fParent;
-          while (parent_frame > 0) {
-            framedsurf              = exit_side.GetSurface(parent_frame, surfdata);
-            framedsurf.fOverlapping = true;
-            parent_frame            = exit_side.GetSurface(parent_frame, surfdata).fParent;
-          }
 
           VECGEOM_LOG(warning) << std::setprecision(16) << num_overlaps << " overlap detected for ray " << i
                                << " at num_cross = " << crossings[i].GetNsteps() << "\n   starting point " << points[i]
