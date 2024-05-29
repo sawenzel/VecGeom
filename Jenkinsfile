@@ -103,7 +103,7 @@ def init() {
 def buildAndTest() {
   sh label: 'build_and_test', script: """
     if [[ ${LABEL} =~ cuda ]]; then
-        source /cvmfs/sft.cern.ch/lcg/contrib/cuda/11.4/x86_64-centos7/setup.sh
+        source /cvmfs/sft.cern.ch/lcg/contrib/cuda/12.4/x86_64-el9/setup.sh
     fi
     source /cvmfs/sft.cern.ch/lcg/views/${EXTERNALS}/${PLATFORM}/setup.sh
     env | sort | sed 's/:/:?     /g' | tr '?' '\n'
