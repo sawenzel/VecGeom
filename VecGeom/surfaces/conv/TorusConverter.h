@@ -79,6 +79,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
                                               static_cast<vecgeom::Precision>(360)}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
           {rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(lplus); // '('
@@ -92,6 +93,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
                                               static_cast<vecgeom::Precision>(360)}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
           {rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);

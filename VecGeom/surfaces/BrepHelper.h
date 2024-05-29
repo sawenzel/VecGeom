@@ -408,6 +408,7 @@ public:
     framedata << "    fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{"
               << surf.fNeverCheck << "} ";
     if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
+    framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
     framedata << "fEmbedded{" << to_cstring(surf.fEmbedded) << "} ";
     if (surf.fFrame.type != FrameType::kNoFrame) framedata << "fSurfIndex{" << surf.fSurfIndex << "} ";
     std::cout << framedata.str() << "\n    fState: ";
@@ -668,6 +669,7 @@ public:
         auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
         framed_surf.fLogicId   = lsurf.fLogicId;
         framed_surf.fSurfIndex = lsurf.fSurfIndex;
+        framed_surf.fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
         assert(lsurf.fSurfIndex < nsurf_local);
 
         char iside = 0;
@@ -694,6 +696,7 @@ public:
             // inserting a new frame the array may be re-allocated internally by the vector
             fCPUdata.fFramedSurf[id_surf_scene].fLogicId   = lsurf.fLogicId;
             fCPUdata.fFramedSurf[id_surf_scene].fSurfIndex = lsurf.fSurfIndex;
+            fCPUdata.fFramedSurf[id_surf_scene].fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
             auto isurf_scene = CreateCommonSurface(id_surf_scene, ivol, newscene_id, iframe, iside);
 
             // This assert was to ensure that the first surface of a new volume must be on the left side

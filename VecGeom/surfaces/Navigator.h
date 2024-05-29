@@ -207,12 +207,14 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &exiting_FS, vecgeom::
 /// @param direction Global direction
 /// @param onsurf_local Propagated point on the checked common surface, in its local reference frame
 /// @param surfdata Surface data storage
+/// @param parent_embedding whether the parent framed surface is embedding
 /// @return Crossed frame index. Negative if none crossed.
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecgeom::NavigationState const &in_state,
                                                 NavIndex_t in_navind, bool is_scene, int to_be_checked, Real_t distance,
                                                 Vector3D<Real_t> const &point, Vector3D<Real_t> const &direction,
-                                                Vector3D<Real_t> const &onsurf_local, SurfData<Real_t> const &surfdata)
+                                                Vector3D<Real_t> const &onsurf_local, SurfData<Real_t> const &surfdata,
+                                                bool &parent_embedding)
 {
   constexpr char kCheckChildren  = 1;
   constexpr char kCheckParents   = 2;
@@ -225,6 +227,9 @@ VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecge
   for (auto ind = start_ind; ind < last_ind; ++ind) {
     auto const &framedsurf = surface_side.GetSurface(ind, surfdata);
     if (framedsurf.fNeverCheck) return ind;
+    // if the parent is embedding, the child must be embedded, otherwise it is an illegal overlap and needs to be
+    // ignored
+    if (to_be_checked == kCheckChildren && parent_embedding && !framedsurf.fEmbedded) continue;
     // If this frame has the same state as the exited state (this can happen in Booleans
     // having internal surfaces), it means that the current touchable has an internal common
     // surface being crossed, so this surface must be ignored.
@@ -249,6 +254,7 @@ VECCORE_ATT_HOST_DEVICE int CheckFramesEntering(int isurf, bool left_side, vecge
       // For a real exiting, the post-crossing point must be inside the Boolean
       if (!inside) continue;
     }
+    if (to_be_checked == kCheckParents) parent_embedding = framedsurf.fEmbedding;
     return ind;
   }
   return -1;
@@ -567,11 +573,9 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
         prev_volume = nullptr;
         continue;
       }
-      unsigned short scene_id = 0, newscene_id = 0;
-      bool is_scene = path.GetSceneId(scene_id, newscene_id);
       path.Push(daughter);
       auto same_cs = VolumeHasCommonSurface<Real_t>(path, exiting_FS);
-      if (same_cs && !is_scene) {
+      if (same_cs) {
         inside = false;
       } else {
         inside = LogicInside(point, path, surfdata);
@@ -774,16 +778,17 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // first check the extent of the entry side using onsurf
     if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
 
-    bool has_children = entry_side.fNsurf > entry_side.fNumParents;
-    bool full_check   = !has_children;
+    bool has_children     = entry_side.fNsurf > entry_side.fNumParents;
+    bool full_check       = !has_children;
+    bool parent_embedding = true;
     // Check first parent frames
     auto iframe = CheckFramesEntering(isurf, left_side, in_state, in_navind, is_scene, kCheckParents, dist, point,
-                                      direction, onsurf_crt, surfdata);
+                                      direction, onsurf_crt, surfdata, parent_embedding);
     if (iframe < 0) {
       if (!has_children) continue;
       // We need to check also the children
       iframe     = CheckFramesEntering(isurf, left_side, in_state, in_navind, is_scene, kCheckChildren, dist, point,
-                                       direction, onsurf_crt, surfdata);
+                                       direction, onsurf_crt, surfdata, parent_embedding);
       full_check = true;
     }
 
@@ -863,8 +868,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
       // Parent frames have been already checked if entering
       auto to_check = exiting ? kCheckAll : kCheckChildren;
+      auto parent_embedding = false;
       auto iframe   = CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, is_scene, to_check,
-                                          distance, point, direction, onsurf, surfdata);
+                                          distance, point, direction, onsurf, surfdata, parent_embedding);
 
       if (iframe < 0) {
         relocated = true;
@@ -912,9 +918,11 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
             out_state.TopMatrix(scene_trans);
             local_scene = scene_trans.Transform(point + distance * direction);
             onsurf      = surfdata.fGlobalTrans[scene_surf.fTrans].Transform(local_scene);
+            auto parent_embedding = false;
             // Need to check frames up to the index of the first frame pointing to the parent state
-            iframe = CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, is_scene,
-                                         kCheckChildren, distance, point, direction, onsurf, surfdata);
+            iframe =
+                CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, is_scene, kCheckChildren,
+                                    distance, point, direction, onsurf, surfdata, parent_embedding);
           }
         }
       }

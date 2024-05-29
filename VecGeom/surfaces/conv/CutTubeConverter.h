@@ -153,6 +153,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   vert[3].Set(rmin * csphi, rmin * ssphi, zmax1);
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assert(isurf >= 0);
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(land);
@@ -166,6 +167,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id)
   vert[3].Set(rmax * cephi, rmax * sephi, zmax2);
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   assert(isurf >= 0);
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(smallerPi ? land : lor);

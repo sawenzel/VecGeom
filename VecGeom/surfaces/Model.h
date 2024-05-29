@@ -248,6 +248,7 @@ struct FramedSurface {
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
   bool fNeverCheck{false};  ///< The frame should never be checked
   bool fEmbedded{true};     ///< The surface is embedded in the parent surface if any
+  bool fEmbedding{true};    ///< The frame always embeds daughter state frames if on the same CS
   bool fOverlapping{false}; ///< The frame is overlapping another frame and requires a relocation after crossing
 
   FramedSurface() = default;

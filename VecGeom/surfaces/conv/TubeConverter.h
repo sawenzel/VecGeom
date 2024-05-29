@@ -91,6 +91,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
           {Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(land);
   logic.push_back(lplus); // '('
@@ -102,6 +103,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
           {Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
+  if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);

@@ -270,6 +270,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
           // Make the surface for now non-embedding, in future this needs to be done only for surfaces sitting on the
           // same common plane
+          builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
@@ -314,6 +315,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
           isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+          builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
@@ -409,11 +411,13 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
     vertices = {section_origin1 + section_scale1 * triangle_var[2], section_origin1 + section_scale1 * triangle_var[1],
                 section_origin1 + section_scale1 * triangle_var[0]};
     isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+    builder::GetSurface<Real_t>(isurf).fEmbedding = false;
 
     // top triangles
     vertices = {section_origin2 + section_scale2 * triangle_var[0], section_origin2 + section_scale2 * triangle_var[1],
                 section_origin2 + section_scale2 * triangle_var[2]};
     isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+    builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   }
 
   // bottom virtual surface
