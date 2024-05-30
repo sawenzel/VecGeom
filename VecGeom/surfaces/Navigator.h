@@ -170,10 +170,13 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &exiting_FS, vecgeom::
       while (parent_ind > 0) {
         // next parent to be checked in case the frame is not embedded is parent_ind
         ind = parent_ind - 1;
-        // Not embedding frames must be checked thoroughly
-        if (!embedded) break;
-        // The frame is embedded in the parent, so the parent is also exited
+        // Not embedded frames must be checked thoroughly
+        // Note: frames could be non-embedded because they are extruding overlaps. This can be confirmed if the parent
+        // surface is embedding. In that case, the parent is exited as well. For these extruding overlaps the exiting_FS
+        // must be set to the highest exited frame for the overlap detection to work
         auto const &parent_framedsurf = exit_side.GetSurface(parent_ind, surfdata);
+        if (!embedded && !parent_framedsurf.fEmbedding) break;
+        // The frame is embedded in the parent, so the parent is also exited
         setTopExited(parent_framedsurf, parent_ind);
         if (parent_framedsurf.fState)
           exited_state.SetNavIndex(parent_framedsurf.fState);
@@ -867,10 +870,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       }
 
       // Parent frames have been already checked if entering
-      auto to_check = exiting ? kCheckAll : kCheckChildren;
+      auto to_check         = exiting ? kCheckAll : kCheckChildren;
       auto parent_embedding = false;
-      auto iframe   = CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, is_scene, to_check,
-                                          distance, point, direction, onsurf, surfdata, parent_embedding);
+      auto iframe = CheckFramesEntering(isurfcross, relocated_left_side, out_state, in_navind, is_scene, to_check,
+                                        distance, point, direction, onsurf, surfdata, parent_embedding);
 
       if (iframe < 0) {
         relocated = true;
@@ -916,8 +919,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
             // Recompute onsurf
             scene_trans.Clear();
             out_state.TopMatrix(scene_trans);
-            local_scene = scene_trans.Transform(point + distance * direction);
-            onsurf      = surfdata.fGlobalTrans[scene_surf.fTrans].Transform(local_scene);
+            local_scene           = scene_trans.Transform(point + distance * direction);
+            onsurf                = surfdata.fGlobalTrans[scene_surf.fTrans].Transform(local_scene);
             auto parent_embedding = false;
             // Need to check frames up to the index of the first frame pointing to the parent state
             iframe =
