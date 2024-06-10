@@ -35,6 +35,7 @@ pipeline {
     //---Build & Test stages--------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------------------------------
     stage('Prepa'){
+      agent { label 'startup-jobs' }
       steps {
         init()
       }
@@ -107,6 +108,7 @@ def buildAndTest() {
     fi
     source /cvmfs/sft.cern.ch/lcg/views/${EXTERNALS}/${PLATFORM}/setup.sh
     env | sort | sed 's/:/:?     /g' | tr '?' '\n'
-    ctest -VV -S vecgeom/jenkins/vecgeom-ctest.cmake,$MODE
+    ctest -VV -S vecgeom/jenkins/vecgeom-cbuild.cmake,$MODE
+    ctest -V --output-on-failure -S jenkins/vecgeom-ctest.cmake,$MODE
   """
 }
