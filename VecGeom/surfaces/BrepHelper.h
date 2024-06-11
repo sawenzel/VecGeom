@@ -145,9 +145,21 @@ public:
           auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
           auto navind       = child_frame.fState;
           if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) {
-            // Check if the frame is embedded in the parent
-            child_frame.fEmbedded = fCPUdata.IsEmbedding(parent_frame, child_frame);
-            child_frame.fParent   = parent_ind;
+            // Check if the frame is embedded in ANY of the parents
+            if (!child_frame.fEmbedded) {
+              child_frame.fEmbedded = fCPUdata.IsEmbedding(parent_frame, child_frame);
+              if (parent_frame.fEmbedding && child_frame.fLogicId == 0 && !child_frame.fEmbedded) {
+                VECGEOM_LOG(warning) << "Non-embedded frame " << i << " having embedding parent " << parent_ind
+                                     << " on CS " << common_id;
+                if (fVerbose > 0) {
+                  PrintFramedSurface(child_frame);
+                  PrintFramedSurface(parent_frame);
+                  // Debugging only:
+                  fCPUdata.IsEmbedding(parent_frame, child_frame);
+                }
+              }
+            }
+            child_frame.fParent = parent_ind;
           }
         }
       }
@@ -405,8 +417,8 @@ public:
       framedata << " { no such frame type }";
     };
 
-    framedata << "    fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{"
-              << surf.fNeverCheck << "} ";
+    framedata << "    fTrans{" << surf.fTrans << "} fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId
+              << "} fNeverCheck{" << surf.fNeverCheck << "} ";
     if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
     framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
     framedata << "fEmbedded{" << to_cstring(surf.fEmbedded) << "} ";

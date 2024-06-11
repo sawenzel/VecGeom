@@ -94,7 +94,7 @@ struct RingMask {
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool IsConvex() const { return !HasRmin() && vecSPhi.CrossZ(vecEPhi) > Real_t(0); }
+  bool IsConvex() const { return !HasRmin() && vecSPhi.CrossZ(vecEPhi) > -vecgeom::kToleranceDist<Real_t>; }
 
   /// @brief Check if local point is in the radius range
   /// @param local Point in local coordinates

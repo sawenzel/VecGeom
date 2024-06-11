@@ -166,6 +166,7 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
 
   // Assign logic id to each surface
   for (auto id : cpudata.fShells[logical_id].fSurfaces) {
+    cpudata.fLocalSurfaces[id].fEmbedding = false;
     // Set the logic id for Boolean surfaces
     if (logichelper::is_negated(id, crtlogic))
       cpudata.fLocalSurfaces[id].fLogicId = -id;

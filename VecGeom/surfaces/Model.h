@@ -247,7 +247,7 @@ struct FramedSurface {
   unsigned fSurfIndex{0};   ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
   NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
   bool fNeverCheck{false};  ///< The frame should never be checked
-  bool fEmbedded{true};     ///< The surface is embedded in the parent surface if any
+  bool fEmbedded{false};    ///< The surface is embedded in the parent surface if any
   bool fEmbedding{true};    ///< The frame always embeds daughter state frames if on the same CS
   bool fOverlapping{false}; ///< The frame is overlapping another frame and requires a relocation after crossing
 
@@ -266,6 +266,8 @@ struct FramedSurface {
     auto level2 = NavigationState::GetLevelImpl(other.fState);
     if (level1 > level2) return true;
     if (level1 < level2) return false;
+    if (!fEmbedding && other.fEmbedding) return true;
+    if (fEmbedding && !other.fEmbedding) return false;
     if (fState < other.fState) return true;
     if (fState > other.fState) return false;
     // If states are identical, sort by fSurfIndex
@@ -711,7 +713,7 @@ struct SurfData {
   /// @return Side pointed by the locator
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Side const &GetSide(FSlocator const &locator)
+  Side const &GetSide(FSlocator const &locator) const
   {
     auto const &surf = fCommonSurfaces[locator.GetCSindex()];
     return locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;

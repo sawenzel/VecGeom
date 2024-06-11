@@ -140,8 +140,10 @@ struct FrameChecker<Real_t, RingMask<Real_t>, TriangleMask<Real_t>> {
       }
     }
     // The center of the circle must not be inside the frame
-    auto center = trans.Transform(Vector3D<Real_t>{});
-    if (frame2.Inside(center)) return false;
+    if (!frame1.isFullCirc) {
+      auto center = trans.Transform(Vector3D<Real_t>{});
+      if (frame2.Inside(center)) return false;
+    }
 
     return true;
   }
