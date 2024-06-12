@@ -162,8 +162,8 @@ struct ZPhiMask {
   bool CombineWith(ZPhiMask<Real_t> const &other)
   {
     // Check compatibility of frames
-    if (vecCore::math::Abs(invcalf - other.invcalf) > vecgeom::kTolerance) return false;
-    if (vecCore::math::Abs(Radius(0) - other.Radius(0)) > vecgeom::kTolerance) return false;
+    if (vecCore::math::Abs(invcalf - other.invcalf) > vecgeom::kToleranceDist<Real_t>) return false;
+    if (vecCore::math::Abs(Radius(0) - other.Radius(0)) > vecgeom::kToleranceDist<Real_t>) return false;
 
     rangeZ[0] = vecCore::math::Min(rangeZ[0], other.rangeZ[0]);
     rangeZ[1] = vecCore::math::Max(rangeZ[1], other.rangeZ[1]);
