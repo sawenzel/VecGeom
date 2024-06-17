@@ -480,7 +480,7 @@ public:
     case SurfaceType::kTorus:
     case SurfaceType::kArb4:
     default:
-      VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented";
+      VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented for CS " << common_id;
     }
     for (int i = 0; i < surf.fLeftSide.fNsurf; ++i) {
       int idglob         = surf.fLeftSide.fSurfaces[i];
@@ -520,7 +520,7 @@ public:
       case SurfaceType::kTorus:
       case SurfaceType::kArb4:
       default:
-        VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented";
+        VECGEOM_LOG(error) << "Surface type " << to_cstring(surf.fType) << " not implemented for CS " << common_id;
       }
     } else {
       printf("   \x1B[31mright:\x1B[0m 0 surfaces\n");
@@ -1175,12 +1175,20 @@ private:
       // Surfaces may be in future "compatible" even if they are not the same, for now enforce equality
       if (s1.fSurface.type != s2.fSurface.type) return false;
 
-      // Skip Arb4 for now
+      // Skip Arb4 and Elliptical for now
       static bool warning_printed = false;
       if (s1.fSurface.type == SurfaceType::kArb4 || s2.fSurface.type == SurfaceType::kArb4) {
         if (!warning_printed) {
           VECGEOM_LOG(warning) << "CreateCommonSurface: case " << to_cstring(s1.fSurface.type) << " not implemented";
           warning_printed = true;
+        }
+        return false;
+      }
+      static bool warning_printed_elliptical = false;
+      if (s1.fSurface.type == SurfaceType::kElliptical || s2.fSurface.type == SurfaceType::kElliptical) {
+        if (!warning_printed_elliptical) {
+          VECGEOM_LOG(warning) << "CreateCommonSurface: case " << to_cstring(s1.fSurface.type) << " not implemented";
+          warning_printed_elliptical = true;
         }
         return false;
       }
@@ -1303,6 +1311,7 @@ private:
       case SurfaceType::kSpherical:
       case SurfaceType::kTorus:
       case SurfaceType::kArb4:
+      case SurfaceType::kElliptical:
       default:
         hash = 0;
         break;

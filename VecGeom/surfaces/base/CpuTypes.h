@@ -15,7 +15,7 @@ char const *to_cstring(T type)
 template <>
 char const *to_cstring<SurfaceType>(SurfaceType type)
 {
-  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "arb4"};
+  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "elliptical", "arb4"};
   assert(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
