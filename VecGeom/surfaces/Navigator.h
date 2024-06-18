@@ -7,6 +7,8 @@
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Algorithms.h>
 
+#include <VecGeom/volumes/utilities/VolumeUtilities.h>
+
 #include <iomanip>
 
 namespace vgbrep {
@@ -379,13 +381,13 @@ VECCORE_ATT_HOST_DEVICE bool VolumeHasCommonSurface(vecgeom::NavigationState &pa
 
   // non-embedded surfaces cannot be excluded based on this approach, since this could exclude the correct parent that
   // is entered through the non-embedded part of the frame.
-  if (!surfdata.IsFramedSurfaceEmbedded(exiting_FS)) return false;
+  if (!surfdata.IsFramedSurfaceEmbedded(exiting_FS) && surfdata.FramedSurfaceParentInd(exiting_FS) >= 0) return false;
 
   // loop over all framed surfaces to see if booleans are on the common surface
   // booleans can have the same state while having a different framed surface, so they need a full inside check
-  for (int isurf = 0; isurf < exit_side.fNsurf; isurf++) {
-    if (surfdata.fFramedSurf[exit_side.fSurfaces[isurf]].fLogicId) return false;
-  }
+  // for (int isurf = 0; isurf < exit_side.fNsurf; isurf++) {
+  //   if (surfdata.fFramedSurf[exit_side.fSurfaces[isurf]].fLogicId) return false;
+  // }
 
   // loop over all states of the exited common surface and exclude volumes of that state
   // NOTE: this might not be correct for booleans
@@ -419,7 +421,11 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   VPlacedVolumePtr_t prev_volume   = path.GetLastExited();
 
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
-  bool in_boolean                = false;
+  bool is_boolean                = false;
+
+  auto final_point = point;
+
+  int logic_id_exit = -1; 
 
   // first, check daughter volumes of the current path to find if the point lies within any of the daughters
   bool godeeper;
@@ -434,8 +440,15 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
         //   prev_volume = nullptr;
         //   continue;
         // }
+
+        if (daughter->GetUnplacedVolume()->IsBoolean()) {
+          final_point = point + kPushDistance * direction;
+          // logic_id_exit = surfdata.FramedSurfaceLogicId(exiting_FS);
+        }
         path.Push(daughter);
-        bool inside = LogicInside(point, path, surfdata);
+        bool inside = LogicInside(final_point, path, surfdata); //, logic_id_exit, false);
+        final_point = point;
+//        logic_id_exit = -1;
 
         if (inside) {
           inside_daughter = true;
@@ -545,14 +558,17 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   // we need to check if the exiting framed surface belongs to a boolean.
   // in case of a boolean, an exiting surface does not necessarily mean that the full boolean is exited,
   // thus, in that case we should not go up in the path before searching in the boolean itself
-  if (surfdata.FramedSurfaceLogicId(exiting_FS)) {
-    auto pushedPoint = point + kPushDistance * direction;
-    vecgeom::NavigationState boolean_state;
-    boolean_state = path;
-    in_boolean    = LogicInside(pushedPoint, boolean_state, surfdata, 0, false);
-  }
+  // if (surfdata.FramedSurfaceLogicId(exiting_FS)) {
+  //   auto pushedPoint = point + kPushDistance * direction;
+  //   vecgeom::NavigationState boolean_state;
+  //   boolean_state = path;
+  //   in_boolean    = LogicInside(pushedPoint, boolean_state, surfdata, 0, false);
+  // }
 
-  if (!in_boolean) {
+  currentvolume = path.Top();
+  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
+
+  if (!is_boolean) {
     // exclude volume of the highest parent of the exited framed surface
     if (path.GetNavIndex() > 1) path.SetLastExited();
     prev_volume = path.GetLastExited();
@@ -563,6 +579,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   }
 
   currentvolume = path.Top();
+  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
 
   // check whether the point is in the parent volume, otherwise go higher until it is found
   bool gohigher = false;
@@ -571,10 +588,20 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   do {
     gohigher     = false;
     auto same_cs = VolumeHasCommonSurface<Real_t>(path, exiting_FS);
-    if (same_cs && !in_boolean) {
+    if (same_cs && !is_boolean) {
       inside = false;
     } else {
-      inside = LogicInside(point, path, surfdata);
+
+      // if (vecgeom::BooleanHelper::GetBooleanStruct(currentvolume->GetUnplacedVolume())) {
+      if (currentvolume->GetUnplacedVolume()->IsBoolean()) {
+        final_point = point + kPushDistance * direction;
+        logic_id_exit = surfdata.FramedSurfaceLogicId(exiting_FS);
+      }
+
+      inside = LogicInside(final_point, path, surfdata, logic_id_exit, false);
+
+      final_point = point;
+      logic_id_exit = -1;
     }
 
     if (inside == false) {
@@ -588,7 +615,8 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   do {
     godeeper = false;
     for (auto *daughter : currentvolume->GetDaughters()) {
-      if (daughter == prev_volume) {
+      is_boolean = daughter->GetUnplacedVolume()->IsBoolean();
+      if (daughter == prev_volume && !is_boolean) {
         // Only exclude the placed volume once since we could enter it again via a
         // different volume history.
         prev_volume = nullptr;
@@ -596,10 +624,21 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
       }
       path.Push(daughter);
       auto same_cs = VolumeHasCommonSurface<Real_t>(path, exiting_FS);
-      if (same_cs) {
+      if (same_cs && !is_boolean) {
         inside = false;
       } else {
-        inside = LogicInside(point, path, surfdata);
+
+        // if (vecgeom::BooleanHelper::GetBooleanStruct(currentvolume->GetUnplacedVolume())) {
+        if (is_boolean) {
+          final_point = point + kPushDistance * direction;
+          if (daughter == prev_volume) {
+            logic_id_exit = surfdata.FramedSurfaceLogicId(exiting_FS);
+          }
+        }
+
+        inside      = LogicInside(final_point, path, surfdata, logic_id_exit, false);
+        final_point = point;
+        logic_id_exit = -1;
       }
       if (inside) {
         currentvolume = daughter;

@@ -698,6 +698,17 @@ struct SurfData {
     return framedsurf.fEmbedded;
   }
 
+  /// @brief Check if framed surface from a locator is embedded
+  /// @param locator Frame locator
+  /// @return Frame pointed by the locator
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int FramedSurfaceParentInd(FSlocator const &locator) const
+  {
+    auto const &framedsurf = GetFramedSurface(locator);
+    return framedsurf.fParent;
+  }
+
   /// @brief Get common surface pointed by a locator
   /// @param locator Frame locator
   /// @return CS pointed by the locator

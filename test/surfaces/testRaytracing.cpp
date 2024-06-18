@@ -333,10 +333,10 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
                                 << " at num_cross = " << crossings[i].GetNsteps() << "\n Terminating raytracing!";
           return;
         }
-        // exiting framed surface marked as overlapping, need to relocate
-        if (surfdata.IsFSOverlapping(exiting_FS)) {
-          vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, exiting_FS);
-        }
+        // // exiting framed surface marked as overlapping, need to relocate
+        // if (surfdata.IsFSOverlapping(exiting_FS)) {
+        //   vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, exiting_FS);
+        // }
       }
       auto num_cross = crossings[i].SetNextCrossing(distance, out_state);
       if (idebug >= 0) {

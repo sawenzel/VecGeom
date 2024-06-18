@@ -70,6 +70,9 @@ public:
 #endif
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  virtual bool IsBoolean() const override { return true; }
+
   virtual int MemorySize() const override { return sizeof(*this); }
 
 #ifdef VECGEOM_CUDA_INTERFACE

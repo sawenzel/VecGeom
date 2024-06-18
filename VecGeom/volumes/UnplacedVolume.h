@@ -51,6 +51,9 @@ public:
   VECCORE_ATT_HOST_DEVICE
   virtual ~VUnplacedVolume() {}
 
+  VECCORE_ATT_HOST_DEVICE
+  virtual bool IsBoolean() const { return false; }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void SetBBox(Vector3D<Precision> const &amin, Vector3D<Precision> const &amax)
