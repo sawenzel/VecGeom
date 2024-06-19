@@ -53,35 +53,67 @@ struct CrossingSeq {
   /// @brief Compares two crossing sequences
   /// @param other Sequence to compare to
   /// @param istep_err Index of the divergent step if comparison fails
+  /// @param istep_err_other Index of the diverging step of the sequence to compare to
+  /// @param accept_zeros whether 0 steps should throw an error or not
   /// @return Are the sequences identical
   VECCORE_ATT_HOST_DEVICE
-  bool IsEqual(CrossingSeq const &other, int &istep_err, bool accept_zeros = false)
+  bool IsEqual(CrossingSeq const &other, int &istep_err, int &istep_err_other, bool accept_zeros = false)
   {
-    auto kTolerance    = vecgeom::kToleranceDist<Real_t>;
-    size_t istep       = 0;
-    size_t istep_other = 0;
-    istep_err          = 0;
+    auto kTolerance         = vecgeom::kToleranceDist<Real_t>;
+    size_t istep            = 0;
+    size_t istep_other      = 0;
+    size_t istep_next       = 0;
+    size_t istep_next_other = 0;
+    istep_err               = 0;
     while (istep < fSteps.size()) {
       if (accept_zeros) {
         if (istep_other >= other.GetNsteps()) {
           istep_err = istep;
           return false;
         }
-        if (vecCore::math::Abs(fSteps[istep]) < kTolerance) {
+        if (vecCore::math::Abs(fSteps[istep]) < 1000 * kTolerance) {
           istep++;
           continue;
         }
-        if (vecCore::math::Abs(other.fSteps[istep_other]) < kTolerance) {
+        if (vecCore::math::Abs(other.fSteps[istep_other]) < 1000 * kTolerance) {
           istep_other++;
           continue;
         }
       }
       // Now the steps must be in sync
-      if (fStates[istep].GetState() != other.fStates[istep_other].GetState() ||
-          vecCore::math::Abs(fSteps[istep] - other.fSteps[istep_other]) >
-              vgbrep::RoundingError(static_cast<Real_t>(other.fSteps[istep_other]), 100 * kTolerance)) {
-        istep_err = istep;
+      if (vecCore::math::Abs(fSteps[istep] - other.fSteps[istep_other]) >
+          vgbrep::RoundingError(static_cast<Real_t>(other.fSteps[istep_other]), 1000 * kTolerance)) {
+        istep_err       = istep;
+        istep_err_other = istep_other;
+
         return false;
+      }
+
+      // However, the states must not be in sync, because if the next step was a zero step, the states only need to be
+      // in sync after the next zero step. Thus, if the states disagree, check for the next steps, until the next step
+      // is not a zero step.
+      if (fStates[istep].GetState() != other.fStates[istep_other].GetState()) {
+
+        istep_next       = istep;
+        istep_next_other = istep_other;
+        // loop over next steps until the next step is not a 0 step
+        while (accept_zeros && (istep < fSteps.size() - 1) &&
+               vecCore::math::Abs(fSteps[istep_next + 1]) < 1000 * kTolerance) {
+          istep_next++;
+        }
+        while (accept_zeros && (istep_other < other.GetNsteps() - 1) &&
+               vecCore::math::Abs(other.fSteps[istep_next_other + 1]) < 1000 * kTolerance) {
+          istep_next_other++;
+        }
+        // check states again, if they still differ, this is an error
+        if (fStates[istep_next].GetState() != other.fStates[istep_next_other].GetState()) {
+          istep_err       = istep;
+          istep_err_other = istep_other;
+          return false;
+        } else {
+          istep       = istep_next;
+          istep_other = istep_next_other;
+        }
       }
       istep++;
       istep_other++;

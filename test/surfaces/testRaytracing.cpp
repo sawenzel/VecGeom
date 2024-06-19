@@ -352,12 +352,14 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
 //==================================================================================
 int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                      Vector3D<Real_t> const *points_RT, Vector3D<Real_t> const *dirs_RT,
-                     NavigationState const *in_states, CrossingSeq *ref_crossings, CrossingSeq *crossings, bool debug)
+                     NavigationState const *in_states, CrossingSeq *ref_crossings, CrossingSeq *crossings, bool debug,
+                     bool accept_zeros = false)
 {
   int num_errors_dist = 0;
   int istep_err       = 0;
+  int istep_err_solid = 0;
   for (auto i = 0; i < nrays; ++i) {
-    bool error_dist = !crossings[i].IsEqual(ref_crossings[i], istep_err, /*acceptZeros=*/false);
+    bool error_dist = !crossings[i].IsEqual(ref_crossings[i], istep_err, istep_err_solid, accept_zeros);
     if (error_dist && !debug && num_errors_dist < 10) {
       std::cout << std::setprecision(16) << "=== error for ray " << i << " at step " << istep_err << "/"
                 << ref_crossings[i].GetNsteps() << ": p{" << points[i] << "} d{" << dirs[i] << "}\n";
@@ -366,14 +368,16 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
     num_errors_dist += error_dist;
     if (debug && error_dist && (num_errors_dist == 1)) {
       // replay first error
-      printf("=== ray %d has a propagation difference at step %d dist_ref = %g :  dist = %g\n", i, istep_err,
-             ref_crossings[i].fSteps[istep_err], crossings[i].fSteps[istep_err]);
-      if (crossings[i].fStates[istep_err].GetState() != ref_crossings[i].fStates[istep_err].GetState()) {
-        printf("solid model state after step: ");
-        ref_crossings[i].fStates[istep_err].Print();
-        printf("surface model state after step: ");
+      printf("\033[1;31m=== ray %d has a propagation difference at step %d (correponding solid model step %d) dist_ref "
+             "= %.10g :  dist = %.10g\033[0m\n",
+             i, istep_err, istep_err_solid, ref_crossings[i].fSteps[istep_err_solid], crossings[i].fSteps[istep_err]);
+      if (crossings[i].fStates[istep_err].GetState() != ref_crossings[i].fStates[istep_err_solid].GetState()) {
+        printf("\033[1;32msolid model state after step:\033[0m\n");
+        ref_crossings[i].fStates[istep_err_solid].Print();
+        printf("\033[1;31msurface model state after step:\033[0m\n");
         crossings[i].fStates[istep_err].Print();
       }
+      printf("Replaying ray for debugging : \n\n");
       PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i);
       PropagateRaysSurf(nrays, points_RT, dirs_RT, in_states, crossings, i, istep_err);
     }
@@ -382,7 +386,7 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 }
 //==================================================================================
 int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug,
-                       Precision safety_tolerance, bool detect_overlaps = false)
+                       Precision safety_tolerance, bool detect_overlaps = false, bool accept_zeros = false)
 {
   // allocate storage
   NavigationState *origStates   = new NavigationState[nrays];
@@ -477,8 +481,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   auto time_traverse_surf = timer.Stop();
 
   // Corectness for traversal
-  num_errors_dist =
-      ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings, debug);
+  num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
+                                     debug, accept_zeros);
 
   num_errors += num_errors_dist;
   if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
@@ -512,6 +516,7 @@ int main(int argc, char *argv[])
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
   OPTION_BOOL(detect_overlaps, 0);
+  OPTION_BOOL(accept_zeros, 0);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -593,7 +598,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps);
+  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
