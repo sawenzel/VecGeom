@@ -48,7 +48,8 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance)
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
+                 bool &two_solutions)
   {
 
     // RESCALING, from now on RadTube is normalized to TorusRadius and TorusRadius = 1!
@@ -69,7 +70,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       localpoint[2] = point[2] / fTorusData->Radius() - RadTube_R0;
       Vector3D<Real_t> tmppoint;
       Real_t tmp_rho;
-      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, dir, false, tmp)) {
+      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, dir, false, tmp, two_solutions)) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         tmp_rho  = Sqrt(tmppoint[0] * tmppoint[0] + tmppoint[1] * tmppoint[1]);
         if ((tmp > -vecgeom::kTolerance) && (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance) &&
@@ -82,7 +83,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       // emulate transformation of lower surface
       Vector3D<Real_t> localdir = {dir[0], dir[1], -dir[2]};
       localpoint[2]             = -point[2] / fTorusData->Radius() - RadTube_R0;
-      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, localdir, false, tmp)) {
+      if (SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(localpoint, localdir, false, tmp, two_solutions)) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         tmp_rho  = Sqrt(tmppoint[0] * tmppoint[0] + tmppoint[1] * tmppoint[1]);
         if ((tmp > -vecgeom::kTolerance) && (tmp_rho - (1. - RadTube_R0) > -vecgeom::kTolerance) &&
@@ -98,7 +99,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       // check outer cylinder
       localpoint = point / fTorusData->Radius();
       if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData())
-              .Intersect(localpoint, dir, false, tmp)) {
+              .Intersect(localpoint, dir, false, tmp, two_solutions)) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {
@@ -112,7 +113,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       // check inner cylinder
       localpoint = point / fTorusData->Radius();
       if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData())
-              .Intersect(localpoint, dir, false, tmp)) {
+              .Intersect(localpoint, dir, false, tmp, two_solutions)) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {

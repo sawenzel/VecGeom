@@ -62,6 +62,7 @@ VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
 // a special constant to indicate a "miss" length
 VECGEOM_CONST Precision kInfLength        = vecCore::NumericLimits<Precision>::Max();
 VECGEOM_CONST Precision kMaximum          = vecCore::NumericLimits<Precision>::Max();
+VECGEOM_CONST int kMaximumInt             = vecCore::NumericLimits<int>::Max();
 VECGEOM_CONST Precision kMinimum          = vecCore::NumericLimits<Precision>::Min();
 VECGEOM_CONST Precision kPi               = 3.14159265358979323846;
 VECGEOM_CONST Precision kHalfPi           = 0.5 * kPi;

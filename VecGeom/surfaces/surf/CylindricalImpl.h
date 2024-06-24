@@ -35,8 +35,10 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param dir Direction in the local surface coordinates
   /// @param left_side Flag specifying if the surface is intersected from the left-side that defines the normal
   /// @param distance Computed distance to surface
+  /// @param two_solutions whether there are two possible solutions
   /// @return Validity of the intersection
-  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance)
+  bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
+                 bool &two_solutions)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
@@ -44,6 +46,7 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
     bool flip_exiting = left_side ^ fCylData->IsFlipped();
     CylinderEq<Real_t>(point, dir, fCylData->Radius(), coef);
     QuadraticSolver(coef, roots, numroots);
+    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kTolerance && roots[1] > -vecgeom::kTolerance);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;

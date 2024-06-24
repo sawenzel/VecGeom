@@ -833,7 +833,8 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> const &point,
                                                   vecgeom::Vector3D<Real_t> const &direction,
                                                   SurfData<Real_t> const &surfdata, int isurf, char sides, bool exiting,
-                                                  bool &left_side, bool &surfhit, vecgeom::Vector3D<Real_t> &onsurf)
+                                                  bool &left_side, bool &surfhit, vecgeom::Vector3D<Real_t> &onsurf,
+                                                  Real_t &dist2)
 {
   constexpr char kLside = 1;
   constexpr char kRside = 2;
@@ -852,13 +853,29 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   left_side             = (sides & kLside) > 0;
   bool check_both_sides = left_side && (sides & kRside) > 0;
   bool visibility       = !exiting ^ left_side ^ flipped;
-  surfhit               = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
-  if (!surfhit && check_both_sides) {
+  bool two_solutions    = false;
+  surfhit               = unplaced.Intersect(local, localdir, visibility, surfdata, dist, two_solutions);
+  if ((!surfhit && check_both_sides) || (two_solutions && check_both_sides)) {
     // Left side already checked, now check right side
     // Note: only one side can have a valid exiting
     left_side  = false;
     visibility = !exiting ^ flipped;
-    surfhit    = unplaced.Intersect(local, localdir, visibility, surfdata, dist);
+    if (!(two_solutions)) dist = dist2;
+    surfhit = unplaced.Intersect(local, localdir, visibility, surfdata, dist2, two_solutions);
+    if (two_solutions) {
+      // if the solution on the right side is closer, use it and store the left side solution as dist2
+      if (dist2 < dist) {
+        Real_t tmp_dist = dist;
+        dist            = dist2;
+        dist2           = tmp_dist;
+      } else {
+        // set left_side back to true if left_side solution is closer
+        left_side = true;
+      }
+    } else {
+      dist  = dist2;
+      dist2 = -vecgeom::InfinityLength<Real_t>();
+    }
   }
   if (surfhit) onsurf = local + dist * localdir;
   return dist;
@@ -911,9 +928,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     if (isurf == 0) continue;
     bool left_side, surfhit;
     Vector3D<Real_t> onsurf_crt;
+    Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/true, left_side,
-                                   surfhit, onsurf_crt);
+                                   surfhit, onsurf_crt, dist2);
     if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
 
     tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], left_side);
@@ -921,6 +939,15 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
     FSlocator out_frame;
     auto inframe = ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist, onsurf_crt, hit_FS, out_frame);
+    // if no frame was hit and no second solution exists, continue
+    if (!inframe && dist2 < -vecgeom::kToleranceDist<Real_t>) continue;
+    // if no frame was hit, try second solution
+    if (!inframe && dist2 > -vecgeom::kToleranceDist<Real_t>) {
+      tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], !left_side);
+      onsurf_crt = point + dist2 * direction;
+      inframe    = ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist2, onsurf_crt, hit_FS, out_frame);
+      if (inframe) dist = dist2;
+    }
     if (!inframe) continue;
     found     = true;
     distance  = dist;
@@ -952,34 +979,49 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
     bool left_side, surfhit;
     Vector3D<Real_t> onsurf_crt;
+    Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/false, left_side,
-                                   surfhit, onsurf_crt);
+                                   surfhit, onsurf_crt, dist2);
     if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
 
     // Temporary ugly solution to avoid self-entering the volume at 0 distance on the same surface
     if (self_entering && vecCore::math::Abs(dist) < vecgeom::kToleranceDist<Real_t>) continue;
 
-    auto const &surf       = surfdata.fCommonSurfaces[isurf];
-    auto const &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
-    // first check the extent of the entry side using onsurf
-    if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf_crt, surfdata)) continue;
-
-    // Seek and cross entering frames
-    // Bootstrap the temporary frame locator with the hit CS side
-    tmp_hit_FS.Set(isurf, -1, left_side);
-    tmp_hit_FS.state = in_state;
     FSlocator out_frame;
-    EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
-    auto iframe = tmp_hit_FS.frame_id;
-    if (iframe >= 0) {
-      // We do have the final hit frame as out_frame now
-      // This surface is certainly hit because the parent frame is hit
-      distance = dist;
-      // compute exited state
-      out_state = out_frame.state;
-      continue; // check next
+    auto EnterFrameCheck = [&](auto left_side, auto &onsurf, auto dist) -> int {
+      auto const &surf = surfdata.fCommonSurfaces[isurf];
+      auto &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
+      // first check the extent of the entry side using onsurf
+      if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf, surfdata)) return -1;
+
+      // Seek and cross entering frames
+      // Bootstrap the temporary frame locator with the hit CS side
+      tmp_hit_FS.Set(isurf, -1, left_side);
+      tmp_hit_FS.state = in_state;
+      EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
+      return tmp_hit_FS.frame_id;
+    };
+    auto iframe = EnterFrameCheck(left_side, onsurf_crt, dist);
+
+    // if frame is not hit and not second solution was found, continue
+    if (iframe < 0 && dist2 < -vecgeom::kToleranceDist<Real_t>) continue;
+
+    // if no frame is hit and second solution is valid, check second solution
+    if (iframe < 0 && dist2 > -vecgeom::kToleranceDist<Real_t> && dist2 < distance) {
+      onsurf_crt = point + dist2 * direction;
+      iframe     = EnterFrameCheck(!left_side, onsurf_crt, dist2);
+      if (iframe >= 0) dist = dist2;
     }
+
+    if (iframe < 0) continue;
+    // We do have the final hit frame as out_frame now
+    // hit_FS = tmp_hit_FS; // if this is commented out, the exited surface is not printed correctly, however, the
+    // hit_FS needs to be the highest exited frame information and must not contain entering frame information for the
+    // overlap detection to work. To be fixed soon FIXME This surface is certainly hit because the parent frame is hit
+    distance = dist;
+    // compute exited state
+    out_state = out_frame.state;
   }
 
   // Fix the out_state if pointing to a 0 scene
