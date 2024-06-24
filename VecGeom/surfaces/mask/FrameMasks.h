@@ -42,21 +42,30 @@ struct FrameChecker<Real_t, RingMask<Real_t>, RingMask<Real_t>> {
                           TransformationMP<Real_t> const &trans)
   {
     // Special case where trans is identity (most frequent)
-    if (trans.IsIdentity()) {
+    if (trans.IsIdentity() || (!(trans.HasTranslation()) && trans.IsXYRotation())) {
       // Radial embedding
       if (frame2.rangeR[0] < vecgeom::MakeMinusTolerant<true, Real_t>(frame1.rangeR[0]) ||
           frame2.rangeR[1] > vecgeom::MakePlusTolerant<true, Real_t>(frame1.rangeR[1]))
         return false;
       // Phi embedding
-      if (!frame1.InsidePhi(frame2.vecSPhi[0], frame2.vecSPhi[1]) ||
-          !frame1.InsidePhi(frame2.vecEPhi[0], frame2.vecEPhi[1]))
+
+      Vector3D<Real_t> SPhi{frame2.vecSPhi[0], frame2.vecSPhi[1], 0};
+      Vector3D<Real_t> EPhi{frame2.vecEPhi[0], frame2.vecEPhi[1], 0};
+      Vector3D<Real_t> trans_SPhi = trans.InverseTransform(SPhi);
+      Vector3D<Real_t> trans_EPhi = trans.InverseTransform(EPhi);
+
+      if (!frame1.InsidePhi(trans_SPhi[0], trans_SPhi[1]) || !frame1.InsidePhi(trans_EPhi[0], trans_EPhi[1]))
         return false;
       return true;
     }
     // General case: check if Safety inside for the center of the frame2 circle is large enough
     Vector3D<Real_t> center;
-    Real_t safety = frame1.SafetyInside(trans.InverseTransform(center));
-    return frame2.rangeR[1] < vecgeom::MakePlusTolerant<true, Real_t>(safety);
+    Real_t safety     = frame1.SafetyInside(trans.InverseTransform(center));
+    bool is_embedding = frame2.rangeR[1] < vecgeom::MakePlusTolerant<true, Real_t>(safety);
+    if (!(is_embedding))
+      VECGEOM_LOG(warning) << "Non-embedded Ring frame in Ring parent frame detected. This could be a general case "
+                              "that is not treated or an extruding overlap.";
+    return is_embedding;
   }
 };
 

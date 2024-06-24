@@ -320,6 +320,15 @@ public:
   VECGEOM_FORCE_INLINE
   bool IsIdentity() const { return fIdentity; }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsXYRotation() const
+  {
+    return (fHasRotation && (std::abs(rzx_) < vecgeom::kTolerance) && (std::abs(rzy_) < vecgeom::kTolerance) &&
+            (std::abs(rxz_) < vecgeom::kTolerance) && (std::abs(ryz_) < vecgeom::kTolerance) &&
+            (std::abs(rzz_ - Real_s(1.)) < vecgeom::kTolerance));
+  }
+
   // VECCORE_ATT_HOST_DEVICE
   // VECGEOM_FORCE_INLINE
   // bool IsReflected() const { return Determinant() < 0; }

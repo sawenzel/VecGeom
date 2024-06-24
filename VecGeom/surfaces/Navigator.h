@@ -425,7 +425,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
 
   auto final_point = point;
 
-  int logic_id_exit = -1; 
+  int logic_id_exit = -1;
 
   // first, check daughter volumes of the current path to find if the point lies within any of the daughters
   bool godeeper;
@@ -448,7 +448,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
         path.Push(daughter);
         bool inside = LogicInside(final_point, path, surfdata); //, logic_id_exit, false);
         final_point = point;
-//        logic_id_exit = -1;
+        //        logic_id_exit = -1;
 
         if (inside) {
           inside_daughter = true;
@@ -566,7 +566,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   // }
 
   currentvolume = path.Top();
-  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
+  is_boolean    = currentvolume->GetUnplacedVolume()->IsBoolean();
 
   if (!is_boolean) {
     // exclude volume of the highest parent of the exited framed surface
@@ -579,7 +579,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   }
 
   currentvolume = path.Top();
-  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
+  is_boolean    = currentvolume->GetUnplacedVolume()->IsBoolean();
 
   // check whether the point is in the parent volume, otherwise go higher until it is found
   bool gohigher = false;
@@ -594,13 +594,13 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
 
       // if (vecgeom::BooleanHelper::GetBooleanStruct(currentvolume->GetUnplacedVolume())) {
       if (currentvolume->GetUnplacedVolume()->IsBoolean()) {
-        final_point = point + kPushDistance * direction;
+        final_point   = point + kPushDistance * direction;
         logic_id_exit = surfdata.FramedSurfaceLogicId(exiting_FS);
       }
 
       inside = LogicInside(final_point, path, surfdata, logic_id_exit, false);
 
-      final_point = point;
+      final_point   = point;
       logic_id_exit = -1;
     }
 
@@ -636,8 +636,8 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
           }
         }
 
-        inside      = LogicInside(final_point, path, surfdata, logic_id_exit, false);
-        final_point = point;
+        inside        = LogicInside(final_point, path, surfdata, logic_id_exit, false);
+        final_point   = point;
         logic_id_exit = -1;
       }
       if (inside) {
@@ -973,8 +973,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
     auto iframe = tmp_hit_FS.frame_id;
     if (iframe >= 0) {
-      // save the exit surf information for entering surfaces of the lowest frame exited
-      hit_FS = tmp_hit_FS; // FIXME: set exiting FS for entering surface as well to faster detect overlaps?
       // We do have the final hit frame as out_frame now
       // This surface is certainly hit because the parent frame is hit
       distance = dist;
