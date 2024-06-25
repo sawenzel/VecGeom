@@ -155,10 +155,7 @@ bool Middleware::Load(XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument const *aDOMDocu
   return processNode(rootDocNode);
 }
 
-XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument *Middleware::Save(void const *)
-{
-  exit(-1);
-}
+XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument *Middleware::Save(void const *) { exit(-1); }
 
 bool Middleware::processNode(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode)
 {
@@ -499,8 +496,8 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processBoole
   auto *placedFirstSolidPtr    = logicFirstVolume->Place();
   auto *placedSecondSolidPtr   = logicSecondVolume->Place(&transformation);
 
-  auto *booleanPtr = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<
-      vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedBooleanVolume<Op>>(Op, placedFirstSolidPtr, placedSecondSolidPtr);
+  auto *booleanPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedBooleanVolume<Op>>(
+      Op, placedFirstSolidPtr, placedSecondSolidPtr);
   return booleanPtr;
 }
 
@@ -520,8 +517,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processMulti
       placedNodes.emplace_back(processMultiUnionNode(it));
     }
   }
-  auto *multiUnionPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedMultiUnion>();
+  auto *multiUnionPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedMultiUnion>();
 
   for (auto const *const node : placedNodes) {
     multiUnionPtr->AddNode(node);
@@ -670,8 +666,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processOrb(
   auto const *const attributes = aDOMNode->getAttributes();
   auto const lengthMultiplier  = GetLengthMultiplier(aDOMNode);
   DECLAREANDGETLENGTVAR(r)
-  auto const anUnplacedOrbPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedOrb>(r);
+  auto const anUnplacedOrbPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedOrb>(r);
   return anUnplacedOrbPtr;
   // TODO precision
 }
@@ -719,8 +714,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processBox(
   DECLAREHALF(y)
   DECLAREHALF(z)
   auto const anUnplacedBoxPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedBox>(
-          halfx, halfy, halfz);
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedBox>(halfx, halfy, halfz);
   return anUnplacedBoxPtr;
 }
 
@@ -739,9 +733,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processTube(
   DECLAREANDGETANGLEVAR(startphi)
   DECLAREANDGETANGLEVAR(deltaphi) // FIXME the default value is not 0
   DECLAREHALF(z)
-  auto const anUnplacedTubePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTube>(
-          rmin, rmax, halfz, startphi, deltaphi);
+  auto const anUnplacedTubePtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTube>(
+      rmin, rmax, halfz, startphi, deltaphi);
   return anUnplacedTubePtr;
 }
 
@@ -756,8 +749,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processElTub
   DECLAREANDGETLENGTVAR(dx)
   DECLAREANDGETLENGTVAR(dy)
   DECLAREANDGETLENGTVAR(dz)
-  auto const anUnplacedEllipticalTubePtr = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<
-      vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipticalTube>(dx, dy, dz);
+  auto const anUnplacedEllipticalTubePtr =
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipticalTube>(dx, dy, dz);
   return anUnplacedEllipticalTubePtr;
 }
 
@@ -786,11 +779,10 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processCutTu
     VECGEOM_LOG(warning)
         << "Middleware::processCutTube: for compatibility, the normal must point outwards, expected to fail";
   }
-  auto const bottomNormal = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{lowX, lowY, lowZ};
-  auto const topNormal    = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{highX, highY, highZ};
-  auto const anUnplacedCutTubePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedCutTube>(
-          rmin, rmax, halfz, startphi, deltaphi, bottomNormal, topNormal);
+  auto const bottomNormal         = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{lowX, lowY, lowZ};
+  auto const topNormal            = vecgeom::VECGEOM_IMPL_NAMESPACE::Vector3D<double>{highX, highY, highZ};
+  auto const anUnplacedCutTubePtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedCutTube>(
+      rmin, rmax, halfz, startphi, deltaphi, bottomNormal, topNormal);
   return anUnplacedCutTubePtr;
 }
 
@@ -811,9 +803,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processCone(
   DECLAREANDGETANGLEVAR(startphi)
   DECLAREANDGETANGLEVAR(deltaphi) // FIXME the default value is not 0
   DECLAREHALF(z)
-  auto const anUnplacedConePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedCone>(
-          rmin1, rmax1, rmin2, rmax2, halfz, startphi, deltaphi);
+  auto const anUnplacedConePtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedCone>(
+      rmin1, rmax1, rmin2, rmax2, halfz, startphi, deltaphi);
   return anUnplacedConePtr;
 }
 
@@ -829,8 +820,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processElCon
   DECLAREANDGETPLAINVAR(dy)
   DECLAREANDGETLENGTVAR(zmax)
   DECLAREANDGETLENGTVAR(zcut)
-  auto const anUnplacedEllipticalConePtr = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<
-      vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipticalCone>(dx, dy, zmax, zcut);
+  auto const anUnplacedEllipticalConePtr =
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipticalCone>(dx, dy, zmax, zcut);
   return anUnplacedEllipticalConePtr;
 }
 
@@ -864,7 +855,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processPolyc
     }
   }
   auto const anUnplacedPolyconePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedPolycone>(
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedPolycone>(
           startphi, deltaphi, zs.size(), zs.data(), rmins.data(), rmaxs.data());
   return anUnplacedPolyconePtr;
 }
@@ -895,9 +886,9 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processGenPo
       zvec.push_back(z);
     }
   }
-  auto const anUnplacedGenericPolyconePtr = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<
-      vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedGenericPolycone>(startphi, deltaphi, rvec.size(), rvec.data(),
-                                                                zvec.data());
+  auto const anUnplacedGenericPolyconePtr =
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedGenericPolycone>(
+          startphi, deltaphi, rvec.size(), rvec.data(), zvec.data());
   return anUnplacedGenericPolyconePtr;
 }
 
@@ -931,9 +922,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processPolyh
       zs.push_back(z);
     }
   }
-  auto const anUnplacedConePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedPolyhedron>(
-          startphi, deltaphi, numsides, zs.size(), zs.data(), rmins.data(), rmaxs.data());
+  auto const anUnplacedConePtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedPolyhedron>(
+      startphi, deltaphi, numsides, zs.size(), zs.data(), rmins.data(), rmaxs.data());
   return anUnplacedConePtr;
 }
 
@@ -951,9 +941,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processTorus
   DECLAREANDGETLENGTVAR(rtor)
   DECLAREANDGETANGLEVAR(startphi)
   DECLAREANDGETANGLEVAR(deltaphi) // FIXME the default value is not 0
-  auto const anUnplacedTorusPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTorus2>(
-          rmin, rmax, rtor, startphi, deltaphi);
+  auto const anUnplacedTorusPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTorus2>(
+      rmin, rmax, rtor, startphi, deltaphi);
   return anUnplacedTorusPtr;
 }
 
@@ -972,9 +961,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processSpher
   DECLAREANDGETANGLEVAR(deltaphi) // FIXME the default value is not 0
   DECLAREANDGETANGLEVAR(starttheta)
   DECLAREANDGETANGLEVAR(deltatheta) // FIXME the default value is not 0
-  auto const anUnplacedSpherePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedSphere>(
-          rmin, rmax, startphi, deltaphi, starttheta, deltatheta);
+  auto const anUnplacedSpherePtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedSphere>(
+      rmin, rmax, startphi, deltaphi, starttheta, deltatheta);
   return anUnplacedSpherePtr;
 }
 
@@ -992,8 +980,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processEllip
   DECLAREANDGETLENGTVAR(zcut1)
   DECLAREANDGETLENGTVAR(zcut2)
   auto const anUnplacedEllipsoidPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipsoid>(
-          ax, by, cz, zcut1, zcut2);
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedEllipsoid>(ax, by, cz, zcut1, zcut2);
   return anUnplacedEllipsoidPtr;
 }
 
@@ -1015,8 +1002,9 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processParal
   DECLAREHALF(x)
   DECLAREHALF(y)
   DECLAREHALF(z)
-  auto const anUnplacedParallelepipedPtr = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<
-      vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedParallelepiped>(halfx, halfy, halfz, alpha, theta, phi);
+  auto const anUnplacedParallelepipedPtr =
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedParallelepiped>(halfx, halfy, halfz,
+                                                                                                 alpha, theta, phi);
   return anUnplacedParallelepipedPtr;
 }
 
@@ -1038,9 +1026,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processTrd(
   DECLAREHALF(y1)
   DECLAREHALF(y2)
   DECLAREHALF(z)
-  auto const anUnplacedTrdPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTrd>(
-          halfx1, halfx2, halfy1, halfy2, halfz);
+  auto const anUnplacedTrdPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTrd>(
+      halfx1, halfx2, halfy1, halfy2, halfz);
   return anUnplacedTrdPtr;
 }
 
@@ -1072,7 +1059,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processTrape
   DECLAREHALF(x3)
   DECLAREHALF(x4)
   auto const anUnplacedTrapezoidPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTrapezoid>(
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTrapezoid>(
           halfz, theta, phi, halfy1, halfx1, halfx2, alpha1, halfy2, halfx3, halfx4, alpha2);
   return anUnplacedTrapezoidPtr;
 }
@@ -1121,9 +1108,8 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processGenTr
   verticesy.push_back(v6y);
   verticesy.push_back(v7y);
   verticesy.push_back(v8y);
-  auto const anUnplacedGenTrapPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedGenTrap>(
-          verticesx.data(), verticesy.data(), dz);
+  auto const anUnplacedGenTrapPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedGenTrap>(
+      verticesx.data(), verticesy.data(), dz);
   return anUnplacedGenTrapPtr;
 }
 
@@ -1139,8 +1125,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processParab
   DECLAREANDGETLENGTVAR(rhi)
   DECLAREANDGETLENGTVAR(dz)
   auto const anUnplacedParaboloidPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedParaboloid>(
-          rlo, rhi, dz);
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedParaboloid>(rlo, rhi, dz);
   return anUnplacedParaboloidPtr;
 }
 
@@ -1160,8 +1145,7 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processHype(
   DECLAREANDGETLENGTVAR(z)
   DECLAREHALF(z)
   auto const anUnplacedHypePtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedHype>(
-          rmin, rmax, inst, outst, halfz);
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedHype>(rmin, rmax, inst, outst, halfz);
   return anUnplacedHypePtr;
 }
 
@@ -1172,7 +1156,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processTesse
     VECGEOM_LOG(debug) << "Middleware::processTesselated: processing: " << Helper::GetNodeInformation(aDOMNode);
   }
   auto *const anUnplacedTessellatedPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTessellated>();
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTessellated>();
 
   for (auto *it = aDOMNode->getFirstChild(); it != nullptr; it = it->getNextSibling()) {
     if (debug) {
@@ -1198,9 +1182,8 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processTet(
     auto const position     = positionMap[positionName];
     vertices.at(ind)        = position;
   }
-  auto const anUnplacedTetPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTet>(
-          vertices.at(0), vertices.at(1), vertices.at(2), vertices.at(3));
+  auto const anUnplacedTetPtr = vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedTet>(
+      vertices.at(0), vertices.at(1), vertices.at(2), vertices.at(3));
   return anUnplacedTetPtr;
 }
 
@@ -1211,8 +1194,8 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
   if (debug) {
     VECGEOM_LOG(debug) << "Middleware::processExtruded: processing: " << Helper::GetNodeInformation(aDOMNode);
   }
-  auto const *attributes = aDOMNode->getAttributes();
-  auto const lengthMultiplier  = GetLengthMultiplier(aDOMNode);
+  auto const *attributes      = aDOMNode->getAttributes();
+  auto const lengthMultiplier = GetLengthMultiplier(aDOMNode);
   std::vector<Precision> xs;
   std::vector<Precision> ys;
   std::vector<Precision> zs; // only first two are used, scaling factor and offset are not supported
@@ -1221,8 +1204,8 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
       VECGEOM_LOG(debug) << "procExtru Child: " << Helper::GetNodeInformation(it);
     }
     if (it->getNodeType() == XERCES_CPP_NAMESPACE_QUALIFIER DOMNode::ELEMENT_NODE) {
-      auto const theChildNodeName       = Helper::Transcode(it->getNodeName());
-      attributes = it->getAttributes();
+      auto const theChildNodeName = Helper::Transcode(it->getNodeName());
+      attributes                  = it->getAttributes();
       if (theChildNodeName == "twoDimVertex") {
         DECLAREANDGETLENGTVAR(x);
         DECLAREANDGETLENGTVAR(y);
@@ -1253,7 +1236,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processExtru
     }
   }
   auto const anUnplacedExtrudedPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedSExtruVolume>(
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedSExtruVolume>(
           xs.size(), xs.data(), ys.data(), zs.front(), zs.back());
   return anUnplacedExtrudedPtr;
 }
@@ -1293,8 +1276,8 @@ const vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume *Middleware::processScale
     }
   }
   auto const anUnplacedScaledPtr =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedScaledShape>(
-          solid, scale.x(), scale.y(), scale.z());
+      vecgeom::GeoManager::MakeInstance<vecgeom::VECGEOM_IMPL_NAMESPACE::UnplacedScaledShape>(solid, scale.x(),
+                                                                                              scale.y(), scale.z());
   return anUnplacedScaledPtr;
 }
 
@@ -1366,7 +1349,7 @@ bool Middleware::processLogicVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const
       } else {
         if (debug) VECGEOM_LOG(debug) << "Found solid " << solidName;
         logicVolume = new vecgeom::VECGEOM_IMPL_NAMESPACE::LogicalVolume(volumeName.c_str(), foundSolid->second);
-        vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().RegisterLogicalVolume(logicVolume);
+        vecgeom::GeoManager::Instance().RegisterLogicalVolume(logicVolume);
         if (foundMaterial) {
           auto const success = volumeMaterialMap.insert(std::make_pair(logicVolume->id(), *foundMaterial)).second;
           if (!success) {
@@ -1443,8 +1426,7 @@ bool Middleware::processPhysicalVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode co
     auto const theChildNodeName = Helper::Transcode(it->getNodeName());
     if (theChildNodeName == "volumeref") {
       auto const logicalVolumeName = GetAttribute("ref", aDOMElement->getAttributes());
-      logicalVolume =
-          vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
+      logicalVolume                = vecgeom::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
       if (!logicalVolume) {
         VECGEOM_LOG(error) << "Middleware::processPhysicalVolume: could not find volume " << logicalVolumeName;
         return false;
@@ -1566,8 +1548,7 @@ bool Middleware::processWorld(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOM
     VECGEOM_LOG(debug) << "Middleware::processWorld: processing: " << Helper::GetNodeInformation(aDOMNode);
   }
   auto const logicalVolumeName = GetAttribute("ref", aDOMNode->getAttributes());
-  auto logicalVolume =
-      vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
+  auto logicalVolume           = vecgeom::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
 
   if (!logicalVolume) {
     VECGEOM_LOG(error) << "Middleware::processWorld: could not find world volume " << logicalVolumeName;
@@ -1576,9 +1557,9 @@ bool Middleware::processWorld(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOM
     if (debug) VECGEOM_LOG(debug) << "Middleware::processWorld: found world volume " << logicalVolumeName;
     std::string PVname(logicalVolumeName);
     PVname.append("_PV");
-    auto placedWorld = logicalVolume->Place(PVname.c_str()); // TODO use the setup name
-    vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().RegisterPlacedVolume(placedWorld); // FIXME is it needed?
-    vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().SetWorldAndClose(placedWorld);
+    auto placedWorld = logicalVolume->Place(PVname.c_str());           // TODO use the setup name
+    vecgeom::GeoManager::Instance().RegisterPlacedVolume(placedWorld); // FIXME is it needed?
+    vecgeom::GeoManager::Instance().SetWorldAndClose(placedWorld);
   }
   return true;
 }

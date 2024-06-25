@@ -27,11 +27,11 @@ struct kCudaType<const cxx::VPlacedVolume *> {
   using type_t = const cuda::VPlacedVolume *;
 };
 #endif
+class GeoManager;
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class PlacedBox;
-class GeoManager;
 
 /*!
  * \brief A placed volume is a positioned logical volume.
@@ -51,7 +51,7 @@ class GeoManager;
  * far this is done or not.
  */
 class VPlacedVolume {
-  friend class GeoManager;
+  friend class vecgeom::GeoManager;
 
 private:
   unsigned int id_;  ///< Integer id

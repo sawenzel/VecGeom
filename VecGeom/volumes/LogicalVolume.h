@@ -31,6 +31,7 @@ VECGEOM_DEVICE_FORWARD_DECLARE(class VSafetyEstimator;);
 VECGEOM_DEVICE_FORWARD_DECLARE(class VNavigator;);
 
 VECGEOM_DEVICE_DECLARE_CONV(class, LogicalVolume);
+class GeoManager;
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -38,7 +39,6 @@ class VLevelLocator;
 class VSafetyEstimator;
 class VNavigator;
 typedef VPlacedVolume const *Daughter;
-class GeoManager;
 
 /**
  * \brief Class responsible for storing the list of daughter volumes
@@ -52,7 +52,7 @@ class GeoManager;
  *  This class follows largely the class existing in Geant4: G4LogicalVolume.
  */
 class LogicalVolume {
-  friend class GeoManager;
+  friend class vecgeom::GeoManager;
 
 private:
   /// Pointer to concrete unplaced volume/shape
@@ -88,13 +88,12 @@ public:
   LogicalVolume(VUnplacedVolume const *const unplaced_vol) : LogicalVolume("", unplaced_vol) {}
 
   /// copy operators deleted
-  LogicalVolume(LogicalVolume const &other) = delete;
+  LogicalVolume(LogicalVolume const &other)            = delete;
   LogicalVolume *operator=(LogicalVolume const &other) = delete;
 
 #else
   VECCORE_ATT_DEVICE
-  LogicalVolume(VUnplacedVolume const *const unplaced_vol,
-                unsigned int id, Vector<Daughter> *GetDaughter);
+  LogicalVolume(VUnplacedVolume const *const unplaced_vol, unsigned int id, Vector<Daughter> *GetDaughter);
 #endif
 
   ~LogicalVolume();
@@ -179,11 +178,11 @@ public:
   VECCORE_ATT_HOST_DEVICE
   const char *GetName() const
   {
-    #ifndef VECCORE_CUDA
-      return fLabel->c_str();
-    #else
-      return "- Names unavailable on GPU -";
-    #endif
+#ifndef VECCORE_CUDA
+    return fLabel->c_str();
+#else
+    return "- Names unavailable on GPU -";
+#endif
   }
   /// Returns the name of this logical volume as string.
   std::string const &GetLabel() const { return *fLabel; }

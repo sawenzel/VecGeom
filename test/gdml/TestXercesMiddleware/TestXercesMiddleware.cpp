@@ -36,13 +36,13 @@ int main(int argC, char *argV[])
   // To speed up testing and ensure the middleware and backend work without
   // schema validation, skip it for the middleware test.
   constexpr bool validate_xml_schema = false;
-  auto aBackend       = vgdml::Backend(validate_xml_schema);
-  auto const aDOMDoc  = aBackend.Load(filename);
+  auto aBackend                      = vgdml::Backend(validate_xml_schema);
+  auto const aDOMDoc                 = aBackend.Load(filename);
   aBackend.Save(aDOMDoc, "TestXercesMiddleware.out.gdml");
   auto aMiddleware      = vgdml::Middleware();
   auto loadedMiddleware = aMiddleware.Load(aDOMDoc);
   //  std::cout << loadedMiddleware << std::endl;
-  auto const *world = vecgeom::VECGEOM_IMPL_NAMESPACE::GeoManager::Instance().GetWorld();
+  auto const *world = vecgeom::GeoManager::Instance().GetWorld();
   if (!loadedMiddleware || !world) return 1;
 #ifdef VECGEOM_ROOT
   auto &aROOTmanager = vecgeom::RootGeoManager::Instance();

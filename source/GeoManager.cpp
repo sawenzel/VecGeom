@@ -24,7 +24,6 @@
 #include <functional>
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VPlacedVolume *GeoManager::gCompactPlacedVolBuffer = nullptr;
 NavIndex_t *GeoManager::gNavIndex                  = nullptr;
@@ -71,6 +70,7 @@ void GeoManager::DeregisterPlacedVolume(const int id)
 
 void GeoManager::CompactifyMemory()
 {
+  using UnplacedScaledShape = cxx::UnplacedScaledShape;
   // this function will compactify the memory a-posteriori
   // it might be worth investigating other methods that do this directly
   // ( for instance via specialized allocators )
@@ -443,5 +443,4 @@ __attribute__((noinline)) void GeoManager::getAllPathForLogicalVolume(LogicalVol
 template void GeoManager::getAllPathForLogicalVolume(LogicalVolume const *lvol, std::list<NavigationState *> &c) const;
 template void GeoManager::getAllPathForLogicalVolume(LogicalVolume const *lvol,
                                                      std::vector<NavigationState *> &c) const;
-} // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

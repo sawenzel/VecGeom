@@ -188,7 +188,7 @@ private:
   void SetLeft(VPlacedVolume const *pvol) { fBoolean.fLeftVolume = pvol; }
   void SetRight(VPlacedVolume const *pvol) { fBoolean.fRightVolume = pvol; }
 
-  friend class GeoManager;
+  friend class vecgeom::GeoManager;
 }; // End class
 
 } // namespace VECGEOM_IMPL_NAMESPACE

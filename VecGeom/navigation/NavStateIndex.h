@@ -131,15 +131,8 @@ public:
     assert(vecgeom::globaldevicegeomdata::gNavIndex != nullptr);
     return &vecgeom::globaldevicegeomdata::gNavIndex[nav_ind];
 #else
-#ifndef VECCORE_CUDA
     assert(vecgeom::GeoManager::gNavIndex != nullptr);
     return &vecgeom::GeoManager::gNavIndex[nav_ind];
-#else
-    // this is the case when we compile with nvcc for host side
-    // (failed previously due to undefined symbol vecgeom::cuda::GeoManager::gCompactPlacedVolBuffer)
-    assert(false && "reached unimplement code");
-    return nullptr;
-#endif
 #endif
   }
 
@@ -157,17 +150,9 @@ public:
     assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[index];
 #else
-#ifndef VECCORE_CUDA
     assert(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
            vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
     return &vecgeom::GeoManager::gCompactPlacedVolBuffer[index];
-#else
-    // this is the case when we compile with nvcc for host side
-    // (failed previously due to undefined symbol vecgeom::cuda::GeoManager::gCompactPlacedVolBuffer)
-    assert(false && "reached unimplement code");
-    (void)index; // avoid unused parameter warning.
-    return nullptr;
-#endif
 #endif
   }
 

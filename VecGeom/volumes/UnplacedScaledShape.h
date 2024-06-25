@@ -25,7 +25,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef GOT_AROUND_TO_SPECIALIZE_SCALED_SHAPE
 template <typename Specialized_t>
-class SUnplacedScaledShape {};
+class SUnplacedScaledShape {
+};
 
 return ScaledShape::MakeInstance<BaseShape_t>(scale, Argtypes... args);
 
@@ -35,9 +36,7 @@ Scale(Shape_t vol, ... Scale)
   return SUnplacedScaleShabe<Shape_t>(scale, vol);
 }
 
-UnplacedScaledScale(UnplacedTube, scale)
-{
-  if (dynamic_cast<...>()) }
+UnplacedScaledScale(UnplacedTube, scale) { if (dynamic_cast<...>()) }
 
 template <typename BaseShape_t, Argtypes... Args>
 static UnplacedScaledShape *MakeScaledInstance(Scale3D scale, Argtypes... args)
@@ -225,7 +224,7 @@ private:
   void SetPlaced(VPlacedVolume const *pvol) { fScaled.fPlaced = pvol; }
   void SetScale(Scale3D const &scale) { fScaled.fScale = scale; }
 
-  friend class GeoManager;
+  friend class vecgeom::GeoManager;
 };
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

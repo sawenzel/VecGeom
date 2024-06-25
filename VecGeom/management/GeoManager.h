@@ -19,10 +19,11 @@
 #include <map>
 
 namespace vecgeom {
-inline namespace VECGEOM_IMPL_NAMESPACE {
 
+namespace VECGEOM_IMPL_NAMESPACE {
 class UnplacedScaledShape;
 class Scale3D;
+} // namespace VECGEOM_IMPL_NAMESPACE
 
 /**
  * @brief A class serving as central registry for VecGeom geometries.
@@ -100,9 +101,10 @@ public:
 
   /// A factory for unplaced scaled shapes
   template <typename BaseShape_t, typename... ArgTypes>
-  static UnplacedScaledShape *MakeScaledInstance(const Scale3D &scale, ArgTypes... args)
+  static VECGEOM_IMPL_NAMESPACE::UnplacedScaledShape *MakeScaledInstance(const VECGEOM_IMPL_NAMESPACE::Scale3D &scale,
+                                                                         ArgTypes... args)
   {
-    return Maker<UnplacedScaledShape>::MakeInstance<BaseShape_t>(scale, args...);
+    return Maker<VECGEOM_IMPL_NAMESPACE::UnplacedScaledShape>::MakeInstance<BaseShape_t>(scale, args...);
   }
 #endif
   /** Compactify memory space used by VecGeom geometry objects.
@@ -310,7 +312,6 @@ UnplacedShape_t *GeoManager::MakeInstance(Argtypes... args)
   return Maker<UnplacedShape_t>::MakeInstance(args...);
 }
 #endif
-} // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
 #endif // VECGEOM_MANAGEMENT_GEOMANAGER_H_
