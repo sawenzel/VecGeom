@@ -566,7 +566,9 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   // }
 
   currentvolume = path.Top();
-  is_boolean    = currentvolume->GetUnplacedVolume()->IsBoolean();
+  assert(currentvolume != nullptr &&
+         " currentvolume is nullptr in overlap detection! Most likely due to incorrect path!");
+  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
 
   if (!is_boolean) {
     // exclude volume of the highest parent of the exited framed surface
@@ -579,7 +581,9 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   }
 
   currentvolume = path.Top();
-  is_boolean    = currentvolume->GetUnplacedVolume()->IsBoolean();
+  assert(currentvolume != nullptr && " currentvolume is nullptr in overlap detection! This might due to incorrect path "
+                                     "or due to a surface previously being falsely flagged as overlapping!");
+  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
 
   // check whether the point is in the parent volume, otherwise go higher until it is found
   bool gohigher = false;
@@ -608,7 +612,10 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
       prev_volume = currentvolume;
       path.Pop();
       currentvolume = path.Top();
-      gohigher      = true;
+      assert(
+          currentvolume != nullptr &&
+          " currentvolume is nullptr in overlap detection! That means some inside call failed or was falsely excluded");
+      gohigher = true;
     }
   } while (gohigher);
 

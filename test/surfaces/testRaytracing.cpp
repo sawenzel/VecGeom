@@ -348,14 +348,14 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
       }
       pt += distance * dir;
       start_state = out_state;
-    } while (!out_state.IsOutside() && int(crossings[i].GetNsteps()) < max_cross);
+    } while (!out_state.IsOutside() && int(crossings[i].GetNsteps()) < max_cross + 1);
   }
 }
 //==================================================================================
 int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                      Vector3D<Real_t> const *points_RT, Vector3D<Real_t> const *dirs_RT,
                      NavigationState const *in_states, CrossingSeq *ref_crossings, CrossingSeq *crossings, bool debug,
-                     bool accept_zeros = false)
+                     bool accept_zeros = false, int max_cross = vecgeom::kMaximumInt)
 {
   int num_errors_dist = 0;
   int istep_err       = 0;
@@ -380,8 +380,9 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
         crossings[i].fStates[istep_err].Print();
       }
       printf("Replaying ray for debugging : \n\n");
-      PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i);
-      PropagateRaysSurf(nrays, points_RT, dirs_RT, in_states, crossings, i, istep_err);
+      PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i, max_cross);
+      PropagateRaysSurf(nrays, points_RT, dirs_RT, in_states, crossings, i, istep_err, /*detect_overlaps =*/false,
+                        max_cross);
     }
   }
   return num_errors_dist;
@@ -486,7 +487,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Corectness for traversal
   num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
-                                     debug, accept_zeros);
+                                     debug, accept_zeros, max_cross);
 
   num_errors += num_errors_dist;
   if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";

@@ -1,8 +1,7 @@
 #ifndef VECGEOM_SURFACE_POLYCONECONVERTER_H_
 #define VECGEOM_SURFACE_POLYCONECONVERTER_H_
 
-#include <VecGeom/surfaces/conv/Builder.h>
-#include <VecGeom/surfaces/Model.h>
+#include <VecGeom/surfaces/conv/ConvHelper.h>
 
 #include <VecGeom/volumes/Polycone.h>
 
@@ -46,6 +45,25 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
   auto ssphi = std::sin(sphi);
   auto cephi = std::cos(ephi);
   auto sephi = std::sin(ephi);
+
+  // generate z, rmin and rmax arrays, 2*nSect because each section has a bottom and a top value
+  std::unique_ptr<vecgeom::Precision[]> zArray(new vecgeom::Precision[2 * nSect]);
+  std::unique_ptr<vecgeom::Precision[]> rMinArray(new vecgeom::Precision[2 * nSect]);
+  std::unique_ptr<vecgeom::Precision[]> rMaxArray(new vecgeom::Precision[2 * nSect]);
+  // fill rArrays per section
+  for (int i = 0; i < nSect; ++i) {
+    rMinArray[2 * i]     = polycone.GetRmin1AtSection(i);
+    rMinArray[2 * i + 1] = polycone.GetRmin2AtSection(i);
+    rMaxArray[2 * i]     = polycone.GetRmax1AtSection(i);
+    rMaxArray[2 * i + 1] = polycone.GetRmax2AtSection(i);
+  }
+  // fill zArray per section
+  zArray[0] = polycone.GetZAtPlane(0);
+  for (int i = 1; i < nSect; ++i) {
+    zArray[2 * i - 1] = polycone.GetZAtPlane(i);
+    zArray[2 * i]     = polycone.GetZAtPlane(i);
+  }
+  zArray[2 * nSect - 1] = polycone.GetZAtPlane(nSect);
 
   // loop over sections, at each section the full cone-like solid is constructed
   for (int i = 0; i < nSect; i++) {
@@ -189,6 +207,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
                                        ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, rmin1, rmin2, sphi, ephi}),
           builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z_shift, 0, 0, 0}));
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+      // Only a convex inner cone is embedding, since this is practically a boolean union.
+      auto is_convex = IsConvexConcave(2 * i, zArray, rMinArray, /*convex_check=*/1, 2 * nSect);
+      if (!(is_convex)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(isurf);
       logic.push_back(land);
     }
@@ -202,6 +223,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
                                      ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, rmax1, rmax2, sphi, ephi}),
         builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z_shift, 0, 0, 0}));
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    // Only a concave outer cone is embedding, since this is practically a boolean union.
+    auto is_concave = IsConvexConcave(2 * i, zArray, rMaxArray, /*convex_check=*/0, 2 * nSect);
+    if (!(is_concave)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
     logic.push_back(isurf);
 
     if (!fullCirc) {

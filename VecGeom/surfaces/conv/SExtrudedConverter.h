@@ -2,8 +2,7 @@
 #define VECGEOM_SURFACE_EXTRUDEDCONVERTER_H_
 
 #include <numeric>
-#include <VecGeom/surfaces/conv/Builder.h>
-#include <VecGeom/surfaces/Model.h>
+#include <VecGeom/surfaces/conv/ConvHelper.h>
 #include <VecGeom/management/Logger.h>
 
 #include <VecGeom/volumes/SExtru.h>
@@ -28,12 +27,6 @@ struct ReducedPoly {
       : Nconvex(0), Nvert(input_vec.size()), ind_arr(input_vec), is_convex(false)
   {
   }
-
-  bool IsRightSided(Vector3 v1, Vector3 v2, Vector3 v3) const
-  {
-    vecgeom::Precision dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
-    return (dot < -vecgeom::kTolerance) ? false : true;
-  };
 
   /// @brief Helper function whether a polygon is convex
   /// @param vertx vertices in x of original, global polygon

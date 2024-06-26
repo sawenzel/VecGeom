@@ -1,8 +1,7 @@
 #ifndef VECGEOM_SURFACE_POLYHEDRONCONVERTER_H_
 #define VECGEOM_SURFACE_POLYHEDRONCONVERTER_H_
 
-#include <VecGeom/surfaces/conv/Builder.h>
-#include <VecGeom/surfaces/Model.h>
+#include <VecGeom/surfaces/conv/ConvHelper.h>
 
 #include <VecGeom/volumes/Polyhedron.h>
 
@@ -109,6 +108,9 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
         if (realSeg) {
           if (nseg > 1 || iside > 0) logic.push_back(land);
           logic.push_back(isurf);
+          // Only a concave outer surface is embedding, since this is practically a boolean union.
+          auto is_concave = IsConvexConcave(iseg, zPlanes, rMax, /*convex_check=*/0, nseg + 1);
+          if (!(is_concave)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         }
@@ -135,6 +137,9 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
           if (iside == sideCount - 1) {
             logic.push_back(lminus);
           }
+          // Only a convex inner surface is embedding, since this is practically a boolean union.
+          auto is_convex = IsConvexConcave(iseg, zPlanes, rMin, /*convex_check=*/1, nseg + 1);
+          if (!(is_convex)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         }
