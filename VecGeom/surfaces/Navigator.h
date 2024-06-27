@@ -759,22 +759,26 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
 /// @param sides Visible sides of the common surface
 /// @param surfhit Returned validity of the crossing
 /// @param onsurf Point on surface in the CS frame
+/// @param dist2 distance to the possible second solution
+/// @param local point in common surface coordinate
+/// @param localdir direction in common surface coordinate
 /// @return Distance to unplaced surface
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> const &point,
                                                   vecgeom::Vector3D<Real_t> const &direction,
                                                   SurfData<Real_t> const &surfdata, int isurf, char sides, bool exiting,
                                                   bool &left_side, bool &surfhit, vecgeom::Vector3D<Real_t> &onsurf,
-                                                  Real_t &dist2)
+                                                  Real_t &dist2, vecgeom::Vector3D<Real_t> &local,
+                                                  vecgeom::Vector3D<Real_t> &localdir)
 {
   constexpr char kLside = 1;
   constexpr char kRside = 2;
   auto const &surf      = surfdata.fCommonSurfaces[isurf];
 
   // Convert point and direction to surface frame
-  auto const &trans         = surfdata.fGlobalTrans[surf.fTrans];
-  Vector3D<Real_t> local    = trans.Transform(point);
-  Vector3D<Real_t> localdir = trans.TransformDirection(direction);
+  auto const &trans = surfdata.fGlobalTrans[surf.fTrans];
+  local             = trans.Transform(point);
+  localdir          = trans.TransformDirection(direction);
 
   // Compute distance to surface
   Real_t dist;
@@ -851,6 +855,8 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
   in_state.SceneMatrix(scene_trans);
   Vector3D<Real_t> local_scene    = scene_trans.Transform(point);
   Vector3D<Real_t> localdir_scene = scene_trans.TransformDirection(direction);
+  Vector3D<Real_t> local;
+  Vector3D<Real_t> localdir;
 
   // First check Exiting candidates
   for (auto icand = 0; icand < cand.fNExiting; ++icand) {
@@ -862,7 +868,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/true, left_side,
-                                   surfhit, onsurf_crt, dist2);
+                                   surfhit, onsurf_crt, dist2, local, localdir);
     if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
 
     tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], left_side);
@@ -877,7 +883,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // if no frame was hit, try second solution
     if (!inframe && dist2 > -vecgeom::kToleranceDist<Real_t>) {
       tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], !left_side);
-      onsurf_crt = point + dist2 * direction;
+      onsurf_crt = local + dist2 * localdir;
       inframe = ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist2, onsurf_crt, exit_FS.hit_surf, out_frame);
       exit_FS.exit_surf = exit_FS.hit_surf;
       ; // store exiting information
@@ -919,7 +925,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/false, left_side,
-                                   surfhit, onsurf_crt, dist2);
+                                   surfhit, onsurf_crt, dist2, local, localdir);
     if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
 
     // Temporary ugly solution to avoid self-entering the volume at 0 distance on the same surface
@@ -946,7 +952,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
     // if no frame is hit and second solution is valid, check second solution
     if (iframe < 0 && dist2 > -vecgeom::kToleranceDist<Real_t> && dist2 < distance) {
-      onsurf_crt = point + dist2 * direction;
+      onsurf_crt = local + dist2 * localdir;
       iframe     = EnterFrameCheck(!left_side, onsurf_crt, dist2);
       if (iframe >= 0) dist = dist2;
     }
