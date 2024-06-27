@@ -141,30 +141,32 @@ __device__ void PropagateRaySurf(int i, Vector3D<Real_t> const *points, Vector3D
   NavigationState start_state = in_states[i];
   NavigationState out_state;
   int num_cross = 0;
-  vgbrep::FSlocator exiting_FS;
+  vgbrep::CrossedSurface crossed_surf;
   double dist_tot = 0;
   auto pt         = points[i];
   auto const &dir = dirs[i];
   do {
-    exiting_FS.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exiting_FS);
+    crossed_surf.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, crossed_surf);
     // exiting framed surface marked as overlapping, need to relocate
-    if (surfdata->IsFSOverlapping(exiting_FS) && exiting_FS.GetFSindex() != -1) {
-      vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, exiting_FS);
+    if (surfdata->IsFSOverlapping(crossed_surf.hit_surf) && crossed_surf.hit_surf.GetFSindex() != -1) {
+      vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, crossed_surf.exit_surf,
+                                        distance);
     }
-    if (exiting_FS.GetFSindex() == -1) {
+    if (crossed_surf.hit_surf.GetFSindex() == -1) {
       // Extruding overlap detected, relocating to correct starting state
       // Find true location for the crossing point
       NavigationState true_state;
-      vgbrep::protonav::ReLocatePointIn(start_state, pt, dir, true_state, exiting_FS);
+      vgbrep::protonav::ReLocatePointIn(start_state, pt, dir, true_state, crossed_surf.exit_surf,
+                                        /*distance=*/Real_t(0.));
 
       // Now replay to get correct distance
-      distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exiting_FS);
+      distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, crossed_surf);
       assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
              "Distance after relocation shouldn't be 0 or infinity");
     }
     if (debug) {
-      printf("     dist = %.16f  surf = %d\n", distance, exiting_FS.common_id);
+      printf("     dist = %.16f  surf = %d\n", distance, crossed_surf.hit_surf.common_id);
       printf("   ");
       out_state.Print();
     }

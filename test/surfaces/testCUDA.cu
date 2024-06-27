@@ -11,10 +11,10 @@ using SurfData        = vgbrep::SurfData<vecgeom::Precision>;
 
 static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, NavigationState const state)
 {
-  vgbrep::FSlocator exiting_FS;
+  vgbrep::CrossedSurface crossed_surf;
   NavigationState out;
-  vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exiting_FS);
-  int common_id               = exiting_FS.GetCSindex();
+  vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, crossed_surf);
+  int common_id               = crossed_surf.hit_surf.GetCSindex();
   vecgeom::Precision safety   = vgbrep::protonav::ComputeSafety(pos, state, common_id);
   printf("Surf@DEVICE: distance = %f, safety = %f\n", distance, safety);
 }

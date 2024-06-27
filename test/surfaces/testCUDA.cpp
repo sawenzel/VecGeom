@@ -107,9 +107,9 @@ static void TestHost(Vector3D<Precision> pos, Vector3D<Precision> dir)
   safety = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, state);
   printf("VecGeom (NewSimp, LoopNav): dists = %f %f, safety = %f\n", distance, dist1, safety);
 
-  vgbrep::FSlocator exiting_FS;
-  distance      = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, exiting_FS);
-  int common_id = exiting_FS.GetCSindex();
+  vgbrep::CrossedSurface crossed_surf;
+  distance      = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, crossed_surf);
+  int common_id = crossed_surf.hit_surf.GetCSindex();
   safety        = vgbrep::protonav::ComputeSafety(pos, state, common_id);
   printf("surf@HOST: distance = %f, safety = %f\n", distance, safety);
 }

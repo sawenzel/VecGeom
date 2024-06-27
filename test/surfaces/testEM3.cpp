@@ -143,19 +143,19 @@ double PropagateRay(Vector3D<Precision> const &point, Vector3D<Precision> const 
 {
   // Locate the start point. This is not yet implemented in the surface model
   NavigationState in_state, out_state;
-  vgbrep::FSlocator exiting_FS;
+  vgbrep::CrossedSurface crossed_surf;
   double dist_tot = 0;
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, in_state, true);
   auto pt = point;
   printf("start: ");
   in_state.Print();
   do {
-    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, exiting_FS);
-    if (exiting_FS.GetCSindex() != 0) {
+    auto distance = vgbrep::protonav::ComputeStepAndHit(pt, direction, in_state, out_state, crossed_surf);
+    if (crossed_surf.hit_surf.GetCSindex() != 0) {
       dist_tot += distance;
       pt += distance * direction;
     }
-    printf("surface %d at dist = %g: ", exiting_FS.GetCSindex(), distance);
+    printf("surface %d at dist = %g: ", crossed_surf.hit_surf.GetCSindex(), distance);
     out_state.Print();
     in_state = out_state;
   } while (!out_state.IsOutside());
@@ -205,15 +205,15 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
     if (safecheck) refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
 
     // shoot the same ray in the surface model
-    vgbrep::FSlocator exiting_FS;
+    vgbrep::CrossedSurface crossed_surf;
     NavigationState out_state, locate_state;
     double distance = 0, safety = 0;
     bool safesafe = true;
     if (locatecheck) vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, true);
 
-    if (distcheck) distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exiting_FS);
+    if (distcheck) distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, crossed_surf);
     if (safecheck) {
-      int common_id = exiting_FS.GetCSindex();
+      int common_id = crossed_surf.hit_surf.GetCSindex();
       safety        = vgbrep::protonav::ComputeSafety(pos, *origStates[i], common_id);
       if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
       num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
@@ -329,8 +329,8 @@ void TestPerformance(int npoints, int nbLayers, int locatecheck, int distcheck, 
       // Vector3D<Precision> pos(points[i] + pt);
       Vector3D<Precision> const &pos = points[i];
       Vector3D<Precision> const &dir = dirs[i];
-      vgbrep::FSlocator exiting_FS;
-      distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, exiting_FS);
+      vgbrep::CrossedSurface crossed_surf;
+      distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, crossed_surf);
       // out_state.Print();
     }
     Precision time_surf_dist = timer.Stop();

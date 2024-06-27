@@ -106,6 +106,40 @@ struct FSlocator {
   int GetFSindex() const { return frame_id; }
 };
 
+/// @brief Exit surf data, contains all relevant surface information
+struct CrossedSurface {
+  FSlocator exit_surf; // containing the surface information of the highest exited frame
+  FSlocator hit_surf;  // containing the surface data of the last frame hit (exited or entered)
+
+  // Default constructor
+  CrossedSurface() = default;
+
+  // Constructor with initialization
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  CrossedSurface(int csind1, int iframe1, bool left1, int csind2, int iframe2, bool left2)
+      : exit_surf(csind1, iframe1, left1), hit_surf(csind2, iframe2, left2)
+  {
+  }
+
+  // Method to set both FSlocators
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void Set(int csind1, int iframe1, bool left1, int csind2, int iframe2, bool left2)
+  {
+    exit_surf.Set(csind1, iframe1, left1);
+    hit_surf.Set(csind2, iframe2, left2);
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void Set(int csind, int iframe, bool left)
+  {
+    exit_surf.Set(csind, iframe, left);
+    hit_surf.Set(csind, iframe, left);
+  }
+};
+
 // Aliases for different usages of Vec2D.
 template <typename Real_t>
 using Range = Vector2D<Real_t>;

@@ -259,47 +259,52 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
   for (auto i = istart; i < ilast; ++i) {
     NavigationState start_state = in_states[i];
     NavigationState out_state;
-    vgbrep::FSlocator exiting_FS;
+    vgbrep::CrossedSurface
+        crossed_surf; // contains highest exiting frame information and final exiting or entering frame information
+    // For general handling the crossed_surf.hit_surface_data to be used, only for the relocation in the overlap
+    // detection only the highest exiting infromation crossed_surf.exit_surface_data is used
     auto pt         = points[i];
     auto const &dir = dirs[i];
     crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     do {
-      exiting_FS.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
+      crossed_surf.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
+
       if (idebug >= 0 && int(crossings[i].GetNsteps()) == idebug_step) {
         std::cout << "Debugging step " << idebug_step << " starting from state:\n";
         start_state.Print();
       }
-      auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, exiting_FS);
+      auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, crossed_surf);
 
       // get framed surface data to check surface for overlapping
       auto const &surfdata = BrepHelper::Instance().GetSurfData();
-      if (detect_overlaps && !surfdata.IsFSOverlapping(exiting_FS) && out_state.GetState() != 0) {
+      if (detect_overlaps && !surfdata.IsFSOverlapping(crossed_surf.hit_surf) && out_state.GetState() != 0) {
         NavigationState true_state;
-        if (exiting_FS.GetFSindex() != -1) {
+        if (crossed_surf.hit_surf.GetFSindex() != -1) {
           true_state = out_state;
-          vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, true_state, exiting_FS);
+          vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, true_state, crossed_surf.exit_surf,
+                                            distance);
         }
 
         // overlap if the output state and the true state disagree (and the outstate is not outside) or if extruding
         // overlap, which is handled separately
-        if ((out_state.GetState() != true_state.GetState())) { // || exiting_FS.GetFSindex() == -1) {
+        if ((out_state.GetState() != true_state.GetState())) { // || crossed_surf.GetFSindex() == -1) {
           num_overlaps++;
 
           // fixme: if common_id = -1, then these accessors below are garbage. Recheck if this is needed or even
           // harmful.
           // cannot use getter since the framedsurf must not be const here
-          auto const &surf        = surfdata.fCommonSurfaces[exiting_FS.GetCSindex()];
-          auto const &exit_side   = exiting_FS.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
-          auto &framedsurf        = exit_side.GetSurface(exiting_FS.GetFSindex(), surfdata);
+          auto const &surf        = surfdata.fCommonSurfaces[crossed_surf.hit_surf.GetCSindex()];
+          auto const &exit_side   = crossed_surf.hit_surf.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
+          auto &framedsurf        = exit_side.GetSurface(crossed_surf.hit_surf.GetFSindex(), surfdata);
           int surf_index          = framedsurf.fSurfIndex;
           framedsurf.fOverlapping = true;
 
           VECGEOM_LOG(warning) << std::setprecision(16) << num_overlaps << " overlap detected for ray " << i
                                << " at num_cross = " << crossings[i].GetNsteps() << "\n   starting point " << points[i]
                                << " and direction " << dirs[i]
-                               << "\n   Overlapping surface:  " << exiting_FS.GetCSindex() << " side "
-                               << exiting_FS.IsLeftSide() << " frameid " << exiting_FS.GetFSindex()
-                               << " local problem side: " << surf_index;
+                               << "\n   Overlapping surface:  " << crossed_surf.hit_surf.GetCSindex() << " side "
+                               << crossed_surf.hit_surf.IsLeftSide() << " frameid "
+                               << crossed_surf.hit_surf.GetFSindex() << " local problem side: " << surf_index;
           std::cout << " out_state.Print() " << std::endl;
           out_state.Print();
           std::cout << " true_state.Print() " << std::endl;
@@ -309,10 +314,11 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
         }
       }
       // exiting framed surface marked as overlapping, need to relocate
-      if (surfdata.IsFSOverlapping(exiting_FS) && exiting_FS.GetFSindex() != -1) {
-        vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, exiting_FS);
+      if (surfdata.IsFSOverlapping(crossed_surf.hit_surf) && crossed_surf.hit_surf.GetFSindex() != -1) {
+        vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, crossed_surf.exit_surf,
+                                          distance);
       }
-      if (exiting_FS.GetFSindex() == -1) {
+      if (crossed_surf.hit_surf.GetFSindex() == -1) {
         // Most likely extruding overlap detected, relocating to correct state
 
         VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
@@ -323,27 +329,24 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
         // Find true location for the crossing point
         NavigationState true_state;
         // note that here we use the previous point pt and not pt + distance * dir because the distance is inf!
-        vgbrep::protonav::ReLocatePointIn(start_state, pt, dir, true_state, exiting_FS);
+        vgbrep::protonav::ReLocatePointIn(start_state, pt, dir, true_state, crossed_surf.exit_surf,
+                                          /* distance=*/Real_t(0.));
         std::cout << "   crossing point : " << pt << " was located in : ";
         true_state.Print();
 
         // Now replay to get correct distance
-        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, exiting_FS);
+        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, true_state, out_state, crossed_surf);
         // if corrected distance is still incorrect, abort
         if (distance == 0 || distance == vecgeom::InfinityLength<Precision>()) {
           VECGEOM_LOG(critical) << std::setprecision(16) << "After relocation, still no exiting surface for ray " << i
                                 << " at num_cross = " << crossings[i].GetNsteps() << "\n Terminating raytracing!";
           return;
         }
-        // // exiting framed surface marked as overlapping, need to relocate
-        // if (surfdata.IsFSOverlapping(exiting_FS)) {
-        //   vgbrep::protonav::ReLocatePointIn(start_state, pt + distance * dir, dir, out_state, exiting_FS);
-        // }
       }
       auto num_cross = crossings[i].SetNextCrossing(distance, out_state);
       if (idebug >= 0) {
-        std::cout << std::setprecision(16) << "     dist = " << distance << "  surf = " << exiting_FS.GetCSindex()
-                  << "\n   " << num_cross << " : ";
+        std::cout << std::setprecision(16) << "     dist = " << distance
+                  << "  surf = " << crossed_surf.hit_surf.GetCSindex() << "\n   " << num_cross << " : ";
         out_state.Print();
       }
       pt += distance * dir;
