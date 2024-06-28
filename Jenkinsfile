@@ -43,7 +43,7 @@ pipeline {
     stage('InDocker') {
       when {
         beforeAgent true
-        expression { params.LABEL =~ 'centos|ubuntu' && !(params.LABEL =~ 'physical')}
+        expression { params.LABEL =~ 'centos|ubuntu|alma' && !(params.LABEL =~ 'physical')}
       }
       agent {
         docker {
