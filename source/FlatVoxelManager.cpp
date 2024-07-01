@@ -72,9 +72,9 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   timer.Start();
   std::vector<std::future<void>> futures;
   for (int t = 0; t < numtasks; ++t) {
-    bool verbose= (t==0);
-    auto fut = std::async([&engines, &points, &keyspertask, vol, t, voxels] {
-       bool foundPoints = volumeUtilities::FillUncontainedPoints(*vol, engines[t], *points[t], verbose);
+    bool verbose = (t == 0);
+    auto fut     = std::async([&engines, &points, &keyspertask, vol, t, voxels] {
+      bool foundPoints = volumeUtilities::FillUncontainedPoints(*vol, engines[t], *points[t], verbose);
       if (foundPoints) {
         keyspertask[t] = new std::vector<long>;
         voxels->getKeys(*points[t], *keyspertask[t]);
@@ -113,8 +113,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   }
   VECGEOM_LOG(diagnostic) << "- Generating unique keys took " << timer.Stop() << "s";
   VECGEOM_LOG(diagnostic) << "- We have " << sortedkeys.size() << " sorted unique keys; fraction "
-            << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
-            << sortedkeys.size() * safetyvoxels->getVoxelVolume();
+                          << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
+                          << sortedkeys.size() * safetyvoxels->getVoxelVolume();
 
   timer.Start();
   // make a vector where to collect safeties
@@ -174,7 +174,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  VECGEOM_LOG(diagnostic) << "Setting up safety voxels for " << vol->GetName() << " with " << ndaughters << " daughters ";
+  VECGEOM_LOG(diagnostic) << "Setting up safety voxels for " << vol->GetName() << " with " << ndaughters
+                          << " daughters ";
 
   int Nx = std::max(4., 2 * std::sqrt(1. * ndaughters));
   int Ny = std::max(4., 2 * std::sqrt(1. * ndaughters));
@@ -184,7 +185,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   //  int Nz = 10; //std::max(4., 2*std::sqrt(1.*ndaughters));
 
   // Initialize new structure
-  auto* safetyvoxels = new FlatVoxelHashMap<int, false>(lower, 1.005 * (upper - lower), Nx, Ny, Nz);
+  auto *safetyvoxels = new FlatVoxelHashMap<int, false>(lower, 1.005 * (upper - lower), Nx, Ny, Nz);
 
   int numtasks = std::thread::hardware_concurrency();
   int npointstotal{1000 * Nx * Ny * Nz};
@@ -211,8 +212,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
         // delete points[t]; points[t] = nullptr;  // JA 2021.03.04 17:15 CEST ???
       } else {
         keyspertask[t] = nullptr;
-        VECGEOM_LOG(warning) << "Found 0 uncontained points for " << vol->GetName()
-                  << " -- expect problems in estimating safety";
+        VECGEOM_LOG(warning) << "WARNING: Found 0 uncontained points for " << vol->GetName()
+                             << " -- expect problems in estimating safety.";
       }
     });
     futures.push_back(std::move(fut));
@@ -247,8 +248,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
   VECGEOM_LOG(diagnostic) << "- Generating unique keys took " << timer.Stop() << " s";
 
   VECGEOM_LOG(diagnostic) << "- We have " << sortedkeys.size() << " sorted unique keys; fraction "
-            << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
-            << sortedkeys.size() * safetyvoxels->getVoxelVolume();
+                          << sortedkeys.size() / (1. * Nx * Ny * Nz) << " estimated volume "
+                          << sortedkeys.size() * safetyvoxels->getVoxelVolume();
   size_t minSize = 50;
   if (sortedkeys.size() < minSize) {
     VECGEOM_LOG(info) << " ** Keys are few -- not creating acceleration structure.";
@@ -276,7 +277,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
       }
 
       int size{0};
-      auto abboxcorners = ABBoxManager::Instance().GetABBoxes(vol, size);
+      auto abboxcorners = ABBoxManager<Precision>::Instance().GetABBoxes(vol, size);
 
       std::vector<Vector3D<float>> voxelsurfacepoints;
       for (int i = startindex; i < endindex; ++i) {
@@ -290,7 +291,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
         safetyvoxels->Extent(k, keylower, keyupper);
 #ifdef VOXEL_DEBUG
         VECGEOM_LOG(debug) << "KEY LOWER EXTENT " << keylower << "\n"
-                          << "KEY UPPER EXTENT " << keyupper;
+                           << "KEY UPPER EXTENT " << keyupper;
 #endif
         // painful but we could speed up with SIMD
         for (int boxindex = 0; boxindex < size; ++boxindex) {
@@ -359,9 +360,10 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
 
             int size{0};
             // fetches the SIMDized bounding box representations
-            ABBoxManager::ABBoxContainer_v bboxes = ABBoxManager::Instance().GetABBoxes_v(vol, size);
+            ABBoxManager<Precision>::ABBoxContainer_v bboxes =
+                ABBoxManager<Precision>::Instance().GetABBoxes_v(vol, size);
 
-            using IdDistPair_t = ABBoxManager::BoxIdDistancePair_t;
+            using IdDistPair_t = ABBoxManager<Precision>::BoxIdDistancePair_t;
             char stackspace[VECGEOM_MAXDAUGHTERS * sizeof(IdDistPair_t)];
             IdDistPair_t *boxsafetylist = reinterpret_cast<IdDistPair_t *>(&stackspace);
 
@@ -379,8 +381,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
               const auto candidatesafety = daughters[volid]->SafetyToIn(spdouble);
               const auto candsafetysqr   = candidatesafety * candidatesafety;
 #ifdef VOXEL_DEBUG
-              VECGEOM_LOG(debug) << "DAUGH " << volid << " squared box saf " << safetytoboxsqr
-                                 << " cands " << candidatesafety;
+              VECGEOM_LOG(debug) << "DAUGH " << volid << " squared box saf " << safetytoboxsqr << " cands "
+                                 << candidatesafety;
 #endif
               // we take the larger of boxsafety or candidatesafety as the safety for this object
               const auto thiscandidatesafetysqr = std::max<Precision>(candsafetysqr, safetytoboxsqr);
@@ -400,7 +402,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
 #endif
             othersafetycandidates.insert(bestcandidate);
           } // if not in daughter
-        }   // loop over surface points of voxel
+        } // loop over surface points of voxel
 
         for (const auto &other : othersafetycandidates) {
           // we add the other candidates to the list of existing candidates
@@ -451,8 +453,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
   const auto &daughters   = vol->GetDaughters();
   const size_t ndaughters = daughters.size();
   //  a good guess is by the number of daughters and their average extent/dimensions
-  VECGEOM_LOG(diagnostic) << "Setting up locate voxels for " << vol->GetName()
-                    << " with " << ndaughters << " daughters";
+  VECGEOM_LOG(diagnostic) << "Setting up locate voxels for " << vol->GetName() << " with " << ndaughters
+                          << " daughters";
   int Nx            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Ny            = 10; // std::max(4., std::sqrt(1.*ndaughters));
   int Nz            = 10; // std::max(4., std::sqrt(1.*ndaughters));
@@ -490,7 +492,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildLocateVoxels(LogicalVolume 
         endindex += remainder;
       }
       int size{0};
-      auto abboxcorners = ABBoxManager::Instance().GetABBoxes(vol, size);
+      auto abboxcorners = ABBoxManager<Precision>::Instance().GetABBoxes(vol, size);
 
       for (int i = startindex; i < endindex; ++i) {
         auto k = sortedkeys[i];

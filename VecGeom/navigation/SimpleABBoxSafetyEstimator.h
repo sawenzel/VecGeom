@@ -20,10 +20,10 @@ class SimpleABBoxSafetyEstimator : public VSafetyEstimatorHelper<SimpleABBoxSafe
 
 private:
   // we keep a reference to the ABBoxManager ( avoids calling Instance() on this guy all the time )
-  ABBoxManager &fABBoxManager;
+  ABBoxManager<Precision> &fABBoxManager;
 
   SimpleABBoxSafetyEstimator()
-      : VSafetyEstimatorHelper<SimpleABBoxSafetyEstimator>(), fABBoxManager(ABBoxManager::Instance())
+      : VSafetyEstimatorHelper<SimpleABBoxSafetyEstimator>(), fABBoxManager(ABBoxManager<Precision>::Instance())
   {
   }
 
@@ -38,24 +38,25 @@ private:
 public:
   // helper function calculating some candidate volumes
   VECCORE_ATT_HOST_DEVICE
-  static size_t GetSafetyCandidates_v(Vector3D<Precision> const &point, ABBoxManager::ABBoxContainer_v const &corners,
-                                      size_t size, ABBoxManager::BoxIdDistancePair_t *boxsafetypairs,
+  static size_t GetSafetyCandidates_v(Vector3D<Precision> const &point,
+                                      ABBoxManager<Precision>::ABBoxContainer_v const &corners, size_t size,
+                                      ABBoxManager<Precision>::BoxIdDistancePair_t *boxsafetypairs,
                                       Precision upper_squared_limit)
   {
     size_t count = 0;
     Vector3D<float> pointfloat((float)point.x(), (float)point.y(), (float)point.z());
     size_t vecsize = size;
     for (size_t box = 0; box < vecsize; ++box) {
-      ABBoxManager::Float_v safetytoboxsqr =
+      ABBoxManager<Precision>::Float_v safetytoboxsqr =
           ABBoxImplementation::ABBoxSafetySqr(corners[2 * box], corners[2 * box + 1], pointfloat);
 
-      auto hit           = safetytoboxsqr < ABBoxManager::Real_t(upper_squared_limit);
-      constexpr auto kVS = vecCore::VectorSize<ABBoxManager::Float_v>();
+      auto hit           = safetytoboxsqr < ABBoxManager<Precision>::Real_s(upper_squared_limit);
+      constexpr auto kVS = vecCore::VectorSize<ABBoxManager<Precision>::Float_v>();
       if (!vecCore::MaskEmpty(hit)) {
         for (size_t i = 0; i < kVS; ++i) {
           if (vecCore::MaskLaneAt(hit, i)) {
             boxsafetypairs[count] =
-                ABBoxManager::BoxIdDistancePair_t(box * kVS + i, vecCore::LaneAt(safetytoboxsqr, i));
+                ABBoxManager<Precision>::BoxIdDistancePair_t(box * kVS + i, vecCore::LaneAt(safetytoboxsqr, i));
             count++;
           }
         }
@@ -71,7 +72,7 @@ public:
     // a stack based workspace array
     // The following construct reserves stackspace for objects
     // of type IdDistPair_t WITHOUT initializing those objects
-    using IdDistPair_t = ABBoxManager::BoxIdDistancePair_t;
+    using IdDistPair_t = ABBoxManager<Precision>::BoxIdDistancePair_t;
     char stackspace[VECGEOM_MAXDAUGHTERS * sizeof(IdDistPair_t)];
     IdDistPair_t *boxsafetylist = reinterpret_cast<IdDistPair_t *>(&stackspace);
 
@@ -82,7 +83,7 @@ public:
     if (safety > 0. && lvol->GetDaughtersp()->size() > 0) {
       int size;
 
-      ABBoxManager::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
+      ABBoxManager<Precision>::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
       // calculate squared bounding box safeties in vectorized way
       auto ncandidates = GetSafetyCandidates_v(localpoint, bboxes, size, boxsafetylist, safetysqr);
       // not sorting the candidate list ( which one could do )

@@ -202,8 +202,7 @@ void BenchTracks()
 
 void InitNavigators(int use_bvh_navigator)
 {
-  if (use_bvh_navigator)
-    BVHManager::Init();
+  if (use_bvh_navigator) BVHManager::Init();
 
   for (auto &lvol : GeoManager::Instance().GetLogicalVolumesMap()) {
     auto ndaughters = lvol.second->GetDaughtersp()->size();
@@ -619,8 +618,8 @@ int main(int argc, char *argv[])
   pixel_width = atof(argv[4]);
 
   unsigned int use_bvh_navigator = 0;
-  unsigned int cutatlevel = 1000;
-  bool cutlevel           = false;
+  unsigned int cutatlevel        = 1000;
+  bool cutlevel                  = false;
   for (auto i = 5; i < argc; i++) {
     if (!strcmp(argv[i], "--novoxel")) voxelize = false;
     if (!strcmp(argv[i], "--noassembly")) assemblies = false;
@@ -871,7 +870,7 @@ int main(int argc, char *argv[])
     RootGeoManager::Instance().LoadRootGeometry();
     std::cout << "Detector loaded "
               << "\n";
-    ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
+    ABBoxManager<Precision>::Instance().InitABBoxesForCompleteGeometry();
     std::cout << "voxelized "
               << "\n";
 

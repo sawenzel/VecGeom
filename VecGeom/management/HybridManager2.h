@@ -113,7 +113,7 @@ public:
   // public method allowing to build a hybrid acceleration structure
   // given a vector of aligned bounding boxes
   // can be used by clients (not coupled to LogicalVolumes)
-  HybridBoxAccelerationStructure *BuildStructure(ABBoxManager::ABBoxContainer_t alignedboxes,
+  HybridBoxAccelerationStructure *BuildStructure(ABBoxManager<Precision>::ABBoxContainer_t alignedboxes,
                                                  size_t numberofboxes) const;
 
 private:
@@ -124,7 +124,7 @@ private:
                         size_t const maxNodeSize);
 
   template <typename Container_t>
-  void InitClustersWithKMeans(ABBoxManager::ABBoxContainer_t, int, Container_t &, SOA3D<Precision> &,
+  void InitClustersWithKMeans(ABBoxManager<Precision>::ABBoxContainer_t, int, Container_t &, SOA3D<Precision> &,
                               SOA3D<Precision> &, int const numberOfInterations = 50) const;
 
   void RecalculateCentres(SOA3D<Precision> &centers, SOA3D<Precision> const &allvolumecenters,
@@ -148,7 +148,7 @@ private:
   }
 
 }; // end class
-}
-} // end namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif

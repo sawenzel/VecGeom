@@ -4,6 +4,7 @@
 #include "VecGeom/base/BVH.h"
 
 #include "VecGeom/management/ABBoxManager.h"
+#include "VecGeom/surfaces/Model.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,9 +18,9 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 constexpr int BVH::BVH_MAX_DEPTH;
 
 enum class BVH::ConstructionAlgorithm : unsigned int {
-  SplitLongestAxis = 0,
+  SplitLongestAxis         = 0,
   LargestDistanceAlongAxis = 1,
-  SurfaceAreaHeuristic = 2,
+  SurfaceAreaHeuristic     = 2,
 };
 
 /**
@@ -46,14 +47,22 @@ enum class BVH::ConstructionAlgorithm : unsigned int {
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
 
-BVH::BVH(LogicalVolume const &volume, int depth) : fRootId(volume.id()), fRootNChild(volume.GetDaughters().size())
+BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::SurfData<Precision> const *surfData, int depth)
+    : fRootId(volume.id())
 {
   int n;
+  Vector3D<Precision> *ptr;
 
   /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
-  Vector3D<Precision> *ptr = ABBoxManager::Instance().GetABBoxes(&volume, n);
+  if (surfacesBVH) {
+    ptr = ABBoxManager<Precision>::Instance().GetSurfaceABBoxes(volume.id(), n, *surfData);
+  } else {
+    ptr = ABBoxManager<Precision>::Instance().GetABBoxes(&volume, n);
+  }
 
   if (n <= 0) throw std::logic_error("Cannot construct BVH for volume with no children!");
+
+  fRootNChild = n;
 
   fAABBs = new AABB[n];
   for (int i = 0; i < n; ++i)
@@ -76,8 +85,8 @@ BVH::BVH(LogicalVolume const &volume, int depth) : fRootId(volume.id()), fRootNC
   fNChild = new int[nodes];
   fOffset = new int[nodes];
   fNodes  = new AABB[nodes];
-  std::fill(fNChild, fNChild+nodes, 0);
-  std::fill(fOffset, fOffset+nodes, -1);
+  std::fill(fNChild, fNChild + nodes, 0);
+  std::fill(fOffset, fOffset + nodes, -1);
 
   /* Recursively initialize BVH nodes starting at the root node */
   ComputeNodes(0, fPrimId, fPrimId + n, nodes, ConstructionAlgorithm::SurfaceAreaHeuristic);
@@ -90,7 +99,8 @@ BVH::BVH(LogicalVolume const &volume, int depth) : fRootId(volume.id()), fRootNC
 #ifdef VECGEOM_ENABLE_CUDA
 VECCORE_ATT_DEVICE
 BVH::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int *dOffset, int *dNChild, AABB *dNodes)
-    : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
+    : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fPrimId(dPrimId), fOffset(dOffset),
+      fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
 {
 }
 #endif
@@ -98,19 +108,18 @@ BVH::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int
 VECCORE_ATT_HOST_DEVICE
 void BVH::Print(bool verbose) const
 {
-  printf("\nBVH(%u): addr: %p, depth: %d, nodes: %d, children: %d, name: %s\n",
-         fRootId, this, fDepth, (2 << fDepth) - 1, fRootNChild,
-         " " );
+  printf("\nBVH(%u): addr: %p, depth: %d, nodes: %d, children: %d, name: %s\n", fRootId, this, fDepth,
+         (2 << fDepth) - 1, fRootNChild, " ");
   if (verbose) {
     constexpr auto width = 4;
-    int nChildToPad = 1;
+    int nChildToPad      = 1;
     for (int depth = fDepth; depth >= 0; --depth) {
       const auto begin = (1 << depth) - 1;
       const auto end   = (2 << depth) - 1;
       for (int node = begin; node < end; ++node) {
-        if (nChildToPad > 1) printf("%*c", (nChildToPad-1)*width/2, ' ');
+        if (nChildToPad > 1) printf("%*c", (nChildToPad - 1) * width / 2, ' ');
         printf("%3d ", fNChild[node]);
-        if (nChildToPad > 1) printf("%*c", (nChildToPad-1)*width/2, ' ');
+        if (nChildToPad > 1) printf("%*c", (nChildToPad - 1) * width / 2, ' ');
       }
       printf("\n");
       nChildToPad *= 2;
@@ -145,11 +154,13 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
   CudaCheckError(CudaCopyToDevice((void *)dNChild, (void *)fNChild, nodes * sizeof(int)));
   CudaCheckError(CudaCopyToDevice((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB)));
 
-  //cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
-  cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(GeoManager::Instance().FindLogicalVolume(fRootId)).GetPtr();
+  // cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
+  cuda::LogicalVolume const *dvolume =
+      CudaManager::Instance().LookupLogical(GeoManager::Instance().FindLogicalVolume(fRootId)).GetPtr();
 
   if (!dvolume) {
-    std::cerr << "Failed for lv " << /*fLV.GetLabel()*/ " " << " (id = " << fRootId << ")" << std::endl;
+    std::cerr << "Failed for lv " << /*fLV.GetLabel()*/ " "
+              << " (id = " << fRootId << ")" << std::endl;
     throw std::logic_error("Cannot copy BVH because logical volume does not exist on the device.");
   }
 
@@ -161,14 +172,19 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
 }
 #endif
 
-BVH::~BVH()
+void BVH::Clear()
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
-  if (fPrimId) delete[] fPrimId;
-  if (fOffset) delete[] fOffset;
-  if (fNChild) delete[] fNChild;
-  if (fNodes) delete[] fNodes;
-  if (fAABBs) delete[] fAABBs;
+  delete[] fPrimId;
+  fPrimId = nullptr;
+  delete[] fOffset;
+  fOffset = nullptr;
+  delete[] fNChild;
+  fNChild = nullptr;
+  delete[] fNodes;
+  fNodes = nullptr;
+  delete[] fAABBs;
+  fAABBs = nullptr;
 #endif
 }
 
@@ -179,36 +195,32 @@ int ClosestAxis(Vector3D<Precision> v)
   return v[0] > v[2] ? (v[0] > v[1] ? 0 : 1) : (v[1] > v[2] ? 1 : 2);
 }
 
-int * splitAlongLongestAxis(const AABB * primitiveBoxes,
-                            int * begin, int * end,
-                            const AABB & currentBVHNode) {
+int *splitAlongLongestAxis(const AABB *primitiveBoxes, int *begin, int *end, const AABB &currentBVHNode)
+{
   const Vector3D<Precision> basis[] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-  Vector3D<Precision> p = currentBVHNode.Center();
-  Vector3D<Precision> v = basis[ClosestAxis(currentBVHNode.Size())];
+  Vector3D<Precision> p             = currentBVHNode.Center();
+  Vector3D<Precision> v             = basis[ClosestAxis(currentBVHNode.Size())];
 
-  return std::partition(begin, end, [&](size_t i) { return Vector3D<Precision>::Dot(primitiveBoxes[i].Center() - p, v) < 0.0; });
+  return std::partition(begin, end,
+                        [&](size_t i) { return Vector3D<Precision>::Dot(primitiveBoxes[i].Center() - p, v) < 0.0; });
 }
 
-int * largestDistanceAlongAxis(const AABB * primitiveBoxes,
-                               int * begin, int * end,
-                               const AABB & /*currentBVHNode*/) {
+int *largestDistanceAlongAxis(const AABB *primitiveBoxes, int *begin, int *end, const AABB & /*currentBVHNode*/)
+{
   // Compute maximum extension of lower-left front corners along all axes
   float extension[3][2] = {{0.f, 0.f}, {0.f, 0.f}, {0.f, 0.f}};
   for (int axis = 0; axis <= 2; ++axis) {
-    auto minMaxIt = std::minmax_element(begin, end, [=](size_t a, size_t b){
-      return primitiveBoxes[a].Min()[axis] < primitiveBoxes[b].Min()[axis];
-    });
+    auto minMaxIt = std::minmax_element(
+        begin, end, [=](size_t a, size_t b) { return primitiveBoxes[a].Min()[axis] < primitiveBoxes[b].Min()[axis]; });
     extension[axis][0] = primitiveBoxes[*minMaxIt.first].Min()[axis];
     extension[axis][1] = primitiveBoxes[*minMaxIt.second].Min()[axis];
   }
 
-  const int splitAxis = std::distance(extension, std::max_element(extension, extension+3, [](float a[], float b[]){
-    return a[1]-a[0] < b[1]-b[0];
-  }));
+  const int splitAxis = std::distance(extension, std::max_element(extension, extension + 3, [](float a[], float b[]) {
+                                        return a[1] - a[0] < b[1] - b[0];
+                                      }));
   const float middlePoint = (extension[splitAxis][1] + extension[splitAxis][0]) / 2.;
-  return std::partition(begin, end, [=](size_t i) {
-    return primitiveBoxes[i].Min()[splitAxis] < middlePoint;
-  });
+  return std::partition(begin, end, [=](size_t i) { return primitiveBoxes[i].Min()[splitAxis] < middlePoint; });
 }
 
 /**
@@ -217,14 +229,13 @@ int * largestDistanceAlongAxis(const AABB * primitiveBoxes,
  * @param left,right Compute `left < right`.
  * @param sortAxis Principal axis to sort by.
  */
-template<typename T>
-bool less3D(const T & left, const T & right, const int sortAxis) {
+template <typename T>
+bool less3D(const T &left, const T &right, const int sortAxis)
+{
   return left[sortAxis] < right[sortAxis] ||
-    ( left[sortAxis] == right[sortAxis] &&
-      ( left[(sortAxis+1)%3] < right[(sortAxis+1)%3] ||
-        ( left[(sortAxis+1)%3] == right[(sortAxis+1)%3] && left[(sortAxis+2)%3] < right[(sortAxis+2)%3] )
-      )
-    );
+         (left[sortAxis] == right[sortAxis] && (left[(sortAxis + 1) % 3] < right[(sortAxis + 1) % 3] ||
+                                                (left[(sortAxis + 1) % 3] == right[(sortAxis + 1) % 3] &&
+                                                 left[(sortAxis + 2) % 3] < right[(sortAxis + 2) % 3])));
 }
 
 /**
@@ -242,21 +253,22 @@ bool less3D(const T & left, const T & right, const int sortAxis) {
  * @param begin Index of first primitive to be considered.
  * @param end   Past-the-end index of primitives to be considered.
  */
-std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB * primitiveBoxes, int const * begin, int const * end) {
+std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB *primitiveBoxes, int const *begin, int const *end)
+{
   if (begin >= end) return {};
 
   std::vector<std::pair<double, double>> areas(std::distance(begin, end), {0., 0.});
 
   AABB box{primitiveBoxes[*begin]};
-  for (auto it = begin+1; it < end; ++it) {
-    areas[it-begin].first = box.SurfaceArea();
-    box = AABB::Union(box, primitiveBoxes[*it]);
+  for (auto it = begin + 1; it < end; ++it) {
+    areas[it - begin].first = box.SurfaceArea();
+    box                     = AABB::Union(box, primitiveBoxes[*it]);
   }
 
-  AABB box2{primitiveBoxes[*(end-1)]};
+  AABB box2{primitiveBoxes[*(end - 1)]};
   for (auto it = end - 1; it >= begin; --it) {
-    box2 = AABB::Union(box2, primitiveBoxes[*(it)]);
-    areas[it-begin].second = box2.SurfaceArea();
+    box2                     = AABB::Union(box2, primitiveBoxes[*(it)]);
+    areas[it - begin].second = box2.SurfaceArea();
   }
 
   return areas;
@@ -275,22 +287,20 @@ std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB * primitiveBo
  * @param end   Past-the-end index of primitives to be considered.
  * @return Index of the first element of the second group. If this is `end`, no good split was found.
  */
-int * surfaceAreaHeuristic(const AABB * primitiveBoxes,
-                          int * begin, int * end,
-                          const AABB & /*currentBVHNode*/) {
-  int bestSplitAxis = -1;
+int *surfaceAreaHeuristic(const AABB *primitiveBoxes, int *begin, int *end, const AABB & /*currentBVHNode*/)
+{
+  int bestSplitAxis          = -1;
   double bestTraversalMetric = std::distance(begin, end);
-  int bestSplitObject = -1;
-  const auto nObj = std::distance(begin, end);
+  int bestSplitObject        = -1;
+  const auto nObj            = std::distance(begin, end);
 
   int currentSortAxis = 0;
-  auto sorter = [primitiveBoxes, &currentSortAxis](int a, int b) {
-    const auto centroidA = primitiveBoxes[a].Center();
-    const auto centroidB = primitiveBoxes[b].Center();
+  auto sorter         = [primitiveBoxes, &currentSortAxis](int a, int b) {
+    const auto centroidA   = primitiveBoxes[a].Center();
+    const auto centroidB   = primitiveBoxes[b].Center();
     constexpr double shift = 0.01;
-    return less3D(centroidA + shift*(centroidA - primitiveBoxes[a].Min()),
-                  centroidB + shift*(centroidB - primitiveBoxes[b].Min()),
-                  currentSortAxis);
+    return less3D(centroidA + shift * (centroidA - primitiveBoxes[a].Min()),
+                          centroidB + shift * (centroidB - primitiveBoxes[b].Min()), currentSortAxis);
   };
 
   for (int axis = 0; axis <= 2; ++axis) {
@@ -299,34 +309,29 @@ int * surfaceAreaHeuristic(const AABB * primitiveBoxes,
     std::sort(begin, end, sorter);
 
     // Sweep axis looking for best split
-    const std::vector<std::pair<double,double>> surfaceSweep = sweepSurfaceArea(primitiveBoxes, begin, end);
-    const auto totSurfArea = surfaceSweep.front().second;
+    const std::vector<std::pair<double, double>> surfaceSweep = sweepSurfaceArea(primitiveBoxes, begin, end);
+    const auto totSurfArea                                    = surfaceSweep.front().second;
 
-    for (int * splitObject = begin; splitObject < end; ++splitObject) {
-      const auto left  = surfaceSweep[splitObject-begin].first/totSurfArea;
-      const auto right = surfaceSweep[splitObject-begin].second/totSurfArea;
+    for (int *splitObject = begin; splitObject < end; ++splitObject) {
+      const auto left  = surfaceSweep[splitObject - begin].first / totSurfArea;
+      const auto right = surfaceSweep[splitObject - begin].second / totSurfArea;
       assert(left <= 1. && right <= 1.);
 
-      const auto splitMetric =
-            left * std::distance(begin, splitObject)
-          + right * std::distance(splitObject, end)
-          + 0.1 * abs(nObj/2 - std::distance(begin, splitObject) / nObj); // Prefer balanced splits
+      const auto splitMetric = left * std::distance(begin, splitObject) + right * std::distance(splitObject, end) +
+                               0.1 * abs(nObj / 2 - std::distance(begin, splitObject) / nObj); // Prefer balanced splits
 
       if (splitMetric < bestTraversalMetric) {
         bestTraversalMetric = splitMetric;
-        bestSplitAxis = axis;
-        bestSplitObject = *splitObject;
+        bestSplitAxis       = axis;
+        bestSplitObject     = *splitObject;
       }
     }
   }
 
-  if (bestSplitAxis == -1)
-    return end;
+  if (bestSplitAxis == -1) return end;
 
   currentSortAxis = bestSplitAxis;
-  auto result = std::partition(begin, end, [sorter,bestSplitObject](size_t i) {
-    return sorter(i, bestSplitObject);
-  });
+  auto result = std::partition(begin, end, [sorter, bestSplitObject](size_t i) { return sorter(i, bestSplitObject); });
 
   return result;
 }
@@ -335,12 +340,11 @@ int * surfaceAreaHeuristic(const AABB * primitiveBoxes,
  * Array of splitting functions that can be used to construct the BVH tree.
  * @see BVH::ConstructionAlgorithm
  */
-int * (*splittingFunction[])(const AABB * /*primitveAABBs*/,
-                            int * /*firstPrimitive*/, int * /*lastPrimitive*/,
+int *(*splittingFunction[])(const AABB * /*primitveAABBs*/, int * /*firstPrimitive*/, int * /*lastPrimitive*/,
                             const AABB & /*currentBVHNode*/) = {
-  &splitAlongLongestAxis,
-  &largestDistanceAlongAxis,
-  &surfaceAreaHeuristic,
+    &splitAlongLongestAxis,
+    &largestDistanceAlongAxis,
+    &surfaceAreaHeuristic,
 };
 
 } // anonymous namespace
@@ -380,11 +384,11 @@ void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int node
   const auto algo = static_cast<unsigned int>(constructionAlgorithm);
   assert(algo < sizeof(splittingFunction));
 
-  int * pivot = splittingFunction[algo](fAABBs, first, last, fNodes[id]);
+  int *pivot = splittingFunction[algo](fAABBs, first, last, fNodes[id]);
   assert(first <= pivot && pivot <= last);
 
   ComputeNodes(2 * id + 1, first, pivot, nodes, constructionAlgorithm);
-  ComputeNodes(2 * id + 2, pivot, last,  nodes, constructionAlgorithm);
+  ComputeNodes(2 * id + 2, pivot, last, nodes, constructionAlgorithm);
 }
 
 } // namespace VECGEOM_IMPL_NAMESPACE

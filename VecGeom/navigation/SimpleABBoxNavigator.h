@@ -20,10 +20,10 @@ template <bool MotherIsConvex = false>
 class SimpleABBoxNavigator : public VNavigatorHelper<SimpleABBoxNavigator<MotherIsConvex>, MotherIsConvex> {
 
 private:
-  ABBoxManager &fABBoxManager;
+  ABBoxManager<Precision> &fABBoxManager;
   SimpleABBoxNavigator()
       : VNavigatorHelper<SimpleABBoxNavigator<MotherIsConvex>, MotherIsConvex>(SimpleABBoxSafetyEstimator::Instance()),
-        fABBoxManager(ABBoxManager::Instance())
+        fABBoxManager(ABBoxManager<Precision>::Instance())
   {
   }
 
@@ -37,11 +37,11 @@ private:
 
   // a simple sort class (based on insertionsort)
   // template <typename T, typename Cmp>
-  static void insertionsort(ABBoxManager::BoxIdDistancePair_t *arr, unsigned int N)
+  static void insertionsort(ABBoxManager<Precision>::BoxIdDistancePair_t *arr, unsigned int N)
   {
     for (unsigned short i = 1; i < N; ++i) {
-      ABBoxManager::BoxIdDistancePair_t value = arr[i];
-      short hole                              = i;
+      ABBoxManager<Precision>::BoxIdDistancePair_t value = arr[i];
+      short hole                                         = i;
 
       for (; hole > 0 && value.second < arr[hole - 1].second; --hole)
         arr[hole] = arr[hole - 1];
@@ -52,8 +52,8 @@ private:
 
   // vector version
   size_t GetHitCandidates_v(LogicalVolume const * /*lvol*/, Vector3D<Precision> const &point,
-                            Vector3D<Precision> const &dir, ABBoxManager::ABBoxContainer_v const &corners, size_t size,
-                            ABBoxManager::BoxIdDistancePair_t *hitlist) const
+                            Vector3D<Precision> const &dir, ABBoxManager<Precision>::ABBoxContainer_v const &corners,
+                            size_t size, ABBoxManager<Precision>::BoxIdDistancePair_t *hitlist) const
   {
     size_t vecsize  = size;
     size_t hitcount = 0;
@@ -63,7 +63,7 @@ private:
     sign[0]       = invdirfloat.x() < 0;
     sign[1]       = invdirfloat.y() < 0;
     sign[2]       = invdirfloat.z() < 0;
-    using Float_v = ABBoxManager::Float_v;
+    using Float_v = ABBoxManager<Precision>::Float_v;
     using Bool_v  = vecCore::Mask_v<Float_v>;
     for (size_t box = 0; box < vecsize; ++box) {
       Float_v distance = BoxImplementation::IntersectCachedKernel2<Float_v, float>(
@@ -77,7 +77,8 @@ private:
         for (size_t i = 0; i < kVS; ++i) {
           if (vecCore::MaskLaneAt(hit, i)) {
             assert(hitcount < VECGEOM_MAXDAUGHTERS);
-            hitlist[hitcount] = (ABBoxManager::BoxIdDistancePair_t(box * kVS + i, vecCore::LaneAt(distance, i)));
+            hitlist[hitcount] =
+                (ABBoxManager<Precision>::BoxIdDistancePair_t(box * kVS + i, vecCore::LaneAt(distance, i)));
             hitcount++;
           }
         }
@@ -98,15 +99,15 @@ public:
   {
     // The following construct reserves stackspace for objects
     // of type IdDistPair_t WITHOUT initializing those objects
-    using IdDistPair_t = ABBoxManager::BoxIdDistancePair_t;
+    using IdDistPair_t = ABBoxManager<Precision>::BoxIdDistancePair_t;
     char stackspace[VECGEOM_MAXDAUGHTERS * sizeof(IdDistPair_t)];
     IdDistPair_t *hitlist = reinterpret_cast<IdDistPair_t *>(&stackspace);
 
     if (lvol->GetDaughtersp()->size() == 0) return false;
 
     int size;
-    ABBoxManager::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
-    auto ncandidates                      = GetHitCandidates_v(lvol, localpoint, localdir, bboxes, size, hitlist);
+    ABBoxManager<Precision>::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
+    auto ncandidates = GetHitCandidates_v(lvol, localpoint, localdir, bboxes, size, hitlist);
 
     // sort candidates according to their bounding volume hit distance
     insertionsort(hitlist, ncandidates);
@@ -152,15 +153,15 @@ public:
   {
     // The following construct reserves stackspace for objects
     // of type IdDistPair_t WITHOUT initializing those objects
-    using IdDistPair_t = ABBoxManager::BoxIdDistancePair_t;
+    using IdDistPair_t = ABBoxManager<Precision>::BoxIdDistancePair_t;
     char stackspace[VECGEOM_MAXDAUGHTERS * sizeof(IdDistPair_t)];
     IdDistPair_t *hitlist = reinterpret_cast<IdDistPair_t *>(&stackspace);
 
     if (lvol->GetDaughtersp()->size() == 0) return false;
 
     int size;
-    ABBoxManager::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
-    auto ncandidates                      = GetHitCandidates_v(lvol, localpoint, localdir, bboxes, size, hitlist);
+    ABBoxManager<Precision>::ABBoxContainer_v bboxes = fABBoxManager.GetABBoxes_v(lvol, size);
+    auto ncandidates = GetHitCandidates_v(lvol, localpoint, localdir, bboxes, size, hitlist);
 
     // sort candidates according to their bounding volume hit distance
     insertionsort(hitlist, ncandidates);
@@ -222,7 +223,7 @@ public:
   static constexpr const char *gClassNameString = "SimpleABBoxNavigator";
   typedef SimpleABBoxSafetyEstimator SafetyEstimator_t;
 }; // end of class
-}
-} // end namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif /* NAVIGATION_SIMPLEABBOXNAVIGATOR_H_ */

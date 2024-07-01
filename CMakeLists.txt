@@ -185,6 +185,7 @@ option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in 
 option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" OFF)
 set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
+option(VECGEOM_BVH_SINGLE "Enable using single precision for BVH traversal" OFF)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
 option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
 
@@ -209,6 +210,12 @@ else()
   if (VECGEOM_USE_NAVINDEX)
     message(STATUS "Enabled navigation state index navigation")
   endif()
+endif()
+
+if(VECGEOM_BVH_SINGLE)
+  message(STATUS "BVH navigation using single precision")
+else()
+  message(STATUS "BVH navigation using double precision")
 endif()
 
 ################################################################################
@@ -545,6 +552,8 @@ set(VECGEOM_CPPONLY_SRCS
   source/Logger.cpp
   source/LoggerMessage.cpp
   source/LoggerTypes.cpp
+  VecGeom/surfaces/cpp/LogicHelper.cpp
+  VecGeom/surfaces/cpp/BrepHelper.cpp
 )
 
 if(VECGEOM_EMBREE)

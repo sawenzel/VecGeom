@@ -84,7 +84,10 @@
 // When VTUNE is ON
 #cmakedefine VECGEOM_TEST_VTUNE
 
-// When GDML id ON
+// When GDML is ON
 #cmakedefine VECGEOM_GDML
+
+// When single precision BVH is ON
+#cmakedefine VECGEOM_BVH_SINGLE
 
 #endif

@@ -82,7 +82,7 @@ public:
     std::vector<std::pair<long, P>> keyToProp;
 
     int nDaughters{0};
-    auto abboxes = ABBoxManager::Instance().GetABBoxes(&lvol, nDaughters);
+    auto abboxes = ABBoxManager<Precision>::Instance().GetABBoxes(&lvol, nDaughters);
     for (int d = 0; d < nDaughters; ++d) {
       const auto &lower = abboxes[2 * d];
       const auto &upper = abboxes[2 * d + 1];

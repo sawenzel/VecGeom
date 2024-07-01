@@ -52,7 +52,7 @@ public:
                       Vector3D<Precision> const &localpoint) const
   {
     int size{0};
-    auto abboxcorners = ABBoxManager::Instance().GetABBoxes(lvol, size);
+    auto abboxcorners = ABBoxManager<Precision>::Instance().GetABBoxes(lvol, size);
     Vector3D<float> lp(localpoint.x(), localpoint.y(), localpoint.z()); // in float
     const bool needmother        = (safetycandidates[0] == -1);
     const Precision safetymother = needmother ? lvol->GetUnplacedVolume()->SafetyToOut(localpoint) : 0.;
@@ -95,7 +95,7 @@ public:
     const auto structure = fAccStructureManager.GetStructure(lvol);
 
     int size{0};
-    auto abboxcorners = ABBoxManager::Instance().GetABBoxes(lvol, size);
+    auto abboxcorners = ABBoxManager<Precision>::Instance().GetABBoxes(lvol, size);
 
     if (structure != nullptr) {
       const Vector3D<float> lp(localpoint.x(), localpoint.y(), localpoint.z()); // in float

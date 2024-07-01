@@ -58,6 +58,8 @@ using namespace vecCore::math;
 
 VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;
 VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
+template <typename Real_t>
+constexpr Real_t kEpsilonT = std::numeric_limits<Real_t>::epsilon();
 // VECGEOM_CONST Precision kInfinity         = std::numeric_limits<Precision>::infinity();
 // a special constant to indicate a "miss" length
 VECGEOM_CONST Precision kInfLength        = vecCore::NumericLimits<Precision>::Max();

@@ -7,13 +7,13 @@
 namespace vgbrep {
 
 template <typename T>
-char const *to_cstring(T type)
+VECGEOM_FORCE_INLINE char const *to_cstring(T type)
 {
   return nullptr;
 }
 
 template <>
-char const *to_cstring<SurfaceType>(SurfaceType type)
+VECGEOM_FORCE_INLINE char const *to_cstring<SurfaceType>(SurfaceType type)
 {
   static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "elliptical", "arb4"};
   assert(size_t(type) * sizeof(const char *) < sizeof(data));
@@ -21,14 +21,14 @@ char const *to_cstring<SurfaceType>(SurfaceType type)
 }
 
 template <>
-char const *to_cstring<bool>(bool type)
+VECGEOM_FORCE_INLINE char const *to_cstring<bool>(bool type)
 {
   if (type) return "true";
   return "false";
 }
 
 template <>
-char const *to_cstring<FrameType>(FrameType type)
+VECGEOM_FORCE_INLINE char const *to_cstring<FrameType>(FrameType type)
 {
   static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
   assert(size_t(type) * sizeof(const char *) < sizeof(data));
@@ -43,8 +43,13 @@ using LogicExpressionCPU = std::vector<logic_int>;
 // the flattening process, depending on the scene on which the parent volume will be flattened
 struct VolumeShellCPU {
   std::vector<int> fSurfaces; ///< Local surface id's for this volume
-  LogicExpressionCPU fLogic;  ///< Logic expression for the solid
-  bool fSimplified{false};    ///< The logic was simplified
+
+  std::vector<int> fVisibleSurfaces;
+  std::vector<int> fVisibleSurfacesPvol;
+
+  LogicExpressionCPU fLogic; ///< Logic expression for the solid
+  bool fSimplified{false};   ///< The logic was simplified
+  int fBVH{0};
 };
 
 // Surface data used only on CPU during the conversion process

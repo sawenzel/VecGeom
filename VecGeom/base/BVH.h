@@ -11,8 +11,15 @@
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/PlacedVolume.h"
+// #include "VecGeom/surfaces/Model.h"
 
 #include <vector>
+
+// Forward-declare SurfData
+namespace vgbrep {
+template <typename Real_t>
+struct SurfData;
+}
 
 namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE(class BVH;);
@@ -26,23 +33,49 @@ class VPlacedVolume;
  * @brief Bounding Volume Hierarchy class to represent an axis-aligned bounding volume hierarchy.
  * @details BVH instances can be associated with logical volumes to accelerate queries to their child volumes.
  */
-
 class BVH {
+private:
+  uint fRootId    = 0;   ///< Id of the root element this BVH was constructed for
+  int fRootNChild = 0;   ///< Number of children of the root element
+  int *fPrimId{nullptr}; ///< Child volume ids for each BVH node
+  int *fOffset{nullptr}; ///< Offset in @c fPrimId for first child of each BVH node
+  int *fNChild{nullptr}; ///< Number of children for each BVH node
+  AABB *fNodes{nullptr}; ///< AABBs of BVH nodes
+  AABB *fAABBs{nullptr}; ///< AABBs of children of the BVH root element
+  int fDepth = 0;        ///< Depth of the BVH
+
 public:
+  // Default constructor
+  BVH()
+      : fRootId(0), fRootNChild(0), fPrimId(nullptr), fOffset(nullptr), fNChild(nullptr), fNodes(nullptr),
+        fAABBs(nullptr), fDepth(0)
+  {
+  }
+
+  int GetRootNChild() const { return fRootNChild; };
+  int GetDepth() const { return fDepth; };
+  const int *GetPrimId() const { return fPrimId; };
+  const int *GetOffset() const { return fOffset; };
+  const int *GetNChild() const { return fNChild; };
+  const AABB *GetAABBs() const { return fAABBs; };
+  const AABB *GetNodes() const { return fNodes; };
+
   /** Maximum depth. */
   static constexpr int BVH_MAX_DEPTH = 32;
-
   /**
    * Constructor.
    * @param volume Pointer to logical volume for which the BVH will be created.
+   * @param surfacesBVH Whether to build this BVH from AABBs created for solids or surfaces
    * @param depth Depth of the BVH binary tree. Defaults to zero, in which case
    * the actual depth will be chosen dynamically based on the number of child volumes.
    * When a fixed depth is chosen, it cannot be larger than @p BVH_MAX_DEPTH.
    */
-  BVH(LogicalVolume const &volume, int depth = 0);
+  BVH(LogicalVolume const &volume, bool surfacesBVH = false, vgbrep::SurfData<Precision> const *surfData = nullptr,
+      int depth = 0);
 
   /** Destructor. */
-  ~BVH();
+  ~BVH() { Clear(); }
+  void Clear();
 
 #ifdef VECGEOM_ENABLE_CUDA
   /**
@@ -57,12 +90,32 @@ public:
    */
   VECCORE_ATT_DEVICE
   BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int *dOffset, int *NChild, AABB *dNodes);
+
+  /**
+   * Setter for all member arrays. Used to update the pointers after a copy from host to device
+   * @param dPrimId Device buffer with child volume ids
+   * @param dAABBs  Device buffer with AABBs of child volumes
+   * @param dOffset Device buffer with offsets in @c dPrimId for first child of each BVH node
+   * @param dNChild Device buffer with number of children for each BVH node
+   * @param dNodes AABBs of BVH nodes
+   */
+  VECCORE_ATT_DEVICE
+  void SetPointers(int *dPrimId, int *dOffset, int *dNChild, AABB *dAABBs, AABB *dNodes)
+  {
+    fPrimId = dPrimId;
+    fOffset = dOffset;
+    fNChild = dNChild;
+    fAABBs  = dAABBs;
+    fNodes  = dNodes;
+  }
 #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
   /** Copy and construct an instance of this BVH on the device, at the device address @p addr. */
   DevicePtr<cuda::BVH> CopyToGpu(void *addr) const;
 #endif
+
+  // void CopyToGpu(BVH *dBVH) const;
 
   /** Print a summary of BVH contents */
   VECCORE_ATT_HOST_DEVICE
@@ -94,9 +147,11 @@ public:
    * sum of children in the left+right child nodes will be less than for the current node.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision> localdir,
-                                                          Precision &step, long const last_exited_id,
-                                                          long &hitcandidate_index) const
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(
+      const Vector3D<Precision> &localpoint, const Vector3D<Precision> &localdir,
+      // VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision>
+      // localdir,
+      Precision &step, long const last_exited_id, long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -107,17 +162,30 @@ public:
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
+      Precision min{kInfLength}, max{-kInfLength};
+      fNodes[id].ComputeIntersectionInvDir(localpoint, invdir, min, max);
+      if (!(min <= max && max >= 0.0 && min < step)) {
+        continue;
+      }
+      // if(!fNodes[id].IntersectInvDir(localpoint, invdir, step))
+      //   continue;
+
       if (fNChild[id] >= 0) {
+
+        // If the current distance is shorter than the distance to the node we can safely ignore it
+        // if(!fNodes[id].IntersectInvDir(localpoint, invdir, step))
+        //   continue;
+
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           /* Check AABB first, then the element itself if needed */
           if (fAABBs[prim].IntersectInvDir(localpoint, invdir, step)) {
             const auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint, localdir, step);
-
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && !(dist <= kTolerance && Navigator::SkipItem(fRootId, prim, last_exited_id)))
+            if (dist < step && !(dist <= kTolerance && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
               step = dist, hitcandidate_index = prim;
+            }
           }
         }
       } else {
@@ -155,7 +223,7 @@ public:
    * @returns Minimum between safety to the closest child of root element and input @p safety.
    */
   /*
-   * BVH::ComputeSafety is very similar to CheckDaughterIntersections regarding traversal of the tree, but 
+   * BVH::ComputeSafety is very similar to CheckDaughterIntersections regarding traversal of the tree, but
    * it computes only the safety instead of the intersection using a ray, so the logic is a bit simpler.
    */
   template <typename Navigator>
@@ -171,6 +239,9 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Safety(localpoint) < safety) {
+
+            // printf("// BVH Call, AABB safety: %lf\n", fAABBs[prim].Safety(localpoint));
+
             const Precision dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
             if (dist < safety) safety = dist;
           }
@@ -305,6 +376,97 @@ public:
     } while (ptr > stack);
   }
 
+  /**
+   * Check ray defined by <tt>localpoint + t * localdir</tt> for intersections with children
+   * of the root element of the BVH, and within a maximum distance of @p step
+   * along the ray, while ignoring the @p last_exited_id volume.
+   * @param[in] localpoint Point in the local coordinates of the BVH root.
+   * @param[in] localdir Direction in the local coordinates of the BVH root.
+   * @param[in,out] step Maximum step distance for which intersections should be considered.
+   * @param[in] last_exited_id Last exited element. This element is ignored when reporting intersections.
+   * @param[out] hitcandidate_index Index of element for which closest intersection was found. -1 if no intersection
+   * is found within the current step distance.
+   */
+  /*
+   * This function is meant to be used for benchmarking of the BVH, and not for actual navigation. It gathers stats
+   * on the traversal of the BVH tree
+   */
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersectionsBenchmark(
+      const Vector3D<Precision> &localpoint, const Vector3D<Precision> &localdir,
+      // VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision>
+      // localdir,
+      Precision &step, long const last_exited_id, long &hitcandidate_index, long &total_visited_children,
+      long &total_visited_leaves, long &total_cut_nodes, long &total_stacked_nodes) const
+  {
+    total_visited_children = 0;
+    total_visited_leaves   = 0;
+    total_cut_nodes        = 0; // Number of nodes put on the stack but skipped when visited due to being too far
+    total_stacked_nodes    = 0; // Number of nodes put on the stack to visit
+
+    unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
+    stack[0] = 0;
+
+    /* Calculate and reuse inverse direction to save on divisions */
+    Vector3D<Precision> invdir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
+
+    do {
+      const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
+
+      // If the current distance is shorter than the distance to the node we can safely ignore it
+      Precision min{kInfLength}, max{-kInfLength};
+      fNodes[id].ComputeIntersectionInvDir(localpoint, invdir, min, max);
+      if (!(min <= max && max >= 0.0 && min < step)) {
+        total_cut_nodes++;
+        continue;
+      }
+
+      if (fNChild[id] >= 0) {
+        total_visited_leaves++;
+        /* For leaf nodes, loop over children */
+        for (int i = 0; i < fNChild[id]; ++i) {
+          const int prim = fPrimId[fOffset[id] + i];
+          /* Check AABB first, then the element itself if needed */
+          if (fAABBs[prim].IntersectInvDir(localpoint, invdir, step)) {
+            total_visited_children++;
+            const auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint, localdir, step);
+            /* If distance to current child is smaller than current step, update step and hitcandidate */
+            if (dist < step && dist > -kTolerance && !Navigator::SkipItem(fRootId, prim, last_exited_id)) {
+              step = dist, hitcandidate_index = prim;
+            }
+          }
+        }
+      } else {
+        const unsigned int childL = 2 * id + 1;
+        const unsigned int childR = 2 * id + 2;
+
+        /* For internal nodes, check AABBs to know if we need to traverse left and right children */
+        Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
+
+        fNodes[childL].ComputeIntersectionInvDir(localpoint, invdir, tminL, tmaxL);
+        fNodes[childR].ComputeIntersectionInvDir(localpoint, invdir, tminR, tmaxR);
+
+        const bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < step;
+        const bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < step;
+
+        /*
+         * If both left and right nodes need to be checked, check closest one first.
+         * This ensures step gets short as fast as possible so we can skip more nodes without checking.
+         */
+        if (tminR < tminL) {
+          if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
+        } else {
+          if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
+        }
+
+        if (traverseR) total_stacked_nodes++;
+        if (traverseL) total_stacked_nodes++;
+      }
+    } while (ptr > stack);
+  }
+
 private:
   enum class ConstructionAlgorithm : unsigned int;
   /**
@@ -322,15 +484,6 @@ private:
    * contains only a single child volume.
    */
   void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, ConstructionAlgorithm);
-
-  uint const fRootId;       ///< Id of the root element this BVH was constructed for
-  int const fRootNChild;    ///< Number of children of the root element
-  int *fPrimId;             ///< Child volume ids for each BVH node
-  int *fOffset;             ///< Offset in @c fPrimId for first child of each BVH node
-  int *fNChild;             ///< Number of children for each BVH node
-  AABB *fNodes;             ///< AABBs of BVH nodes
-  AABB *fAABBs;             ///< AABBs of children of the BVH root element
-  int fDepth;               ///< Depth of the BVH
 };
 
 } // namespace VECGEOM_IMPL_NAMESPACE

@@ -7,8 +7,8 @@
 
 using namespace vecgeom;
 
-using Boxes_t     = ABBoxManager::ABBoxContainer_t;
-using BoxCorner_t = ABBoxManager::ABBox_s;
+using Boxes_t     = ABBoxManager<Precision>::ABBoxContainer_t;
+using BoxCorner_t = ABBoxManager<Precision>::ABBox_s;
 
 // make a vector of aligned bounding boxes
 // boxes are just arranged linearly

@@ -5,26 +5,67 @@
 // functions from the CUDA Runtime API and invoke a kernel.
 #ifdef __CUDACC__
 
-#include <VecGeom/surfaces/Model.h>
+#include <VecGeom/surfaces/SurfData.h>
+#include "VecGeom/surfaces/bvh/AABBsurf.h"
+#include "VecGeom/surfaces/bvh/BVHsurf.h"
 
 namespace vgbrep {
+
+template <typename Real_t>
+__global__ void FinishBVHCopy(bvh::BVHsurf<Real_t> *dBVH, int *dPrimId, int *dOffset, int *dNChild,
+                              bvh::AABBsurf<typename SurfData<Real_t>::Real_b> *dAABBs,
+                              bvh::AABBsurf<typename SurfData<Real_t>::Real_b> *dNodes)
+{
+  if (dBVH == nullptr) {
+    printf("Error: Null pointer 'dBVH' encountered in FinishBVHCopy\n");
+    return;
+  }
+  if (dPrimId == nullptr) {
+    printf("Error: Null pointer 'dPrimId' encountered in FinishBVHCopy\n");
+    return;
+  }
+  if (dOffset == nullptr) {
+    printf("Error: Null pointer 'dOffset' encountered in FinishBVHCopy\n");
+    return;
+  }
+  if (dNChild == nullptr) {
+    printf("Error: Null pointer 'dNChild' encountered in FinishBVHCopy\n");
+    return;
+  }
+  if (dAABBs == nullptr) {
+    printf("Error: Null pointer 'dAABBs' encountered in FinishBVHCopy\n");
+    return;
+  }
+  if (dNodes == nullptr) {
+    printf("Error: Null pointer 'dNodes' encountered in FinishBVHCopy\n");
+    return;
+  }
+  dBVH->SetPointers(dPrimId, dOffset, dNChild, dAABBs, dNodes);
+}
 
 // This function sets the correct pointers on device memory in the data structures that were copied
 template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
-  int *current;
+  int *current, *current_visible_surface, *current_visible_surface_pvol;
   logic_int *current_logic;
   globaldevicesurfdata::gSurfDataDevice<Real_t> = surfData;
 
-  // Write pointers into fShells[i].fSurfaces and fShells[i].fLogic
-  current       = surfData->fSurfShellList;
-  current_logic = surfData->fLogicList;
+  // Write pointers into fShells[i].fSurfaces, fShells[i].fLogic, fShells[i].fShellVisibleSurfaceList,
+  // fShells[i].fShellVisibleSurfaceTransList, fShells[i].fShellVisibleSurfacePvolList
+  current                      = surfData->fSurfShellList;
+  current_logic                = surfData->fLogicList;
+  current_visible_surface      = surfData->fShellVisibleSurfaceList;
+  current_visible_surface_pvol = surfData->fShellVisibleSurfacePvolList;
   for (int i = 0; i < surfData->fNshells; i++) {
     surfData->fShells[i].fSurfaces = current;
     current += surfData->fShells[i].fNsurf;
     surfData->fShells[i].fLogic.data_ = current_logic;
     current_logic += surfData->fShells[i].fLogic.size();
+    surfData->fShells[i].fVisibleSurfaces = current_visible_surface;
+    current_visible_surface += surfData->fShells[i].fNVisibleSurfaces;
+    surfData->fShells[i].fVisibleSurfacesPvol = current_visible_surface_pvol;
+    current_visible_surface_pvol += surfData->fShells[i].fNVisibleSurfaces;
   }
 
   // Write pointers into fCommonSurfaces[i].f{Left,Right}Side.fSurfaces
@@ -81,6 +122,7 @@ public:
 
   void TransferSurfData(const SurfData_t &surfData)
   {
+    using Real_b = typename SurfData_t::Real_b;
     size_t sizeInBytes;
 
     // Allocate and copy transformations
@@ -141,6 +183,76 @@ public:
     sizeInBytes = sizeof(logic_int) * surfData.fNlogic;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLogicList, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fLogicList, surfData.fLogicList, sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Nota bene: fShells[i].fShellVisibleSurfaceList are backed by the following array
+    // and set via BrepCudaManagerFinishTransfer.
+    fSurfDataStaging.fNVisibleSurfaces = surfData.fNVisibleSurfaces;
+    sizeInBytes                        = sizeof(surfData.fShellVisibleSurfaceList[0]) * surfData.fNVisibleSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellVisibleSurfaceList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellVisibleSurfaceList, surfData.fShellVisibleSurfaceList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Nota bene: fShells[i].fShellVisibleSurfacePvolList are backed by the following array
+    // and set via BrepCudaManagerFinishTransfer.
+    sizeInBytes = sizeof(surfData.fShellVisibleSurfacePvolList[0]) * surfData.fNVisibleSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellVisibleSurfacePvolList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellVisibleSurfacePvolList, surfData.fShellVisibleSurfacePvolList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Allocate space for the BVHs
+    sizeInBytes = sizeof(surfData.fBVH[0]) * surfData.fNshells;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fBVH, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fBVH, surfData.fBVH, sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Allocate and copy BVH members
+    for (int i = 0; i < surfData.fNshells; ++i) {
+      if (surfData.fShells[i].fNsurf > 0) { // this checks that the BVH is actually populated and not null
+        auto const &hBVH = surfData.fBVH[i];
+        auto dBVH        = &(fSurfDataStaging.fBVH[i]);
+
+        int *dPrimId;
+        int *dOffset;
+        int *dNChild;
+        bvh::AABBsurf<Real_b> *dNodes;
+        bvh::AABBsurf<Real_b> *dAABBs;
+
+        int rootNChild = hBVH.GetRootNChild();
+        if (rootNChild <= 0) {
+          std::ostringstream oss;
+          oss << "Invalid number of root children: " << rootNChild;
+          throw std::logic_error(oss.str());
+        }
+        int nodes = (2 << hBVH.GetDepth()) - 1;
+        if (nodes <= 0) {
+          std::ostringstream oss;
+          oss << "Invalid number of nodes: " << nodes;
+          throw std::logic_error(oss.str());
+        }
+
+        BREP_CUDA_CHECK(cudaMalloc(&dPrimId, hBVH.GetRootNChild() * sizeof(int)));
+        BREP_CUDA_CHECK(cudaMalloc(&dOffset, nodes * sizeof(int)));
+        BREP_CUDA_CHECK(cudaMalloc(&dNChild, nodes * sizeof(int)));
+        BREP_CUDA_CHECK(cudaMalloc(&dNodes, nodes * sizeof(bvh::AABBsurf<Real_b>)));
+        BREP_CUDA_CHECK(cudaMalloc(&dAABBs, hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_b>)));
+
+        // Ensure pointers are not null after allocation
+        if (!dPrimId || !dAABBs || !dOffset || !dNChild || !dNodes) {
+          throw std::runtime_error("Memory allocation failed: One or more pointers are null.");
+        }
+
+        BREP_CUDA_CHECK(
+            cudaMemcpy(dPrimId, hBVH.GetPrimId(), hBVH.GetRootNChild() * sizeof(int), cudaMemcpyHostToDevice));
+        BREP_CUDA_CHECK(cudaMemcpy(dOffset, hBVH.GetOffset(), nodes * sizeof(int), cudaMemcpyHostToDevice));
+        BREP_CUDA_CHECK(cudaMemcpy(dNChild, hBVH.GetNChild(), nodes * sizeof(int), cudaMemcpyHostToDevice));
+        BREP_CUDA_CHECK(
+            cudaMemcpy(dNodes, hBVH.GetNodes(), nodes * sizeof(bvh::AABBsurf<Real_b>), cudaMemcpyHostToDevice));
+        BREP_CUDA_CHECK(cudaMemcpy(dAABBs, hBVH.GetAABBs(), hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_b>),
+                                   cudaMemcpyHostToDevice));
+
+        // Adjust pointers in the GPU instance
+        FinishBVHCopy<<<1, 1>>>(dBVH, dPrimId, dOffset, dNChild, dAABBs, dNodes);
+      }
+    }
 
     // Allocate and copy surfaces
     fSurfDataStaging.fNlocalSurf = surfData.fNlocalSurf;

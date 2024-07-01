@@ -192,8 +192,8 @@ private:
   /// Creates the navigation acceleration structure based ob the pre-computed clusters of facets.
   void CreateABBoxes()
   {
-    using Boxes_t           = ABBoxManager::ABBoxContainer_t;
-    using BoxCorner_t       = ABBoxManager::ABBox_s;
+    using Boxes_t           = ABBoxManager<Precision>::ABBoxContainer_t;
+    using BoxCorner_t       = ABBoxManager<Precision>::ABBox_s;
     int nclusters           = fClusters.size();
     BoxCorner_t *boxcorners = new BoxCorner_t[2 * nclusters];
     for (int i = 0; i < nclusters; ++i) {

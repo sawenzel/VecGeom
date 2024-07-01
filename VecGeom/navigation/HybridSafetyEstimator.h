@@ -131,21 +131,21 @@ public:
         Precision distmaxsqr_s = vecCore::LaneAt(distmaxsqr, i);
         if (distmaxsqr_s < upper_squared_limit) upper_squared_limit = distmaxsqr_s;
       }
-      auto hit = safetytonodesqr < ABBoxManager::Real_t(upper_squared_limit);
+      auto hit = safetytonodesqr < ABBoxManager<Precision>::Real_s(upper_squared_limit);
       if (!vecCore::MaskEmpty(hit)) {
         for (size_t i = 0; i < kVS; ++i) {
           if (vecCore::MaskLaneAt(hit, i)) {
             Float_v safetytoboxsqr = ABBoxImplementation::ABBoxSafetyRangeSqr(
                 boxes_v[index + 2 * (i + 1)], boxes_v[index + 2 * (i + 1) + 1], pointfloat, distmaxsqr);
 
-            auto hit1 = safetytoboxsqr < ABBoxManager::Real_t(upper_squared_limit);
+            auto hit1 = safetytoboxsqr < ABBoxManager<Precision>::Real_s(upper_squared_limit);
             if (!vecCore::MaskEmpty(hit1)) {
               // loop bounding boxes in the cluster
               for (size_t j = 0; j < kVS; ++j) {
                 if (vecCore::MaskLaneAt(hit1, j)) {
                   assert(count < VECGEOM_MAXFACETS);
                   hitlist[count]         = HybridManager2::BoxIdDistancePair_t(nodeToDaughters[nodeindex + i][j],
-                                                                       vecCore::LaneAt(safetytoboxsqr, j));
+                                                                               vecCore::LaneAt(safetytoboxsqr, j));
                   Precision distmaxsqr_s = vecCore::LaneAt(distmaxsqr, j);
                   // Reduce the upper limit
                   if (distmaxsqr_s < upper_squared_limit) upper_squared_limit = distmaxsqr_s;
@@ -161,9 +161,9 @@ public:
   }
 
   template <typename AccStructure, typename Func>
-  VECGEOM_FORCE_INLINE
-  void BVHSortedSafetyLooper(AccStructure const &accstructure, Vector3D<Precision> const &localpoint, Func &&userhook,
-                             Precision upper_squared_limit) const
+  VECGEOM_FORCE_INLINE void BVHSortedSafetyLooper(AccStructure const &accstructure,
+                                                  Vector3D<Precision> const &localpoint, Func &&userhook,
+                                                  Precision upper_squared_limit) const
   {
     // The following construct reserves stackspace for objects
     // of type IdDistPair_t WITHOUT initializing those objects

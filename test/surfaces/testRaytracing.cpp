@@ -24,6 +24,7 @@
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/BrepHelper.h>
 #include <VecGeom/surfaces/Navigator.h>
+#include <VecGeom/surfaces/BVHSurfNavigator.h>
 
 using namespace vecgeom;
 // surface model is based on Real_t precision defined in testRaytracing.h
@@ -245,7 +246,7 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
 //==================================================================================
 void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_t> const *dirs,
                        NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1,
-                       bool detect_overlaps = false, int max_cross = vecgeom::kMaximumInt)
+                       bool detect_overlaps = false, int max_cross = vecgeom::kMaximumInt, bool use_bvh = false)
 {
   int ilast        = nrays;
   int istart       = 0;
@@ -273,7 +274,13 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
         std::cout << "Debugging step " << idebug_step << " starting from state:\n";
         start_state.Print();
       }
-      auto distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, crossed_surf);
+      Real_t distance{0};
+      if (!use_bvh) {
+        distance = vgbrep::protonav::ComputeStepAndHit(pt, dir, start_state, out_state, crossed_surf);
+      } else {
+        distance = vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeStepAndHit(pt, dir, start_state, out_state,
+                                                                                 crossed_surf);
+      }
 
       // get framed surface data to check surface for overlapping
       auto const &surfdata = BrepHelper::Instance().GetSurfData();
@@ -393,7 +400,7 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 //==================================================================================
 int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug,
                        Precision safety_tolerance, bool detect_overlaps = false, bool accept_zeros = false,
-                       int max_cross = vecgeom::kMaximumInt)
+                       int max_cross = vecgeom::kMaximumInt, bool test_bvh = false)
 {
   // allocate storage
   NavigationState *origStates   = new NavigationState[nrays];
@@ -407,13 +414,15 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   auto ref_crossings = new CrossingSeq[nrays];
   auto crossings     = new CrossingSeq[nrays];
+  auto bvh_crossings = new CrossingSeq[nrays];
 
-  int num_errors        = 0;
-  int num_errors_safe   = 0;
-  int num_errors_dist   = 0;
-  int num_better_safety = 0;
-  int num_worse_safety  = 0;
-  int idebug            = (debug && nrays == 1) ? 0 : -1;
+  int num_errors          = 0;
+  int num_errors_safe     = 0;
+  int num_errors_dist     = 0;
+  int num_errors_dist_bvh = 0;
+  int num_better_safety   = 0;
+  int num_worse_safety    = 0;
+  int idebug              = (debug && nrays == 1) ? 0 : -1;
 
   // convert vecgeom::Precision points and dirs to Real_t precision for running the surface model in mixed precision
   auto points_RT = convertVectorArray<Precision, Real_t>(points, nrays);
@@ -485,19 +494,33 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   // Distance computation + relocation for surface model
   timer.Start();
   PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
-                    max_cross);
+                    vecgeom::kMaximumInt, false);
   auto time_traverse_surf = timer.Stop();
+
+  // Distance computation + relocation for surface model + BVH
+  timer.Start();
+  if(test_bvh)
+    PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, bvh_crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
+                      vecgeom::kMaximumInt, true);
+  auto time_traverse_surf_bvh = timer.Stop();
 
   // Corectness for traversal
   num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
-                                     debug, accept_zeros, max_cross);
-
+                                     debug, accept_zeros);
+  if(test_bvh)
+    num_errors_dist_bvh = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings,
+                                          bvh_crossings, debug, accept_zeros);
   num_errors += num_errors_dist;
   if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
+  if(test_bvh)
+    if (num_errors_dist_bvh > 0) std::cout << "*** HOST: traverse errors surf BVH: " << num_errors_dist_bvh << "\n";
   if (!debug) {
     std::cout << "HOST: traverse_solids: " << time_traverse_solids
-              << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf
-              << "  num_errors = " << num_errors_dist << "\n";
+              << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
+    if(test_bvh)
+      std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << "  num_errors = " << num_errors_dist << "\n";
+    else
+      std::cout << "  num_errors = " << num_errors_dist << "\n";
   }
 
   if (num_errors > 0) printf("HOST: num_erros = %d / %d\n", num_errors, nrays);
@@ -512,7 +535,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 }
 
 // in testRaytracing.cu
-int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug);
+int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug, bool test_bvh);
 
 //==================================================================================
 int main(int argc, char *argv[])
@@ -526,6 +549,7 @@ int main(int argc, char *argv[])
   OPTION_INT(max_cross, vecgeom::kMaximumInt);
   OPTION_BOOL(detect_overlaps, 0);
   OPTION_BOOL(accept_zeros, 0);
+  OPTION_BOOL(test_bvh, 0);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -607,7 +631,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros, max_cross);
+  int errHost =
+      testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros, max_cross, test_bvh);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
@@ -617,7 +642,7 @@ int main(int argc, char *argv[])
     errCUDA            = LoadOnGPU();
     auto time_transfer = timer.Stop();
     std::cout << "Solid model GPU transfer time: " << time_transfer << " [s]\n";
-    if (!errCUDA) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug);
+    if (!errCUDA) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, test_bvh);
   }
 #endif
 

@@ -185,6 +185,17 @@ public:
     this->Set(trans, rot, has_trans, has_rot);
   }
 
+  /**
+   * @brief Construct from a Transformation3D holding the elements in vecgeom::Precition
+   */
+  VECCORE_ATT_HOST_DEVICE Transformation3DMP(Transformation3D const &other)
+  {
+    auto rot = other.Rotation();
+    SetTranslation(other.Translation(0), other.Translation(1), other.Translation(2));
+    SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+    SetProperties();
+  }
+
   // /**
   //  * Constructor for a rotation based on a given direction
   //  * @param axis direction of the new z axis
@@ -207,6 +218,10 @@ public:
   Transformation3DMP const &operator*=(Transformation3DMP const &rhs);
 
   // operator for multiplication with Transformation3D
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Transformation3DMP operator*(Transformation3D const &rhs) const;
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Transformation3DMP const &operator*=(Transformation3D const &rhs);
@@ -845,6 +860,26 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Transformation3DMP<Real_s> Transfor
                                     rxx_ * rhs.rxz_ + rxy_ * rhs.ryz_ + rxz_ * rhs.rzz_,        // rxz
                                     ryx_ * rhs.rxz_ + ryy_ * rhs.ryz_ + ryz_ * rhs.rzz_,        // ryz
                                     rzx_ * rhs.rxz_ + rzy_ * rhs.ryz_ + rzz_ * rhs.rzz_);       // rzz
+}
+
+template <typename Real_s>
+VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Transformation3DMP<Real_s> Transformation3DMP<Real_s>::operator*(
+    Transformation3D const &rhs) const
+{
+  if (rhs.IsIdentity()) return Transformation3DMP<Real_s>(*this);
+  return Transformation3DMP<Real_s>(
+      tx_ * rhs.Rotation()[0] + ty_ * rhs.Rotation()[3] + tz_ * rhs.Rotation()[6] + rhs.Translation(0),
+      tx_ * rhs.Rotation()[1] + ty_ * rhs.Rotation()[4] + tz_ * rhs.Rotation()[7] + rhs.Translation(1),
+      tx_ * rhs.Rotation()[2] + ty_ * rhs.Rotation()[5] + tz_ * rhs.Rotation()[8] + rhs.Translation(2),
+      rxx_ * rhs.Rotation()[0] + rxy_ * rhs.Rotation()[3] + rxz_ * rhs.Rotation()[6],
+      ryx_ * rhs.Rotation()[0] + ryy_ * rhs.Rotation()[3] + ryz_ * rhs.Rotation()[6],
+      rzx_ * rhs.Rotation()[0] + rzy_ * rhs.Rotation()[3] + rzz_ * rhs.Rotation()[6],
+      rxx_ * rhs.Rotation()[1] + rxy_ * rhs.Rotation()[4] + rxz_ * rhs.Rotation()[7],
+      ryx_ * rhs.Rotation()[1] + ryy_ * rhs.Rotation()[4] + ryz_ * rhs.Rotation()[7],
+      rzx_ * rhs.Rotation()[1] + rzy_ * rhs.Rotation()[4] + rzz_ * rhs.Rotation()[7],
+      rxx_ * rhs.Rotation()[2] + rxy_ * rhs.Rotation()[5] + rxz_ * rhs.Rotation()[8],
+      ryx_ * rhs.Rotation()[2] + ryy_ * rhs.Rotation()[5] + ryz_ * rhs.Rotation()[8],
+      rzx_ * rhs.Rotation()[2] + rzy_ * rhs.Rotation()[5] + rzz_ * rhs.Rotation()[8]);
 }
 
 template <typename Real_s>

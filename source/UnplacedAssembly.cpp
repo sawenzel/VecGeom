@@ -17,28 +17,19 @@ UnplacedAssembly::UnplacedAssembly() : fLogicalVolume(nullptr), fLowerCorner(-kI
 
 UnplacedAssembly::~UnplacedAssembly() {}
 
-void UnplacedAssembly::AddVolume(VPlacedVolume *const v)
-{
-  fLogicalVolume->PlaceDaughter(v);
-}
+void UnplacedAssembly::AddVolume(VPlacedVolume *const v) { fLogicalVolume->PlaceDaughter(v); }
 
 VECCORE_ATT_HOST_DEVICE
-void UnplacedAssembly::Print() const
-{
-  printf("UnplacedAssembly ");
-}
+void UnplacedAssembly::Print() const { printf("UnplacedAssembly "); }
 
-void UnplacedAssembly::Print(std::ostream &os) const
-{
-  os << "UnplacedAssembly ";
-}
+void UnplacedAssembly::Print(std::ostream &os) const { os << "UnplacedAssembly "; }
 
 //______________________________________________________________________________
 VECCORE_ATT_HOST_DEVICE
 void UnplacedAssembly::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
 {
 #ifndef VECCORE_CUDA
-  auto &abboxmgr = ABBoxManager::Instance();
+  auto &abboxmgr = ABBoxManager<Precision>::Instance();
 
   // Returns the full 3D cartesian extent of the solid.
   // Loop nodes and get their extent
@@ -120,10 +111,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedAssembly::CopyToGpu(DevicePtr<cuda::VUn
   return CopyToGpuImpl<UnplacedAssembly>(in_gpu_ptr);
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedAssembly::CopyToGpu() const
-{
-  return CopyToGpuImpl<UnplacedAssembly>();
-}
+DevicePtr<cuda::VUnplacedVolume> UnplacedAssembly::CopyToGpu() const { return CopyToGpuImpl<UnplacedAssembly>(); }
 
 #endif // VECGEOM_CUDA_INTERFACE
 

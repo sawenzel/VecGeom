@@ -62,7 +62,7 @@ struct MultiUnionStruct {
     using vecCore::math::Max;
     using vecCore::math::Min;
     Vector3D<Precision> amin, amax;
-    ABBoxManager::ComputeABBox(volume, &amin, &amax);
+    ABBoxManager<Precision>::ComputeABBox(volume, &amin, &amax);
     fMinExtent.Set(Min(fMinExtent.x(), amin.x()), Min(fMinExtent.y(), amin.y()), Min(fMinExtent.z(), amin.z()));
     fMaxExtent.Set(Max(fMaxExtent.x(), amax.x()), Max(fMaxExtent.y(), amax.y()), Max(fMaxExtent.z(), amax.z()));
     fVolumes.push_back(volume);
@@ -82,13 +82,13 @@ struct MultiUnionStruct {
   void Close()
   {
     // This method prepares the navigation structure
-    using Boxes_t           = ABBoxManager::ABBoxContainer_t;
-    using BoxCorner_t       = ABBoxManager::ABBox_s;
+    using Boxes_t           = ABBoxManager<Precision>::ABBoxContainer_t;
+    using BoxCorner_t       = ABBoxManager<Precision>::ABBox_s;
     size_t nboxes           = fVolumes.size();
     BoxCorner_t *boxcorners = new BoxCorner_t[2 * nboxes];
     Vector3D<Precision> amin, amax;
     for (size_t i = 0; i < nboxes; ++i)
-      ABBoxManager::ComputeABBox(fVolumes[i], &boxcorners[2 * i], &boxcorners[2 * i + 1]);
+      ABBoxManager<Precision>::ComputeABBox(fVolumes[i], &boxcorners[2 * i], &boxcorners[2 * i + 1]);
     Boxes_t boxes = &boxcorners[0];
     fNavHelper    = HybridManager2::Instance().BuildStructure(boxes, nboxes);
     // Compute the lists of possibly overlapping neighbours

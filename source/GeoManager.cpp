@@ -219,7 +219,7 @@ void GeoManager::CloseGeometry()
   }
 
   CompactifyMemory();
-  vecgeom::ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
+  vecgeom::ABBoxManager<Precision>::Instance().InitABBoxesForCompleteGeometry();
   fIsClosed = true;
 
 #if defined(VECGEOM_USE_NAVINDEX) || defined(VECGEOM_USE_NAVTUPLE)

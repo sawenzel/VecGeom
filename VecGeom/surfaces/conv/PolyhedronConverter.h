@@ -109,7 +109,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
           if (nseg > 1 || iside > 0) logic.push_back(land);
           logic.push_back(isurf);
           // Only a concave outer surface is embedding, since this is practically a boolean union.
-          auto is_concave = IsConvexConcave(iseg, zPlanes, rMax, /*convex_check=*/0, nseg + 1);
+          auto is_concave = IsConvexConcave<vecgeom::Precision>(iseg, zPlanes, rMax, /*convex_check=*/0, nseg + 1);
           if (!(is_concave)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -138,7 +138,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
             logic.push_back(lminus);
           }
           // Only a convex inner surface is embedding, since this is practically a boolean union.
-          auto is_convex = IsConvexConcave(iseg, zPlanes, rMin, /*convex_check=*/1, nseg + 1);
+          auto is_convex = IsConvexConcave<vecgeom::Precision>(iseg, zPlanes, rMin, /*convex_check=*/1, nseg + 1);
           if (!(is_convex)) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         } else {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -153,7 +153,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                   {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1},
                   {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1}};
       isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
-      if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+      builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(land);
       logic.push_back(lplus); // '('
       logic.push_back(isurf);
@@ -163,7 +163,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                   {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2},
                   {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2}};
       isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
-      if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+      builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);
       logic.push_back(lminus); // ')'

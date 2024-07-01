@@ -4,10 +4,14 @@
 #include <VecGeom/management/Logger.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/LogicEvaluator.h>
+#include <VecGeom/surfaces/BVHSurfNavigator.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Algorithms.h>
 
 #include <VecGeom/volumes/utilities/VolumeUtilities.h>
+#include <VecGeom/base/BVH.h>
+
+#include <VecGeom/surfaces/BVHSurfNavigator.h>
 
 #include <iomanip>
 
@@ -281,6 +285,22 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
     }
   }
   return ifound;
+}
+
+/// @brief Computes isotropic safety for the logic expression of a volume
+/// @param localpoint Point in local volume coordinates
+/// @param lvol_id LogicalVolume id
+/// @param surfdata
+/// @return isotropic safety value
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LocalLogicSafety(vecgeom::Vector3D<Real_t> const &localpoint,
+                                                                     bool exiting, int lvol_id,
+                                                                     SurfData<Real_t> const &surfdata,
+                                                                     Real_t safe_max) // Temporarily non default
+{
+  auto const &logic = surfdata.fShells[lvol_id].fLogic;
+  Real_t safety     = EvaluateSafety(localpoint, lvol_id, exiting, logic, surfdata, safe_max);
+  return safety;
 }
 
 /// @brief Computes isotropic safety for the logic expression of a volume
@@ -722,6 +742,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
                                                  SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
                                                  bool exiting, bool &surfhit)
 {
+  bool two_solutions = false;
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   // Convert point and direction to surface frame
   auto const &trans         = surfdata.fLocalTrans[framedsurf.fTrans];
@@ -732,7 +753,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   bool visibility   = exiting ^ flipped_bool;
   // Compute distance taking into account the surface visibility (normal orientation)
   Real_t dist = vecgeom::InfinityLength<Real_t>();
-  surfhit     = framedsurf.fSurface.Intersect(local, localdir, visibility, surfdata, dist);
+  surfhit     = framedsurf.fSurface.Intersect(local, localdir, visibility, surfdata, dist, two_solutions);
   if (!surfhit) return dist;
   // Do the frame intersection using the propagated point on surface
   auto onsurf = local + localdir * dist;
@@ -942,7 +963,11 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       // Bootstrap the temporary frame locator with the hit CS side
       tmp_hit_FS.Set(isurf, -1, left_side);
       tmp_hit_FS.state = in_state;
-      EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
+      if (is_scene) {
+        EnterCS(tmp_hit_FS, local_scene, localdir_scene, dist, onsurf_crt, out_frame);
+      } else {
+        EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
+      }
       return tmp_hit_FS.frame_id;
     };
     auto iframe = EnterFrameCheck(left_side, onsurf_crt, dist);
@@ -969,6 +994,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
   // Fix the out_state if pointing to a 0 scene
   if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
+
   return distance;
 }
 
@@ -1097,10 +1123,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     bool right_side       = (sides & kRside) > 0;
     bool check_both_sides = left_side && right_side;
     bool visibility       = !left_side ^ flipped;
-    // Compute signed closest distance to surface. The closest projected point on surface is computed, except for:
-    // - negative safety (coming from the wrong side)
-    // - exiting framed surfaces for which fUseSurfSafety is true
-    // To test if on GPU is better to compute the projection systematically
     bool can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
 
     if (!can_compute && check_both_sides) {

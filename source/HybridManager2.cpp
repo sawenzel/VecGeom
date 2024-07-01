@@ -43,7 +43,7 @@ void HybridManager2::BuildStructure_v(LogicalVolume const *vol)
   int nDaughters{0};
   // get the boxes (and number of boxes), must be called before the BuildStructure
   // function call since otherwise nDaughters is not guaranteed to be initialized
-  auto boxes                  = ABBoxManager::Instance().GetABBoxes(vol, nDaughters);
+  auto boxes                  = ABBoxManager<Precision>::Instance().GetABBoxes(vol, nDaughters);
   auto structure              = BuildStructure(boxes, nDaughters);
   fStructureHolder[vol->id()] = structure;
   assert((int)vol->GetDaughters().size() == nDaughters);
@@ -53,8 +53,8 @@ void HybridManager2::BuildStructure_v(LogicalVolume const *vol)
 /**
  * build bvh bruteforce AND vectorized
  */
-HybridManager2::HybridBoxAccelerationStructure *HybridManager2::BuildStructure(ABBoxManager::ABBoxContainer_t abboxes,
-                                                                               size_t numberofdaughters) const
+HybridManager2::HybridBoxAccelerationStructure *HybridManager2::BuildStructure(
+    ABBoxManager<Precision>::ABBoxContainer_t abboxes, size_t numberofdaughters) const
 {
   if (numberofdaughters == 0) return nullptr;
 
@@ -185,7 +185,7 @@ void HybridManager2::RecalculateCentres(SOA3D<Precision> &centers, SOA3D<Precisi
 }
 
 template <typename Container_t>
-void HybridManager2::InitClustersWithKMeans(ABBoxManager::ABBoxContainer_t boxes, int numberOfDaughters,
+void HybridManager2::InitClustersWithKMeans(ABBoxManager<Precision>::ABBoxContainer_t boxes, int numberOfDaughters,
                                             Container_t &clusters, SOA3D<Precision> &centers,
                                             SOA3D<Precision> &allvolumecenters, int const numberOfIterations) const
 {
@@ -267,9 +267,6 @@ void HybridManager2::EqualizeClusters(Container_t &clusters, SOA3D<Precision> &c
   }
 }
 
-VPlacedVolume const *HybridManager2::PrintHybrid(LogicalVolume const *lvol) const
-{
-  return 0;
-}
+VPlacedVolume const *HybridManager2::PrintHybrid(LogicalVolume const *lvol) const { return 0; }
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

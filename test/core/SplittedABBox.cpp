@@ -25,7 +25,7 @@ int main()
   auto cone = GeoManager::MakeInstance<UnplacedCone>(0., 3., 0., 8., 30., 0., 2 * kPi);
   Transformation3D tr(0, 0, 0, 0, 30, 45);
   VPlacedVolume const *conePlaced = LogicalVolume("", cone).Place(&tr);
-  ABBoxManager::Instance().ComputeSplittedABBox(conePlaced, lowerc, upperc, numOfSlices);
+  ABBoxManager<Precision>::Instance().ComputeSplittedABBox(conePlaced, lowerc, upperc, numOfSlices);
 
   Visualizer visualizer;
   Visualize(&visualizer, conePlaced, lowerc, upperc);
@@ -54,7 +54,7 @@ void Visualize(Visualizer *visualizer, VPlacedVolume const *pvol, std::vector<Ve
 
   // Adding Global Aligned Box of the placed Volume
   Vector3D<Precision> lowerc_ABBox(0., 0., 0.), upperc_ABBox(0., 0., 0.);
-  ABBoxManager::Instance().ComputeABBox(pvol, &lowerc_ABBox, &upperc_ABBox);
+  ABBoxManager<Precision>::Instance().ComputeABBox(pvol, &lowerc_ABBox, &upperc_ABBox);
   delta                           = (upperc_ABBox - lowerc_ABBox) / 2;
   Vector3D<Precision> translation = (upperc_ABBox + lowerc_ABBox) / 2;
   Transformation3D trans(translation.x(), translation.y(), translation.z());

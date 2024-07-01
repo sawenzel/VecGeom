@@ -154,6 +154,16 @@ public:
     return (global_id == GetPlacedVolume(aLVIndex, index)->id());
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  static long TestBVHCheckDaughterIntersections(const vecgeom::BVH &bvh, Vector3D<Precision> &localpoint,
+                                                Vector3D<Precision> &localdir, Precision &bvhstep)
+  {
+    long hitcandidate_index = -1;
+    long last_exited_id     = -1;
+    bvh.CheckDaughterIntersections<BVHNavigator>(localpoint, localdir, bvhstep, last_exited_id, hitcandidate_index);
+    return hitcandidate_index;
+  }
+
   /*
    * @param[in] aLVIndex Global index of a LogicalVolume
    * @param[in] index Index within the list of daughters of the specified LogicalVolume

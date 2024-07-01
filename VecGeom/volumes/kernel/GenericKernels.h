@@ -20,6 +20,13 @@ struct GenericKernels {
 
 }; // End struct GenericKernels
 
+// typesafe sign
+template <typename Real_t>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr int kSign(Real_t x)
+{
+  return (Real_t(0) < x) - (x < Real_t(0));
+}
+
 // relative tolerance specializations
 template <typename Real_t>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real_t x)
@@ -30,12 +37,26 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x)
 {
-  return x * kToleranceDist<double>;
+  // If x is fractional, we don't want to reduce the tolerance
+  return (x + kSign(x)) * kToleranceDist<double>;
 }
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x)
 {
-  return x * kToleranceDist<float>;
+  // If x is fractional, we don't want to reduce the tolerance
+  return (x + kSign(x)) * kToleranceDist<float>;
+}
+
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakePlusTolerantRel(T const x)
+{
+  return (x + kRelTolerance<T>(x));
+}
+
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakeMinusTolerantRel(T const x)
+{
+  return (x - kRelTolerance<T>(x));
 }
 
 template <bool tolerant, typename T>

@@ -27,8 +27,8 @@ template <bool IsAssemblyAware = false>
 class TSimpleABBoxLevelLocator : public VLevelLocator {
 
 private:
-  ABBoxManager &fAccelerationStructure;
-  TSimpleABBoxLevelLocator() : fAccelerationStructure(ABBoxManager::Instance()) {}
+  ABBoxManager<Precision> &fAccelerationStructure;
+  TSimpleABBoxLevelLocator() : fAccelerationStructure(ABBoxManager<Precision>::Instance()) {}
 
   // the actual implementation kernel
   // the template "ifs" should be optimized away
@@ -40,18 +40,18 @@ private:
                                                         Vector3D<Precision> &daughterlocalpoint) const
   {
     int size;
-    ABBoxManager::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
+    ABBoxManager<Precision>::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
 
     auto daughters = lvol->GetDaughtersp();
     // here the loop is over groups of bounding boxes
     // it is basically linear but vectorizable search
     for (int boxgroupid = 0; boxgroupid < size; ++boxgroupid) {
-      using Bool_v = vecCore::Mask_v<ABBoxManager::Float_v>;
+      using Bool_v = vecCore::Mask_v<ABBoxManager<Precision>::Float_v>;
       Bool_v inBox;
       ABBoxImplementation::ABBoxContainsKernel(alignedbboxes[2 * boxgroupid], alignedbboxes[2 * boxgroupid + 1],
                                                localpoint, inBox);
       if (!vecCore::MaskEmpty(inBox)) {
-        constexpr auto kVS = vecCore::VectorSize<ABBoxManager::Float_v>();
+        constexpr auto kVS = vecCore::VectorSize<ABBoxManager<Precision>::Float_v>();
         // TODO: could start directly at first 1 in inBox
         for (size_t ii = 0; ii < kVS; ++ii) {
           auto daughterid = boxgroupid * kVS + ii;
@@ -81,18 +81,18 @@ private:
   {
 
     int size;
-    ABBoxManager::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
+    ABBoxManager<Precision>::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
 
     auto daughters = lvol->GetDaughtersp();
     // here the loop is over groups of bounding boxes
     // it is basically linear but vectorizable search
     for (int boxgroupid = 0; boxgroupid < size; ++boxgroupid) {
-      using Bool_v = vecCore::Mask_v<ABBoxManager::Float_v>;
+      using Bool_v = vecCore::Mask_v<ABBoxManager<Precision>::Float_v>;
       Bool_v inBox;
       ABBoxImplementation::ABBoxContainsKernel(alignedbboxes[2 * boxgroupid], alignedbboxes[2 * boxgroupid + 1],
                                                localpoint, inBox);
       if (!vecCore::MaskEmpty(inBox)) {
-        constexpr auto kVS = vecCore::VectorSize<ABBoxManager::Float_v>();
+        constexpr auto kVS = vecCore::VectorSize<ABBoxManager<Precision>::Float_v>();
         // TODO: could start directly at first 1 in inBox
         for (size_t ii = 0; ii < kVS; ++ii) {
           auto daughterid = boxgroupid * kVS + ii;
@@ -169,18 +169,18 @@ using SimpleAssemblyAwareABBoxLevelLocator = TSimpleABBoxLevelLocator<true>;
 //                                                 const
 //{
 //    int size;
-//    ABBoxManager::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
+//    ABBoxManager<Precision>::ABBoxContainer_v alignedbboxes = fAccelerationStructure.GetABBoxes_v(lvol, size);
 
 //    auto daughters = lvol->GetDaughtersp();
 //    // here the loop is over groups of bounding boxes
 //    // it is basically linear but vectorizable search
 //    for (int boxgroupid = 0; boxgroupid < size; ++boxgroupid) {
-//      using Bool_v = vecCore::Mask_v<ABBoxManager::Float_v>;
+//      using Bool_v = vecCore::Mask_v<ABBoxManager<Precision>::Float_v>;
 //      Bool_v inBox;
 //      ABBoxImplementation::ABBoxContainsKernel(alignedbboxes[2 * boxgroupid], alignedbboxes[2 * boxgroupid + 1],
 //                                               localpoint, inBox);
 //      if (!vecCore::MaskEmpty(inBox)) {
-//        constexpr auto kVS = vecCore::VectorSize<ABBoxManager::Float_v>();
+//        constexpr auto kVS = vecCore::VectorSize<ABBoxManager<Precision>::Float_v>();
 //        // TODO: could start directly at first 1 in inBox
 //        for (size_t ii = 0; ii < kVS; ++ii) {
 //          auto daughterid = boxgroupid * kVS + ii;

@@ -50,7 +50,7 @@ void EmbreeManager::BuildStructure(LogicalVolume const *vol)
   if (fBuildMode == EmbreeBuildMode::kAABBox) {
     // get the boxes (and number of boxes), must be called before the BuildStructure
     // function call since otherwise nDaughters is not guaranteed to be initialized
-    auto boxes                  = ABBoxManager::Instance().GetABBoxes(vol, nDaughters);
+    auto boxes                  = ABBoxManager<Precision>::Instance().GetABBoxes(vol, nDaughters);
     auto structure              = BuildStructureFromBoundingBoxes(boxes, nDaughters);
     fStructureHolder[vol->id()] = structure;
     assert((int)vol->GetDaughters().size() == nDaughters);
@@ -94,7 +94,7 @@ EmbreeManager::EmbreeAccelerationStructure *EmbreeManager::BuildStructureFromBou
 }
 
 EmbreeManager::EmbreeAccelerationStructure *EmbreeManager::BuildStructureFromBoundingBoxes(
-    ABBoxManager::ABBoxContainer_t abboxes, size_t numberofdaughters) const
+    ABBoxManager<Precision>::ABBoxContainer_t abboxes, size_t numberofdaughters) const
 {
   Stopwatch timer;
   timer.Start();

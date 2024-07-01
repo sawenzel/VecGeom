@@ -42,7 +42,7 @@ struct ReducedPoly {
     for (int i = 0; i < Nvert; i++) {
       j = (i + 1) % Nvert;
       k = (i + 2) % Nvert;
-      if (!IsRightSided({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[j]], verty[ind_arr[j]], 0},
+      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[j]], verty[ind_arr[j]], 0},
                         {vertx[ind_arr[k]], verty[ind_arr[k]], 0}))
         return false;
     }
@@ -60,7 +60,7 @@ struct ReducedPoly {
     for (int i = 0; i < Nvert; i++) {
       if (i == i1 || i == i2) continue;
 
-      if (!IsRightSided({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[i1]], verty[ind_arr[i1]], 0},
+      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[i1]], verty[ind_arr[i1]], 0},
                         {vertx[ind_arr[i2]], verty[ind_arr[i2]], 0}))
         return false;
     }

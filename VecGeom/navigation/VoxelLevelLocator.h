@@ -50,7 +50,7 @@ private:
     if (numbercandidates > 0) {
       // here we have something to do
       int numberboxes{0};
-      const auto boxes = ABBoxManager::Instance().GetABBoxes(lvol, numberboxes);
+      const auto boxes = ABBoxManager<Precision>::Instance().GetABBoxes(lvol, numberboxes);
 
       for (int i = 0; i < numbercandidates; ++i) {
         const int daughterid = candidateidsptr[i];
@@ -102,7 +102,7 @@ private:
     if (numbercandidates > 0) {
       // here we have something to do
       int numberboxes{0};
-      const auto boxes = ABBoxManager::Instance().GetABBoxes(lvol, numberboxes);
+      const auto boxes = ABBoxManager<Precision>::Instance().GetABBoxes(lvol, numberboxes);
 
       for (int i = 0; i < numbercandidates; ++i) {
         const int daughterid = candidateidsptr[i];

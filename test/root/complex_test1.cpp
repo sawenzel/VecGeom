@@ -63,10 +63,7 @@ void CreateRootGeom()
   ::gGeoManager->CloseGeometry();
 }
 
-void testVecAssign(Vector3D<Precision> const &a, Vector3D<Precision> &b)
-{
-  b = a;
-}
+void testVecAssign(Vector3D<Precision> const &a, Vector3D<Precision> &b) { b = a; }
 
 void test1()
 {
@@ -520,7 +517,7 @@ void test_alignedboundingboxcalculation()
 
   Vector3D<Precision> lower;
   Vector3D<Precision> upper;
-  ABBoxManager::ComputeABBox(GeoManager::Instance().GetWorld(), &lower, &upper);
+  ABBoxManager<Precision>::ComputeABBox(GeoManager::Instance().GetWorld(), &lower, &upper);
   assert(lower.x() <= -10);
   assert(lower.y() <= -10);
 
@@ -536,7 +533,7 @@ void test_alignedboundingboxcalculation()
   VPlacedVolume const *pvol1  = lbox.Place(&placement1);
 
   // when no rotation:
-  ABBoxManager::ComputeABBox(pvol1, &lower, &upper);
+  ABBoxManager<Precision>::ComputeABBox(pvol1, &lower, &upper);
   assert(lower.x() <= -dx + tx);
   assert(lower.y() <= -dy + ty);
   assert(lower.z() <= -dz + tz);
@@ -549,7 +546,7 @@ void test_alignedboundingboxcalculation()
   Transformation3D placement2 = Transformation3D(tx, ty, tz, 5, 5, 5);
   VPlacedVolume const *pvol2  = lbox.Place(&placement2);
 
-  ABBoxManager::ComputeABBox(pvol2, &lower, &upper);
+  ABBoxManager<Precision>::ComputeABBox(pvol2, &lower, &upper);
   assert(lower.x() <= -dx + tx);
   assert(lower.y() <= -dy + ty);
   assert(lower.z() <= -dz + tz);
@@ -587,7 +584,7 @@ int main()
   test9(0.1); // test with a limited physics step
 
   // test ABBoxNavigator
-  ABBoxManager::Instance().InitABBoxesForCompleteGeometry();
+  ABBoxManager<Precision>::Instance().InitABBoxesForCompleteGeometry();
   test9<SimpleABBoxNavigator<>>();
   test_safety();
 
