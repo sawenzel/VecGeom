@@ -14,6 +14,17 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   VECCORE_ATT_HOST_DEVICE
   SurfaceHelper(TorusData<Real_t> const &torusdata) { fTorusData = &torusdata; }
 
+  /// @brief Fills the 3D extent of the Arb4
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    auto rtor  = fTorusData->Radius();
+    auto rtube = fTorusData->RadiusTube();
+    aMin.Set(-rtor - rtube, -rtor - rtube, -rtube);
+    aMax.Set(rtor + rtube, rtor + rtube, rtube);
+  }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function

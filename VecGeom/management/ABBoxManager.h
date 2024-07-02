@@ -218,7 +218,7 @@ public:
     Vector3D<Real_t> lowert, uppert;
 
     // Get the frame bounding box
-    framedSurface.fFrame.Extent3D(lowert, uppert, surfData);
+    framedSurface.Extent3D(lowert, uppert, surfData);
     Vector3D<Precision> lower(lowert[0], lowert[1], lowert[2]);
     Vector3D<Precision> upper(uppert[0], uppert[1], uppert[2]);
 

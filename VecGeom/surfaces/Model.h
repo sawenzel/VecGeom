@@ -307,6 +307,21 @@ struct FramedSurface {
     return false;
   }
 
+  template <typename Real_t>
+  VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax,
+                                        SurfData<Real_t> const &surfdata) const
+  {
+    aMin.Set(0, 0, 0);
+    aMax.Set(0, 0, 0);
+    if (fFrame.type == FrameType::kNoFrame) {
+      if (fSurface.type == SurfaceType::kTorus)
+        SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(fSurface.id)).Extent3D(aMin, aMax);
+      else if (fSurface.type == SurfaceType::kArb4)
+        SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(fSurface.id)).Extent3D(aMin, aMax);
+    } else
+      fFrame.Extent3D(aMin, aMax, surfdata);
+  }
+
   /// @brief Get the parent state index for the framed surface
   /// @param parent_state Parent state variable filled with the return value
   /// @return True if there is a parent, false if this is a top scene surface

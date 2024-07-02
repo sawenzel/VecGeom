@@ -367,19 +367,40 @@ VECTOR3D_BINARY_OP(/, /=)
 #undef VECTOR3D_BINARY_OP
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-bool operator==(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator==(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
 {
-  return Abs(lhs[0] - rhs[0]) < kToleranceDist<Type> && Abs(lhs[1] - rhs[1]) < kToleranceDist<Type> && Abs(lhs[2] - rhs[2]) < kToleranceDist<Type>;
+  return Abs(lhs[0] - rhs[0]) < kToleranceDist<Type> && Abs(lhs[1] - rhs[1]) < kToleranceDist<Type> &&
+         Abs(lhs[2] - rhs[2]) < kToleranceDist<Type>;
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-bool operator!=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator!=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
 {
   return !(lhs == rhs);
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator<(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+{
+  return lhs[0] < rhs[0] && lhs[1] < rhs[1] && lhs[2] < rhs[2];
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator<=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+{
+  return lhs[0] <= rhs[0] && lhs[1] <= rhs[1] && lhs[2] <= rhs[2];
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator>(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+{
+  return lhs[0] > rhs[0] && lhs[1] > rhs[1] && lhs[2] > rhs[2];
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator>=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+{
+  return lhs[0] >= rhs[0] && lhs[1] >= rhs[1] && lhs[2] >= rhs[2];
 }
 
 template <typename Type>
@@ -390,10 +411,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Type> operator-(Vector3D<T
 
 VECCORE_ATT_HOST_DEVICE
 VECGEOM_FORCE_INLINE
-Vector3D<bool> operator!(Vector3D<bool> const &vec)
-{
-  return Vector3D<bool>(!vec[0], !vec[1], !vec[2]);
-}
+Vector3D<bool> operator!(Vector3D<bool> const &vec) { return Vector3D<bool>(!vec[0], !vec[1], !vec[2]); }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Weffc++"
@@ -421,6 +439,36 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void MaskedAssign(vecgeom::Vector3D
   vecCore::MaskedAssign(v[1], mask, val[1]);
   vecCore::MaskedAssign(v[2], mask, val[2]);
 }
+
+/// @brief Minimum between two vectors
+/// @tparam T Vector type
+/// @param v1 first vector
+/// @param v2 second vector
+/// @return Vector having the minimum of the two vector components
+namespace math {
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecgeom::Vector3D<T> Min(vecgeom::Vector3D<T> const &v1,
+                                                                      vecgeom::Vector3D<T> const &v2)
+{
+  vecgeom::Vector3D<T> result(vecCore::math::Min(v1.x(), v2.x()), vecCore::math::Min(v1.y(), v2.y()),
+                              vecCore::math::Min(v1.z(), v2.z()));
+  return result;
+}
+
+/// @brief Maximum between two vectors
+/// @tparam T Vector type
+/// @param v1 first vector
+/// @param v2 second vector
+/// @return Vector having the maximum of the two vector components
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecgeom::Vector3D<T> Max(vecgeom::Vector3D<T> const &v1,
+                                                                      vecgeom::Vector3D<T> const &v2)
+{
+  vecgeom::Vector3D<T> result(vecCore::math::Max(v1.x(), v2.x()), vecCore::math::Max(v1.y(), v2.y()),
+                              vecCore::math::Max(v1.z(), v2.z()));
+  return result;
+}
+} // namespace math
 } // namespace vecCore
 
 // for use in GEANT4

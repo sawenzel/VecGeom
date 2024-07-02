@@ -14,6 +14,22 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
   VECCORE_ATT_HOST_DEVICE
   SurfaceHelper(Arb4Data<Real_t> const &arbdata) { fArb4Data = &arbdata; }
 
+  /// @brief Fills the 3D extent of the Arb4
+  /// @param aMin Bottom extent corner
+  /// @param aMax Top extent corner
+  void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax) const
+  {
+    Real_t dz = fArb4Data->halfH;
+    aMin.Set(fArb4Data->verticesX[0], fArb4Data->verticesY[0], -dz);
+    aMax = aMin;
+    for (auto i = 0; i < 4; ++i) {
+      aMin = vecCore::math::Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
+      aMax = vecCore::math::Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
+      aMin = vecCore::math::Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
+      aMax = vecCore::math::Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
+    }
+  }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
