@@ -187,7 +187,7 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
       num_warnings++;
       printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g ratio surf/solid = %g\n", i, points[i][0],
              points[i][1], points[i][2], refSafeties[i], safeties[i], (safeties[i] / refSafeties[i]));
-      if (num_warnings == 10) printf("=== only fist 10 warnings are shown\n");
+      if (num_warnings == 10) printf("=== only first 10 warnings are shown\n");
       // Replay before exiting for debugging
       int exit_surf = 0;
       vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
@@ -198,7 +198,7 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
         num_errors++;
         printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g NOT SAFE\n", i, points[i][0], points[i][1],
                points[i][2], refSafeties[i], safeties[i]);
-        if (num_errors == 10) printf("=== only fist 10 errors are shown\n");
+        if (num_errors == 10) printf("=== only first 10 errors are shown\n");
         // Replay before exiting for debugging
         int exit_surf = 0;
         vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);

@@ -261,7 +261,10 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
   for (auto ind = indstart; ind >= 0; --ind) {
     auto const &framedsurf = side.GetSurface(ind, surfdata);
     // NeverCheck frames are always hit
-    if (framedsurf.fNeverCheck) return ind;
+    if (framedsurf.fNeverCheck) {
+      ihit = ind;
+      return ind;
+    }
     // Check only direct children if a frame was already found
     if (found && framedsurf.fParent != iparent) continue;
     // Skip same state frames unless this is a side of a scene surface
