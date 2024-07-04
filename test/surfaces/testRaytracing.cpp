@@ -494,30 +494,30 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   // Distance computation + relocation for surface model
   timer.Start();
   PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
-                    vecgeom::kMaximumInt, false);
+                    max_cross, false);
   auto time_traverse_surf = timer.Stop();
 
   // Distance computation + relocation for surface model + BVH
   timer.Start();
-  if(test_bvh)
+  if (test_bvh)
     PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, bvh_crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
-                      vecgeom::kMaximumInt, true);
+                      max_cross, true);
   auto time_traverse_surf_bvh = timer.Stop();
 
   // Corectness for traversal
   num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
-                                     debug, accept_zeros);
-  if(test_bvh)
+                                     debug, accept_zeros, max_cross);
+  if (test_bvh)
     num_errors_dist_bvh = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings,
-                                          bvh_crossings, debug, accept_zeros);
+                                           bvh_crossings, debug, accept_zeros, max_cross);
   num_errors += num_errors_dist;
   if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
-  if(test_bvh)
+  if (test_bvh)
     if (num_errors_dist_bvh > 0) std::cout << "*** HOST: traverse errors surf BVH: " << num_errors_dist_bvh << "\n";
   if (!debug) {
     std::cout << "HOST: traverse_solids: " << time_traverse_solids
               << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
-    if(test_bvh)
+    if (test_bvh)
       std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << "  num_errors = " << num_errors_dist << "\n";
     else
       std::cout << "  num_errors = " << num_errors_dist << "\n";
@@ -535,7 +535,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 }
 
 // in testRaytracing.cu
-int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug, bool test_bvh);
+int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug,
+                       bool test_bvh);
 
 //==================================================================================
 int main(int argc, char *argv[])

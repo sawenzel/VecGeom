@@ -266,11 +266,14 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
     if (found && framedsurf.fParent != iparent) continue;
     // Skip same state frames unless this is a side of a scene surface
     if (!is_scene_surface && framedsurf.fState == in_navind) continue;
-    // Hitting a topscene frame staring from the same scene must be discarded
+    // Hitting a topscene frame starting from the same scene must be discarded
     if (is_scene && framedsurf.fState == 0) continue;
-    // Skip embedded children if a parent was not yet found
+    // Skip embedded children if a parent was not yet found,
+    // unless the parent is virtual, then we need to check the children since the parent will not be found
     if (!found && framedsurf.fParent >= 0)
-      if (framedsurf.fEmbedded || side.GetSurface(framedsurf.fParent, surfdata).fEmbedding) continue;
+      if ((framedsurf.fEmbedded && !(framedsurf.fVirtualParent)) ||
+          side.GetSurface(framedsurf.fParent, surfdata).fEmbedding)
+        continue;
 
     //=== Do the real check ===//
     auto inframe = framedsurf.InsideFrame(onsurf_local, surfdata);
@@ -742,7 +745,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
                                                  SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
                                                  bool exiting, bool &surfhit)
 {
-  bool two_solutions = false;
+  bool two_solutions             = false;
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   // Convert point and direction to surface frame
   auto const &trans         = surfdata.fLocalTrans[framedsurf.fTrans];
@@ -1123,7 +1126,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
     bool right_side       = (sides & kRside) > 0;
     bool check_both_sides = left_side && right_side;
     bool visibility       = !left_side ^ flipped;
-    bool can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
+    bool can_compute      = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
 
     if (!can_compute && check_both_sides) {
       // Left side already checked, now check right side

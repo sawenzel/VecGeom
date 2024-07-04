@@ -265,22 +265,23 @@ struct Frame {
 /// @brief A placed surface on a scene having a frame and a navigation state associated to a touchable
 struct FramedSurface {
   using NavState_t = vecgeom::NavigationState::Value_t;
-  UnplacedSurface fSurface; ///< Surface identifier
-  Frame fFrame;             ///< Frame
-  int fTrans{-1};           ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fParent{-1};          ///< Index of the first parent frame on the common surface
-  int fLogicId{0};          ///< Logic flag for surface:
-                            ///<   0        = non-Bool
-                            ///<   positive = true logic surface
-                            ///<   negative = negated logic surface
-  int fSceneCS{0};          ///< The frame may belong to a daughter scene common surface
-  int fSceneCSind{0};       ///< Index of the corresponding frame on the scene CS
-  unsigned fSurfIndex{0};   ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
-  NavIndex_t fState{0};     ///< sub-path navigation state id in the parent scene
-  bool fNeverCheck{false};  ///< The frame should never be checked
-  bool fEmbedded{false};    ///< The surface is embedded in the parent surface if any
-  bool fEmbedding{true};    ///< The frame always embeds daughter state frames if on the same CS
-  bool fOverlapping{false}; ///< The frame is overlapping another frame and requires a relocation after crossing
+  UnplacedSurface fSurface;   ///< Surface identifier
+  Frame fFrame;               ///< Frame
+  int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fParent{-1};            ///< Index of the first parent frame on the common surface
+  int fLogicId{0};            ///< Logic flag for surface:
+                              ///<   0        = non-Bool
+                              ///<   positive = true logic surface
+                              ///<   negative = negated logic surface
+  int fSceneCS{0};            ///< The frame may belong to a daughter scene common surface
+  int fSceneCSind{0};         ///< Index of the corresponding frame on the scene CS
+  unsigned fSurfIndex{0};     ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
+  NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
+  bool fNeverCheck{false};    ///< The frame should never be checked
+  bool fEmbedded{false};      ///< The surface is embedded in the parent surface if any
+  bool fEmbedding{true};      ///< The frame always embeds daughter state frames if on the same CS
+  bool fOverlapping{false};   ///< The frame is overlapping another frame and requires a relocation after crossing
+  bool fVirtualParent{false}; ///< The parent frame is a virtual surface of a boolean
 
   FramedSurface() = default;
   FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,

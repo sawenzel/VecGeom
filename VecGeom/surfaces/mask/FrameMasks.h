@@ -207,21 +207,25 @@ struct FrameChecker<Real_t, ZPhiMask<Real_t>, ZPhiMask<Real_t>> {
                           TransformationMP<Real_t> const &trans)
   {
     // embedding in Z must be transformed in z
-    Vector3D<Real_t> zmin(0., 0., frame1.rangeZ[0]);
-    Vector3D<Real_t> zmax(0., 0., frame1.rangeZ[1]);
+    Vector3D<Real_t> zmin(0., 0., frame2.rangeZ[0]);
+    Vector3D<Real_t> zmax(0., 0., frame2.rangeZ[1]);
 
     zmin = trans.InverseTransform(zmin);
     zmax = trans.InverseTransform(zmax);
 
     // Z embedding
-    if (frame2.rangeZ[0] < vecgeom::MakeMinusTolerant<true, Real_t>(zmin[2]) ||
-        frame2.rangeZ[1] > vecgeom::MakePlusTolerant<true, Real_t>(zmax[2]))
+    if (zmin[2] < vecgeom::MakeMinusTolerant<true, Real_t>(frame1.rangeZ[0]) ||
+        zmax[2] > vecgeom::MakePlusTolerant<true, Real_t>(frame1.rangeZ[1]))
       return false;
+
+    Vector3D<Real_t> SPhi{frame2.vecSPhi[0], frame2.vecSPhi[1], 0};
+    Vector3D<Real_t> EPhi{frame2.vecEPhi[0], frame2.vecEPhi[1], 0};
+    Vector3D<Real_t> trans_SPhi = trans.InverseTransform(SPhi);
+    Vector3D<Real_t> trans_EPhi = trans.InverseTransform(EPhi);
 
     // Phi embedding (does not require transformation since transformations for
     // zphi masks on the same common surface are only allowed along z)
-    if (!frame1.InsidePhi(frame2.vecSPhi[0], frame2.vecSPhi[1]) ||
-        !frame1.InsidePhi(frame2.vecEPhi[0], frame2.vecEPhi[1]))
+    if (!frame1.InsidePhi(trans_SPhi[0], trans_SPhi[1]) || !frame1.InsidePhi(trans_EPhi[0], trans_EPhi[1]))
       return false;
 
     return true;

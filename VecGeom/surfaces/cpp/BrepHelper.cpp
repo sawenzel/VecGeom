@@ -430,11 +430,12 @@ void BrepHelper<Real_t>::CreateCandidateLists()
 
   // Lambda adding the surface id as entering candidate to all parent states from a side
   auto addSurfToSideParents = [&](int isurf, char iside) {
-    auto const &surf = fCPUdata.fCommonSurfaces[isurf];
-    Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+    auto const &surf       = fCPUdata.fCommonSurfaces[isurf];
+    Side const &side       = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+    Side const &other_side = (iside == kLside) ? surf.fRightSide : surf.fLeftSide;
     for (int i = 0; i < side.fNsurf; ++i) {
-      int idglob             = side.fSurfaces[i];
-      auto const &framedsurf = fCPUdata.fFramedSurf[idglob];
+      int idglob       = side.fSurfaces[i];
+      auto &framedsurf = fCPUdata.fFramedSurf[idglob];
       // Skip parent frames, just make sure their parent state matches the default state
       NavIndex_t parent_state = 0;
       framedsurf.GetParentState(parent_state);
@@ -442,8 +443,22 @@ void BrepHelper<Real_t>::CreateCandidateLists()
         assert(parent_state == surf.fDefaultState);
         continue;
       }
-      // If the frame is embedded in the parent frame, skip the frame
-      if (framedsurf.fEmbedded) continue;
+
+      // If the parent state of the frame also exist on the other side and both are booleans the parents are a virtual
+      // frame in a boolean
+      bool double_sided = false;
+      // loop over other site to check for the same parent state
+      for (int j = 0; j < other_side.fNsurf; ++j) {
+        int other_idglob             = other_side.fSurfaces[j];
+        auto const &other_framedsurf = fCPUdata.fFramedSurf[other_idglob];
+        if (parent_state == other_framedsurf.fState && other_framedsurf.fLogicId)
+          double_sided = true;
+      }
+      if (double_sided) framedsurf.fVirtualParent = true;
+      // If the frame is embedded in the parent frame, skip the frame because it will always be entered through the
+      // parent exception: if the parent is a virtual surface in a boolean, the embedded frame can only be entered
+      // directly (not through the parent) and must be added to the entering candidates
+      if (framedsurf.fEmbedded && !framedsurf.fVirtualParent) continue;
       // The frame is not embedded in the parent, so add the surface as candidate to the parent state
       // assert(parent_state != surf.fDefaultState);
       vecgeom::NavigationState state(parent_state);
@@ -1333,6 +1348,7 @@ void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface const &surf)
   if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
   framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
   framedata << "fEmbedded{" << to_cstring(surf.fEmbedded) << "} ";
+  framedata << "fVirtualParent{" << to_cstring(surf.fVirtualParent) << "} ";
   if (surf.fFrame.type != FrameType::kNoFrame) framedata << "fSurfIndex{" << surf.fSurfIndex << "} ";
   std::cout << framedata.str() << "\n    fState: ";
   surf.PrintState();
@@ -1492,8 +1508,7 @@ void BrepHelper<Real_t>::PrintSurfData()
   msg << "    quad masks             = " << fSurfData->fNquads << " [" << size << " MB]\n";
   size = float(fSurfData->fNshells * sizeof(int)) / megabyte;
   // Add the internal allocation for each BVH
-  for(int i=0; i<fSurfData->fNshells; i++)
-  {
+  for (int i = 0; i < fSurfData->fNshells; i++) {
     size += float(fSurfData->fBVH[fSurfData->fShells[i].fBVH].GetAllocatedSize()) / megabyte;
   }
   total += size;
