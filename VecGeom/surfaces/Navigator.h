@@ -820,23 +820,32 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   if ((!surfhit && check_both_sides) || (two_solutions && check_both_sides)) {
     // Left side already checked, now check right side
     // Note: only one side can have a valid exiting
-    left_side  = false;
-    visibility = !exiting ^ flipped;
-    if (!(two_solutions)) dist = dist2;
-    surfhit = unplaced.Intersect(local, localdir, visibility, surfdata, dist2, two_solutions);
-    if (two_solutions) {
-      // if the solution on the right side is closer, use it and store the left side solution as dist2
-      if (dist2 < dist) {
-        Real_t tmp_dist = dist;
-        dist            = dist2;
-        dist2           = tmp_dist;
+    left_side          = false;
+    visibility         = !exiting ^ flipped;
+    bool surfhit_right = unplaced.Intersect(local, localdir, visibility, surfdata, dist2, two_solutions);
+    if (surfhit_right) {
+      if (surfhit) {
+        // both sides have valid hits, we need to chose the one with the smaller distance
+        // such that two valid solutions are returned with dist being the closer one and dist2 the one that is further
+        // away if the solution on the right side is closer, use it and store the left side solution as dist2
+        if (dist2 < dist) {
+          Real_t tmp_dist = dist;
+          dist            = dist2;
+          dist2           = tmp_dist;
+        } else {
+          // set left_side back to true if left_side solution is closer
+          left_side = true;
+        }
       } else {
-        // set left_side back to true if left_side solution is closer
-        left_side = true;
+        // surfhit is false so only the right side hit was valid. Thus, we return only one valid distance dist
+        dist  = dist2;
+        dist2 = -vecgeom::InfinityLength<Real_t>();
       }
+      // since surfhit_right is true, we definitively have one valid hit
+      surfhit = surfhit_right;
     } else {
-      dist  = dist2;
-      dist2 = -vecgeom::InfinityLength<Real_t>();
+      // surfhit_right is false, therefore the original surfhit, dist and dist2 = -infinity is returned
+      left_side = true;
     }
   }
   if (surfhit) onsurf = local + dist * localdir;
