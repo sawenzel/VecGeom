@@ -196,8 +196,7 @@ struct ZPhiMask {
         vecEPhi    = vecSPhi;
         isFullCirc = true;
       } else {
-        vecSPhi = vecEPhi;
-        vecEPhi = other.vecSPhi;
+        vecSPhi = other.vecSPhi;
       }
       return true;
     }

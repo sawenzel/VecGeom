@@ -51,8 +51,8 @@ struct FrameChecker<Real_t, RingMask<Real_t>, RingMask<Real_t>> {
 
       Vector3D<Real_t> SPhi{frame2.vecSPhi[0], frame2.vecSPhi[1], 0};
       Vector3D<Real_t> EPhi{frame2.vecEPhi[0], frame2.vecEPhi[1], 0};
-      Vector3D<Real_t> trans_SPhi = trans.InverseTransform(SPhi);
-      Vector3D<Real_t> trans_EPhi = trans.InverseTransform(EPhi);
+      Vector3D<Real_t> trans_SPhi = trans.InverseTransformDirection(SPhi);
+      Vector3D<Real_t> trans_EPhi = trans.InverseTransformDirection(EPhi);
 
       if (!frame1.InsidePhi(trans_SPhi[0], trans_SPhi[1]) || !frame1.InsidePhi(trans_EPhi[0], trans_EPhi[1]))
         return false;
