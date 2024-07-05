@@ -259,11 +259,23 @@ struct ConeImplementation {
     outside |= rsq > MakePlusTolerantSquare<true>(outerRad, cone.fOuterTolerance);
     done |= outside;
     if (vecCore::MaskFull(done)) return;
+    // rejection of points on surface and exiting
+    Bool_t onsurf_and_exiting = (rsq > MakeMinusTolerantSquare<true>(outerRad, cone.fOuterTolerance)) &&
+                                (direction.Dot(GetNormal<Real_v, false>(cone, point)) >= zero);
+    vecCore__MaskedAssignFunc(distance, onsurf_and_exiting, zero);
+    done |= onsurf_and_exiting;
+    if (vecCore::MaskFull(done)) return;
 
     if (checkRminTreatment<coneTypeT>(cone) && !vecCore::MaskFull(outside)) {
       Real_v innerRad = ConeUtilities::GetRadiusOfConeAtPoint<Real_v, true>(cone, point.z());
       outside |= rsq < MakeMinusTolerantSquare<true>(innerRad, cone.fInnerTolerance);
       done |= outside;
+      if (vecCore::MaskFull(done)) return;
+      // rejection of points on surface and exiting
+      onsurf_and_exiting = (rsq < MakePlusTolerantSquare<true>(innerRad, cone.fInnerTolerance)) &&
+                           (direction.Dot(GetNormal<Real_v, true>(cone, point)) >= zero);
+      vecCore__MaskedAssignFunc(distance, onsurf_and_exiting, zero);
+      done |= onsurf_and_exiting;
       if (vecCore::MaskFull(done)) return;
     }
     if (checkPhiTreatment<coneTypeT>(cone) && !vecCore::MaskEmpty(outside)) {
