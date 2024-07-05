@@ -295,7 +295,9 @@ public:
       auto pvol_navstate(in_state);
       // Get the navigation state of the daughter
       pvol_navstate.Push(pvol);
+      // set hit_FS.hit_surf
       surfdata.SceneToTouchableLocator(pvol_navstate, framed_surface.fSurfIndex, hit_FS.hit_surf);
+      hit_FS.hit_surf.state = in_state;
       // Get the onsurf point in CS coordinates
       auto surf                    = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
       auto CS_trans                = surfdata.fGlobalTrans[surf.fTrans];

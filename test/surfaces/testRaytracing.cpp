@@ -365,7 +365,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
 int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                      Vector3D<Real_t> const *points_RT, Vector3D<Real_t> const *dirs_RT,
                      NavigationState const *in_states, CrossingSeq *ref_crossings, CrossingSeq *crossings, bool debug,
-                     bool accept_zeros = false, int max_cross = vecgeom::kMaximumInt)
+                     bool accept_zeros = false, int max_cross = vecgeom::kMaximumInt, bool use_bvh = false)
 {
   int num_errors_dist = 0;
   int istep_err       = 0;
@@ -386,13 +386,13 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
       if (crossings[i].fStates[istep_err].GetState() != ref_crossings[i].fStates[istep_err_solid].GetState()) {
         printf("\033[1;32msolid model state after step:\033[0m\n");
         ref_crossings[i].fStates[istep_err_solid].Print();
-        printf("\033[1;31msurface model state after step:\033[0m\n");
+        printf("\033[1;31msurface model using the %s state after step:\033[0m\n", use_bvh ? "BVH" : "looper");
         crossings[i].fStates[istep_err].Print();
       }
       printf("Replaying ray for debugging : \n\n");
       PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i, max_cross);
       PropagateRaysSurf(nrays, points_RT, dirs_RT, in_states, crossings, i, istep_err, /*detect_overlaps =*/false,
-                        max_cross);
+                        max_cross, use_bvh);
     }
   }
   return num_errors_dist;
@@ -500,8 +500,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   // Distance computation + relocation for surface model + BVH
   timer.Start();
   if (test_bvh)
-    PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, bvh_crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
-                      max_cross, true);
+    PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, bvh_crossings, idebug, /*idebug_step=*/-1,
+                      /*detect_overlaps=*/false, max_cross, true);
   auto time_traverse_surf_bvh = timer.Stop();
 
   // Corectness for traversal
@@ -509,7 +509,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
                                      debug, accept_zeros, max_cross);
   if (test_bvh)
     num_errors_dist_bvh = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings,
-                                           bvh_crossings, debug, accept_zeros, max_cross);
+                                           bvh_crossings, debug, accept_zeros, max_cross, /*use_bvh=*/true);
   num_errors += num_errors_dist;
   if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
   if (test_bvh)
