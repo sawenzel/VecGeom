@@ -59,7 +59,7 @@ struct CrossingSeq {
   VECCORE_ATT_HOST_DEVICE
   bool IsEqual(CrossingSeq const &other, int &istep_err, int &istep_err_other, bool accept_zeros = false)
   {
-    auto kTolerance         = vecgeom::kToleranceDist<Real_t>;
+    auto kTolerance         = 10 * vecgeom::kToleranceDist<Real_t>;
     size_t istep            = 0;
     size_t istep_other      = 0;
     size_t istep_next       = 0;

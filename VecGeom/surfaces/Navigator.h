@@ -452,7 +452,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   bool is_boolean                = false;
 
   // in case of 0 steps, a push is needed to exclude the previously exited volume
-  bool is_zero_step = distance < 1000 * vecgeom::kToleranceDist<Real_t>;
+  bool is_zero_step = distance < 10000 * vecgeom::kToleranceDist<Real_t>;
   auto final_point  = is_zero_step ? point + kPushDistance * direction : point;
 
   int logic_id_exit = -1;
