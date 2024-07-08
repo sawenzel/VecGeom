@@ -450,7 +450,8 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
 
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   bool is_boolean                = false;
-
+  bool is_self_entering = false; // this flag is intended for booleans that we start in and don't exit because we cross
+                                 // a virtual surface within the boolean
   // in case of 0 steps, a push is needed to exclude the previously exited volume
   bool is_zero_step = distance < 10000 * vecgeom::kToleranceDist<Real_t>;
   auto final_point  = is_zero_step ? point + kPushDistance * direction : point;
@@ -464,14 +465,14 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
     do {
       godeeper = false;
       for (auto *daughter : currentvolume->GetDaughters()) {
+        is_boolean = daughter->GetUnplacedVolume()->IsBoolean();
         // if (daughter == prev_volume && !(daughter->GetUnplacedVolume()->IsBoolean())) {
         //   // Only exclude the placed volume once since we could enter it again via a
         //   // different volume history.
         //   prev_volume = nullptr;
         //   continue;
         // }
-
-        if (daughter->GetUnplacedVolume()->IsBoolean()) {
+        if (is_boolean) {
           final_point = point + kPushDistance * direction;
           // logic_id_exit = surfdata.FramedSurfaceLogicId(crossed_surf);
         }
@@ -527,7 +528,8 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
     // navigate one level higher to search for inside
     if (path.GetNavIndex() > 1) path.Pop(); // go one level higher, unless we are in the top volume
   } else {
-    prev_volume = starting_path.Top();
+    prev_volume      = starting_path.Top();
+    is_self_entering = true;
   }
 
   currentvolume = path.Top();
@@ -553,7 +555,14 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
       }
 
       inside = LogicInside(final_point, path, surfdata, logic_id_exit, false);
-
+      // in the case of surfaces that are closer than the push distance together, it can happen that a boolean is exited
+      // into another boolean. however, the other boolean extents only with a very small distance into the next one, so
+      // a push would mark this as false, leading to an incorrect overlap therefore, we need to check whether the point
+      // is with and without a push inside the next boolean. however, we should not do this check when we check whether
+      // we are staying within the same boolean because without the push this would always return true, although we are
+      // exiting the boolean
+      if (currentvolume->GetUnplacedVolume()->IsBoolean() && !is_self_entering)
+        inside |= LogicInside(point, path, surfdata, logic_id_exit, false);
       final_point   = is_zero_step ? point + kPushDistance * direction : point;
       logic_id_exit = -1;
     }
