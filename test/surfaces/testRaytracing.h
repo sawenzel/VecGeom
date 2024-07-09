@@ -72,10 +72,12 @@ struct CrossingSeq {
           return false;
         }
         if (vecCore::math::Abs(fSteps[istep]) < 1000 * kTolerance) {
+          if (vecCore::math::Abs(fSteps[istep] - other.fSteps[istep_other]) < 100 * kTolerance) istep_other++;
           istep++;
           continue;
         }
         if (vecCore::math::Abs(other.fSteps[istep_other]) < 1000 * kTolerance) {
+          if (vecCore::math::Abs(fSteps[istep] - other.fSteps[istep_other]) < 100 * kTolerance) istep++;
           istep_other++;
           continue;
         }
