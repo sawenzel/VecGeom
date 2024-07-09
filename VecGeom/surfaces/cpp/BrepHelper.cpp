@@ -451,8 +451,7 @@ void BrepHelper<Real_t>::CreateCandidateLists()
       for (int j = 0; j < other_side.fNsurf; ++j) {
         int other_idglob             = other_side.fSurfaces[j];
         auto const &other_framedsurf = fCPUdata.fFramedSurf[other_idglob];
-        if (parent_state == other_framedsurf.fState && other_framedsurf.fLogicId)
-          double_sided = true;
+        if (parent_state == other_framedsurf.fState && other_framedsurf.fLogicId) double_sided = true;
       }
       if (double_sided) framedsurf.fVirtualParent = true;
       // If the frame is embedded in the parent frame, skip the frame because it will always be entered through the
@@ -699,9 +698,11 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
         vecgeom::NavigationState::PopImpl(parent_state_index);
         NavIndex_t default_state = fCPUdata.fCommonSurfaces[id].fDefaultState;
         // if the default state is different (note that it can also be different if both are 0 but it is a scene) do
-        // thorough check
-        if ((default_state != parent_state_index) ||
-            (default_state == 0 && parent_state_index == 0 && fCPUdata.fCommonSurfaces[id].fSceneId < 0)) {
+        // thorough check. If the common surface is a top scene surface (fSceneId < 0), don't do the state check if
+        // the to-be-checked surface is also a top scene surface (is_scene_surf), because those need to be put on the
+        // same common surface
+        if ((default_state != parent_state_index) || (default_state == 0 && parent_state_index == 0 &&
+                                                      fCPUdata.fCommonSurfaces[id].fSceneId < 0 && !is_scene_surf)) {
           // To be compatible, a surface of the parent state MUST exist on the same side
           bool has_parent = false;
           for (auto isurf = 0; isurf < crt_side.fNsurf; ++isurf) {

@@ -353,7 +353,9 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
       auto num_cross = crossings[i].SetNextCrossing(distance, out_state);
       if (idebug >= 0) {
         std::cout << std::setprecision(16) << "     dist = " << distance
-                  << "  surf = " << crossed_surf.hit_surf.GetCSindex() << "\n   " << num_cross << " : ";
+                  << "  surf = " << crossed_surf.hit_surf.GetCSindex()
+                  << "  frame = " << crossed_surf.hit_surf.GetFSindex()
+                  << "  LeftSide: " << crossed_surf.hit_surf.IsLeftSide() << "\n   " << num_cross << " : ";
         out_state.Print();
       }
       pt += distance * dir;

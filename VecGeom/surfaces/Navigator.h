@@ -987,7 +987,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       // Bootstrap the temporary frame locator with the hit CS side
       tmp_hit_FS.Set(isurf, -1, left_side);
       tmp_hit_FS.state = in_state;
-      if (is_scene) {
+      if (is_scene && !self_entering) {
         EnterCS(tmp_hit_FS, local_scene, localdir_scene, dist, onsurf_crt, out_frame);
       } else {
         EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
