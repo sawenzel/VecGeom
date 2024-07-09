@@ -61,13 +61,13 @@ public:
 
     // Retrieve the candidate local surface
     // Different treatment for entering and exiting surfaces
-    if (index >= shell.fNsurf) // Entering surfaces
+    if (index >= shell.fNExitingSurfaces) // Entering surfaces
     {
-      int exiting_surf_index = index - shell.fNsurf;
-      framed_surface         = &(surfdata.fLocalSurf[shell.fVisibleSurfaces[exiting_surf_index]]);
+      int exiting_index = index - shell.fNExitingSurfaces;
+      framed_surface    = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[exiting_index]]);
 
       // Get the pvol
-      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fVisibleSurfacesPvol[exiting_surf_index]);
+      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fEnteringSurfacesPvol[exiting_index]);
 
       // Get the transformation
       auto pvol_trans = pvol->GetTransformation();
@@ -80,8 +80,9 @@ public:
       lv_index = pvol->GetLogicalVolume()->id();
 
     } else { // Exiting surfaces
-      exiting        = true;
-      framed_surface = &(surfdata.fLocalSurf[shell.fSurfaces[index]]);
+      exiting            = true;
+      auto exiting_index = shell.fExitingSurfaces[index];
+      framed_surface     = &(surfdata.fLocalSurf[shell.fSurfaces[exiting_index]]);
     }
 
     // Common part for entering and exiting surfaces
@@ -119,12 +120,12 @@ public:
 
     // Retrieve the candidate local surface
     // Different treatment for entering and exiting surfaces
-    if (index >= shell.fNsurf) // Entering surfaces
+    if (index >= shell.fNExitingSurfaces) // Entering surfaces
     {
-      int entering_surf_index = index - shell.fNsurf;
-      framed_surface          = &(surfdata.fLocalSurf[shell.fVisibleSurfaces[entering_surf_index]]);
+      int entering_index = index - shell.fNExitingSurfaces;
+      framed_surface     = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[entering_index]]);
       // Get the pvol
-      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fVisibleSurfacesPvol[entering_surf_index]);
+      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fEnteringSurfacesPvol[entering_index]);
       // Get the transformation
       auto const &pvol_trans = *pvol->GetTransformation();
       // Compute the transformation to the surface reference frame
@@ -137,8 +138,9 @@ public:
       surface_point = surf_trans.Transform(surface_point);
 
     } else { // Exiting surfaces
-      exiting        = true;
-      framed_surface = &(surfdata.fLocalSurf[shell.fSurfaces[index]]);
+      exiting            = true;
+      auto exiting_index = shell.fExitingSurfaces[index];
+      framed_surface     = &(surfdata.fLocalSurf[shell.fSurfaces[exiting_index]]);
       // Get the local transformation of the surface
       TransformationMP<Real_t> &local_trans = surfdata.fLocalTrans[framed_surface->fTrans];
       // In the case of exiting surfaces we only need to apply this transformation
@@ -264,10 +266,11 @@ public:
 
     // Now identify the common surface
     auto currentShell = surfdata.fShells[in_state.GetLogicalId()];
-    if (hitcandidate_index < currentShell.fNsurf) {
+    if (hitcandidate_index < currentShell.fNExitingSurfaces) {
       // If the hit candidate is an exiting surface
+      auto exiting_index = currentShell.fExitingSurfaces[hitcandidate_index];
       FSlocator hit_FS_tmp;
-      surfdata.SceneToTouchableLocator(in_state, hitcandidate_index, hit_FS_tmp);
+      surfdata.SceneToTouchableLocator(in_state, exiting_index, hit_FS_tmp);
       // surfdata.SceneToTouchableLocator(in_state, hitcandidate_index, hit_FS);
       FSlocator out_frame;
       hit_FS_tmp.state = in_state;
@@ -285,10 +288,10 @@ public:
 
     } else {
 
-      auto entering_index   = hitcandidate_index - currentShell.fNsurf;
-      auto local_surface_id = currentShell.fVisibleSurfaces[entering_index];
+      auto entering_index   = hitcandidate_index - currentShell.fNExitingSurfaces;
+      auto local_surface_id = currentShell.fEnteringSurfaces[entering_index];
       auto framed_surface   = surfdata.fLocalSurf[local_surface_id];
-      auto pvol_id          = currentShell.fVisibleSurfacesPvol[entering_index];
+      auto pvol_id          = currentShell.fEnteringSurfacesPvol[entering_index];
       // Get the placed volume the hit candidate belongs to
       auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
       // Create a copy of the navigation state

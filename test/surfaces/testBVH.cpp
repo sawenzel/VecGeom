@@ -222,9 +222,8 @@ int main(int argc, char *argv[])
       for (uint lvol_id = 0; lvol_id < num_lvol; lvol_id++) {
         if (i == 0) // Solids
         {
-          auto bvh              = vecgeom::BVHManager::GetBVH(lvol_id);
-          if(bvh == nullptr)
-            continue;
+          auto bvh = vecgeom::BVHManager::GetBVH(lvol_id);
+          if (bvh == nullptr) continue;
           aRootNChild           = bvh->GetRootNChild();
           aDepth                = bvh->GetDepth();
           aNChild               = bvh->GetNChild();
@@ -235,9 +234,8 @@ int main(int argc, char *argv[])
           total_cut_nodes       = solids_total_cut_nodes;
         } else // Surfaces
         {
-          auto bvh              = &(surfdata.fBVH[surfdata.fShells[lvol_id].fBVH]);
-          if(bvh == nullptr)
-            continue;
+          auto bvh = &(surfdata.fBVH[surfdata.fShells[lvol_id].fBVH]);
+          if (bvh == nullptr) continue;
           aRootNChild           = bvh->GetRootNChild();
           aDepth                = bvh->GetDepth();
           aNChild               = bvh->GetNChild();
@@ -253,7 +251,7 @@ int main(int argc, char *argv[])
           if (i == 1) {
             // Get the shell for this volume
             auto shell = surfdata.fShells[lvol_id];
-            if (shell.fNVisibleSurfaces == 0) {
+            if (shell.fNEnteringSurfaces == 0) {
               continue;
             }
           }
@@ -305,16 +303,13 @@ int main(int argc, char *argv[])
     printf("Saved global BVH stats to: %s\n", bvh_stats_file.c_str());
   }
 
-  
   if (bvh_dump_dir != "") {
-    for(uint lvol_id=0; lvol_id<num_lvol; lvol_id++)
-    {
-      auto lvol = GeoManager::Instance().GetLogicalVolume(lvol_id);
+    for (uint lvol_id = 0; lvol_id < num_lvol; lvol_id++) {
+      auto lvol       = GeoManager::Instance().GetLogicalVolume(lvol_id);
       const auto &bvh = surfdata.fBVH[surfdata.fShells[lvol_id].fBVH];
       // if(bvh == nullptr)
       //   continue;
-      if(bvh.GetNChild() == 0)
-        continue;
+      if (bvh.GetNChild() == 0) continue;
       std::stringstream filename;
       filename << bvh_dump_dir << "/" << lvol->GetLabel() << ".bin";
       vgbrep::bvh::DumpBVH<SurfData::Real_b>(bvh, filename.str().c_str());

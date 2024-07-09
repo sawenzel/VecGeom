@@ -42,7 +42,8 @@ struct SurfData {
 
   int fNglobalTrans{0};
   int fNlocalSurf{0};
-  int fNVisibleSurfaces{0};
+  int fNExitingSurfaces{0};
+  int fNEnteringSurfaces{0};
   int fNglobalSurf{0};
   int fNcylsph{0};
   int fNcone{0};
@@ -84,20 +85,21 @@ struct SurfData {
   Arb4Data_t *fArb4Data{nullptr};   ///< Arb4 data
 
   // Frame data
-  WindowMask_t *fWindowMasks{nullptr};        ///< rectangular masks
-  RingMask_t *fRingMasks{nullptr};            ///< ring masks
-  ZPhiMask_t *fZPhiMasks{nullptr};            ///< cylindrical masks
-  TriangleMask_t *fTriangleMasks{nullptr};    ///< triangular masks
-  QuadMask_t *fQuadMasks{nullptr};            ///< quadrilateral masks
-  CommonSurface *fCommonSurfaces{nullptr};    ///< common surfaces
-  Candidates *fCandidates;                    ///< candidate surfaces per navigation state
-  int *fSides{nullptr};                       ///< side surface indices
-  int *fSurfShellList{nullptr};               ///< indices of local surfaces used in shells
-  logic_int *fLogicList{nullptr};             ///< list of logic expressions per volume
-  int *fCandList{nullptr};                    ///< global list of candidate indices
-  int *fShellVisibleSurfaceList{nullptr};     ///< List of surfaces of the daughters of a volume
-  int *fShellVisibleSurfacePvolList{nullptr}; ///< Id of the PlacedVolume each visible surface belongs to
-  bvh::BVHsurf<Real_b> *fBVH{nullptr};        ///< BVH per volume shell
+  WindowMask_t *fWindowMasks{nullptr};         ///< rectangular masks
+  RingMask_t *fRingMasks{nullptr};             ///< ring masks
+  ZPhiMask_t *fZPhiMasks{nullptr};             ///< cylindrical masks
+  TriangleMask_t *fTriangleMasks{nullptr};     ///< triangular masks
+  QuadMask_t *fQuadMasks{nullptr};             ///< quadrilateral masks
+  CommonSurface *fCommonSurfaces{nullptr};     ///< common surfaces
+  Candidates *fCandidates;                     ///< candidate surfaces per navigation state
+  int *fSides{nullptr};                        ///< side surface indices
+  int *fSurfShellList{nullptr};                ///< indices of local surfaces used in shells
+  logic_int *fLogicList{nullptr};              ///< list of logic expressions per volume
+  int *fCandList{nullptr};                     ///< global list of candidate indices
+  int *fShellExitingSurfaceList{nullptr};      ///< List of surfaces of a volume, having a frame
+  int *fShellEnteringSurfaceList{nullptr};     ///< List of surfaces of the daughters of a volume, having a frame
+  int *fShellEnteringSurfacePvolList{nullptr}; ///< Id of the PlacedVolume each entering surface belongs to
+  bvh::BVHsurf<Real_b> *fBVH{nullptr};         ///< BVH per volume shell
 
   SurfData() = default;
 
@@ -239,7 +241,6 @@ struct SurfData {
     auto const &framedsurf = GetFramedSurface(locator);
     return framedsurf.fParent;
   }
-
 
   /// @brief Get common surface pointed by a locator
   /// @param locator Frame locator

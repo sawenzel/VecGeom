@@ -42,10 +42,10 @@ using LogicExpressionCPU = std::vector<logic_int>;
 // Note: the local surfaces defined by solids will have local references that will be changed by
 // the flattening process, depending on the scene on which the parent volume will be flattened
 struct VolumeShellCPU {
-  std::vector<int> fSurfaces; ///< Local surface id's for this volume
-
-  std::vector<int> fVisibleSurfaces;
-  std::vector<int> fVisibleSurfacesPvol;
+  std::vector<int> fSurfaces;         ///< Local surface id's for this volume
+  std::vector<int> fExitingSurfaces;  ///< Local surface id's for this volume, excluding virtual ones
+  std::vector<int> fEnteringSurfaces; ///< Local surface id's for all surfaces of daughters, excluding virtual ones
+  std::vector<int> fEnteringSurfacesPvol;
 
   LogicExpressionCPU fLogic; ///< Logic expression for the solid
   bool fSimplified{false};   ///< The logic was simplified

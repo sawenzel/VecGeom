@@ -79,10 +79,12 @@ void BrepHelper<Real_t>::ClearData()
   fSurfData->fSurfShellList = nullptr;
   delete[] fSurfData->fLogicList;
   fSurfData->fLogicList = nullptr;
-  delete[] fSurfData->fShellVisibleSurfaceList;
-  fSurfData->fShellVisibleSurfaceList = nullptr;
-  delete[] fSurfData->fShellVisibleSurfacePvolList;
-  fSurfData->fShellVisibleSurfacePvolList = nullptr;
+  delete[] fSurfData->fShellExitingSurfaceList;
+  fSurfData->fShellExitingSurfaceList = nullptr;
+  delete[] fSurfData->fShellEnteringSurfaceList;
+  fSurfData->fShellEnteringSurfaceList = nullptr;
+  delete[] fSurfData->fShellEnteringSurfacePvolList;
+  fSurfData->fShellEnteringSurfacePvolList = nullptr;
   delete[] fSurfData->fBVH;
   fSurfData->fBVH = nullptr;
 
@@ -1222,21 +1224,24 @@ void BrepHelper<Real_t>::InitBVHData()
     // Assign a BVH slot
     rootShell.fBVH = lvol->id();
 
-    int localSurfIndex = 0;
-    int localPvolIndex = 0;
+    // Initialize array of exiting surfaces which have a frame
+    for (uint i = 0; i < rootShell.fSurfaces.size(); i++) {
+      if (fCPUdata.fLocalSurfaces[rootShell.fSurfaces[i]].fFrame.type != FrameType::kNoFrame)
+        rootShell.fExitingSurfaces.push_back(i);
+    }
+
     for (auto pvol : lvol->GetDaughters()) {
       // Get the shell
       auto shell = fCPUdata.fShells[pvol->GetLogicalVolume()->id()];
-      // Iterate over the local surfaces in this shell
+      // Iterate over the local surfaces which have a frame in this shell
       for (uint i = 0; i < shell.fSurfaces.size(); i++) {
-        // Add the index of the surface to the list of visible surfaces for the LV
-        rootShell.fVisibleSurfaces.push_back(shell.fSurfaces[i]);
-        // Add the id of the Pvol to which this surface belongs
-        rootShell.fVisibleSurfacesPvol.push_back(pvol->id());
-
-        localSurfIndex++;
+        if (fCPUdata.fLocalSurfaces[shell.fSurfaces[i]].fFrame.type != FrameType::kNoFrame) {
+          // Add the index of the surface to the list of entering surfaces for the LV
+          rootShell.fEnteringSurfaces.push_back(shell.fSurfaces[i]);
+          // Add the id of the Pvol to which this surface belongs
+          rootShell.fEnteringSurfacesPvol.push_back(pvol->id());
+        }
       }
-      localPvolIndex++;
     }
   }
 }
@@ -1766,16 +1771,19 @@ void BrepHelper<Real_t>::UpdateSurfData()
   fSurfData->fNlogic       = sizeLogic;
   logic_int *current_logic = fSurfData->fLogicList;
 
-  // Compute the sum of visible surfaces for all Lvols
+  // Compute the sum of entering surfaces for all Lvols
   for (auto shell : fCPUdata.fShells) {
-    fSurfData->fNVisibleSurfaces += shell.fVisibleSurfaces.size();
+    fSurfData->fNExitingSurfaces += shell.fExitingSurfaces.size();
+    fSurfData->fNEnteringSurfaces += shell.fEnteringSurfaces.size();
   }
 
-  fSurfData->fShellVisibleSurfaceList     = new int[fSurfData->fNVisibleSurfaces];
-  fSurfData->fShellVisibleSurfacePvolList = new int[fSurfData->fNVisibleSurfaces];
+  fSurfData->fShellExitingSurfaceList      = new int[fSurfData->fNExitingSurfaces];
+  fSurfData->fShellEnteringSurfaceList     = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellEnteringSurfacePvolList = new int[fSurfData->fNEnteringSurfaces];
 
-  int *currentVisibleSurface     = fSurfData->fShellVisibleSurfaceList;
-  int *currentVisibleSurfacePvol = fSurfData->fShellVisibleSurfacePvolList;
+  int *currentExitingSurface      = fSurfData->fShellExitingSurfaceList;
+  int *currentEnteringSurface     = fSurfData->fShellEnteringSurfaceList;
+  int *currentEnteringSurfacePvol = fSurfData->fShellEnteringSurfacePvolList;
 
   for (size_t i = 0; i < numShells; ++i) {
     auto const &surfaces         = fCPUdata.fShells[i].fSurfaces;
@@ -1793,22 +1801,29 @@ void BrepHelper<Real_t>::UpdateSurfData()
       fSurfData->fShells[i].fLogic.data_[iitem++] = item;
     current_logic += nlogic;
 
-    auto const &visibleSurfaces     = fCPUdata.fShells[i].fVisibleSurfaces;
-    auto const &visibleSurfacesPvol = fCPUdata.fShells[i].fVisibleSurfacesPvol;
-    auto nVisibleSurf               = visibleSurfaces.size();
-    // Init number of visible surfaces in shell
-    fSurfData->fShells[i].fNVisibleSurfaces = nVisibleSurf;
+    auto const &exitingSurfaces      = fCPUdata.fShells[i].fExitingSurfaces;
+    auto const &enteringSurfaces     = fCPUdata.fShells[i].fEnteringSurfaces;
+    auto const &enteringSurfacesPvol = fCPUdata.fShells[i].fEnteringSurfacesPvol;
+    auto nExitingSurf                = exitingSurfaces.size();
+    auto nEnteringSurf               = enteringSurfaces.size();
+    // Init number of exiting/entering surfaces in shell
+    fSurfData->fShells[i].fNExitingSurfaces  = nExitingSurf;
+    fSurfData->fShells[i].fNEnteringSurfaces = nEnteringSurf;
     // Copy indices corresponding to this shell to surfData
-    for (size_t isurf = 0; isurf < nVisibleSurf; isurf++) {
-      currentVisibleSurface[isurf]     = visibleSurfaces[isurf];
-      currentVisibleSurfacePvol[isurf] = visibleSurfacesPvol[isurf];
+    for (size_t isurf = 0; isurf < nExitingSurf; isurf++)
+      currentExitingSurface[isurf] = exitingSurfaces[isurf];
+    for (size_t isurf = 0; isurf < nEnteringSurf; isurf++) {
+      currentEnteringSurface[isurf]     = enteringSurfaces[isurf];
+      currentEnteringSurfacePvol[isurf] = enteringSurfacesPvol[isurf];
     }
     // Set the members of this shell to point to the newly copied data
-    fSurfData->fShells[i].fVisibleSurfaces     = currentVisibleSurface;
-    fSurfData->fShells[i].fVisibleSurfacesPvol = currentVisibleSurfacePvol;
+    fSurfData->fShells[i].fExitingSurfaces      = currentExitingSurface;
+    fSurfData->fShells[i].fEnteringSurfaces     = currentEnteringSurface;
+    fSurfData->fShells[i].fEnteringSurfacesPvol = currentEnteringSurfacePvol;
     // Move the pointers in surfData for the next shell
-    currentVisibleSurface += nVisibleSurf;
-    currentVisibleSurfacePvol += nVisibleSurf;
+    currentExitingSurface += nExitingSurf;
+    currentEnteringSurface += nEnteringSurf;
+    currentEnteringSurfacePvol += nEnteringSurf;
 
     fSurfData->fShells[i].fBVH = fCPUdata.fShells[i].fBVH;
   }

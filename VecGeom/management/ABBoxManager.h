@@ -324,15 +324,16 @@ public:
     auto &rootShell = surfData.fShells[lvol->id()];
 
     // Allocate space for the AABBs (2 corners per surface)
-    ABBox_s *boxes                      = new ABBox_s[2 * rootShell.fNsurf + 2 * rootShell.fNVisibleSurfaces];
+    ABBox_s *boxes = new ABBox_s[2 * rootShell.fNExitingSurfaces + 2 * rootShell.fNEnteringSurfaces];
     fVolToSurfaceABBoxesMap[lvol->id()] = boxes;
 
     auto const identityTransform = new Transformation3D();
 
     // Create AABBs for the Exiting surfaces of this volume
-    for (int motherSurfIndex = 0; motherSurfIndex < rootShell.fNsurf; motherSurfIndex++) {
+    for (int motherSurfIndex = 0; motherSurfIndex < rootShell.fNExitingSurfaces; motherSurfIndex++) {
       // Get the surface
-      auto const localSurface = surfData.fLocalSurf[rootShell.fSurfaces[motherSurfIndex]];
+      auto exiting_ind        = rootShell.fExitingSurfaces[motherSurfIndex];
+      auto const localSurface = surfData.fLocalSurf[rootShell.fSurfaces[exiting_ind]];
 
       // Local transformation of this surface
       auto const &surfaceTransform = surfData.fLocalTrans[localSurface.fTrans];
@@ -349,15 +350,16 @@ public:
       // Get the shell
       auto shell = surfData.fShells[pvol->GetLogicalVolume()->id()];
       // Iterate over the local surfaces in this shell
-      for (int i = 0; i < shell.fNsurf; i++) {
-        auto const &localSurface = surfData.fLocalSurf[shell.fSurfaces[i]];
+      for (int i = 0; i < shell.fNExitingSurfaces; i++) {
+        auto exiting_ind         = shell.fExitingSurfaces[i];
+        auto const &localSurface = surfData.fLocalSurf[shell.fSurfaces[exiting_ind]];
         // Local transformation of the surface within this daughter volume
         auto const &surfaceTransform = surfData.fLocalTrans[localSurface.fTrans];
         // Transformation of this daughter volume with respect to its mother
         auto daughterTransform = pvol->GetTransformation();
         ComputeSurfaceABBox<Real_t>(localSurface, surfaceTransform, *daughterTransform,
-                                    boxes[2 * (localSurfIndex + rootShell.fNsurf)],
-                                    boxes[2 * (localSurfIndex + rootShell.fNsurf) + 1], surfData);
+                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces)],
+                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces) + 1], surfData);
         localSurfIndex++;
       }
     }
@@ -414,7 +416,7 @@ public:
   template <typename Real_t>
   ABBoxContainer_t GetSurfaceABBoxes(int ivol, int &size, vgbrep::SurfData<Real_t> const &surfData)
   {
-    size = surfData.fShells[ivol].fNVisibleSurfaces + surfData.fShells[ivol].fNsurf;
+    size = surfData.fShells[ivol].fNExitingSurfaces + surfData.fShells[ivol].fNEnteringSurfaces;
     return fVolToSurfaceABBoxesMap[ivol];
   }
 

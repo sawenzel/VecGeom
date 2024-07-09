@@ -315,6 +315,11 @@ struct FramedSurface {
     aMin.Set(0, 0, 0);
     aMax.Set(0, 0, 0);
     if (fFrame.type == FrameType::kNoFrame) {
+      VECGEOM_LOG(critical) << "Extent3D should not be called for kNoFrame frames";
+      return;
+    }
+    if (fNeverCheck) {
+      // Special cases where the bounding box is computed based on the UnplacedSurface
       if (fSurface.type == SurfaceType::kTorus)
         SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(fSurface.id)).Extent3D(aMin, aMax);
       else if (fSurface.type == SurfaceType::kArb4)
@@ -513,13 +518,15 @@ struct CommonSurface {
 
 /// @brief A volume shell holding indices for all placed surfaces belonging to a volume.
 struct VolumeShell {
-  int fNsurf{0};                      ///< Number of local surfaces
-  int *fSurfaces{nullptr};            ///< Local surface id's
-  LogicExpression fLogic;             ///< Logic expression for local surfaces
-  int fNVisibleSurfaces{0};           ///< Number of visible entering surfaces
-  int *fVisibleSurfaces{nullptr};     ///< List of visible entering surfaces
-  int *fVisibleSurfacesPvol{nullptr}; ///< Pvol id per visible surface
-  int fBVH{0};                        ///< The BVH for this logical volume
+  LogicExpression fLogic;              ///< Logic expression for local surfaces
+  int fBVH{0};                         ///< The BVH index for this logical volume
+  int fNsurf{0};                       ///< Number of local surfaces
+  int fNExitingSurfaces{0};            ///< Number of framed exiting surfaces
+  int fNEnteringSurfaces{0};           ///< Number of framed entering surfaces
+  int *fSurfaces{nullptr};             ///< Local surface id's
+  int *fExitingSurfaces{nullptr};      ///< Indices of real surfaces in the fSurfaces array
+  int *fEnteringSurfaces{nullptr};     ///< List of framed entering surfaces
+  int *fEnteringSurfacesPvol{nullptr}; ///< Pvol id per framed surface
 
   /// @brief Check if a point is inside the volume defined by surfaces
   /// @tparam Real_t Floating-point precision type

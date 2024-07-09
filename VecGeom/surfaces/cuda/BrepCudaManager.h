@@ -47,25 +47,28 @@ __global__ void FinishBVHCopy(bvh::BVHsurf<Real_t> *dBVH, int *dPrimId, int *dOf
 template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
-  int *current, *current_visible_surface, *current_visible_surface_pvol;
+  int *current, *current_exiting_surface, *current_entering_surface, *current_entering_surface_pvol;
   logic_int *current_logic;
   globaldevicesurfdata::gSurfDataDevice<Real_t> = surfData;
 
-  // Write pointers into fShells[i].fSurfaces, fShells[i].fLogic, fShells[i].fShellVisibleSurfaceList,
-  // fShells[i].fShellVisibleSurfaceTransList, fShells[i].fShellVisibleSurfacePvolList
-  current                      = surfData->fSurfShellList;
-  current_logic                = surfData->fLogicList;
-  current_visible_surface      = surfData->fShellVisibleSurfaceList;
-  current_visible_surface_pvol = surfData->fShellVisibleSurfacePvolList;
+  // Write pointers into fShells[i].fSurfaces, fShells[i].fLogic, fShells[i].fShellEnteringSurfaceList,
+  // fShells[i].fShellEnteringSurfaceTransList, fShells[i].fShellEnteringSurfacePvolList
+  current                       = surfData->fSurfShellList;
+  current_logic                 = surfData->fLogicList;
+  current_exiting_surface       = surfData->fShellExitingSurfaceList;
+  current_entering_surface      = surfData->fShellEnteringSurfaceList;
+  current_entering_surface_pvol = surfData->fShellEnteringSurfacePvolList;
   for (int i = 0; i < surfData->fNshells; i++) {
     surfData->fShells[i].fSurfaces = current;
     current += surfData->fShells[i].fNsurf;
     surfData->fShells[i].fLogic.data_ = current_logic;
     current_logic += surfData->fShells[i].fLogic.size();
-    surfData->fShells[i].fVisibleSurfaces = current_visible_surface;
-    current_visible_surface += surfData->fShells[i].fNVisibleSurfaces;
-    surfData->fShells[i].fVisibleSurfacesPvol = current_visible_surface_pvol;
-    current_visible_surface_pvol += surfData->fShells[i].fNVisibleSurfaces;
+    surfData->fShells[i].fExitingSurfaces = current_exiting_surface;
+    current_exiting_surface += surfData->fShells[i].fNExitingSurfaces;
+    surfData->fShells[i].fEnteringSurfaces = current_entering_surface;
+    current_entering_surface += surfData->fShells[i].fNEnteringSurfaces;
+    surfData->fShells[i].fEnteringSurfacesPvol = current_entering_surface_pvol;
+    current_entering_surface_pvol += surfData->fShells[i].fNEnteringSurfaces;
   }
 
   // Write pointers into fCommonSurfaces[i].f{Left,Right}Side.fSurfaces
@@ -184,19 +187,25 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLogicList, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fLogicList, surfData.fLogicList, sizeInBytes, cudaMemcpyHostToDevice));
 
-    // Nota bene: fShells[i].fShellVisibleSurfaceList are backed by the following array
+    // Nota bene: fShells[i].fShellExiting/EnteringSurfaceList are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
-    fSurfDataStaging.fNVisibleSurfaces = surfData.fNVisibleSurfaces;
-    sizeInBytes                        = sizeof(surfData.fShellVisibleSurfaceList[0]) * surfData.fNVisibleSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellVisibleSurfaceList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellVisibleSurfaceList, surfData.fShellVisibleSurfaceList,
+    fSurfDataStaging.fNExitingSurfaces  = surfData.fNExitingSurfaces;
+    fSurfDataStaging.fNEnteringSurfaces = surfData.fNEnteringSurfaces;
+
+    sizeInBytes = sizeof(surfData.fShellExitingSurfaceList[0]) * surfData.fNExitingSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellExitingSurfaceList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellExitingSurfaceList, surfData.fShellExitingSurfaceList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+    sizeInBytes = sizeof(surfData.fShellEnteringSurfaceList[0]) * surfData.fNEnteringSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfaceList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfaceList, surfData.fShellEnteringSurfaceList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
-    // Nota bene: fShells[i].fShellVisibleSurfacePvolList are backed by the following array
+    // Nota bene: fShells[i].fShellEnteringSurfacePvolList are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
-    sizeInBytes = sizeof(surfData.fShellVisibleSurfacePvolList[0]) * surfData.fNVisibleSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellVisibleSurfacePvolList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellVisibleSurfacePvolList, surfData.fShellVisibleSurfacePvolList,
+    sizeInBytes = sizeof(surfData.fShellEnteringSurfacePvolList[0]) * surfData.fNEnteringSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfacePvolList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfacePvolList, surfData.fShellEnteringSurfacePvolList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate space for the BVHs
