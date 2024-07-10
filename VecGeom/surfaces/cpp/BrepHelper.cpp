@@ -434,7 +434,6 @@ void BrepHelper<Real_t>::CreateCandidateLists()
   auto addSurfToSideParents = [&](int isurf, char iside) {
     auto const &surf       = fCPUdata.fCommonSurfaces[isurf];
     Side const &side       = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
-    Side const &other_side = (iside == kLside) ? surf.fRightSide : surf.fLeftSide;
     for (int i = 0; i < side.fNsurf; ++i) {
       int idglob       = side.fSurfaces[i];
       auto &framedsurf = fCPUdata.fFramedSurf[idglob];
@@ -446,16 +445,10 @@ void BrepHelper<Real_t>::CreateCandidateLists()
         continue;
       }
 
-      // If the parent state of the frame also exist on the other side and both are booleans the parents are a virtual
-      // frame in a boolean
-      bool double_sided = false;
-      // loop over other site to check for the same parent state
-      for (int j = 0; j < other_side.fNsurf; ++j) {
-        int other_idglob             = other_side.fSurfaces[j];
-        auto const &other_framedsurf = fCPUdata.fFramedSurf[other_idglob];
-        if (parent_state == other_framedsurf.fState && other_framedsurf.fLogicId) double_sided = true;
-      }
-      if (double_sided) framedsurf.fVirtualParent = true;
+      // If parent is a boolean, it could be a virtual frame
+      auto const &parent_framedsurf = fCPUdata.fFramedSurf[side.fSurfaces[framedsurf.fParent]];
+      if (parent_framedsurf.fLogicId) framedsurf.fVirtualParent = true;
+
       // If the frame is embedded in the parent frame, skip the frame because it will always be entered through the
       // parent exception: if the parent is a virtual surface in a boolean, the embedded frame can only be entered
       // directly (not through the parent) and must be added to the entering candidates
