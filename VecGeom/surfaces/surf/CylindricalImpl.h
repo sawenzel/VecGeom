@@ -38,7 +38,7 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param two_solutions whether there are two possible solutions
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions)
+                 bool &two_solutions, Real_t &safety)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
@@ -53,7 +53,13 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
       Vector3D<Real_t> normal(onsurf[0], onsurf[1], 0);
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
-      if (hit) return true;
+      if (hit) {
+        if (distance < -vecgeom::kTolerance && distance < -fCylData->Radius()) {
+          Real_t rho = point.Perp();
+          safety     = fCylData->Radius() - rho;
+        }
+        return true;
+      }
     }
     return false;
   }

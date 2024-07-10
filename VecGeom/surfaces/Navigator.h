@@ -755,7 +755,7 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &point_volume,
                                                  vecgeom::Vector3D<Real_t> const &direction_volume, int volId,
                                                  SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
-                                                 bool exiting, bool &surfhit)
+                                                 bool exiting, bool &surfhit, Real_t &safety)
 {
   bool two_solutions             = false;
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
@@ -768,7 +768,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   bool visibility   = exiting ^ flipped_bool;
   // Compute distance taking into account the surface visibility (normal orientation)
   Real_t dist = vecgeom::InfinityLength<Real_t>();
-  surfhit     = framedsurf.fSurface.Intersect(local, localdir, visibility, surfdata, dist, two_solutions);
+  surfhit     = framedsurf.fSurface.Intersect(local, localdir, visibility, surfdata, dist, two_solutions, safety);
   if (!surfhit) return dist;
   // Do the frame intersection using the propagated point on surface
   auto onsurf = local + localdir * dist;
@@ -805,7 +805,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
                                                   SurfData<Real_t> const &surfdata, int isurf, char sides, bool exiting,
                                                   bool &left_side, bool &surfhit, vecgeom::Vector3D<Real_t> &onsurf,
                                                   Real_t &dist2, vecgeom::Vector3D<Real_t> &local,
-                                                  vecgeom::Vector3D<Real_t> &localdir)
+                                                  vecgeom::Vector3D<Real_t> &localdir, Real_t &safety)
 {
   constexpr char kLside = 1;
   constexpr char kRside = 2;
@@ -825,13 +825,13 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   bool check_both_sides = left_side && (sides & kRside) > 0;
   bool visibility       = !exiting ^ left_side ^ flipped;
   bool two_solutions    = false;
-  surfhit               = unplaced.Intersect(local, localdir, visibility, surfdata, dist, two_solutions);
+  surfhit               = unplaced.Intersect(local, localdir, visibility, surfdata, dist, two_solutions, safety);
   if ((!surfhit && check_both_sides) || (two_solutions && check_both_sides)) {
     // Left side already checked, now check right side
     // Note: only one side can have a valid exiting
     left_side          = false;
     visibility         = !exiting ^ flipped;
-    bool surfhit_right = unplaced.Intersect(local, localdir, visibility, surfdata, dist2, two_solutions);
+    bool surfhit_right = unplaced.Intersect(local, localdir, visibility, surfdata, dist2, two_solutions, safety);
     if (surfhit_right) {
       if (surfhit) {
         // both sides have valid hits, we need to chose the one with the smaller distance
@@ -910,11 +910,15 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     if (isurf == 0) continue;
     bool left_side, surfhit;
     Vector3D<Real_t> onsurf_crt;
+    Real_t safety;
     Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/true, left_side,
-                                   surfhit, onsurf_crt, dist2, local, localdir);
-    if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
+                                   surfhit, onsurf_crt, dist2, local, localdir, safety);
+    if (!surfhit || (dist < -vecgeom::kToleranceDist<Real_t> && !(Abs(safety) < vecgeom::kToleranceDist<Real_t>)) ||
+        dist >= distance)
+      continue;
+    // if (dist < 0) dist = Real_t(0.);
 
     tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], left_side);
     tmp_hit_FS.state = in_state;
@@ -967,11 +971,15 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
     bool left_side, surfhit;
     Vector3D<Real_t> onsurf_crt;
+    Real_t safety;
     Real_t dist2 = -vecgeom::InfinityLength<Real_t>(); // possible second solution
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/false, left_side,
-                                   surfhit, onsurf_crt, dist2, local, localdir);
-    if (!surfhit || dist < -vecgeom::kToleranceDist<Real_t> || dist >= distance) continue;
+                                   surfhit, onsurf_crt, dist2, local, localdir, safety);
+    if (!surfhit || (dist < -vecgeom::kToleranceDist<Real_t> && !(Abs(safety) < vecgeom::kToleranceDist<Real_t>)) ||
+        dist >= distance)
+      continue;
+    // if (dist < 0) dist = Real_t(0.);
 
     // Temporary ugly solution to avoid self-entering the volume at 0 distance on the same surface
     if (self_entering && vecCore::math::Abs(dist) < vecgeom::kToleranceDist<Real_t>) continue;

@@ -35,7 +35,7 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions)
+                 bool &two_solutions, Real_t &safety)
   {
 
     distance = vecgeom::kInfLength;
@@ -75,7 +75,15 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
       Vector3D<Real_t> normal(onsurf[0] * fEllipData->fDDy, onsurf[1] * fEllipData->fDDx, 0);
       bool hit = left_side ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
-      if (hit) return true;
+      if (hit) {
+        if (distance < -vecgeom::kTolerance) {
+          Real_t x   = point.x() * fEllipData->fSx;
+          Real_t y   = point.y() * fEllipData->fSy;
+          Real_t rho = vecCore::math::Sqrt(x * x + y * y);
+          safety     = fEllipData->R - rho;
+        }
+        return true;
+      }
     }
     return false;
   }

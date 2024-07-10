@@ -14,7 +14,7 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &local,
                                                  vecgeom::Vector3D<Real_t> const &localdir, int volId,
                                                  SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
-                                                 bool exiting, bool &surfhit);
+                                                 bool exiting, bool &surfhit, Real_t &safety);
 
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LocalLogicSafety(vecgeom::Vector3D<Real_t> const &localpoint,
@@ -90,9 +90,11 @@ public:
     // Check if we intersect the unplaced and the distance
     double intersect_distance{0};
     bool surfhit{false};
-
-    intersect_distance = DistanceToLocalFS(localpoint, localdir, lv_index, surfdata, *framed_surface, exiting, surfhit);
-    if (surfhit && intersect_distance > -vecgeom::kToleranceDist<Real_t>) {
+    Real_t safety;
+    intersect_distance =
+        DistanceToLocalFS(localpoint, localdir, lv_index, surfdata, *framed_surface, exiting, surfhit, safety);
+    if (surfhit &&
+        (intersect_distance > -vecgeom::kToleranceDist<Real_t> || Abs(safety) < vecgeom::kToleranceDist<Real_t>)) {
       return intersect_distance;
     } else {
       return vecgeom::kInfLength;

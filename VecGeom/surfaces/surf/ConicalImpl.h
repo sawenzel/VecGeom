@@ -37,7 +37,7 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions)
+                 bool &two_solutions, Real_t &safety)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
@@ -55,7 +55,15 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
                               -std::sqrt(onsurf[0] * onsurf[0] + onsurf[1] * onsurf[1]) * fConeData->slope);
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
-      if (hit) return true;
+      if (hit) {
+        if (distance < -vecgeom::kTolerance) {
+          Real_t rho     = point.Perp();
+          auto distanceR = fConeData->RadiusZ(point[2]) - rho;
+          Real_t calf    = Real_t(1) / std::sqrt(Real_t(1) + fConeData->slope * fConeData->slope);
+          safety         = distanceR * calf;
+        }
+        return true;
+      }
     }
     return false;
   }

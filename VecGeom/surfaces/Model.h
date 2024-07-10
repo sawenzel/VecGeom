@@ -71,29 +71,31 @@ struct UnplacedSurface {
   /// @return Validity of the intersection
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side,
-                                         SurfData<Real_t> const &surfdata, Real_t &distance, bool &two_solutions) const
+                                         SurfData<Real_t> const &surfdata, Real_t &distance, bool &two_solutions,
+                                         Real_t &safety) const
   {
     switch (type) {
     case SurfaceType::kPlanar:
-      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(point, dir, left_side, distance, two_solutions);
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(point, dir, left_side, distance, two_solutions,
+                                                                     safety);
     case SurfaceType::kCylindrical:
       return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kConical:
       return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kElliptical:
       return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kSpherical:
       return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kArb4:
       return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
-          .Intersect(point, dir, left_side, distance, two_solutions);
+          .Intersect(point, dir, left_side, distance, two_solutions, safety);
     };
     return false;
   }

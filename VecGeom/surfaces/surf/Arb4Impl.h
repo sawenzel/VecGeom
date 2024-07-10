@@ -72,7 +72,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions)
+                 bool &two_solutions, Real_t &safety)
   {
 
     using Vector3D = vecgeom::Vector3D<Real_t>;
@@ -139,7 +139,10 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
 
       bool hit = left_side ^ (dir.Dot(unorm) < 0);
       // First solution giving a valid hit wins
-      if (hit) return true;
+      if (hit) {
+        if (distance < -vecgeom::kTolerance) safety = Safety(point, left_side, distance, onsurf);
+        return true;
+      }
     }
     return false;
   }

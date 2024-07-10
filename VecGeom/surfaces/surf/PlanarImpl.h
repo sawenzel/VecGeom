@@ -32,11 +32,12 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions)
+                 bool &two_solutions, Real_t &safety)
   {
     // Just need to propagate to (xOy) plane
     bool surfhit = left_side ^ (dir[2] < 0);
     distance     = surfhit ? -point[2] / vecgeom::NonZero(dir[2]) : -1;
+    safety       = point[2];
     return surfhit;
   }
 
