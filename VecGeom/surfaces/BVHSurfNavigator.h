@@ -273,7 +273,6 @@ public:
       auto exiting_index = currentShell.fExitingSurfaces[hitcandidate_index];
       FSlocator hit_FS_tmp;
       surfdata.SceneToTouchableLocator(in_state, exiting_index, hit_FS_tmp);
-      // surfdata.SceneToTouchableLocator(in_state, hitcandidate_index, hit_FS);
       FSlocator out_frame;
       hit_FS_tmp.state = in_state;
       // Get the onsurf point in CS coordinates
@@ -304,17 +303,30 @@ public:
       surfdata.SceneToTouchableLocator(pvol_navstate, framed_surface.fSurfIndex, hit_FS.hit_surf);
       hit_FS.hit_surf.state = in_state;
       // Get the onsurf point in CS coordinates
-      auto surf                    = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
-      auto CS_trans                = surfdata.fGlobalTrans[surf.fTrans];
-      Vector3D<Real_t> CS_local    = CS_trans.Transform(local_scene);
-      Vector3D<Real_t> CS_localdir = CS_trans.TransformDirection(localdir_scene);
-      auto onsurf_crt              = CS_local + Real_t(bvhstep) * CS_localdir;
+      auto surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
+      auto CS_trans = surfdata.fGlobalTrans[surf.fTrans];
+      Vector3D<Real_t> CS_local, CS_localdir;
+
+      unsigned short scene_id = 0, newscene_id = 0;
+      bool is_scene = in_state.GetSceneId(scene_id, newscene_id);
+
+      if (!is_scene) {
+        CS_local    = CS_trans.Transform(local_scene);
+        CS_localdir = CS_trans.TransformDirection(localdir_scene);
+      } else {
+        CS_local    = CS_trans.Transform(localpoint);
+        CS_localdir = CS_trans.TransformDirection(localdir);
+      }
+      auto onsurf_crt = CS_local + Real_t(bvhstep) * CS_localdir;
+
       // Seek and cross entering frames
       FSlocator out_frame;
-
       EnterCS(hit_FS.hit_surf, point, direction, Real_t(bvhstep), onsurf_crt, out_frame);
       out_state = out_frame.state;
     }
+
+    // Fix the out_state if pointing to a 0 scene
+    if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
 
     return bvhstep;
   }

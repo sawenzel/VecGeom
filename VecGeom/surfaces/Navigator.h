@@ -935,7 +935,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       onsurf_crt = local + dist2 * localdir;
       inframe = ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist2, onsurf_crt, exit_FS.hit_surf, out_frame);
       exit_FS.exit_surf = exit_FS.hit_surf;
-      ; // store exiting information
+      // store exiting information
       if (inframe) dist = dist2;
     }
     if (!inframe) continue;
