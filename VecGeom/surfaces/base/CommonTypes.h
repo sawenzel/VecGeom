@@ -278,8 +278,8 @@ struct ConeData {
   ConeData() = default;
   /// @tparam Real_i precision type of inputs
   template <typename Real_i>
-  ConeData(Real_i rad, Real_i slope, bool flip = false)
-      : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad)), slope(static_cast<Real_t>(slope))
+  ConeData(Real_i rad, Real_i slope_i, bool flip = false)
+      : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad)), slope(static_cast<Real_t>(slope_i))
   {
   }
   VECCORE_ATT_HOST_DEVICE
@@ -424,7 +424,7 @@ struct Arb4Data {
     normal3.Normalize();
     if ((vc - vb).Dot(normal3) < 0) normal3 *= -1;
 #endif
-  };
+  }
 };
 
 template <typename Real_t>
@@ -519,7 +519,7 @@ struct TorusData {
         vecSPhi(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi))),
         vecEPhi(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi))),
         inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
-        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false){};
+        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false){}
   VECCORE_ATT_HOST_DEVICE
   Real_t Radius() const { return std::abs(Real_t(rTor)); }
   VECCORE_ATT_HOST_DEVICE

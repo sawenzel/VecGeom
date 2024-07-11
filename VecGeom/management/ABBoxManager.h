@@ -228,11 +228,11 @@ public:
     // Apply the transformation with respect to the mother LV
     TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
 
-    // lowerc.Set(lower.x() - 1E-3, lower.y() - 1E-3, lower.z() - 1E-3);
-    // upperc.Set(upper.x() + 1E-3, upper.y() + 1E-3, upper.z() + 1E-3);
+    lowerc.Set(lower.x() - 1E-3, lower.y() - 1E-3, lower.z() - 1E-3);
+    upperc.Set(upper.x() + 1E-3, upper.y() + 1E-3, upper.z() + 1E-3);
 
-    lowerc.Set(lower.x(), lower.y(), lower.z());
-    upperc.Set(upper.x(), upper.y(), upper.z());
+    // lowerc.Set(lower.x(), lower.y(), lower.z());
+    // upperc.Set(upper.x(), upper.y(), upper.z());
   }
 
   static ABBoxManager<Real_b> &Instance()

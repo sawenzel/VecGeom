@@ -23,7 +23,7 @@ struct RingMask {
     if (isFullCirc) return;
     vecSPhi.Set(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi)));
     vecEPhi.Set(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi)));
-  };
+  }
 
   /// @brief Fills extents in X and Y for the ring mask
   /// @param xmin Minimum of the extent in X
