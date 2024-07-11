@@ -62,6 +62,8 @@ int LoadOnGPU()
   if (!world) return 3;
   // Set higher stack limit to allow depper CSG for the solids model
   CudaAssertError(CudaDeviceSetStackLimit(8192));
+  // set higher heap limit to allow solid model to dynamically allocate on GPU during init for large geometries
+  CudaAssertError(CudaDeviceSetHeapLimit(512 * 1024 * 1024));
   auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
   cudaManager.LoadGeometry(world);
   if (!cudaManager.Synchronize()) return 4;
@@ -252,7 +254,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
   int istart       = 0;
   int num_overlaps = 0;
   if (idebug >= 0) {
-    std::cout << "PropagateRaysSurf debug ray " << idebug << "\n   start : ";
+    std::cout << "PropagateRaysSurf debug ray " << idebug << " using BVH?  " << use_bvh << "\n   start : ";
     in_states[idebug].Print();
     istart = idebug;
     ilast  = istart + 1;
@@ -538,7 +540,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
 // in testRaytracing.cu
 int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug,
-                       bool test_bvh);
+                       bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false);
 
 //==================================================================================
 int main(int argc, char *argv[])
@@ -640,12 +642,13 @@ int main(int argc, char *argv[])
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
-  if (ongpu && !debug) {
+  if (ongpu) {
     timer.Start();
     errCUDA            = LoadOnGPU();
     auto time_transfer = timer.Stop();
     std::cout << "Solid model GPU transfer time: " << time_transfer << " [s]\n";
-    if (!errCUDA) errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, test_bvh);
+    if (!errCUDA)
+      errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, accept_zeros, max_cross, test_bvh);
   }
 #endif
 

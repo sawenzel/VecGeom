@@ -29,8 +29,7 @@ struct kScalar {
   const static bool_v kFalse         = false;
 
   template <class Backend>
-  VECCORE_ATT_HOST_DEVICE
-  static VECGEOM_CONSTEXPR_RETURN bool IsEqual()
+  VECCORE_ATT_HOST_DEVICE static VECGEOM_CONSTEXPR_RETURN bool IsEqual()
   {
     return false;
   }
@@ -41,8 +40,7 @@ struct kScalar {
 };
 
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline VECGEOM_CONSTEXPR_RETURN bool kScalar::IsEqual<kScalar>()
+VECCORE_ATT_HOST_DEVICE inline VECGEOM_CONSTEXPR_RETURN bool kScalar::IsEqual<kScalar>()
 {
   return true;
 }
@@ -71,9 +69,7 @@ constexpr size_t kVectorSize = 1;
 //}
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-void copy(Type const *begin, Type const *const end, Type *const target)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void copy(Type const *begin, Type const *const end, Type *const target)
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   std::copy(begin, end, target);
@@ -83,21 +79,20 @@ void copy(Type const *begin, Type const *const end, Type *const target)
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Type *AlignedAllocate(size_t size)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Type *AlignedAllocate(size_t size)
 {
 #ifndef VECCORE_CUDA
   return static_cast<Type *>(vecCore::AlignedAlloc(kAlignmentBoundary, sizeof(Type) * size));
 #else
-  return new Type[size];
+  Type *ptr = new Type[size];
+  assert(ptr != nullptr && "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU with "
+                           "CudaDeviceSetHeapLimit(new_size)");
+  return ptr;
 #endif
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-void AlignedFree(Type *allocated)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AlignedFree(Type *allocated)
 {
 #ifndef VECCORE_CUDA
   vecCore::AlignedFree(allocated);
@@ -107,9 +102,8 @@ void AlignedFree(Type *allocated)
 }
 
 template <typename InputIterator1, typename InputIterator2>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-bool equal(InputIterator1 first, InputIterator1 last, InputIterator2 target)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool equal(InputIterator1 first, InputIterator1 last,
+                                                        InputIterator2 target)
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   return std::equal(first, last, target);

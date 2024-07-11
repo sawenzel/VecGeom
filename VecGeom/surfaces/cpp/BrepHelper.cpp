@@ -432,8 +432,8 @@ void BrepHelper<Real_t>::CreateCandidateLists()
 
   // Lambda adding the surface id as entering candidate to all parent states from a side
   auto addSurfToSideParents = [&](int isurf, char iside) {
-    auto const &surf       = fCPUdata.fCommonSurfaces[isurf];
-    Side const &side       = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
+    auto const &surf = fCPUdata.fCommonSurfaces[isurf];
+    Side const &side = (iside == kLside) ? surf.fLeftSide : surf.fRightSide;
     for (int i = 0; i < side.fNsurf; ++i) {
       int idglob       = side.fSurfaces[i];
       auto &framedsurf = fCPUdata.fFramedSurf[idglob];
@@ -1223,9 +1223,9 @@ void BrepHelper<Real_t>::InitBVHData()
         rootShell.fExitingSurfaces.push_back(i);
     }
 
-    for (auto pvol : lvol->GetDaughters()) {
+    for (const auto &pvol : lvol->GetDaughters()) {
       // Get the shell
-      auto shell = fCPUdata.fShells[pvol->GetLogicalVolume()->id()];
+      const auto &shell = fCPUdata.fShells[pvol->GetLogicalVolume()->id()];
       // Iterate over the local surfaces which have a frame in this shell
       for (uint i = 0; i < shell.fSurfaces.size(); i++) {
         if (fCPUdata.fLocalSurfaces[shell.fSurfaces[i]].fFrame.type != FrameType::kNoFrame) {
@@ -1765,7 +1765,7 @@ void BrepHelper<Real_t>::UpdateSurfData()
   logic_int *current_logic = fSurfData->fLogicList;
 
   // Compute the sum of entering surfaces for all Lvols
-  for (auto shell : fCPUdata.fShells) {
+  for (const auto &shell : fCPUdata.fShells) {
     fSurfData->fNExitingSurfaces += shell.fExitingSurfaces.size();
     fSurfData->fNEnteringSurfaces += shell.fEnteringSurfaces.size();
   }

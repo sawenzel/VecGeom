@@ -380,9 +380,9 @@ public:
   {
     auto &container = GeoManager::Instance().GetLogicalVolumesMap();
     fVolToSurfaceABBoxesMap.resize(container.size(), nullptr);
-    std::vector<LogicalVolume const *> logicalvolumes(container.size());
-    logicalvolumes.resize(0);
-    for (auto p : container) {
+    std::vector<LogicalVolume const *> logicalvolumes;
+    logicalvolumes.reserve(container.size());
+    for (const auto &p : container) {
       logicalvolumes.push_back(p.second);
     }
     InitSurfaceABBoxes(logicalvolumes, surfData);

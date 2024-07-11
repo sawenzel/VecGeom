@@ -55,9 +55,9 @@ public:
   // constructor (not taking ownership of the pointers)
   VECCORE_ATT_HOST_DEVICE
   PlanarPolygon(int nvertices, Precision *x, Precision *y)
-      : fVertices(), fShiftedXJ({}), fShiftedYJ({}), fLengthSqr({}), fInvLengthSqr({}), fA({}), fB({}), fD({}),
-        fIsConvex(false), fMinX(kInfLength), fMinY(kInfLength), fMaxX(-kInfLength), fMaxY(-kInfLength),
-        fNVertices(nvertices)
+      : fVertices(nvertices), fShiftedXJ(nvertices), fShiftedYJ(nvertices), fLengthSqr(nvertices),
+        fInvLengthSqr(nvertices), fA(nvertices), fB(nvertices), fD(nvertices), fIsConvex(false), fMinX(kInfLength),
+        fMinY(kInfLength), fMaxX(-kInfLength), fMaxY(-kInfLength), fNVertices(nvertices)
   {
     Init(nvertices, x, y);
   }

@@ -47,7 +47,13 @@ struct AllocTrait<T *> {
 
   // Allocate raw buffer to hold the element.
   VECCORE_ATT_HOST_DEVICE
-  static T **Allocate(size_t nElems) { return reinterpret_cast<T **>(new char[nElems * sizeof(T *)]); }
+  static T **Allocate(size_t nElems)
+  {
+    T **ptr = reinterpret_cast<T **>(new char[nElems * sizeof(T *)]);
+    assert(ptr != nullptr && "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU "
+                             "with CudaDeviceSetHeapLimit(new_size)");
+    return ptr;
+  }
 
   // Release raw buffer to hold the element.
   VECCORE_ATT_HOST_DEVICE

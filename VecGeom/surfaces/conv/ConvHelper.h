@@ -15,7 +15,8 @@ namespace conv {
 /// @param v3 vector 3
 /// @return whether the three vectors are right-sided
 template <typename Real_t>
-bool IsRightSided(vecgeom::Vector3D<Real_t> const &v1,  vecgeom::Vector3D<Real_t> const &v2, vecgeom::Vector3D<Real_t> const &v3)
+bool IsRightSided(vecgeom::Vector3D<Real_t> const &v1, vecgeom::Vector3D<Real_t> const &v2,
+                  vecgeom::Vector3D<Real_t> const &v3)
 {
   Real_t dot = (v1[0] - v2[0]) * (v3[1] - v2[1]) - (v1[1] - v2[1]) * (v3[0] - v2[0]);
   return (dot < -vecgeom::kToleranceDist<Real_t>) ? false : true;
@@ -39,7 +40,8 @@ bool IsConvexConcave(const int iSect, Container &zArray, Container &rArray, cons
     int k = (i + 2);
     // if the top of the this section and the bottom of next section are the same, we need to check the next point
     if (rArray[j] == rArray[k]) k++;
-    if (convex ^ IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
+    if (convex ^
+        IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
       return false;
     }
   }
@@ -51,8 +53,9 @@ bool IsConvexConcave(const int iSect, Container &zArray, Container &rArray, cons
     int k = (i + 2);
     // if the top of the previous section and the bottom of this section are the same, we need to check the previous
     // point
-    if (rArray[i] == rArray[j]) i--;
-    if (convex ^ IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
+    if (rArray[i] == rArray[j] && i > 0) i--;
+    if (convex ^
+        IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
       return false;
     }
     i = iSect;
@@ -60,7 +63,8 @@ bool IsConvexConcave(const int iSect, Container &zArray, Container &rArray, cons
     k = (i + 2);
     // if the top of the this section and the bottom of next section are the same, we need to check the next point
     if (rArray[j] == rArray[k]) k++;
-    if (convex ^ IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
+    if (convex ^
+        IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
       return false;
     }
   }
@@ -72,8 +76,9 @@ bool IsConvexConcave(const int iSect, Container &zArray, Container &rArray, cons
     int k = (i + 2);
     // if the top of the previous section and the bottom of this section are the same, we need to check the previous
     // point
-    if (rArray[i] == rArray[j]) i--;
-    if (convex ^ IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
+    if (rArray[i] == rArray[j] && i > 0) i--;
+    if (convex ^
+        IsRightSided<Real_t>({rArray[i], zArray[i], 0.}, {rArray[j], zArray[j], 0.}, {rArray[k], zArray[k], 0.})) {
       return false;
     }
   }
