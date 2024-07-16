@@ -271,7 +271,7 @@ if(VECGEOM_ENABLE_CUDA)
     add_test(NAME GeometryTest-Device-trackML
       COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml -validate false)
     add_test(NAME GeometryTest-Device-cms2018
-      COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/cms2018.gdml -validate false)
+      COMMAND GeometryTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/cms2018.gdml -validate false -stacksize 32768)
   endif()
 endif()
 
