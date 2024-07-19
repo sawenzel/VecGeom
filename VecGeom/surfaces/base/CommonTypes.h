@@ -257,7 +257,10 @@ struct CylData {
   CylData(Real_i rad, bool flip = false) : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad))
   {
   }
-
+  template <typename Real_i>
+  CylData(const CylData<Real_i> &other) : radius(static_cast<Real_t>(other.radius))
+  {
+  }
   VECCORE_ATT_HOST_DEVICE
   Real_t Radius() const { return std::abs(Real_t(radius)); }
   VECCORE_ATT_HOST_DEVICE
@@ -282,6 +285,12 @@ struct ConeData {
       : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad)), slope(static_cast<Real_t>(slope_i))
   {
   }
+  template <typename Real_i>
+  ConeData(const ConeData<Real_i> &other)
+      : radius(static_cast<Real_t>(other.radius)), slope(static_cast<Real_t>(other.slope))
+  {
+  }
+
   VECCORE_ATT_HOST_DEVICE
   Real_t Radius() const { return std::abs(Real_t(radius)); }
   VECCORE_ATT_HOST_DEVICE
@@ -329,6 +338,14 @@ struct EllipData {
     // Coefficient for approximation of distance : Q1 * (x^2 + y^2) - Q2
     fQ1 = 0.5 / R;
     fQ2 = 0.5 * (R + vecgeom::kHalfTolerance * vecgeom::kHalfTolerance / R);
+  }
+  template <typename Real_i>
+  EllipData(const EllipData<Real_i> &other)
+      : Rx(static_cast<Real_t>(other.Rx)), Ry(static_cast<Real_t>(other.Ry)), dz(static_cast<Real_t>(other.dz)),
+        R(static_cast<Real_t>(other.R)), fRsph(static_cast<Real_t>(other.fRsph)), fDDx(static_cast<Real_t>(other.fDDx)),
+        fDDy(static_cast<Real_t>(other.fDDy)), fSx(static_cast<Real_t>(other.fSx)), fSy(static_cast<Real_t>(other.fSy)),
+        fQ1(static_cast<Real_t>(other.fQ1)), fQ2(static_cast<Real_t>(other.fQ2))
+  {
   }
 };
 
@@ -425,6 +442,30 @@ struct Arb4Data {
     if ((vc - vb).Dot(normal3) < 0) normal3 *= -1;
 #endif
   }
+  template <typename Real_i>
+  Arb4Data(const Arb4Data<Real_i> &other)
+      : halfH(static_cast<Real_t>(other.halfH)), halfH_inv(static_cast<Real_t>(other.halfH_inv)),
+        ftx1(static_cast<Real_t>(other.ftx1)), fty1(static_cast<Real_t>(other.fty1)),
+        ftx2(static_cast<Real_t>(other.ftx2)), fty2(static_cast<Real_t>(other.fty2)),
+        ft1crosst2(static_cast<Real_t>(other.ft1crosst2)), fDeltatx(static_cast<Real_t>(other.fDeltatx)),
+        fDeltaty(static_cast<Real_t>(other.fDeltaty)), fViCrossHi0(static_cast<Vector3D>(other.fViCrossHi0)),
+        fViCrossVj(static_cast<Vector3D>(other.fViCrossVj)), fHi1CrossHi0(static_cast<Vector3D>(other.fHi1CrossHi0))
+#ifdef SURF_ACCURATE_SAFETY
+        ,
+        normal0(static_cast<Vector3D>(other.normal0)), normal1(static_cast<Vector3D>(other.normal1)),
+        normal2(static_cast<Vector3D>(other.normal2)), normal3(static_cast<Vector3D>(other.normal3))
+#endif
+  {
+    for (int i = 0; i < 4; ++i) {
+      verticesX[i] = static_cast<Real_t>(other.verticesX[i]);
+      verticesY[i] = static_cast<Real_t>(other.verticesY[i]);
+    }
+
+    for (int i = 0; i < 2; ++i) {
+      connecting_compX[i] = static_cast<Real_t>(other.connecting_compX[i]);
+      connecting_compY[i] = static_cast<Real_t>(other.connecting_compY[i]);
+    }
+  }
 };
 
 template <typename Real_t>
@@ -519,7 +560,19 @@ struct TorusData {
         vecSPhi(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi))),
         vecEPhi(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi))),
         inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
-        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false){}
+        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false)
+  {
+  }
+  template <typename Real_i>
+  TorusData(const TorusData<Real_i> &other)
+      : rTor(static_cast<Real_t>(other.rTor)), rTube(static_cast<Real_t>(other.rTube)),
+        vecSPhi(static_cast<Real_t>(other.vecSPhi[0]), static_cast<Real_t>(other.vecSPhi[1])),
+        vecEPhi(static_cast<Real_t>(other.vecEPhi[0]), static_cast<Real_t>(other.vecEPhi[1])),
+        inner_cycl_data(static_cast<CylData<Real_t>>(other.inner_cycl_data)),
+        outer_cycl_data(static_cast<CylData<Real_t>>(other.outer_cycl_data))
+  {
+  }
+
   VECCORE_ATT_HOST_DEVICE
   Real_t Radius() const { return std::abs(Real_t(rTor)); }
   VECCORE_ATT_HOST_DEVICE

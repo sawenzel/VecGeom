@@ -36,6 +36,14 @@ struct ZPhiMask {
     vecSPhi.Set(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi)));
     vecEPhi.Set(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi)));
   }
+  template <typename Real_i>
+  ZPhiMask(const ZPhiMask<Real_i> &other)
+      : r0(static_cast<Real_t>(other.r0)), invcalf(static_cast<Real_t>(other.invcalf)), isFullCirc(other.isFullCirc)
+  {
+    rangeZ  = Range<Real_t>(other.rangeZ);
+    vecSPhi = AngleVector<Real_t>(other.vecSPhi);
+    vecEPhi = AngleVector<Real_t>(other.vecEPhi);
+  }
 
   /// @brief Fills extents in X and Y for the ZPhi mask
   /// @param xmin Minimum of the extent in X

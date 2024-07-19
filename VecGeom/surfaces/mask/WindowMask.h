@@ -20,11 +20,20 @@ struct WindowMask {
   template <typename Real_i>
   WindowMask(Real_i u1, Real_i u2, Real_i v1, Real_i v2)
       : rangeU(static_cast<Real_t>(u1), static_cast<Real_t>(u2)),
-        rangeV(static_cast<Real_t>(v1), static_cast<Real_t>(v2)){}
+        rangeV(static_cast<Real_t>(v1), static_cast<Real_t>(v2))
+  {
+  }
   template <typename Real_i>
   WindowMask(Real_i u, Real_i v)
-      : rangeU(static_cast<Real_t>(-u), static_cast<Real_t>(u)),
-        rangeV(static_cast<Real_t>(-v), static_cast<Real_t>(v)){}
+      : rangeU(static_cast<Real_t>(-u), static_cast<Real_t>(u)), rangeV(static_cast<Real_t>(-v), static_cast<Real_t>(v))
+  {
+  }
+  template <typename Real_i>
+  WindowMask(const WindowMask<Real_i> &other)
+      : rangeU(static_cast<Real_t>(other.rangeU[0]), static_cast<Real_t>(other.rangeU[1])),
+        rangeV(static_cast<Real_t>(other.rangeV[0]), static_cast<Real_t>(other.rangeV[1]))
+  {
+  }
 
   /// @brief Fills the 3D extent of the window
   /// @param aMin Bottom extent corner

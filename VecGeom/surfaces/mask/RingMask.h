@@ -15,14 +15,25 @@ struct RingMask {
   AngleVector<Real_t> vecEPhi; ///< Cartesian coordinates of vectors that represents the end of the phi-cut.
 
   RingMask() = default;
+
   template <typename Real_i>
   RingMask(Real_i rmin, Real_i rmax, bool isFullCircle, Real_i sphi = Real_i{0}, Real_i ephi = Real_i{0})
       : rangeR(static_cast<Real_t>(rmin), static_cast<Real_t>(rmax)), isFullCirc(isFullCircle)
   {
-    // If there is no Phi cut, we needn't wotty about phi vectors.
+    // If there is no Phi cut, no need to set phi vectors.
     if (isFullCirc) return;
     vecSPhi.Set(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi)));
     vecEPhi.Set(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi)));
+  }
+
+  template <typename Real_i>
+  RingMask(const RingMask<Real_i> &other)
+      : rangeR(static_cast<Real_t>(other.rangeR[0]), static_cast<Real_t>(other.rangeR[1])), isFullCirc(other.isFullCirc)
+  {
+    // If there is no Phi cut, no need to set phi vectors.
+    if (isFullCirc) return;
+    vecSPhi.Set(static_cast<Real_t>(other.vecSPhi[0]), static_cast<Real_t>(other.vecSPhi[1]));
+    vecEPhi.Set(static_cast<Real_t>(other.vecEPhi[0]), static_cast<Real_t>(other.vecEPhi[1]));
   }
 
   /// @brief Fills extents in X and Y for the ring mask

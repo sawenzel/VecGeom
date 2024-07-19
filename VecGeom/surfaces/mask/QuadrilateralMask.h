@@ -59,6 +59,14 @@ struct QuadrilateralMask {
     p_[2].Set(static_cast<Real_t>(x3), static_cast<Real_t>(y3));
     p_[3].Set(static_cast<Real_t>(x4), static_cast<Real_t>(y4));
   }
+  template <typename Real_i>
+  QuadrilateralMask(const QuadrilateralMask<Real_i> &other)
+  {
+    for (int i = 0; i < 4; ++i) {
+      p_[i] = Point2D<Real_t>(other.p_[i]);
+      n_[i] = Point2D<Real_t>(other.n_[i]);
+    }
+  }
 
   /// @brief Fills the 3D extent of the quadrilateral
   /// @param window Extent window to be filled

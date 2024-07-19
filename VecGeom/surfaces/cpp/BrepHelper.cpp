@@ -4,8 +4,13 @@
 namespace vgbrep {
 
 template <typename Real_t>
-BrepHelper<Real_t>::BrepHelper() : fSurfData(&SurfData<Real_t>::Instance()), fCPUdata(CPUsurfData<Real_t>::Instance())
+BrepHelper<Real_t>::BrepHelper()
+    : fSurfData(&SurfData<Real_t>::Instance()), fCPUdata(CPUsurfData<vecgeom::Precision>::Instance())
 {
+  static_assert(std::is_same<CPUsurfData_t, CPUsurfData<vecgeom::Precision>>::value,
+                "CPUsurfData_t must be CPUsurfData<vecgeom::Precision>");
+  static_assert(std::is_same<Real_t, double>::value || std::is_same<Real_t, float>::value,
+                "Real_t must be either double or float");
 }
 
 template <typename Real_t>
@@ -22,8 +27,9 @@ BrepHelper<Real_t>::~BrepHelper()
 }
 
 template <typename Real_t>
-bool BrepHelper<Real_t>::ApproxEqualTransformation(vecgeom::Transformation3DMP<Real_t> const &t1,
-                                                   vecgeom::Transformation3DMP<Real_t> const &t2)
+template <typename Real_i>
+bool BrepHelper<Real_t>::ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_i> &t1,
+                                                   const vecgeom::Transformation3DMP<Real_i> &t2)
 {
   if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
   for (int i = 0; i < 9; ++i)
@@ -364,13 +370,13 @@ void BrepHelper<Real_t>::ConvertTransformations(int idsurf)
   // Set flip status of common surface based on first framed surface after sorting
   fCPUdata.fCommonSurfaces[idsurf].fFlipped = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fLogicId < 0 ? 1 : 0;
 
-  TransformationMP<Real_t> tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
+  TransformationMP<vecgeom::Precision> tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
 
   // Skip first surface on left side
   for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
     int idglob = surf.fLeftSide.fSurfaces[i];
     auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<Real_t> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+    TransformationMP<vecgeom::Precision> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
     tnew *= tsurfinv;
     if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
       surf.fTrans = 0;
@@ -383,7 +389,7 @@ void BrepHelper<Real_t>::ConvertTransformations(int idsurf)
   for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
     int idglob = surf.fRightSide.fSurfaces[i];
     auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<Real_t> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+    TransformationMP<vecgeom::Precision> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
     tnew *= tsurfinv;
     if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
       surf.fTrans = 0;
@@ -549,21 +555,21 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
     }
 
     // Check if the 2 surfaces are parallel
-    vecgeom::Transformation3DMP<Real_t> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-    vecgeom::Transformation3DMP<Real_t> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
     // Check if the rotations are matching. The z axis inverse-transformed
     // with the two rotations should end up as aligned vectors. This is
     // true for planes (Z is the normal) but also for tubes/cones where
     // Z is the axis of symmetry
-    vecgeom::Vector3D<double> const zaxis(0, 0, 1);
+    vecgeom::Vector3D<vecgeom::Precision> const zaxis(0, 0, 1);
     auto z1 = t1.InverseTransformDirection(zaxis);
     auto z2 = t2.InverseTransformDirection(zaxis);
     if (!ApproxEqualVector(z1.Cross(z2), {0, 0, 0})) return false;
     // Calculate normalized connection vector between the two transformations
     // Use double precision explicitly
-    vecgeom::Vector3D<double> tdiff = t1.Translation() - t2.Translation();
-    bool same_tr                    = ApproxEqualVector(tdiff, {0, 0, 0});
-    vecgeom::Vector3D<double> ldir;
+    vecgeom::Vector3D<vecgeom::Precision> tdiff = t1.Translation() - t2.Translation();
+    bool same_tr                                = ApproxEqualVector(tdiff, {0, 0, 0});
+    vecgeom::Vector3D<vecgeom::Precision> ldir;
     switch (s1.fSurface.type) {
     case SurfaceType::kPlanar:
       flip = z1.Dot(z2) < 0;
@@ -616,13 +622,13 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
 
   auto surfHash = [&](int idglobal, double tolerance = 100 * vecgeom::kTolerance) {
     // Compute hash for the surface rotation and translation
-    FramedSurface const &surf                        = fCPUdata.fFramedSurf[idglobal];
-    vecgeom::Transformation3DMP<Real_t> const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
+    FramedSurface const &surf                                    = fCPUdata.fFramedSurf[idglobal];
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
 
     // get normal vector of surface
-    vecgeom::Vector3D<Real_t> normal;
-    vecgeom::Vector3D<Real_t> scaled_norm_vector;
-    const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
+    vecgeom::Vector3D<vecgeom::Precision> normal;
+    vecgeom::Vector3D<vecgeom::Precision> scaled_norm_vector;
+    const vecgeom::Vector3D<vecgeom::Precision> lnorm(0, 0, 1);
     trans.InverseTransformDirection(lnorm, normal);
 
     long hash = 0;
@@ -803,7 +809,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     auto &nperscene = fCPUdata.fSceneTouchables;
     nphysical++;
     nperscene[scene_id]++;
-    TransformationMP<Real_t> trans;
+    TransformationMP<vecgeom::Precision> trans;
     // only consider the surface transformation in its scene
     state.TopInSceneMatrix(trans);
     VolumeShellCPU const &shell = fCPUdata.fShells[ivol];
@@ -817,7 +823,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
 
       // Ignore 'inside' helper surfaces having no frame
       if (lsurf.fFrame.type == FrameType::kNoFrame) continue;
-      TransformationMP<Real_t> surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
+      TransformationMP<vecgeom::Precision> surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
       surftrans *= trans;
       int trans_id = fCPUdata.fGlobalTrans.size();
       fCPUdata.fGlobalTrans.push_back(surftrans);
@@ -947,7 +953,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
   };
 
   // add identity first in the list of global transformations
-  TransformationMP<Real_t> identity;
+  TransformationMP<vecgeom::Precision> identity;
   fCPUdata.fGlobalTrans.push_back(identity);
   // add a dummy common surface since index 0 is not allowed for correctly handling sides
   fCPUdata.fCommonSurfaces.push_back({});
@@ -1061,7 +1067,7 @@ template <typename Real_t>
 bool BrepHelper<Real_t>::CreateLocalSurfaces()
 {
   // add identity first in the list of local transformations
-  TransformationMP<Real_t> identity;
+  TransformationMP<vecgeom::Precision> identity;
   assert(fCPUdata.fLocalTrans.size() == 0);
   fCPUdata.fLocalTrans.push_back(identity);
   //  Iterate logical volumes and create local surfaces
@@ -1074,7 +1080,7 @@ bool BrepHelper<Real_t>::CreateLocalSurfaces()
   // create a placeholder for surface data
   for (auto volume : volumes) {
     vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
-    bool result                           = conv::CreateSolidSurfaces<Real_t>(solid, volume->id());
+    bool result                           = conv::CreateSolidSurfaces<vecgeom::Precision>(solid, volume->id());
     if (!result) {
       VECGEOM_LOG(critical) << "Could not convert volume " << volume->id() << ": " << volume->GetName();
       return false;
@@ -1119,15 +1125,15 @@ void BrepHelper<Real_t>::DumpBVH(uint ivol)
 template <typename Real_t>
 bool BrepHelper<Real_t>::EqualFrames(Side const &side, int i1, int i2)
 {
-  using Vector3D = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
   FramedSurface const &s1 = fCPUdata.fFramedSurf[side.fSurfaces[i1]];
   FramedSurface const &s2 = fCPUdata.fFramedSurf[side.fSurfaces[i2]];
   if (s1.fFrame.type != s2.fFrame.type) return false;
   // Get displacement vector between the 2 frame centers and check if it has null length
-  vecgeom::Transformation3DMP<Real_t> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-  vecgeom::Transformation3DMP<Real_t> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
-  Vector3D tdiff                                = t1.Translation() - t2.Translation();
+  vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
+  vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+  Vector3D tdiff                                            = t1.Translation() - t2.Translation();
   // TODO: Check if this has to always hold with the new mask types!!
   if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
 

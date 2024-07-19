@@ -63,6 +63,37 @@ public:
   constexpr Transformation3DMP() : fIdentity(true), fHasRotation(false), fHasTranslation(false){};
 
   /**
+   * Constructor from other transformation in other precision.
+   * @tparam Real_i precision of other transformation
+   * @param other other transformation
+   */
+  template <typename Real_i>
+  Transformation3DMP(const Transformation3DMP<Real_i> &other)
+  {
+    // Assuming getTranslation returns a pointer or array of 3 elements
+    auto translation = other.Translation();
+    tx_              = static_cast<Real_s>(translation[0]);
+    ty_              = static_cast<Real_s>(translation[1]);
+    tz_              = static_cast<Real_s>(translation[2]);
+
+    // Assuming getRotation returns a pointer or array of 9 elements
+    auto rotation = other.Rotation();
+    rxx_          = static_cast<Real_s>(rotation[0]);
+    ryx_          = static_cast<Real_s>(rotation[1]);
+    rzx_          = static_cast<Real_s>(rotation[2]);
+    rxy_          = static_cast<Real_s>(rotation[3]);
+    ryy_          = static_cast<Real_s>(rotation[4]);
+    rzy_          = static_cast<Real_s>(rotation[5]);
+    rxz_          = static_cast<Real_s>(rotation[6]);
+    ryz_          = static_cast<Real_s>(rotation[7]);
+    rzz_          = static_cast<Real_s>(rotation[8]);
+
+    fIdentity       = other.IsIdentity();
+    fHasRotation    = other.HasRotation();
+    fHasTranslation = other.HasTranslation();
+  }
+
+  /**
    * Constructor for translation only.
    * @param tx Translation in x-coordinate.
    * @param ty Translation in y-coordinate.

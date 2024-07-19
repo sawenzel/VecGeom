@@ -36,7 +36,7 @@ class BrepHelper {
   using ZPhiMask_t     = ZPhiMask<Real_t>;
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
-  using CPUsurfData_t  = CPUsurfData<Real_t>;
+  using CPUsurfData_t  = CPUsurfData<vecgeom::Precision>;
 
 private:
   int fVerbose{0};                ///< verbosity level
@@ -50,8 +50,9 @@ public:
   /// Returns the singleton instance (CPU only)
   static BrepHelper &Instance();
 
-  bool ApproxEqualTransformation(vecgeom::Transformation3DMP<Real_t> const &t1,
-                                 vecgeom::Transformation3DMP<Real_t> const &t2);
+  template <typename Real_i>
+  bool ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_i> &t1,
+                                 const vecgeom::Transformation3DMP<Real_i> &t2);
   void ClearData();
   void ComputeDefaultStates(int common_id);
   // Computes bounding extent on a side of cylindrical surface

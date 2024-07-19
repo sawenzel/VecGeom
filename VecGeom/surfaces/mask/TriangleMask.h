@@ -35,6 +35,14 @@ struct TriangleMask {
       n_[i].Normalize();
     }
   }
+  template <typename Real_i>
+  TriangleMask(const TriangleMask<Real_i> &other)
+  {
+    for (int i = 0; i < 3; ++i) {
+      p_[i] = Point2D<Real_t>(other.p_[i]);
+      n_[i] = Point2D<Real_t>(other.n_[i]);
+    }
+  }
 
   /// @brief Fills the 3D extent of the quadrilateral
   /// @param window Extent window to be filled
