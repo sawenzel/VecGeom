@@ -84,9 +84,9 @@ struct TriangleMask {
   bool Inside(Vector3D<Real_t> const &local) const
   {
     Vector2D<Real_t> const local2D(local.x(), local.y());
-    return (n_[0].Dot(local2D - p_[0]) < vecgeom::kToleranceDist<Real_t> &&
-            n_[1].Dot(local2D - p_[1]) < vecgeom::kToleranceDist<Real_t> &&
-            n_[2].Dot(local2D - p_[2]) < vecgeom::kToleranceDist<Real_t>);
+    return (n_[0].Dot(local2D - p_[0]) < vecgeom::kToleranceStrict<Real_t> &&
+            n_[1].Dot(local2D - p_[1]) < vecgeom::kToleranceStrict<Real_t> &&
+            n_[2].Dot(local2D - p_[2]) < vecgeom::kToleranceStrict<Real_t>);
   }
 
   /// @brief Computes the closest distance from a point in XY plane and the triangle.

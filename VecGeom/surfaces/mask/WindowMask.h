@@ -55,10 +55,10 @@ struct WindowMask {
   VECCORE_ATT_HOST_DEVICE
   bool Inside(Vector3D<Real_t> const &local) const
   {
-    return (local[0] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeU[0]) &&
-            local[0] < vecgeom::MakePlusTolerant<true, Real_t>(rangeU[1]) &&
-            local[1] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeV[0]) &&
-            local[1] < vecgeom::MakePlusTolerant<true, Real_t>(rangeV[1]));
+    return (local[0] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeU[0], vecgeom::kToleranceStrict<Real_t>) &&
+            local[0] < vecgeom::MakePlusTolerant<true, Real_t>(rangeU[1], vecgeom::kToleranceStrict<Real_t>) &&
+            local[1] > vecgeom::MakeMinusTolerant<true, Real_t>(rangeV[0], vecgeom::kToleranceStrict<Real_t>) &&
+            local[1] < vecgeom::MakePlusTolerant<true, Real_t>(rangeV[1], vecgeom::kToleranceStrict<Real_t>));
   }
 
   /// @brief Computes safe distance to the frame combining surface and frame safeties.

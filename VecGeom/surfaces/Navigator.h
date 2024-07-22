@@ -82,7 +82,9 @@ VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(Vector3D<Real_t> const &point, Vecto
     last_bool_state = framedsurf.fState;
     // Frame cross does not guarantee a real surface cross in case of Booleans
     // For a real exiting, the post-crossing point must be outside the Boolean
-    auto pushedPoint = point + (distance + kPushDistance) * direction;
+    auto pushedPoint = std::is_same<Real_t, double>::value
+                           ? point + (distance + kPushDistance) * direction
+                           : point + (distance + vecgeom::kRelTolerance<Real_t>(distance)) * direction;
     // The logic for the frame that is exited can be set to false without a numerical check
     auto inside = LogicInside(pushedPoint, exited_state, surfdata, framedsurf.fLogicId, false);
     if (inside) inframe = false;
@@ -632,13 +634,15 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
                                      Vector3D<Real_t> const &direction, Real_t hit_dist,
                                      Vector3D<Real_t> const &onsurf_local, FSlocator &out_frame)
 {
-  constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
+  constexpr Real_t kPushDistance = 1000 * vecgeom::kTolerance;
   auto const &surfdata           = SurfData<Real_t>::Instance();
   auto const &in_state           = hit_frame.state;
   unsigned short scene_id = 0, newscene_id = 0;
   bool is_scene            = in_state.GetSceneId(scene_id, newscene_id);
   auto in_navind           = in_state.GetNavIndex();
-  auto pushed_point        = point + (hit_dist + kPushDistance) * direction;
+  auto pushed_point        = std::is_same<Real_t, double>::value
+                                 ? point + (hit_dist + kPushDistance) * direction
+                                 : point + (hit_dist + vecgeom::kRelTolerance<Real_t>(hit_dist)) * direction;
   auto const &surf_crossed = surfdata.GetCommonSurface(hit_frame);
   auto const &enter_side   = surfdata.GetSide(hit_frame);
   int iframe = FindFrameOnEnteringSide(enter_side, in_state, in_navind, is_scene, surf_crossed.IsSceneSurface(),
@@ -776,7 +780,9 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   if (!surfhit) return dist;
   // If the frame belongs to a Boolean, we need to check if the solid is really exited/entered
   if (framedsurf.fLogicId) {
-    onsurf = point_volume + (dist + kPushDistance) * direction_volume;
+    onsurf = std::is_same<Real_t, double>::value
+                 ? point_volume + (dist + kPushDistance) * direction_volume
+                 : point_volume + (dist + vecgeom::kRelTolerance<Real_t>(dist)) * direction_volume;
     // The logic for the frame that is entered can be set to true without a numerical check
     auto inside = LogicInsideLocal(onsurf, volId, surfdata, framedsurf.fLogicId, !exiting);
     surfhit     = inside ^ exiting;
@@ -915,7 +921,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/true, left_side,
                                    surfhit, onsurf_crt, dist2, local, localdir, safety);
-    if (!surfhit || (dist < -vecgeom::kToleranceDist<Real_t> && !(Abs(safety) < vecgeom::kToleranceDist<Real_t>)) ||
+    if (!surfhit || (dist < -vecgeom::kToleranceStrict<Real_t> && !(Abs(safety) < vecgeom::kToleranceStrict<Real_t>)) ||
         dist >= distance)
       continue;
     // if (dist < 0) dist = Real_t(0.);
@@ -928,9 +934,9 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
         ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist, onsurf_crt, exit_FS.hit_surf, out_frame);
     exit_FS.exit_surf = exit_FS.hit_surf; // store exiting information
     // if no frame was hit and no second solution exists, continue
-    if (!inframe && dist2 < -vecgeom::kToleranceDist<Real_t>) continue;
+    if (!inframe && dist2 < -vecgeom::kToleranceStrict<Real_t>) continue;
     // if no frame was hit, try second solution
-    if (!inframe && dist2 > -vecgeom::kToleranceDist<Real_t>) {
+    if (!inframe && dist2 > -vecgeom::kToleranceStrict<Real_t>) {
       tmp_hit_FS.Set(isurf, cand.fFrameInd[icand], !left_side);
       onsurf_crt = local + dist2 * localdir;
       inframe = ExitCS(tmp_hit_FS, /*is_hit=*/false, point, direction, dist2, onsurf_crt, exit_FS.hit_surf, out_frame);
@@ -976,13 +982,13 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     // Compute distance to the unplaced surface
     auto dist = DistanceToUnplaced(local_scene, localdir_scene, surfdata, isurf, sides, /*exiting=*/false, left_side,
                                    surfhit, onsurf_crt, dist2, local, localdir, safety);
-    if (!surfhit || (dist < -vecgeom::kToleranceDist<Real_t> && !(Abs(safety) < vecgeom::kToleranceDist<Real_t>)) ||
+    if (!surfhit || (dist < -vecgeom::kToleranceStrict<Real_t> && !(Abs(safety) < vecgeom::kToleranceStrict<Real_t>)) ||
         dist >= distance)
       continue;
     // if (dist < 0) dist = Real_t(0.);
 
     // Temporary ugly solution to avoid self-entering the volume at 0 distance on the same surface
-    if (self_entering && vecCore::math::Abs(dist) < vecgeom::kToleranceDist<Real_t>) continue;
+    if (self_entering && vecCore::math::Abs(dist) < vecgeom::kToleranceStrict<Real_t>) continue;
 
     FSlocator out_frame;
     auto EnterFrameCheck = [&](auto left_side, auto &onsurf, auto dist) -> int {
@@ -1005,10 +1011,10 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     auto iframe = EnterFrameCheck(left_side, onsurf_crt, dist);
 
     // if frame is not hit and not second solution was found, continue
-    if (iframe < 0 && dist2 < -vecgeom::kToleranceDist<Real_t>) continue;
+    if (iframe < 0 && dist2 < -vecgeom::kToleranceStrict<Real_t>) continue;
 
     // if no frame is hit and second solution is valid, check second solution
-    if (iframe < 0 && dist2 > -vecgeom::kToleranceDist<Real_t> && dist2 < distance) {
+    if (iframe < 0 && dist2 > -vecgeom::kToleranceStrict<Real_t> && dist2 < distance) {
       onsurf_crt = local + dist2 * localdir;
       iframe     = EnterFrameCheck(!left_side, onsurf_crt, dist2);
       if (iframe >= 0) dist = dist2;

@@ -94,7 +94,7 @@ public:
     intersect_distance =
         DistanceToLocalFS(localpoint, localdir, lv_index, surfdata, *framed_surface, exiting, surfhit, safety);
     if (surfhit &&
-        (intersect_distance > -vecgeom::kToleranceDist<Real_t> || Abs(safety) < vecgeom::kToleranceDist<Real_t>)) {
+        (intersect_distance > -vecgeom::kToleranceStrict<Real_t> || Abs(safety) < vecgeom::kToleranceStrict<Real_t>)) {
       return intersect_distance;
     } else {
       return vecgeom::InfinityLength<Real_t>();
