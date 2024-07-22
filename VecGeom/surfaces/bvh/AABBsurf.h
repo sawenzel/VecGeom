@@ -37,7 +37,7 @@ struct AABBsurf {
 
   /** Returns the center of the AABB. */
   VECCORE_ATT_HOST_DEVICE
-  Vector3D<Real_t> Center() const { return 0.5 * (fMax + fMin); }
+  Vector3D<Real_t> Center() const { return static_cast<Real_t>(0.5) * (fMax + fMin); }
 
   /** Returns the extents of the AABB along each axis. */
   VECCORE_ATT_HOST_DEVICE
@@ -48,14 +48,14 @@ struct AABBsurf {
   Real_t SurfaceArea() const
   {
     const auto extent = Size();
-    return 2. * (extent[0] * extent[1] + extent[1] * extent[2] + extent[2] * extent[0]);
+    return static_cast<Real_t>(2.) * (extent[0] * extent[1] + extent[1] * extent[2] + extent[2] * extent[0]);
   }
 
   /** Expand AABB. @param s Amount by which to expand in each direction. */
   VECCORE_ATT_HOST_DEVICE
   void Expand(Real_t s)
   {
-    s *= 0.5;
+    s *= static_cast<Real_t>(0.5);
     fMin -= s;
     fMax += s;
   }

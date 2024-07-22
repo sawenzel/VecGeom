@@ -643,23 +643,26 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
       scaled_norm_vector = trans.Translation().Dot(normal) * normal;
       for (int i = 0; i < 3; i++) {
         // use tolerance to generate int with the desired precision from a real number for hashing
-        hash = hash_combine(hash, std::roundl(scaled_norm_vector[i] / tolerance));
+        hash = hash_combine(hash, static_cast<long>(std::round(scaled_norm_vector[i] / tolerance)));
       }
       break;
     case SurfaceType::kCylindrical:
       // use radius and normal for hashing
-      hash = hash_combine(hash, std::roundl(fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance));
+      hash = hash_combine(hash,
+                          static_cast<long>(std::round(fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance)));
+
       for (int i = 0; i < 3; i++) {
-        hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
+        hash = hash_combine(hash, static_cast<long>(std::round(normal[i] / tolerance)));
       }
       break;
     case SurfaceType::kConical:
       // use radius at origin, slope, and normal for hashing
-      hash = hash_combine(
-          hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance));
-      hash = hash_combine(hash, std::roundl(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance));
+      hash = hash_combine(hash,
+                          static_cast<long>(std::round(
+                              fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance)));
+      hash = hash_combine(hash, static_cast<long>(std::round(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance)));
       for (int i = 0; i < 3; i++) {
-        hash = hash_combine(hash, std::roundl(normal[i] / tolerance));
+        hash = hash_combine(hash, static_cast<long>(std::round(normal[i] / tolerance)));
       }
       break;
     case SurfaceType::kSpherical:
@@ -1366,7 +1369,7 @@ void BrepHelper<Real_t>::PrintCommonSurface(int common_id)
     VECGEOM_LOG(error) << "You are trying to print a non-existent common surface " << common_id;
     return;
   }
-  auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kTolerance) ? Real_t(0) : x; };
+  auto round0 = [](Real_t x) { return (std::abs(x) < vecgeom::kToleranceStrict<Real_t>) ? Real_t(0) : x; };
   vecgeom::Vector3D<Real_t> normal;
   const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
   auto const &surf = fSurfData->fCommonSurfaces[common_id];

@@ -32,8 +32,10 @@ int *splitAlongLongestAxis(const AABBsurf<Real_b> *primitiveBoxes, int *begin, i
   Vector3D<Precision> p = currentBVHNode.Center();
   Vector3D<Precision> v = basis[closestAxis(currentBVHNode.Size())];
 
-  return std::partition(begin, end,
-                        [&](size_t i) { return Vector3D<Precision>::Dot(primitiveBoxes[i].Center() - p, v) < 0.0; });
+  return std::partition(begin, end, [&](size_t i) {
+    Vector3D<Precision> center = static_cast<Vector3D<Precision>>(primitiveBoxes[i].Center());
+    return Vector3D<Precision>::Dot(center - p, v) < 0.0;
+  });
 }
 
 template <typename Real_b>
@@ -52,7 +54,7 @@ int *largestDistanceAlongAxis(const AABBsurf<Real_b> *primitiveBoxes, int *begin
   const int splitAxis = std::distance(extension, std::max_element(extension, extension + 3, [](float a[], float b[]) {
                                         return a[1] - a[0] < b[1] - b[0];
                                       }));
-  const float middlePoint = (extension[splitAxis][1] + extension[splitAxis][0]) / 2.;
+  const float middlePoint = (extension[splitAxis][1] + extension[splitAxis][0]) / 2.f;
   return std::partition(begin, end, [=](size_t i) { return primitiveBoxes[i].Min()[splitAxis] < middlePoint; });
 }
 

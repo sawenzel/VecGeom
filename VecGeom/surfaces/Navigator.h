@@ -1058,7 +1058,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &po
   auto const &cand = surfdata.GetCandidates(scene_id, in_state.GetId());
 
   // Convert the point to the scene coordinate system
-  vecgeom::Transformation3D scene_trans;
+  vecgeom::Transformation3DMP<Real_t> scene_trans;
   in_state.SceneMatrix(scene_trans);
   Vector3D<Real_t> local_scene = scene_trans.Transform(point);
 

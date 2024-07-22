@@ -88,7 +88,7 @@ public:
     // Common part for entering and exiting surfaces
 
     // Check if we intersect the unplaced and the distance
-    double intersect_distance{0};
+    Real_t intersect_distance{0};
     bool surfhit{false};
     Real_t safety;
     intersect_distance =
@@ -97,7 +97,8 @@ public:
         (intersect_distance > -vecgeom::kToleranceDist<Real_t> || Abs(safety) < vecgeom::kToleranceDist<Real_t>)) {
       return intersect_distance;
     } else {
-      return vecgeom::kInfLength;
+      return vecgeom::InfinityLength<Real_t>();
+      ;
     }
   }
 

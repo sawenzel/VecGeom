@@ -448,12 +448,24 @@ struct Arb4Data {
         ftx1(static_cast<Real_t>(other.ftx1)), fty1(static_cast<Real_t>(other.fty1)),
         ftx2(static_cast<Real_t>(other.ftx2)), fty2(static_cast<Real_t>(other.fty2)),
         ft1crosst2(static_cast<Real_t>(other.ft1crosst2)), fDeltatx(static_cast<Real_t>(other.fDeltatx)),
-        fDeltaty(static_cast<Real_t>(other.fDeltaty)), fViCrossHi0(static_cast<Vector3D>(other.fViCrossHi0)),
-        fViCrossVj(static_cast<Vector3D>(other.fViCrossVj)), fHi1CrossHi0(static_cast<Vector3D>(other.fHi1CrossHi0))
+        fDeltaty(static_cast<Real_t>(other.fDeltaty)),
+        fViCrossHi0(Vector3D(static_cast<Real_t>(other.fViCrossHi0[0]), static_cast<Real_t>(other.fViCrossHi0[1]),
+                             static_cast<Real_t>(other.fViCrossHi0[2]))),
+        fViCrossVj(Vector3D(static_cast<Real_t>(other.fViCrossVj[0]), static_cast<Real_t>(other.fViCrossVj[1]),
+                            static_cast<Real_t>(other.fViCrossVj[2]))),
+        fHi1CrossHi0(Vector3D(static_cast<Real_t>(other.fHi1CrossHi0[0]), static_cast<Real_t>(other.fHi1CrossHi0[1]),
+                              static_cast<Real_t>(other.fHi1CrossHi0[2])))
 #ifdef SURF_ACCURATE_SAFETY
         ,
-        normal0(static_cast<Vector3D>(other.normal0)), normal1(static_cast<Vector3D>(other.normal1)),
-        normal2(static_cast<Vector3D>(other.normal2)), normal3(static_cast<Vector3D>(other.normal3))
+        normal0(Vector3D(static_cast<Real_t>(other.normal0[0]), static_cast<Real_t>(other.normal0[1]),
+                         static_cast<Real_t>(other.normal0[2]))),
+        normal1(Vector3D(static_cast<Real_t>(other.normal1[0]), static_cast<Real_t>(other.normal1[1]),
+                         static_cast<Real_t>(other.normal1[2]))),
+        normal2(Vector3D(static_cast<Real_t>(other.normal2[0]), static_cast<Real_t>(other.normal2[1]),
+                         static_cast<Real_t>(other.normal2[2]))),
+        normal3(Vector3D(static_cast<Real_t>(other.normal3[0]), static_cast<Real_t>(other.normal3[1]),
+                         static_cast<Real_t>(other.normal3[2])))
+
 #endif
   {
     for (int i = 0; i < 4; ++i) {
@@ -541,14 +553,14 @@ struct TorusData {
   VECGEOM_FORCE_INLINE
   bool InsidePhi(Vector3D<Real_t> const &local, bool flip) const
   {
-    if (vecSPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance &&
-        vecEPhi[0] >= vecgeom::kInfLength - vecgeom::kTolerance)
+    if (vecSPhi[0] >= vecgeom::InfinityLength<Real_t>() - vecgeom::kToleranceStrict<Real_t> &&
+        vecEPhi[0] >= vecgeom::InfinityLength<Real_t>() - vecgeom::kToleranceStrict<Real_t>)
       return true;
     int flipsign = flip ? -1 : 1;
     AngleVector<Real_t> localAngle{local[0], local[1]};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
-    auto in1    = vecSPhi.CrossZ(localAngle) > -flipsign * vecgeom::kTolerance;
-    auto in2    = localAngle.CrossZ(vecEPhi) > -flipsign * vecgeom::kTolerance;
+    auto in1    = vecSPhi.CrossZ(localAngle) > -flipsign * vecgeom::kToleranceStrict<Real_t>;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -flipsign * vecgeom::kToleranceStrict<Real_t>;
     return convex ? in1 && in2 : in1 || in2;
   }
 

@@ -74,7 +74,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
           SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint, false)) ||
         (Abs(localpoint[2]) > Abs(RadTube_R0 + vecgeom::kTolerance))) {
 
-      Real_t tmp   = vecgeom::kInfLength;
+      Real_t tmp   = vecgeom::InfinityLength<Real_t>();
       tubeDistance = -1; // ensure it returns if no hit
       // check upper plane
       // emulate transformation of upper surface
@@ -209,7 +209,7 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
 
         // refine solution with Newton iterations
         s            = roots[i];
-        Real_t eps   = vecgeom::kInfLength;
+        Real_t eps   = vecgeom::InfinityLength<Real_t>();
         Real_t delta = s * s * s * s + coef.a * s * s * s + coef.b * s * s + coef.c * s + coef.d;
         Real_t eps0  = -delta / (4. * s * s * s + 3. * coef.a * s * s + 2. * coef.b * s + coef.c);
         int ntry     = 0;

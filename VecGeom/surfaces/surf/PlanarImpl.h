@@ -20,7 +20,7 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
   bool Inside(Vector3D<Real_t> const &point, bool flip)
   {
     int flipsign = !flip ? 1 : -1;
-    return point.z() < flipsign * vecgeom::kTolerance;
+    return point.z() < flipsign * vecgeom::kToleranceStrict<Real_t>;
   }
 
   VECGEOM_FORCE_INLINE

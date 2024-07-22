@@ -227,9 +227,14 @@ public:
     stack[0] = 0;
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Real_t> binvdir(1.0 / vecgeom::NonZero(localdir[0]), 1.0 / vecgeom::NonZero(localdir[1]),
-                             1.0 / vecgeom::NonZero(localdir[2]));
-    Vector3D<Real_t> blocalpoint(localpoint), blocaldir(localdir);
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[0])),
+                             static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[1])),
+                             static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[2])));
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+    Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
+                               static_cast<Real_t>(localdir[2]));
+
     Real_t bstep = Real_t(step);
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
@@ -241,9 +246,9 @@ public:
           /* Check AABB first, then the element itself if needed */
           Real_t approach;
           if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
-            auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint + Real_i(approach) * localdir,
-                                                         localdir, step);
-            dist += approach;
+            auto dist = Navigator::CandidateDistanceToIn(
+                fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
+            dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
             if (dist < step &&
                 !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
@@ -262,8 +267,8 @@ public:
         fNodes[childL].ComputeIntersectionInvDir(blocalpoint, binvdir, tminL, tmaxL);
         fNodes[childR].ComputeIntersectionInvDir(blocalpoint, binvdir, tminR, tmaxR);
 
-        const bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < bstep;
-        const bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < bstep;
+        const bool traverseL = tminL <= tmaxL && tmaxL >= static_cast<Real_t>(0.0) && tminL < bstep;
+        const bool traverseR = tminR <= tmaxR && tmaxR >= static_cast<Real_t>(0.0) && tminR < bstep;
 
         /*
          * If both left and right nodes need to be checked, check closest one first.
@@ -297,17 +302,22 @@ public:
     stack[0] = 0;
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Real_t> binvdir(1.0 / vecgeom::NonZero(localdir[0]), 1.0 / vecgeom::NonZero(localdir[1]),
-                             1.0 / vecgeom::NonZero(localdir[2]));
-    Vector3D<Real_t> blocalpoint(localpoint), blocaldir(localdir);
-    Real_t bstep = Real_t(step);
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[0]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[1]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[2]));
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+    Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
+                               static_cast<Real_t>(localdir[2]));
+
+    Real_t bstep = static_cast<Real_t>(step);
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
       // If the current distance is shorter than the distance to the node we can safely ignore it
       Real_t min{vecgeom::InfinityLength<Real_t>()}, max{-vecgeom::InfinityLength<Real_t>()};
       fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, min, max);
-      if (!(min <= max && max >= 0.0 && min < step)) {
+      if (!(min <= max && max >= static_cast<Real_t>(0.0) && min < static_cast<Real_t>(step))) {
         total_cut_nodes++;
         continue;
       }
@@ -321,9 +331,9 @@ public:
           Real_t approach;
           if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
             total_visited_children++;
-            auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint + Real_i(approach) * localdir,
-                                                         localdir, step);
-            dist += approach;
+            auto dist = Navigator::CandidateDistanceToIn(
+                fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
+            dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
             if (dist < step &&
                 !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
@@ -342,8 +352,8 @@ public:
         fNodes[childL].ComputeIntersectionInvDir(blocalpoint, binvdir, tminL, tmaxL);
         fNodes[childR].ComputeIntersectionInvDir(blocalpoint, binvdir, tminR, tmaxR);
 
-        const bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < bstep;
-        const bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < bstep;
+        const bool traverseL = tminL <= tmaxL && tmaxL >= static_cast<Real_t>(0.0) && tminL < bstep;
+        const bool traverseR = tminR <= tmaxR && tmaxR >= static_cast<Real_t>(0.0) && tminR < bstep;
 
         /*
          * If both left and right nodes need to be checked, check closest one first.
@@ -479,7 +489,9 @@ public:
     unsigned int stack[BVH_MAX_DEPTH] = {0}, *ptr = &stack[1];
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Real_t> invlocaldir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
+    Vector3D<Real_t> invlocaldir(static_cast<Real_t>(1.0 / NonZero(localdir[0])),
+                                 static_cast<Real_t>(1.0 / NonZero(localdir[1])),
+                                 static_cast<Real_t>(1.0 / NonZero(localdir[2])));
 
     do {
       unsigned int id = *--ptr; /* pop next node id to be checked from the stack */

@@ -813,28 +813,28 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::In
   // than other way round )
 
   if (transform_direction) {
-    master[0] = local[0] * rxx_;
-    master[0] += local[1] * ryx_;
-    master[0] += local[2] * rzx_;
-    master[1] = local[0] * rxy_;
-    master[1] += local[1] * ryy_;
-    master[1] += local[2] * rzy_;
-    master[2] = local[0] * rxz_;
-    master[2] += local[1] * ryz_;
-    master[2] += local[2] * rzz_;
+    master[0] = local[0] * static_cast<Real_i>(rxx_);
+    master[0] += local[1] * static_cast<Real_i>(ryx_);
+    master[0] += local[2] * static_cast<Real_i>(rzx_);
+    master[1] = local[0] * static_cast<Real_i>(rxy_);
+    master[1] += local[1] * static_cast<Real_i>(ryy_);
+    master[1] += local[2] * static_cast<Real_i>(rzy_);
+    master[2] = local[0] * static_cast<Real_i>(rxz_);
+    master[2] += local[1] * static_cast<Real_i>(ryz_);
+    master[2] += local[2] * static_cast<Real_i>(rzz_);
   } else {
-    master[0] = tx_;
-    master[0] += local[0] * rxx_;
-    master[0] += local[1] * ryx_;
-    master[0] += local[2] * rzx_;
-    master[1] = ty_;
-    master[1] += local[0] * rxy_;
-    master[1] += local[1] * ryy_;
-    master[1] += local[2] * rzy_;
-    master[2] = tz_;
-    master[2] += local[0] * rxz_;
-    master[2] += local[1] * ryz_;
-    master[2] += local[2] * rzz_;
+    master[0] = static_cast<Real_i>(tx_);
+    master[0] += local[0] * static_cast<Real_i>(rxx_);
+    master[0] += local[1] * static_cast<Real_i>(ryx_);
+    master[0] += local[2] * static_cast<Real_i>(rzx_);
+    master[1] = static_cast<Real_i>(ty_);
+    master[1] += local[0] * static_cast<Real_i>(rxy_);
+    master[1] += local[1] * static_cast<Real_i>(ryy_);
+    master[1] += local[2] * static_cast<Real_i>(rzy_);
+    master[2] = static_cast<Real_i>(tz_);
+    master[2] += local[0] * static_cast<Real_i>(rxz_);
+    master[2] += local[1] * static_cast<Real_i>(ryz_);
+    master[2] += local[2] * static_cast<Real_i>(rzz_);
   }
 }
 

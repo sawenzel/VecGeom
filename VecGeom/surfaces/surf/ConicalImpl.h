@@ -25,7 +25,7 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
     int bool_flipsign = !flip ? 1 : -1;
     Real_t coneR      = fConeData->RadiusZ(point.z());
     Real_t rho        = point.Perp();
-    return flipsign * (rho - coneR) < bool_flipsign * vecgeom::kTolerance;
+    return flipsign * (rho - coneR) < bool_flipsign * vecgeom::kToleranceStrict<Real_t>;
   }
 
   VECGEOM_FORCE_INLINE
@@ -45,7 +45,8 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
     bool flip_exiting = left_side ^ fConeData->IsFlipped();
     ConeEq<Real_t>(point, dir, fConeData->Radius(), fConeData->slope, coef);
     QuadraticSolver(coef, roots, numroots);
-    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kTolerance && roots[1] > -vecgeom::kTolerance);
+    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kToleranceStrict<Real_t> &&
+                     roots[1] > -vecgeom::kToleranceStrict<Real_t>);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
@@ -56,11 +57,12 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
-        if (distance < -vecgeom::kTolerance) {
+        if (distance < -vecgeom::kToleranceStrict<Real_t>) {
           Real_t rho     = point.Perp();
           auto distanceR = fConeData->RadiusZ(point[2]) - rho;
-          Real_t calf    = Real_t(1) / std::sqrt(Real_t(1) + fConeData->slope * fConeData->slope);
-          safety         = distanceR * calf;
+          Real_t calf =
+              static_cast<Real_t>(1) / std::sqrt(static_cast<Real_t>(1) + fConeData->slope * fConeData->slope);
+          safety = distanceR * calf;
         }
         return true;
       }
@@ -83,11 +85,11 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
     Real_t rho        = point.Perp();
     bool flip_exiting = left_side ^ fConeData->IsFlipped();
     auto distanceR    = flip_exiting ? coneR - rho : rho - coneR;
-    Real_t calf       = Real_t(1) / std::sqrt(Real_t(1) + t * t);
+    Real_t calf       = static_cast<Real_t>(1) / std::sqrt(static_cast<Real_t>(1) + t * t);
     distance          = distanceR * calf;
     // We only use for the ZPhi frame safety the z of the point propagated on the cone surface
     onsurf = point;
-    onsurf[2] += distanceR * t / (Real_t(1) + t * t);
+    onsurf[2] += distanceR * t / (static_cast<Real_t>(1) + t * t);
     return true;
   }
 };

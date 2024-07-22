@@ -42,7 +42,7 @@ VECCORE_ATT_HOST_DEVICE void CylinderEq(Vector3D<Real_t> const &point, Vector3D<
   // TODO: The cylyndrical and cone equations can be merged
   Real_t rsq    = point.Perp2();
   Real_t rdotn  = point.x() * dir.x() + point.y() * dir.y();
-  Real_t invnsq = Real_t(1.) / vecgeom::NonZero(dir.Perp2());
+  Real_t invnsq = static_cast<Real_t>(1.) / vecgeom::NonZero(dir.Perp2());
 
   coef.phalf = invnsq * rdotn;
   coef.q     = invnsq * (rsq - radius * radius);
@@ -61,7 +61,7 @@ VECCORE_ATT_HOST_DEVICE void ConeEq(Vector3D<Real_t> const &point, Vector3D<Real
   Real_t rz     = radius + point[2] * slope;
   Real_t rsq    = point.Perp2();
   Real_t rdotn  = point.x() * dir.x() + point.y() * dir.y() - slope * rz * dir.z();
-  Real_t invnsq = Real_t(1.) / vecgeom::NonZero(dir.Perp2() - slope * slope * dir.z() * dir.z());
+  Real_t invnsq = static_cast<Real_t>(1.) / vecgeom::NonZero(dir.Perp2() - slope * slope * dir.z() * dir.z());
 
   coef.phalf = invnsq * rdotn;
   coef.q     = invnsq * (rsq - rz * rz);
@@ -117,7 +117,7 @@ VECCORE_ATT_HOST_DEVICE void QuadraticSolver(QuadraticCoef<Real_t> const &coef, 
   if (delta < Real_t(0)) return;
   Real_t r1 = -coef.phalf - Sign(coef.phalf) * Sqrt(delta);
   Real_t r2 = coef.q / vecgeom::NonZero(r1);
-  numroots += int(r1 > Real_t(-vecgeom::kTolerance)) + int(r2 > Real_t(-vecgeom::kTolerance));
+  numroots += int(r1 > -vecgeom::kToleranceStrict<Real_t>) + int(r2 > -vecgeom::kToleranceStrict<Real_t>);
   roots[0] = Min(r1, r2);
   roots[1] = Max(r1, r2);
   if (numroots == 1) roots[0] = roots[1];

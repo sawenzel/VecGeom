@@ -15,7 +15,7 @@ double getDoubleOpt(char **begin, char **end, const std::string &option, double 
   return defaultval;
 }
 
-double getIntOpt(char **begin, char **end, const std::string &option, int defaultval)
+int getIntOpt(char **begin, char **end, const std::string &option, int defaultval)
 {
   char **itr = std::find(begin, end, option);
   if (itr != end && ++itr != end) {

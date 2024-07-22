@@ -41,6 +41,13 @@ template <>
 inline constexpr float kToleranceDist<float> = float(1e-3);
 
 template <typename Real_t>
+constexpr Real_t kToleranceStrict = Real_t(0);
+template <>
+inline constexpr double kToleranceStrict<double> = double(1e-9);
+template <>
+inline constexpr float kToleranceStrict<float> = float(1e-6);
+
+template <typename Real_t>
 constexpr Real_t kToleranceDistSquared = Real_t(0);
 template <>
 inline constexpr double kToleranceDistSquared<double> = kToleranceDist<double> *kToleranceDist<double>;

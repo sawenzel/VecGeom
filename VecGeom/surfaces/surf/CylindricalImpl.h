@@ -25,7 +25,7 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
     int bool_flipsign = !flip ? 1 : -1;
     Real_t cylR       = fCylData->Radius();
     Real_t rho        = point.Perp();
-    return flipsign * (rho - cylR) < bool_flipsign * vecgeom::kTolerance;
+    return flipsign * (rho - cylR) < bool_flipsign * vecgeom::kToleranceStrict<Real_t>;
   }
 
   VECGEOM_FORCE_INLINE
@@ -46,7 +46,8 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
     bool flip_exiting = left_side ^ fCylData->IsFlipped();
     CylinderEq<Real_t>(point, dir, fCylData->Radius(), coef);
     QuadraticSolver(coef, roots, numroots);
-    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kTolerance && roots[1] > -vecgeom::kTolerance);
+    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kToleranceStrict<Real_t> &&
+                     roots[1] > -vecgeom::kToleranceStrict<Real_t>);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
@@ -54,7 +55,7 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
-        if (distance < -vecgeom::kTolerance && distance < -fCylData->Radius()) {
+        if (distance < -vecgeom::kToleranceStrict<Real_t> && distance < -fCylData->Radius()) {
           Real_t rho = point.Perp();
           safety     = fCylData->Radius() - rho;
         }

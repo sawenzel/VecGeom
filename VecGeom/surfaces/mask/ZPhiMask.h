@@ -118,8 +118,8 @@ struct ZPhiMask {
     if (isFullCirc) return true;
     AngleVector<Real_t> localAngle{x, y};
     auto convex = vecSPhi.CrossZ(vecEPhi) > Real_t(0);
-    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kTolerance;
-    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kTolerance;
+    auto in1    = vecSPhi.CrossZ(localAngle) > -vecgeom::kToleranceStrict<Real_t>;
+    auto in2    = localAngle.CrossZ(vecEPhi) > -vecgeom::kToleranceStrict<Real_t>;
     return convex ? in1 && in2 : in1 || in2;
   }
 

@@ -1,3 +1,4 @@
+
 #ifndef VECGEOM_SURFACE_LOGICEVALUATOR_H
 #define VECGEOM_SURFACE_LOGICEVALUATOR_H
 
@@ -89,7 +90,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &plocalVol, int volId, bool exiting,
                                               LogicExpression const &logic, SurfData<Real_t> const &surfdata,
-                                              Precision safe_max = vecgeom::InfinityLength<Real_t>())
+                                              Real_t safe_max = vecgeom::InfinityLength<Real_t>())
 {
   ///< Lambda to get the safety for individual framed surfaces of the same logical volume
   Vector3D<Real_t> onsurf_crt;

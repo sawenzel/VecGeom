@@ -23,7 +23,7 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
   {
     int flipsign = !flip ? 1 : -1;
     return (point.x() * point.x() / fEllipData->fDDx + point.y() * point.y() / fEllipData->fDDy <
-            1 + flipsign * vecgeom::kTolerance);
+            static_cast<Real_t>(1) + flipsign * vecgeom::kToleranceStrict<Real_t>);
   }
 
   VECGEOM_FORCE_INLINE
@@ -38,7 +38,7 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
                  bool &two_solutions, Real_t &safety)
   {
 
-    distance = vecgeom::kInfLength;
+    distance = vecgeom::InfinityLength<Real_t>();
 
     Vector3D<Real_t> pcur(point);
 
@@ -68,7 +68,8 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
     Real_t roots[2];
     int numroots;
     QuadraticSolver(coef, roots, numroots);
-    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kTolerance && roots[1] > -vecgeom::kTolerance);
+    two_solutions = (numroots == 2 && roots[0] > -vecgeom::kToleranceStrict<Real_t> &&
+                     roots[1] > -vecgeom::kToleranceStrict<Real_t>);
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
@@ -76,7 +77,7 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
       bool hit = left_side ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
-        if (distance < -vecgeom::kTolerance) {
+        if (distance < -vecgeom::kToleranceStrict<Real_t>) {
           Real_t x   = point.x() * fEllipData->fSx;
           Real_t y   = point.y() * fEllipData->fSy;
           Real_t rho = vecCore::math::Sqrt(x * x + y * y);
