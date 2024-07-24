@@ -53,11 +53,10 @@ public:
   {
     auto surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
-    auto shell = surfdata.fShells[lv_index];
+    auto const &shell = surfdata.fShells[lv_index];
 
     FramedSurface *framed_surface;
     bool exiting{false};
-    const vecgeom::VPlacedVolume *pvol;
 
     // Retrieve the candidate local surface
     // Different treatment for entering and exiting surfaces
@@ -66,18 +65,15 @@ public:
       int exiting_index = index - shell.fNExitingSurfaces;
       framed_surface    = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[exiting_index]]);
 
-      // Get the pvol
-      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fEnteringSurfacesPvol[exiting_index]);
-
       // Get the transformation
-      auto pvol_trans = pvol->GetTransformation();
+      auto const &pvol_trans = surfdata.fPVolTrans[shell.fDaughterPvolTrans[exiting_index]];
 
       // Transform the points to the pvol frame
-      localpoint = pvol_trans->Transform(localpoint);
-      localdir   = pvol_trans->TransformDirection(localdir);
+      localpoint = pvol_trans.Transform(localpoint);
+      localdir   = pvol_trans.TransformDirection(localdir);
 
       // Update the LV index to that of the daughter
-      lv_index = pvol->GetLogicalVolume()->id();
+      lv_index = shell.fDaughterLvolIds[exiting_index];
 
     } else { // Exiting surfaces
       exiting            = true;
@@ -118,7 +114,6 @@ public:
     Vector3D<Real_t> surface_point;
     Vector3D<Real_t> surface_dir;
     FramedSurface *framed_surface;
-    const vecgeom::VPlacedVolume *pvol;
     bool exiting{false};
 
     // Retrieve the candidate local surface
@@ -127,10 +122,9 @@ public:
     {
       int entering_index = index - shell.fNExitingSurfaces;
       framed_surface     = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[entering_index]]);
-      // Get the pvol
-      pvol = vecgeom::NavigationState::ToPlacedVolume(shell.fEnteringSurfacesPvol[entering_index]);
+
       // Get the transformation
-      auto const &pvol_trans = *pvol->GetTransformation();
+      auto const &pvol_trans = surfdata.fPVolTrans[shell.fDaughterPvolTrans[entering_index]];
       // Compute the transformation to the surface reference frame
       auto const &surf_trans = surfdata.fLocalTrans[framed_surface->fTrans];
       auto volume_trans      = surf_trans * pvol_trans;
@@ -252,7 +246,7 @@ public:
 
     auto &bvh = surfdata.fBVH[surfdata.fShells[in_state.GetLogicalId()].fBVH];
 
-    vecgeom::Transformation3D lv_trans;
+    vecgeom::Transformation3DMP<Real_t> lv_trans;
     in_state.TopMatrix(lv_trans);
     auto localpoint = lv_trans.Transform(point);
     auto localdir   = lv_trans.TransformDirection(direction);

@@ -46,6 +46,8 @@ struct VolumeShellCPU {
   std::vector<int> fExitingSurfaces;  ///< Local surface id's for this volume, excluding virtual ones
   std::vector<int> fEnteringSurfaces; ///< Local surface id's for all surfaces of daughters, excluding virtual ones
   std::vector<int> fEnteringSurfacesPvol;
+  std::vector<int> fDaughterPvolTrans; ///< Array of ids to daughter placed volume transformations
+  std::vector<int> fDaughterLvolIds;   ///< Array of ids to daughter logical volumes
 
   LogicExpressionCPU fLogic; ///< Logic expression for the solid
   bool fSimplified{false};   ///< The logic was simplified
@@ -83,6 +85,7 @@ struct CPUsurfData {
   std::vector<Arb4Data_t> fArb4Data;                  ///< data for Arb4 surfaces
   std::vector<TransformationMP<Real_t>> fLocalTrans;  ///< local transformations
   std::vector<TransformationMP<Real_t>> fGlobalTrans; ///< global transformations for surfaces in the scene
+  std::vector<TransformationMP<Real_t>> fPVolTrans;    ///< Transformations to placed volumes
   std::vector<FramedSurface> fLocalSurfaces;          ///< local surfaces per logical volume
   std::vector<FramedSurface> fFramedSurf;             ///< global surfaces
   std::vector<CommonSurface> fCommonSurfaces;         ///< common surfaces
@@ -124,6 +127,7 @@ public:
     std::vector<TorusData_t>().swap(fTorusData);
     std::vector<TransformationMP<Real_t>>().swap(fLocalTrans);
     std::vector<TransformationMP<Real_t>>().swap(fGlobalTrans);
+    std::vector<TransformationMP<Real_t>>().swap(fPVolTrans);
     std::vector<FramedSurface>().swap(fLocalSurfaces);
     std::vector<FramedSurface>().swap(fFramedSurf);
     std::vector<CommonSurface>().swap(fCommonSurfaces);

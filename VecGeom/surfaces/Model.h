@@ -529,6 +529,8 @@ struct VolumeShell {
   int *fExitingSurfaces{nullptr};      ///< Indices of real surfaces in the fSurfaces array
   int *fEnteringSurfaces{nullptr};     ///< List of framed entering surfaces
   int *fEnteringSurfacesPvol{nullptr}; ///< Pvol id per framed surface
+  int *fDaughterPvolTrans{nullptr};    ///< Array to ids to daughter placed volume transformations
+  int *fDaughterLvolIds{nullptr};      ///< Array of ids to daughter logical volumes
 
   /// @brief Check if a point is inside the volume defined by surfaces
   /// @tparam Real_t Floating-point precision type

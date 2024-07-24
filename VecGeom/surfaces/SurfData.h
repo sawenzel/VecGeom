@@ -38,8 +38,7 @@ struct SurfData {
   int fNscenes{0};
   int fNlocalTrans{0};
 
-  int fNvolumeTrans{0};
-
+  int fNvolTrans{0};
   int fNglobalTrans{0};
   int fNlocalSurf{0};
   int fNExitingSurfaces{0};
@@ -69,6 +68,7 @@ struct SurfData {
   /// Transformations.
   TransformationMP<Real_t> *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
   TransformationMP<Real_t> *fGlobalTrans{nullptr}; ///< Touchable global transformations
+  TransformationMP<Real_t> *fPVolTrans{nullptr};    ///< Transformations to placed volumes
 
   /// Volume shells, indexed by the logical volume id
   VolumeShell *fShells{nullptr}; ///< volume shells
@@ -99,6 +99,8 @@ struct SurfData {
   int *fShellExitingSurfaceList{nullptr};      ///< List of surfaces of a volume, having a frame
   int *fShellEnteringSurfaceList{nullptr};     ///< List of surfaces of the daughters of a volume, having a frame
   int *fShellEnteringSurfacePvolList{nullptr}; ///< Id of the PlacedVolume each entering surface belongs to
+  int *fShellDaughterPvolTransList{nullptr};   ///< Id of the volume transformation each entering surface belongs to
+  int *fShellDaughterLvolIdList{nullptr};      ///< Id of the logical volume each entering surface belongs to
   bvh::BVHsurf<Real_b> *fBVH{nullptr};         ///< BVH per volume shell
 
   SurfData() = default;

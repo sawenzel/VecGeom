@@ -48,6 +48,7 @@ template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
   int *current, *current_exiting_surface, *current_entering_surface, *current_entering_surface_pvol;
+  int *currentShellDaughterPvolTrans, *currentShellDaughterLvolId;
   logic_int *current_logic;
   globaldevicesurfdata::gSurfDataDevice<Real_t> = surfData;
 
@@ -58,6 +59,8 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
   current_exiting_surface       = surfData->fShellExitingSurfaceList;
   current_entering_surface      = surfData->fShellEnteringSurfaceList;
   current_entering_surface_pvol = surfData->fShellEnteringSurfacePvolList;
+  currentShellDaughterPvolTrans = surfData->fShellDaughterPvolTransList;
+  currentShellDaughterLvolId    = surfData->fShellDaughterLvolIdList;
   for (int i = 0; i < surfData->fNshells; i++) {
     surfData->fShells[i].fSurfaces = current;
     current += surfData->fShells[i].fNsurf;
@@ -69,6 +72,10 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
     current_entering_surface += surfData->fShells[i].fNEnteringSurfaces;
     surfData->fShells[i].fEnteringSurfacesPvol = current_entering_surface_pvol;
     current_entering_surface_pvol += surfData->fShells[i].fNEnteringSurfaces;
+    surfData->fShells[i].fDaughterPvolTrans = currentShellDaughterPvolTrans;
+    currentShellDaughterPvolTrans += surfData->fShells[i].fNEnteringSurfaces;
+    surfData->fShells[i].fDaughterLvolIds = currentShellDaughterLvolId;
+    currentShellDaughterLvolId += surfData->fShells[i].fNEnteringSurfaces;
   }
 
   // Write pointers into fCommonSurfaces[i].f{Left,Right}Side.fSurfaces
@@ -141,6 +148,11 @@ public:
     BREP_CUDA_CHECK(
         cudaMemcpy(fSurfDataStaging.fGlobalTrans, surfData.fGlobalTrans, sizeInBytes, cudaMemcpyHostToDevice));
 
+    fSurfDataStaging.fNvolTrans = surfData.fNvolTrans;
+    sizeInBytes                 = sizeof(surfData.fPVolTrans[0]) * surfData.fNvolTrans;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fPVolTrans, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fPVolTrans, surfData.fPVolTrans, sizeInBytes, cudaMemcpyHostToDevice));
+
     // Allocate and copy surface data
     fSurfDataStaging.fNcylsph = surfData.fNcylsph;
     sizeInBytes               = sizeof(surfData.fCylSphData[0]) * surfData.fNcylsph;
@@ -206,6 +218,16 @@ public:
     sizeInBytes = sizeof(surfData.fShellEnteringSurfacePvolList[0]) * surfData.fNEnteringSurfaces;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfacePvolList, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfacePvolList, surfData.fShellEnteringSurfacePvolList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+
+    sizeInBytes = sizeof(surfData.fShellDaughterPvolTransList[0]) * surfData.fNEnteringSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterPvolTransList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolTransList, surfData.fShellDaughterPvolTransList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+
+    sizeInBytes = sizeof(surfData.fShellDaughterLvolIdList[0]) * surfData.fNEnteringSurfaces;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterLvolIdList, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterLvolIdList, surfData.fShellDaughterLvolIdList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate space for the BVHs
@@ -356,6 +378,8 @@ public:
     fSurfDataStaging.fLocalTrans = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fGlobalTrans));
     fSurfDataStaging.fGlobalTrans = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fPVolTrans));
+    fSurfDataStaging.fPVolTrans = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCylSphData));
     fSurfDataStaging.fCylSphData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fConeData));
@@ -372,6 +396,14 @@ public:
     fSurfDataStaging.fSurfShellList = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLogicList));
     fSurfDataStaging.fLogicList = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellExitingSurfaceList));
+    fSurfDataStaging.fShellExitingSurfaceList = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellEnteringSurfaceList));
+    fSurfDataStaging.fShellEnteringSurfaceList = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellEnteringSurfacePvolList));
+    fSurfDataStaging.fShellEnteringSurfacePvolList = nullptr;
+    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellDaughterPvolTransList));
+    fSurfDataStaging.fShellDaughterPvolTransList = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLocalSurf));
     fSurfDataStaging.fLocalSurf = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fFramedSurf));
