@@ -38,13 +38,13 @@ template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x)
 {
   // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * kToleranceDist<double>;
+  return (x + kSign(x)) * kToleranceStrict<double>;
 }
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x)
 {
   // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * kToleranceDist<float>;
+  return (x + kSign(x)) * kToleranceStrict<float>;
 }
 
 template <typename T>

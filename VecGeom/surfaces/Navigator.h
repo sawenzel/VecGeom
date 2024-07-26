@@ -84,7 +84,7 @@ VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(Vector3D<Real_t> const &point, Vecto
     // For a real exiting, the post-crossing point must be outside the Boolean
     auto pushedPoint = std::is_same<Real_t, double>::value
                            ? point + (distance + kPushDistance) * direction
-                           : point + (distance + vecgeom::kRelTolerance<Real_t>(distance)) * direction;
+                           : point + (distance + vecgeom::kRelTolerance<Real_t>(distance + point.Mag())) * direction;
     // The logic for the frame that is exited can be set to false without a numerical check
     auto inside = LogicInside(pushedPoint, exited_state, surfdata, framedsurf.fLogicId, false);
     if (inside) inframe = false;
@@ -642,7 +642,7 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
   auto in_navind           = in_state.GetNavIndex();
   auto pushed_point        = std::is_same<Real_t, double>::value
                                  ? point + (hit_dist + kPushDistance) * direction
-                                 : point + (hit_dist + vecgeom::kRelTolerance<Real_t>(hit_dist)) * direction;
+                                 : point + (hit_dist + vecgeom::kRelTolerance<Real_t>(hit_dist + point.Mag())) * direction;
   auto const &surf_crossed = surfdata.GetCommonSurface(hit_frame);
   auto const &enter_side   = surfdata.GetSide(hit_frame);
   int iframe = FindFrameOnEnteringSide(enter_side, in_state, in_navind, is_scene, surf_crossed.IsSceneSurface(),
@@ -782,7 +782,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   if (framedsurf.fLogicId) {
     onsurf = std::is_same<Real_t, double>::value
                  ? point_volume + (dist + kPushDistance) * direction_volume
-                 : point_volume + (dist + vecgeom::kRelTolerance<Real_t>(dist)) * direction_volume;
+                 : point_volume + (dist + vecgeom::kRelTolerance<Real_t>(dist + point_volume.Mag())) * direction_volume;
     // The logic for the frame that is entered can be set to true without a numerical check
     auto inside = LogicInsideLocal(onsurf, volId, surfdata, framedsurf.fLogicId, !exiting);
     surfhit     = inside ^ exiting;
