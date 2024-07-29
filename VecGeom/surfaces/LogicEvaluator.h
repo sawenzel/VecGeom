@@ -17,7 +17,7 @@ namespace vgbrep {
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plocalVol, int volId,
                                             LogicExpression const &logic, SurfData<Real_t> const &surfdata,
-                                            const int logic_id = -1, const bool is_inside = 0)
+                                            const int logic_id = vecgeom::kMaximumInt, const bool is_inside = 0)
 {
   auto test_bit  = [](unsigned bset, int bit) { return (bset & (unsigned(1) << bit)) > 0; };
   auto set_bit   = [](unsigned &bset, int bit) { bset |= unsigned(1) << bit; };
@@ -67,7 +67,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
       break;
     default:
       // This is an operand
-      result = logic[i] == logic_id ? is_inside : insideSurf(int(logic[i]), bool(negate));
+      result = logic[i] == std::abs(logic_id) ? is_inside ^ bool(negate) : insideSurf(int(logic[i]), bool(negate));
       result ^= test_bit(negate, depth);
       reset_bit(negate, depth);
       // We can ignore the previous value because of short-circuiting

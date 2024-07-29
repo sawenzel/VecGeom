@@ -28,7 +28,8 @@ namespace protonav {
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInsideLocal(vecgeom::Vector3D<Real_t> const &localpoint,
                                                                    int volId, SurfData<Real_t> const &surfdata,
-                                                                   const int logic_id = -1, const bool is_inside = 0)
+                                                                   const int logic_id   = vecgeom::kMaximumInt,
+                                                                   const bool is_inside = 0)
 {
   auto const &logic = surfdata.fShells[volId].fLogic;
   // Evaluate volume shell logic
@@ -45,7 +46,8 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInsideLocal(vecgeom::Vect
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<Real_t> const &point,
                                                               vecgeom::NavigationState const &in_state,
-                                                              SurfData<Real_t> const &surfdata, const int logic_id = -1,
+                                                              SurfData<Real_t> const &surfdata,
+                                                              const int logic_id   = vecgeom::kMaximumInt,
                                                               const bool is_inside = 0)
 {
   // Convert point in local VolumeShell coordinates
@@ -458,7 +460,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   bool is_zero_step = distance < 10000 * vecgeom::kToleranceDist<Real_t>;
   auto final_point  = is_zero_step ? point + kPushDistance * direction : point;
 
-  int logic_id_exit = -1;
+  int logic_id_exit = vecgeom::kMaximumInt;
 
   // first, check daughter volumes of the current path to find if the point lies within any of the daughters
   bool godeeper;
@@ -566,7 +568,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
       if (currentvolume->GetUnplacedVolume()->IsBoolean() && !is_self_entering)
         inside |= LogicInside(point, path, surfdata, logic_id_exit, false);
       final_point   = is_zero_step ? point + kPushDistance * direction : point;
-      logic_id_exit = -1;
+      logic_id_exit = vecgeom::kMaximumInt;
     }
 
     if (inside == false) {
