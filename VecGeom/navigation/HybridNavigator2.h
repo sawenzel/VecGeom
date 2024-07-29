@@ -163,9 +163,10 @@ public:
   // FIXME: might be generic enough to work for all possible kinds of BVH structures
   // FIXME: offer various sorting directions, etc.
   template <typename AccStructure, typename Func>
-  VECGEOM_FORCE_INLINE
-  void BVHSortedIntersectionsLooper(AccStructure const &accstructure, Vector3D<Precision> const &localpoint,
-                                    Vector3D<Precision> const &localdir, Precision maxstep, Func &&userhook) const
+  VECGEOM_FORCE_INLINE void BVHSortedIntersectionsLooper(AccStructure const &accstructure,
+                                                         Vector3D<Precision> const &localpoint,
+                                                         Vector3D<Precision> const &localdir, Precision maxstep,
+                                                         Func &&userhook) const
   {
     // The following construct reserves stackspace for objects
     // of type IdDistPair_t WITHOUT initializing those objects
@@ -190,8 +191,8 @@ public:
   }
 
   template <typename AccStructure, typename Func>
-  VECGEOM_FORCE_INLINE
-  void BVHContainsLooper(AccStructure const &accstructure, Vector3D<Precision> const &localpoint, Func &&userhook) const
+  VECGEOM_FORCE_INLINE void BVHContainsLooper(AccStructure const &accstructure, Vector3D<Precision> const &localpoint,
+                                              Func &&userhook) const
   {
     size_t hitlist[VECGEOM_MAXFACETS];
     auto ncandidates = GetContainingCandidates_v(accstructure, localpoint, hitlist);
@@ -211,7 +212,7 @@ public:
     if (lvol->GetDaughtersp()->size() == 0) return false;
     auto &accstructure = *fAccelerationManager.GetAccStructure(lvol);
 
-    float maxstep = step;
+    float maxstep = static_cast<float>(step);
     BVHSortedIntersectionsLooper(
         accstructure, localpoint, localdir, maxstep, [&](HybridManager2::BoxIdDistancePair_t hitbox) {
           // only consider those hitboxes which are within potential reach of this step
@@ -237,29 +238,27 @@ public:
     if (lvol->GetDaughtersp()->size() == 0) return false;
     auto &accstructure = *fAccelerationManager.GetAccStructure(lvol);
 
-    const float maxstep = step;
-    BVHSortedIntersectionsLooper(accstructure, localpoint, localdir, maxstep,
-                                 [&](HybridManager2::BoxIdDistancePair_t hitbox) {
-                                   // only consider those hitboxes which are within potential reach of this step
-                                   if (!(step < hitbox.second)) {
-                                     // To reuse in printing below - else move it into 'if'
-                                     Vector3D<Precision> normal;
-                                     VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
-                                     if (candidate == blocked) {
-                                       // return false; // return early and go on in the looper
-                                       candidate->Normal(localpoint, normal);
-                                       if (normal.Dot(localdir) >= 0.0) {
-                                         std::cerr << "HybridNav2> blocked " << candidate
-                                                   << " has normal.dir = " << normal.Dot(localdir) << " and distToIn = "
-                                                   << candidate->DistanceToIn(localpoint, localdir, step) << "\n";
-                                       }
-                                     }
-                                     const Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
-                                     const auto valid          = !IsInf(ddistance) && ddistance < step &&
-                                                        !((ddistance <= 0.) &&
-                                                          blocked == candidate); // && normal.Dot(localdir) > 0.0);
-                                     hitcandidate              = valid ? candidate : hitcandidate;
-                                     step                      = valid ? ddistance : step;
+    const float maxstep = static_cast<float>(step);
+    BVHSortedIntersectionsLooper(
+        accstructure, localpoint, localdir, maxstep, [&](HybridManager2::BoxIdDistancePair_t hitbox) {
+          // only consider those hitboxes which are within potential reach of this step
+          if (!(step < hitbox.second)) {
+            // To reuse in printing below - else move it into 'if'
+            Vector3D<Precision> normal;
+            VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
+            if (candidate == blocked) {
+              // return false; // return early and go on in the looper
+              candidate->Normal(localpoint, normal);
+              if (normal.Dot(localdir) >= 0.0) {
+                std::cerr << "HybridNav2> blocked " << candidate << " has normal.dir = " << normal.Dot(localdir)
+                          << " and distToIn = " << candidate->DistanceToIn(localpoint, localdir, step) << "\n";
+              }
+            }
+            const Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
+            const auto valid          = !IsInf(ddistance) && ddistance < step &&
+                               !((ddistance <= 0.) && blocked == candidate); // && normal.Dot(localdir) > 0.0);
+            hitcandidate = valid ? candidate : hitcandidate;
+            step         = valid ? ddistance : step;
 #if 0 // enable for debugging
         if ( ddistance<=0 ) {
            std::cerr << "HybridNav2> negative distance found for " << candidate->GetName() << "\n"; 
@@ -283,10 +282,10 @@ public:
            }
         }
 #endif
-                                     return false; // not yet done; need to continue in looper
-                                   }
-                                   return true; // mark done in this case
-                                 });
+            return false; // not yet done; need to continue in looper
+          }
+          return true; // mark done in this case
+        });
     return false;
   }
 

@@ -27,9 +27,9 @@ public:
     fDeltaX    = Length.x() / Nx;
     fDeltaY    = Length.y() / Ny;
     fDeltaZ    = Length.z() / Nz;
-    fInvDeltaX = 1. / fDeltaX;
-    fInvDeltaY = 1. / fDeltaY;
-    fInvDeltaZ = 1. / fDeltaZ;
+    fInvDeltaX = 1.f / fDeltaX;
+    fInvDeltaY = 1.f / fDeltaY;
+    fInvDeltaZ = 1.f / fDeltaZ;
   }
 
   // main method to add something; must be called in sorted key sequence

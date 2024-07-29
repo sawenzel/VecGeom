@@ -16,9 +16,9 @@ void testGeneralVersion()
   // a voxel structure mapping to vector of ints per voxel
   FlatVoxelHashMap<int> voxels(lower, dim, Nx, Ny, Nz);
 
-  Vector3D<float> p1(-4.9, -4.9, -4.9);
+  Vector3D<float> p1(-4.9f, -4.9f, -4.9f);
   assert(voxels.getVoxelKey(p1) == 0);
-  Vector3D<float> p3(4.99, 4.99, 4.99);
+  Vector3D<float> p3(4.99f, 4.99f, 4.99f);
   assert(voxels.getVoxelKey(p3) == Nx * Ny * Nz - 1);
 
   int length{0};
@@ -36,7 +36,7 @@ void testGeneralVersion()
   assert(props[1] == 112);
 
   // nearby point in same voxel
-  Vector3D<float> p2(-4.85, -4.85, -4.85);
+  Vector3D<float> p2(-4.85f, -4.85f, -4.85f);
   assert(voxels.isOccupied(p2) == true);
   assert(voxels.getProperties(p2, length) != nullptr);
 }
@@ -52,9 +52,9 @@ void testScalarVersion()
   // a voxel structure mapping to a single int per voxel
   FlatVoxelHashMap<int, true> voxels(lower, dim, Nx, Ny, Nz);
 
-  Vector3D<float> p1(-4.9, -4.9, -4.9);
+  Vector3D<float> p1(-4.9f, -4.9f, -4.9f);
   assert(voxels.getVoxelKey(p1) == 0);
-  Vector3D<float> p3(4.99, 4.99, 4.99);
+  Vector3D<float> p3(4.99f, 4.99f, 4.99f);
   assert(voxels.getVoxelKey(p3) == Nx * Ny * Nz - 1);
 
   int length{0};
@@ -70,7 +70,7 @@ void testScalarVersion()
   assert(props[0] == 111);
 
   // nearby point in same voxel
-  Vector3D<float> p2(-4.85, -4.85, -4.85);
+  Vector3D<float> p2(-4.85f, -4.85f, -4.85f);
   assert(voxels.isOccupied(p2) == true);
   assert(voxels.getProperties(p2, length) != nullptr);
 }
