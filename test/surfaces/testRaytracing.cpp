@@ -120,29 +120,48 @@ int ValidateLocate(int nrays, Vector3D<Precision> const *points, Vector3D<Real_t
 }
 //==================================================================================
 void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
-                          Precision *ref_safeties)
+                          Precision *ref_safeties, bool validate_results)
 {
-  for (auto i = 0; i < nrays; ++i) {
-    // Compute safety using the solid-based model
-    ref_safeties[i] = LoopNavigator::ComputeSafety(points[i], in_states[i]);
+  if (validate_results) {
+    for (auto i = 0; i < nrays; ++i) {
+      // Compute safety using the solid-based model
+      ref_safeties[i] = LoopNavigator::ComputeSafety(points[i], in_states[i]);
+    }
+  } else {
+    for (auto i = 0; i < nrays; ++i) {
+      LoopNavigator::ComputeSafety(points[i], in_states[i]);
+    }
   }
 }
 //==================================================================================
 void ComputeSafetiesSolidBVH(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
-                             Precision *safeties)
+                             Precision *safeties, bool validate_results)
 {
-  for (auto i = 0; i < nrays; ++i) {
-    // Compute safety using the solid-based model with BVH
-    safeties[i] = BVHNavigator::ComputeSafety(points[i], in_states[i]);
+  if (validate_results) {
+    for (auto i = 0; i < nrays; ++i) {
+      // Compute safety using the solid-based model with BVH
+      safeties[i] = BVHNavigator::ComputeSafety(points[i], in_states[i]);
+    }
+  } else {
+    for (auto i = 0; i < nrays; ++i) {
+      BVHNavigator::ComputeSafety(points[i], in_states[i]);
+    }
   }
 }
 //==================================================================================
 void ComputeSafetiesSurf(int nrays, Vector3D<Real_t> const *points, NavigationState const *in_states,
-                         Precision *safeties)
+                         Precision *safeties, bool validate_results)
 {
-  for (auto i = 0; i < nrays; ++i) {
-    int exit_surf;
-    safeties[i] = vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
+  if (validate_results) {
+    for (auto i = 0; i < nrays; ++i) {
+      int exit_surf;
+      safeties[i] = vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
+    }
+  } else {
+    for (auto i = 0; i < nrays; ++i) {
+      int exit_surf;
+      vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
+    }
   }
 }
 //==================================================================================
@@ -213,7 +232,7 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
 template <typename Navigator>
 void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                         NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1,
-                        int max_cross = vecgeom::kMaximumInt)
+                        int max_cross = vecgeom::kMaximumInt, bool validate_results = true)
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   int ilast                      = nrays;
@@ -230,12 +249,15 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
     NavigationState out_state;
     auto const &dir = dirs[i];
     auto pt         = points[i];
-    crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
+    if (validate_results) crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     int num_cross = 0;
     do {
       auto distance =
           Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
-      num_cross = crossings[i].SetNextCrossing(distance, out_state);
+      if (validate_results)
+        num_cross = crossings[i].SetNextCrossing(distance, out_state);
+      else
+        num_cross++;
       if (idebug >= 0) {
         std::cout << std::setprecision(16) << "     dist = " << distance << "\n   " << num_cross << " : ";
         out_state.Print();
@@ -248,11 +270,13 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
 //==================================================================================
 void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_t> const *dirs,
                        NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1,
-                       bool detect_overlaps = false, int max_cross = vecgeom::kMaximumInt, bool use_bvh = false)
+                       bool detect_overlaps = false, int max_cross = vecgeom::kMaximumInt, bool use_bvh = false,
+                       bool validate_results = true)
 {
   int ilast        = nrays;
   int istart       = 0;
   int num_overlaps = 0;
+  int num_cross    = 0;
   if (idebug >= 0) {
     std::cout << "PropagateRaysSurf debug ray " << idebug << " using BVH?  " << use_bvh << "\n   start : ";
     in_states[idebug].Print();
@@ -268,11 +292,11 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
     // detection only the highest exiting infromation crossed_surf.exit_surface_data is used
     auto pt         = points[i];
     auto const &dir = dirs[i];
-    crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
+    if (validate_results) crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     do {
       crossed_surf.Set(0, 0, 0); // need to reset because the same inner tube surface can be crossed twice in a row
 
-      if (idebug >= 0 && int(crossings[i].GetNsteps()) == idebug_step) {
+      if (idebug >= 0 && num_cross == idebug_step) {
         std::cout << "Debugging step " << idebug_step << " starting from state:\n";
         start_state.Print();
       }
@@ -309,7 +333,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
           framedsurf.fOverlapping = true;
 
           VECGEOM_LOG(warning) << std::setprecision(16) << num_overlaps << " overlap detected for ray " << i
-                               << " at num_cross = " << crossings[i].GetNsteps() << "\n   starting point " << points[i]
+                               << " at num_cross = " << num_cross << "\n   starting point " << points[i]
                                << " and direction " << dirs[i]
                                << "\n   Overlapping surface:  " << crossed_surf.hit_surf.GetCSindex() << " side "
                                << crossed_surf.hit_surf.IsLeftSide() << " frameid "
@@ -331,7 +355,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
         // Most likely extruding overlap detected, relocating to correct state
 
         VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
-                             << " at num_cross = " << crossings[i].GetNsteps() << "\n   starting point " << points[i]
+                             << " at num_cross = " << num_cross << "\n   starting point " << points[i]
                              << " and direction " << dirs[i] << "\n   state for failing step : ";
         start_state.Print();
 
@@ -348,11 +372,14 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
         // if corrected distance is still incorrect, abort
         if (distance == 0 || distance == vecgeom::InfinityLength<Precision>()) {
           VECGEOM_LOG(critical) << std::setprecision(16) << "After relocation, still no exiting surface for ray " << i
-                                << " at num_cross = " << crossings[i].GetNsteps() << "\n Terminating raytracing!";
+                                << " at num_cross = " << num_cross << "\n Terminating raytracing!";
           return;
         }
       }
-      auto num_cross = crossings[i].SetNextCrossing(distance, out_state);
+      if (validate_results)
+        num_cross = crossings[i].SetNextCrossing(distance, out_state);
+      else
+        num_cross++;
       if (idebug >= 0) {
         std::cout << std::setprecision(16) << "     dist = " << distance
                   << "  surf = " << crossed_surf.hit_surf.GetCSindex()
@@ -362,7 +389,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Real_t> const *points, Vector3D<Real_
       }
       pt += distance * dir;
       start_state = out_state;
-    } while (!out_state.IsOutside() && int(crossings[i].GetNsteps()) < max_cross + 1);
+    } while (!out_state.IsOutside() && num_cross < max_cross + 1);
   }
 }
 //==================================================================================
@@ -404,29 +431,35 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
 //==================================================================================
 int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precision> *dirs, bool debug,
                        Precision safety_tolerance, bool detect_overlaps = false, bool accept_zeros = false,
-                       int max_cross = vecgeom::kMaximumInt, bool test_bvh = false)
+                       int max_cross = vecgeom::kMaximumInt, bool test_bvh = false, bool validate_results = true)
 {
   // allocate storage
   NavigationState *origStates   = new NavigationState[nrays];
   NavigationState *outputStates = new NavigationState[nrays];
 
-  Precision *ref_safeties = new Precision[nrays];
-  memset(ref_safeties, 0, sizeof(Precision) * nrays);
-
-  Precision *safeties = new Precision[nrays];
-  memset(safeties, 0, sizeof(Precision) * nrays);
-
-  auto ref_crossings = new CrossingSeq[nrays];
-  auto crossings     = new CrossingSeq[nrays];
-  auto bvh_crossings = new CrossingSeq[nrays];
-
+  Precision *ref_safeties{nullptr}, *safeties{nullptr};
+  CrossingSeq *ref_crossings{nullptr}, *crossings{nullptr}, *bvh_crossings{nullptr};
   int num_errors          = 0;
   int num_errors_safe     = 0;
   int num_errors_dist     = 0;
   int num_errors_dist_bvh = 0;
   int num_better_safety   = 0;
   int num_worse_safety    = 0;
-  int idebug              = (debug && nrays == 1) ? 0 : -1;
+
+  // We may want to disable all results validation for benchmarking
+  if (validate_results) {
+    ref_safeties = new Precision[nrays];
+    memset(ref_safeties, 0, sizeof(Precision) * nrays);
+
+    safeties = new Precision[nrays];
+    memset(safeties, 0, sizeof(Precision) * nrays);
+
+    ref_crossings = new CrossingSeq[nrays];
+    crossings     = new CrossingSeq[nrays];
+    bvh_crossings = new CrossingSeq[nrays];
+  }
+
+  int idebug = (debug && nrays == 1) ? 0 : -1;
 
   // convert vecgeom::Precision points and dirs to Real_t precision for running the surface model in mixed precision
   auto points_RT = convertVectorArray<Precision, Real_t>(points, nrays);
@@ -450,8 +483,10 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   auto time_locate_surf = timer.Stop();
 
   // Correctness for locating points
-  num_errors = ValidateLocate(nrays, points, points_RT, origStates, outputStates, debug);
-  if (num_errors > 0) std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
+  if (validate_results) {
+    num_errors = ValidateLocate(nrays, points, points_RT, origStates, outputStates, debug);
+    if (num_errors > 0) std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
+  }
   if (!debug) {
     std::cout << "HOST: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
               << "  locate_surf: " << time_locate_surf << "\n";
@@ -459,88 +494,96 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Safety for solids model (reference)
   timer.Start();
-  ComputeSafetiesSolid(nrays, points, origStates, ref_safeties);
+  ComputeSafetiesSolid(nrays, points, origStates, ref_safeties, validate_results);
   auto time_safety_solids = timer.Stop();
 
   // Safety for solids model with BVH
   timer.Start();
-  ComputeSafetiesSolidBVH(nrays, points, origStates, safeties);
+  ComputeSafetiesSolidBVH(nrays, points, origStates, safeties, validate_results);
   auto time_safety_solids_bvh = timer.Stop();
 
   // Safety for surface model
   timer.Start();
-  ComputeSafetiesSurf(nrays, points_RT, origStates, safeties);
+  ComputeSafetiesSurf(nrays, points_RT, origStates, safeties, validate_results);
   auto time_safety_surf = timer.Stop();
 
   // Correctness for safety
-  num_errors_safe = ValidateSafety(nrays, points_RT, origStates, safeties, ref_safeties, debug, num_better_safety,
-                                   num_worse_safety, safety_tolerance);
-  num_errors += num_errors_safe;
+  if (validate_results) {
+    num_errors_safe = ValidateSafety(nrays, points_RT, origStates, safeties, ref_safeties, debug, num_better_safety,
+                                     num_worse_safety, safety_tolerance);
+    num_errors += num_errors_safe;
+    if (num_errors_safe > 0) std::cout << "*** HOST: Safety errors: " << num_errors_safe << "\n";
+    if (num_better_safety > 0) printf("HOST:    number of better safety values: %d\n", num_better_safety);
+    if (num_worse_safety > 0) printf("HOST:    number of worse safety values: %d\n", num_worse_safety);
+  }
+
   // Report timing
-  if (num_errors_safe > 0) std::cout << "*** HOST: Safety errors: " << num_errors_safe << "\n";
   if (!debug) {
     std::cout << "HOST: safety_solids: " << time_safety_solids << "  safety_solids_BVH: " << time_safety_solids_bvh
               << "  safety_surf: " << time_safety_surf << "\n";
   }
-  if (num_better_safety > 0) printf("HOST:    number of better safety values: %d\n", num_better_safety);
-  if (num_worse_safety > 0) printf("HOST:    number of worse safety values: %d\n", num_worse_safety);
 
   // Distance computation + relocation for solid model
   timer.Start();
-  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, ref_crossings, idebug, max_cross);
+  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, ref_crossings, idebug, max_cross,
+                                    validate_results);
   auto time_traverse_solids = timer.Stop();
 
   // Distance computation + relocation for solid model + BVH
   timer.Start();
-  PropagateRaysSolid<BVHNavigator>(nrays, points, dirs, origStates, crossings);
+  PropagateRaysSolid<BVHNavigator>(nrays, points, dirs, origStates, crossings, idebug, max_cross, validate_results);
   auto time_traverse_solids_bvh = timer.Stop();
 
   // Distance computation + relocation for surface model
   timer.Start();
   PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, crossings, idebug, /*idebug_step=*/-1, detect_overlaps,
-                    max_cross, false);
+                    max_cross, false, validate_results);
   auto time_traverse_surf = timer.Stop();
 
   // Distance computation + relocation for surface model + BVH
   timer.Start();
   if (test_bvh)
     PropagateRaysSurf(nrays, points_RT, dirs_RT, origStates, bvh_crossings, idebug, /*idebug_step=*/-1,
-                      /*detect_overlaps=*/false, max_cross, true);
+                      /*detect_overlaps=*/false, max_cross, true, validate_results);
   auto time_traverse_surf_bvh = timer.Stop();
 
-  // Corectness for traversal
-  num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
-                                     debug, accept_zeros, max_cross);
-  if (test_bvh)
-    num_errors_dist_bvh = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings,
-                                           bvh_crossings, debug, accept_zeros, max_cross, /*use_bvh=*/true);
-  num_errors += num_errors_dist;
-  if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
-  if (test_bvh)
-    if (num_errors_dist_bvh > 0) std::cout << "*** HOST: traverse errors surf BVH: " << num_errors_dist_bvh << "\n";
+  // Correctness for traversal
+  if (validate_results) {
+    num_errors_dist = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings, crossings,
+                                       debug, accept_zeros, max_cross);
+    if (test_bvh)
+      num_errors_dist_bvh = ValidateCrossing(nrays, points, dirs, points_RT, dirs_RT, origStates, ref_crossings,
+                                             bvh_crossings, debug, accept_zeros, max_cross, /*use_bvh=*/true);
+    num_errors += num_errors_dist;
+    if (num_errors_dist > 0) std::cout << "*** HOST: traverse errors surf: " << num_errors_dist << "\n";
+    if (test_bvh)
+      if (num_errors_dist_bvh > 0) std::cout << "*** HOST: traverse errors surf BVH: " << num_errors_dist_bvh << "\n";
+    if (num_errors > 0) printf("HOST: num_erros = %d / %d\n", num_errors, nrays);
+  }
+
   if (!debug) {
     std::cout << "HOST: traverse_solids: " << time_traverse_solids
               << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
-    if (test_bvh)
-      std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << "  num_errors = " << num_errors_dist << "\n";
-    else
-      std::cout << "  num_errors = " << num_errors_dist << "\n";
+    if (test_bvh) std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << std::endl;
   }
 
-  if (num_errors > 0) printf("HOST: num_erros = %d / %d\n", num_errors, nrays);
-
+  if (validate_results) {
+    delete[] ref_safeties;
+    delete[] safeties;
+    delete[] ref_crossings;
+    delete[] crossings;
+  }
   delete[] origStates;
   delete[] outputStates;
-  delete[] ref_safeties;
-  delete[] safeties;
-  delete[] ref_crossings;
-  delete[] crossings;
-  return num_errors;
+
+  if (validate_results) return num_errors;
+  return 0;
 }
 
 // in testRaytracing.cu
 int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug,
-                       bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false);
+                       bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false,
+                       bool validate_results = true);
 
 //==================================================================================
 int main(int argc, char *argv[])
@@ -552,9 +595,10 @@ int main(int argc, char *argv[])
   OPTION_INT(min_per_scene, 1000);
   OPTION_INT(ongpu, 1);
   OPTION_INT(max_cross, vecgeom::kMaximumInt);
-  OPTION_BOOL(detect_overlaps, 0);
-  OPTION_BOOL(accept_zeros, 0);
-  OPTION_BOOL(test_bvh, 0);
+  OPTION_BOOL(detect_overlaps, false);
+  OPTION_BOOL(accept_zeros, false);
+  OPTION_BOOL(test_bvh, false);
+  OPTION_BOOL(validate_results, true);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -636,8 +680,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  int errHost =
-      testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros, max_cross, test_bvh);
+  int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros, max_cross,
+                                   test_bvh, validate_results);
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
@@ -648,7 +692,8 @@ int main(int argc, char *argv[])
     auto time_transfer = timer.Stop();
     std::cout << "Solid model GPU transfer time: " << time_transfer << " [s]\n";
     if (!errCUDA)
-      errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, accept_zeros, max_cross, test_bvh);
+      errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, accept_zeros, max_cross, test_bvh,
+                                   validate_results);
   }
 #endif
 
