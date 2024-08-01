@@ -149,8 +149,6 @@ public:
   template <typename Navigator>
   VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(
       const Vector3D<Precision> &localpoint, const Vector3D<Precision> &localdir,
-      // VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision>
-      // localdir,
       Precision &step, long const last_exited_id, long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
@@ -162,19 +160,14 @@ public:
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
+      // If the current distance is shorter than the distance to the node we can safely ignore it
       Precision min{kInfLength}, max{-kInfLength};
       fNodes[id].ComputeIntersectionInvDir(localpoint, invdir, min, max);
-      if (!(min <= max && max >= 0.0 && min < step)) {
+      if (min > max || max < 0.0 || min >= step) {
         continue;
       }
-      // if(!fNodes[id].IntersectInvDir(localpoint, invdir, step))
-      //   continue;
 
       if (fNChild[id] >= 0) {
-
-        // If the current distance is shorter than the distance to the node we can safely ignore it
-        // if(!fNodes[id].IntersectInvDir(localpoint, invdir, step))
-        //   continue;
 
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
@@ -206,11 +199,11 @@ public:
          * This ensures step gets short as fast as possible so we can skip more nodes without checking.
          */
         if (tminR < tminL) {
-          if (traverseR) *ptr++ = childR;
           if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
         } else {
-          if (traverseL) *ptr++ = childL;
           if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
         }
       }
     } while (ptr > stack);

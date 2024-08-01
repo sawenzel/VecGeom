@@ -239,6 +239,13 @@ public:
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
+      // If the current distance is shorter than the distance to the node we can safely ignore it
+      Real_t min{vecgeom::InfinityLength<Real_t>()}, max{-vecgeom::InfinityLength<Real_t>()};
+      fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, min, max);
+      if (min > max || max < Real_t{0} || min >= static_cast<Real_t>(bstep)) {
+        continue;
+      }
+
       if (fNChild[id] >= 0) {
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
@@ -252,7 +259,8 @@ public:
             /* If distance to current child is smaller than current step, update step and hitcandidate */
             if (dist < step &&
                 !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
-              step = dist, hitcandidate_index = prim;
+              step = bstep = dist;
+              hitcandidate_index = prim;
             }
           }
         }
@@ -275,11 +283,11 @@ public:
          * This ensures step gets short as fast as possible so we can skip more nodes without checking.
          */
         if (tminR < tminL) {
-          if (traverseR) *ptr++ = childR;
           if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
         } else {
-          if (traverseL) *ptr++ = childL;
           if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
         }
       }
     } while (ptr > stack);
