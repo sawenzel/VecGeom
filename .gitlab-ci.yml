@@ -28,13 +28,13 @@ code_checks:
 with_ROOT:
    tags:
      - cvmfs
-   image: cern/cc7-base
+   image: cern/alma9-base
    stage: build
    before_script:
-     - yum install environment-modules -y
-     - yum install -y unzip autoconf automake make gcc git
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
-     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - yum install -y environment-modules libX11 cmake
+     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu
+     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
+     - export VC_PATH=/cvmfs/alice.cern.ch/el9-x86_64/Packages/Vc/1.4.1-13
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
@@ -46,13 +46,14 @@ with_ROOT:
 with_NAVINDEX_GDML_ROOT:
    tags:
      - cvmfs
-   image: cern/cc7-base
+   image: cern/alma9-base
    stage: build
    before_script:
-     - yum install environment-modules -y
-     - yum install -y unzip autoconf automake make gcc git xerces-c-devel
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
-     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - dnf install -y epel-release
+     - yum install -y environment-modules libX11 cmake
+     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu xerces-c-devel
+     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
+     - export VC_PATH=/cvmfs/alice.cern.ch/el9-x86_64/Packages/Vc/1.4.1-13
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
@@ -64,13 +65,14 @@ with_NAVINDEX_GDML_ROOT:
 with_GDML_ROOT:
    tags:
      - cvmfs
-   image: cern/cc7-base
+   image: cern/alma9-base
    stage: build
    before_script:
-     - yum install environment-modules -y
-     - yum install -y unzip autoconf automake make gcc git xerces-c-devel
-     - eval "$(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-04-9,CMake::v3.27.9-1)"
-     - export VC_PATH=/cvmfs/alice.cern.ch/el7-x86_64/Packages/Vc/1.4.1-100
+     - dnf install -y epel-release
+     - yum install -y environment-modules libX11 cmake
+     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu xerces-c-devel
+     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
+     - export VC_PATH=/cvmfs/alice.cern.ch/el9-x86_64/Packages/Vc/1.4.1-13
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
