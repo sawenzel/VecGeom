@@ -122,6 +122,9 @@ public:
   }
 };
 
+// Alias for ABBoxManager for forward compatibility with a templated version
+using ABBoxManager_t = ABBoxManager;
+
 // output for hitboxes
 template <typename stream>
 stream &operator<<(stream &s, std::vector<ABBoxManager::BoxIdDistancePair_t> const &list)
