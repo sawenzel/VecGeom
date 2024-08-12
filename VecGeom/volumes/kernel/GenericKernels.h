@@ -29,34 +29,37 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr int kSign(Real_t x)
 
 // relative tolerance specializations
 template <typename Real_t>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real_t x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real_t x,
+                                                                            Real_t tolerance = kToleranceStrict<Real_t>)
 {
   return Real_t(0);
 }
 
 template <>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x, double tolerance)
 {
   // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * kToleranceStrict<double>;
+  return (x + kSign(x)) * tolerance;
 }
 template <>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x, float tolerance)
 {
   // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * kToleranceStrict<float>;
+  return (x + kSign(x)) * tolerance;
 }
 
 template <typename T>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakePlusTolerantRel(T const x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakePlusTolerantRel(T const x,
+                                                                             T tolerance = kToleranceStrict<T>)
 {
-  return (x + kRelTolerance<T>(x));
+  return (x + kRelTolerance<T>(x, tolerance));
 }
 
 template <typename T>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakeMinusTolerantRel(T const x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakeMinusTolerantRel(T const x,
+                                                                              T tolerance = kToleranceStrict<T>)
 {
-  return (x - kRelTolerance<T>(x));
+  return (x - kRelTolerance<T>(x, tolerance));
 }
 
 template <bool tolerant, typename T>
