@@ -17,6 +17,7 @@
 #include <VecGeom/volumes/utilities/VolumeUtilities.h>
 #include <VecGeom/navigation/NavStatePool.h>
 #include <VecGeom/base/Stopwatch.h>
+#include <VecGeom/surfaces/BVHSurfNavigator.h>
 
 using namespace vecgeom;
 // Forwards
@@ -45,15 +46,15 @@ int main(int argc, char *argv[])
 
   BrepHelper::Instance().SetVerbosity(verbose);
 
-  if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesScenes()) return 2;
+  if (!BrepHelper::Instance().Convert()) return 1;
 
-  ValidateNavigation(nvalidate, layers, locatecheck, distcheck, safecheck);
+  if (!ValidateNavigation(nvalidate, layers, locatecheck, distcheck, safecheck)) return 1;
 
   TestPerformance(nbench, layers, locatecheck, distcheck, safecheck);
 
   // Test clearing surface data
   BrepHelper::Instance().ClearData();
+  return 0;
 }
 
 void CreateVecGeomWorld(int NbOfLayers, int NbOfAbsorbers)
@@ -211,7 +212,9 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
     bool safesafe = true;
     if (locatecheck) vgbrep::protonav::LocatePointIn(GeoManager::Instance().GetWorld(), pos, locate_state, true);
 
-    if (distcheck) distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, *origStates[i], out_state, crossed_surf);
+    if (distcheck)
+      distance = vgbrep::protonav::BVHSurfNavigator<double>::ComputeStepAndHit(pos, dir, *origStates[i], out_state,
+                                                                               crossed_surf);
     if (safecheck) {
       int common_id = crossed_surf.hit_surf.GetCSindex();
       safety        = vgbrep::protonav::ComputeSafety(pos, *origStates[i], common_id);

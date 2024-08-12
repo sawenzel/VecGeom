@@ -2,6 +2,7 @@
 #define VECGEOM_SURFACE_MODEL_H_
 
 #include <VecGeom/navigation/NavigationState.h>
+#include <VecGeom/surfaces/base/CommonTypes.h>
 #include <VecGeom/surfaces/base/Equations.h>
 #include <VecGeom/surfaces/surf/SurfaceImpl.h>
 #include <VecGeom/surfaces/mask/FrameMasks.h>
@@ -57,8 +58,9 @@ struct UnplacedSurface {
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point, flip);
     case SurfaceType::kArb4:
       return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id)).Inside(point, flip);
+    default:
+      return false;
     };
-    return false;
   }
 
   /// @brief Find signed distance to next intersection from local point.
@@ -96,8 +98,9 @@ struct UnplacedSurface {
     case SurfaceType::kArb4:
       return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
           .Intersect(point, dir, left_side, distance, two_solutions, safety);
+    default:
+      return false;
     };
-    return false;
   }
 
   /// @brief Computes the isotropic safe distance to unplaced surfaces
@@ -133,8 +136,9 @@ struct UnplacedSurface {
     case SurfaceType::kArb4:
       return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id))
           .Safety(point, left_side, distance, onsurf);
+    default:
+      return false;
     };
-    return false;
   }
 };
 
@@ -409,27 +413,12 @@ struct FramedSurface {
   }
 };
 
-/// @brief A list of candidate surfaces
-struct Candidates {
-  int fNcand{0};             ///< Number of candidate surfaces
-  int fNExiting{0};          ///< Number of exiting candidate surfaces. fNcand = NEntering + NExiting
-  int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
-  int *fFrameInd{nullptr};   ///< [fNcand] Start index of the frame contributed by the touchable on the common surface
-  char *fSides{nullptr};     ///< [fNcand] Side containing relevant frames for each candidate (0=left, 1=right, 2=both)
-
-  VECCORE_ATT_HOST_DEVICE
-  int operator[](int i) const { return fCandidates[i]; }
-  VECCORE_ATT_HOST_DEVICE
-  int operator[](int i) { return fCandidates[i]; }
-
-  Candidates() = default;
-};
-
 /// @brief A side represents all common placed surfaces
 struct Side {
   Extent fExtent;          ///< Extent on a side.
   int fNumParents{0};      ///< number of different parent volumes contributing to this side
   int fNsurf{0};           ///< Number of placed surfaces on this side
+  int fDivision{-1};       ///< Division helper for the side
   int *fSurfaces{nullptr}; ///< [fNsurf] Array of placed surfaces on this side
 
   Side() = default;
@@ -474,6 +463,70 @@ struct Side {
   void CopyTo(char *buffer)
   {
     // to be implemented
+  }
+};
+
+template <typename Real_t, typename Real_i>
+struct SideIterator {
+  SliceCand *fSlice{nullptr}; ///< Division slice to be iterated
+  int fNsurf{0};              ///< number of surfaces to iterate
+  int fCrt{0};                ///< Current index
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  SideIterator(const Side &side, Vector3D<Real_i> const &onsurf, SurfData<Real_t> const &surfdata, int increment = 1,
+               int istart = 0)
+      : fNsurf(side.fNsurf), fCrt(istart)
+  {
+    if (side.fDivision >= 0) {
+      auto const &div = surfdata.fSideDivisions[side.fDivision];
+      auto ind        = div.GetSliceIndex(onsurf);
+      if (ind >= 0) {
+        fSlice    = &div.fSlices[ind];
+        fNsurf    = fSlice->fNcand;
+        int inc01 = (increment + 1) >> 1; // [-1/1 -> 0/1]
+        int start = (1 - inc01) * (fSlice->fNcand - 1);
+        int end   = inc01 * (fSlice->fNcand - 1);
+        for (fCrt = start; fCrt * increment < end; fCrt += increment)
+          if (increment * fSlice->fCandidates[fCrt] >= increment * istart) break;
+      }
+    }
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool Done() const { return (fCrt < 0) || (fCrt >= fNsurf); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  void SetNextIndex(int ind)
+  {
+    if (fSlice) {
+      int i;
+      for (i = fCrt + 1; i < fSlice->fNcand; ++i)
+        if (fSlice->fCandidates[i] >= ind) break;
+      fCrt = i - 1;
+    } else {
+      fCrt = ind - 1;
+    }
+  }
+
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int operator()() { return fSlice ? fSlice->fCandidates[fCrt] : fCrt; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  SideIterator &operator++()
+  {
+    fCrt++;
+    return *this;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  SideIterator &operator--()
+  {
+    fCrt--;
+    return *this;
   }
 };
 

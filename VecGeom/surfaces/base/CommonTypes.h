@@ -57,7 +57,7 @@ struct LogicExpression {
 ///< kTorus         <- toroidal surface hafing the median circle in the xy plane, cenetred in origin
 ///< kElliptical    <- elliptical half-space around the z-axis, having the normals pointing outwards
 ///< kArb4          <- twisted surface defined by 4 non co-planar vertices
-enum class SurfaceType : char { kPlanar, kCylindrical, kConical, kSpherical, kTorus, kElliptical, kArb4 };
+enum class SurfaceType : char { kNoSurf, kPlanar, kCylindrical, kConical, kSpherical, kTorus, kElliptical, kArb4 };
 
 ///< Supported frame types
 ///< kNoFrame       <- no frame, used for Inside only
@@ -72,6 +72,22 @@ enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindo
 
 ///< Segment-segment intersection types
 enum class SegmentIntersect : char { kNoIntersect, kEmbedding, kEmbedded, kOverlap, kIntersect, kEqual };
+
+/// @brief A list of candidate surfaces
+struct Candidates {
+  int fNcand{0};             ///< Number of candidate surfaces
+  int fNExiting{0};          ///< Number of exiting candidate surfaces. fNcand = NEntering + NExiting
+  int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
+  int *fFrameInd{nullptr};   ///< [fNcand] Start index of the frame contributed by the touchable on the common surface
+  char *fSides{nullptr};     ///< [fNcand] Side containing relevant frames for each candidate (0=left, 1=right, 2=both)
+
+  VECCORE_ATT_HOST_DEVICE
+  int operator[](int i) const { return fCandidates[i]; }
+  VECCORE_ATT_HOST_DEVICE
+  int operator[](int i) { return fCandidates[i]; }
+
+  Candidates() = default;
+};
 
 /// @brief Framed surface locator
 struct FSlocator {
@@ -137,6 +153,66 @@ struct CrossedSurface {
   {
     exit_surf.Set(csind, iframe, left);
     hit_surf.Set(csind, iframe, left);
+  }
+};
+
+struct SliceCand {
+  int fNcand{0};             ///< Number of candidate frames in the slice
+  int *fCandidates{nullptr}; ///< [fNcand] Array of candidates
+};
+
+enum AxisType : char {
+  kX,     ///< X axis
+  kY,     ///< Y axis
+  kZ,     ///< Z axis
+  kR,     ///< Radial axis
+  kPhi,   ///< Phi axis
+  kXY,    ///< XY grid
+  kNoAxis ///< No axis
+};
+
+/// @brief Helper for dividing a side in equal slices along one axis, keeping frame candidates in each slice
+/// @details The range given by the side extent is divided in equal slices along an axis. Each
+///          slice intersects a number of frames. The slice is found besed on the crossing point, then the full
+///          frame loops are reduced to the list of candidates in that slice.
+template <typename Real_t>
+struct SideDivision {
+  Real_t fStartU{0.};                ///< Division start on primary division axis
+  Real_t fStepU{0.};                 ///< Division step on primary division axis
+  Real_t fStartV{0.};                ///< Division start on secondary axis (if any)
+  Real_t fStepV{0.};                 ///< Division step on secondary axis (if any)
+  unsigned short fNslices{0};        ///< Total number of slices
+  unsigned short fNslicesU{0};       ///< Number of slices on primary division axis
+  unsigned short fNslicesV{0};       ///< Number of slices on secondary division axis
+  AxisType fAxis{AxisType::kNoAxis}; ///< Division axis
+  SliceCand *fSlices{nullptr};       ///< Array of slices
+
+  // Methods
+  SideDivision() = default;
+
+  template <typename Real_i>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetSliceIndex(Vector3D<Real_i> const &onsurf) const
+  {
+    int ind = -1;
+    switch (fAxis) {
+    case kXY: {
+      int indU = (onsurf[0] - fStartU) / fStepU;
+      int indV = (onsurf[1] - fStartV) / fStepV;
+      ind      = (indU >= 0 && indV >= 0 && indU < fNslicesU && indV < fNslicesV) ? fNslicesV * indU + indV : -1;
+      return ind;
+    }
+    case AxisType::kR: {
+      ind = (onsurf.Perp() - fStartU) / fStepU;
+      return (ind < fNslices) ? ind : -1;
+    }
+    case AxisType::kPhi: {
+      ind = (onsurf.Phi() - fStartU) / fStepU;
+      return (ind >= 0 && ind < fNslices) ? ind : -1;
+    }
+    default:
+      ind = (onsurf[fAxis] - fStartU) / fStepU;
+      return (ind >= 0 && ind < fNslices) ? ind : -1;
+    }
   }
 };
 
@@ -496,6 +572,16 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
 {
   return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]);
+}
+
+template <typename Real_t>
+bool ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_t> &t1,
+                               const vecgeom::Transformation3DMP<Real_t> &t2)
+{
+  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
+  for (int i = 0; i < 9; ++i)
+    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
+  return true;
 }
 
 /// @brief Truncate a value to as many significant digits as a given tolerance.

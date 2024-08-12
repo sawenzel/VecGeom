@@ -564,7 +564,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   if (!debug) {
     std::cout << "HOST: traverse_solids: " << time_traverse_solids
               << "  traverse_solids_BVH: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
-    if (test_bvh) std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << std::endl;
+    if (test_bvh) std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh;
+    std::cout << std::endl;
   }
 
   if (validate_results) {

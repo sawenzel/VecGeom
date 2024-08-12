@@ -156,7 +156,8 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
     crossed_surf.Set(isurf, ind, left_side);
   };
 
-  for (int ind = frameind_start; ind < exit_side.fNsurf; ++ind) {
+  for (SideIterator it(exit_side, onsurf_crt, surfdata, 1, frameind_start); !it.Done(); ++it) {
+    auto ind               = it();
     auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
     // The deepest exited frame surface must belong to the input state
     if (!exiting_scene && !inframe && framedsurf.fState != in_navind) continue;
@@ -177,7 +178,7 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
       // loop over parent frames
       while (parent_ind > 0) {
         // next parent to be checked in case the frame is not embedded is parent_ind
-        ind = parent_ind - 1;
+        it.SetNextIndex(parent_ind);
         // Not embedded frames must be checked thoroughly
         // Note: frames could be non-embedded because they are extruding overlaps. This can be confirmed if the parent
         // surface is embedding. In that case, the parent is exited as well. For these extruding overlaps the
@@ -194,6 +195,47 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
       if (embedded) break;
     }
   }
+
+  /*
+    for (int ind = frameind_start; ind < exit_side.fNsurf; ++ind) {
+      auto const &framedsurf = exit_side.GetSurface(ind, surfdata);
+      // The deepest exited frame surface must belong to the input state
+      if (!exiting_scene && !inframe && framedsurf.fState != in_navind) continue;
+      // Skip if this is an already checked Boolean
+      if (framedsurf.fState == last_bool_state) continue;
+      // Check if the frame mask is crossed
+      bool inframe_tmp = (ind == frameind_start) && inframe;
+      if (!inframe_tmp)
+        inframe_tmp = IsExitingFrame<Real_t>(point, direction, distance, onsurf_crt, exited_state, framedsurf,
+                                             last_bool_state, surfdata);
+      if (inframe_tmp) {
+        // The frame is exited
+        inframe = true;
+        // Cache the top exited state and local surface index for the exited surface
+        setTopExited(framedsurf, ind);
+        // If this frame has no parent this is the topmost exited one
+        if (parent_ind < 0) break;
+        // loop over parent frames
+        while (parent_ind > 0) {
+          // next parent to be checked in case the frame is not embedded is parent_ind
+          ind = parent_ind - 1;
+          // Not embedded frames must be checked thoroughly
+          // Note: frames could be non-embedded because they are extruding overlaps. This can be confirmed if the parent
+          // surface is embedding. In that case, the parent is exited as well. For these extruding overlaps the
+          // crossed_surf must be set to the highest exited frame for the overlap detection to work
+          auto const &parent_framedsurf = exit_side.GetSurface(parent_ind, surfdata);
+          if (!embedded && !parent_framedsurf.fEmbedding) break;
+          // The frame is embedded in the parent, so the parent is also exited
+          setTopExited(parent_framedsurf, parent_ind);
+          if (parent_framedsurf.fState)
+            exited_state.SetNavIndex(parent_framedsurf.fState);
+          else
+            exited_state.PopScene();
+        }
+        if (embedded) break;
+      }
+    }
+  */
   if (inframe) {
     // backup exited state
     crossed_surf.state = state;
@@ -262,7 +304,8 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
   int iparent = ifound;
   if (found) iparent = getFirstParent(ifound);
   int indstart = (iparent >= 0) ? iparent - 1 : side.fNsurf - 1;
-  for (auto ind = indstart; ind >= 0; --ind) {
+  for (SideIterator it(side, onsurf_local, surfdata, -1, indstart); !it.Done(); --it) {
+    auto ind               = it();
     auto const &framedsurf = side.GetSurface(ind, surfdata);
     // NeverCheck frames are always hit
     if (framedsurf.fNeverCheck) {
@@ -294,6 +337,41 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
       if (ihit < 0) ihit = ind;
     }
   }
+
+  /*
+    for (auto ind = indstart; ind >= 0; --ind) {
+      auto const &framedsurf = side.GetSurface(ind, surfdata);
+      // NeverCheck frames are always hit
+      if (framedsurf.fNeverCheck) {
+        ihit = ind;
+        return ind;
+      }
+      // Check only direct children if a frame was already found
+      if (found && framedsurf.fParent != iparent) continue;
+      // Skip same state frames unless this is a side of a scene surface
+      if (!is_scene_surface && framedsurf.fState == in_navind) continue;
+      // Hitting a topscene frame starting from the same scene must be discarded
+      if (is_scene && framedsurf.fState == 0) continue;
+      // Skip embedded children if a parent was not yet found,
+      // unless the parent is virtual, then we need to check the children since the parent will not be found
+      if (!found && framedsurf.fParent >= 0)
+        if ((framedsurf.fEmbedded && !(framedsurf.fVirtualParent)) ||
+            side.GetSurface(framedsurf.fParent, surfdata).fEmbedding)
+          continue;
+
+      //=== Do the real check ===//
+      auto inframe = framedsurf.InsideFrame(onsurf_local, surfdata);
+      // For Booleans make sure we don't cross a virtual frame
+      if (inframe && framedsurf.fLogicId) inframe = insideBoolean(framedsurf);
+      if (inframe) {
+        found   = true;
+        ifound  = ind;
+        iparent = getFirstParent(ifound);
+        // Set index of the first frame being hit
+        if (ihit < 0) ihit = ind;
+      }
+    }
+  */
   return ifound;
 }
 

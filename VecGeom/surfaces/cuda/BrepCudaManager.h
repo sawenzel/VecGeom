@@ -87,6 +87,18 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
     current += surfData->fCommonSurfaces[i].fRightSide.fNsurf;
   }
 
+  // Write pointers into fSideDivisions[i].fSlices and fSlices[i].fCandidates
+  auto currentSlice = surfData->fSlices;
+  current           = surfData->fSliceCandidates;
+  for (int i = 0; i < surfData->fNsideDivisions; i++) {
+    surfData->fSideDivisions[i].fSlices = currentSlice;
+    for (int j = 0; j < surfData->fSideDivisions[i].fNslices; ++j) {
+      currentSlice->fCandidates = current;
+      current += currentSlice->fNcand;
+      currentSlice++;
+    }
+  }
+
   // Write pointers into fCandidates[i].{fCandidates,fFrameInd, fSides}
   current = surfData->fCandList;
   for (int i = 0; i < surfData->fNStates; i++) {
@@ -348,6 +360,24 @@ public:
     sizeInBytes              = sizeof(surfData.fSides[0]) * surfData.fNsides;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSides, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fSides, surfData.fSides, sizeInBytes, cudaMemcpyHostToDevice));
+
+    // Allocate and copy side divisions
+    // Nota bene: the fSideDivisions[i].fSlices and fSlices[i].fCandidates are backed
+    // by the following arrays and set via BrepCudaManagerFinishTransfer.
+    fSurfDataStaging.fNsideDivisions   = surfData.fNsideDivisions;
+    fSurfDataStaging.fNslices          = surfData.fNslices;
+    fSurfDataStaging.fNsliceCandidates = surfData.fNsliceCandidates;
+    sizeInBytes                        = sizeof(surfData.fSideDivisions[0]) * surfData.fNsideDivisions;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSideDivisions, sizeInBytes));
+    BREP_CUDA_CHECK(
+        cudaMemcpy(fSurfDataStaging.fSideDivisions, surfData.fSideDivisions, sizeInBytes, cudaMemcpyHostToDevice));
+    sizeInBytes = sizeof(surfData.fSlices[0]) * surfData.fNslices;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSlices, sizeInBytes));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fSlices, surfData.fSlices, sizeInBytes, cudaMemcpyHostToDevice));
+    sizeInBytes = sizeof(int) * surfData.fNsliceCandidates;
+    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSliceCandidates, sizeInBytes));
+    BREP_CUDA_CHECK(
+        cudaMemcpy(fSurfDataStaging.fSliceCandidates, surfData.fSliceCandidates, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy candidates lists
     fSurfDataStaging.fNStates = surfData.fNStates;

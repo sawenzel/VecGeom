@@ -15,7 +15,8 @@ VECGEOM_FORCE_INLINE char const *to_cstring(T type)
 template <>
 VECGEOM_FORCE_INLINE char const *to_cstring<SurfaceType>(SurfaceType type)
 {
-  static const char *const data[] = {"planar", "cylindrical", "conical", "spherical", "torus", "elliptical", "arb4"};
+  static const char *const data[] = {"no_surf",   "planar", "cylindrical", "conical",
+                                     "spherical", "torus",  "elliptical",  "arb4"};
   assert(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
@@ -31,6 +32,14 @@ template <>
 VECGEOM_FORCE_INLINE char const *to_cstring<FrameType>(FrameType type)
 {
   static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
+  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  return data[static_cast<int>(type)];
+}
+
+template <>
+VECGEOM_FORCE_INLINE char const *to_cstring<AxisType>(AxisType type)
+{
+  static const char *const data[] = {"x-axis", "y-axis", "z-axis", "r-axis", "phi-axis", "xy-grid", "no-axis"};
   assert(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
@@ -52,6 +61,146 @@ struct VolumeShellCPU {
   LogicExpressionCPU fLogic; ///< Logic expression for the solid
   bool fSimplified{false};   ///< The logic was simplified
   int fBVH{0};
+};
+
+/// @brief Helper for dividing a side in equal slices along one axis, keeping frame candidates in each slice
+/// @details The range given by the side extent is divided in equal slices along an axis. Each
+///          slice intersects a number of frames. The slice is found besed on the crossing point, then the full
+///          frame loops are reduced to the list of candidates in that slice.
+struct SideDivisionCPU {
+  using VecInt_t = std::vector<int>;
+  double fStartU{0.};                ///< Division start on primary division axis
+  double fStepU{0.};                 ///< Division step on primary division axis
+  double fStartV{0.};                ///< Division start on secondary axis (if any)
+  double fStepV{0.};                 ///< Division step on secondary axis (if any)
+  unsigned short fNslices{0};        ///< Total number of slices
+  unsigned short fNslicesU{0};       ///< Number of slices on primary division axis
+  unsigned short fNslicesV{0};       ///< Number of slices on secondary division axis
+  AxisType fAxis{AxisType::kNoAxis}; ///< Division axis
+  std::vector<VecInt_t> fSlices;     ///< Array of slices
+
+  // Methods
+  SideDivisionCPU() = default;
+  SideDivisionCPU(AxisType axis, double coord_min, double coord_max, int ncand)
+      : fStartU(coord_min), fStepU((coord_max - coord_min) / ncand), fNslices(ncand), fAxis(axis)
+  {
+    fSlices.insert(fSlices.end(), ncand, {});
+  }
+
+  SideDivisionCPU(AxisType axis, double coord_minU, double coord_maxU, double coord_minV, double coord_maxV, int ncand)
+      : fAxis(axis)
+  {
+    fNslicesU = 1 + std::sqrt(static_cast<double>(ncand)); // rounding happens
+    fNslicesV = ncand / fNslicesU;                         // rounding happens
+    fNslices  = fNslicesU * fNslicesV;
+    fStartU   = coord_minU;
+    fStepU    = (coord_maxU - coord_minU) / fNslicesU;
+    fStartV   = coord_minV;
+    fStepV    = (coord_maxV - coord_minV) / fNslicesV;
+    fSlices.insert(fSlices.end(), fNslices, {});
+  }
+
+  void AddCandidate(int icand, double coord_min, double coord_max)
+  {
+    int istart = (coord_min - fStartU - vecgeom::kToleranceDist<double>) / fStepU;
+    int iend   = (coord_max - fStartU + vecgeom::kToleranceDist<double>) / fStepU;
+    for (int i = istart; i <= iend && i < fNslices; ++i) {
+      if (i < 0) continue;
+      fSlices[i].push_back(icand);
+    }
+  }
+
+  void AddCandidate(int icand, double umin, double umax, double vmin, double vmax)
+  {
+    int istartU = (umin - fStartU - vecgeom::kToleranceDist<double>) / fStepU;
+    int iendU   = (umax - fStartU + vecgeom::kToleranceDist<double>) / fStepU;
+    int istartV = (vmin - fStartV - vecgeom::kToleranceDist<double>) / fStepV;
+    int iendV   = (vmax - fStartV + vecgeom::kToleranceDist<double>) / fStepV;
+    for (int i = istartU; i <= iendU && i < fNslicesU; ++i) {
+      for (int j = istartV; j <= iendV && j < fNslicesV; ++j) {
+        if (i < 0 || j < 0) continue;
+        fSlices[i * fNslicesV + j].push_back(icand);
+      }
+    }
+  }
+
+  template <typename Real_t>
+  void CopyTo(SideDivision<Real_t> &div, SliceCand *slices, int *candidates)
+  {
+    div.fStartU   = fStartU;
+    div.fStepU    = fStepU;
+    div.fStartV   = fStartV;
+    div.fStepV    = fStepV;
+    div.fNslices  = fNslices;
+    div.fNslicesU = fNslicesU;
+    div.fNslicesV = fNslicesV;
+    div.fAxis     = fAxis;
+    div.fSlices   = slices;
+    auto cand     = candidates;
+    for (size_t i = 0; i < fSlices.size(); ++i) {
+      slices[i].fNcand      = fSlices[i].size();
+      slices[i].fCandidates = cand;
+      for (int j = 0; j < slices[i].fNcand; ++j)
+        cand[j] = fSlices[i][j];
+      cand += slices[i].fNcand;
+    }
+  }
+
+  template <typename Real_t>
+  size_t GetSizeObject() const
+  {
+    return sizeof(SideDivision<Real_t>);
+  }
+
+  template <typename Real_t>
+  size_t GetSizeSlices() const
+  {
+    return fNslices * sizeof(SliceCand);
+  }
+
+  size_t GetNcandidates() const
+  {
+    size_t size = 0;
+    for (auto i = 0; i < fNslices; ++i)
+      size += fSlices[i].size();
+    return size;
+  }
+
+  size_t GetSizeCandidates() const { return GetNcandidates() * sizeof(int); }
+
+  template <typename Real_t>
+  size_t GetSize() const
+  {
+    size_t size = GetSizeObject<Real_t>() + GetSizeSlices<Real_t>() + GetSizeCandidates();
+    return size;
+  }
+
+  void Print() const
+  {
+    if (fAxis == AxisType::kXY) {
+      std::cout << to_cstring(fAxis) << " division: fNslices = " << fNslices << ", fNslicesU = " << fNslicesU
+                << ", fNslicesV = " << fNslicesV << ", fStartU = " << fStartU << ", fStepU = " << fStepU
+                << ", fStartV = " << fStartV << ", fStepV = " << fStepV << ", efficiency = " << 100 * Efficiency()
+                << " %\n";
+    } else {
+      std::cout << to_cstring(fAxis) << " division: fNslices = " << fNslices << ", fStart = " << fStartU
+                << ", fStep = " << fStepU << ", efficiency = " << 100 * Efficiency() << " %\n";
+    }
+    for (auto i = 0; i < fNslices; ++i)
+      std::cout << fSlices[i].size() << " ";
+    std::cout << "\n";
+  }
+
+  double Efficiency() const
+  {
+    assert(fSlices[0].size() * fSlices[fNslices - 1].size() > 0);
+    double average = 0;
+    for (auto i = 0; i < fNslices; ++i)
+      average += fSlices[i].size();
+    average /= fNslices;
+    double eff = (fNslices - average) / (average * (fNslices - 1));
+    return eff;
+  }
 };
 
 // Surface data used only on CPU during the conversion process
@@ -85,7 +234,7 @@ struct CPUsurfData {
   std::vector<Arb4Data_t> fArb4Data;                  ///< data for Arb4 surfaces
   std::vector<TransformationMP<Real_t>> fLocalTrans;  ///< local transformations
   std::vector<TransformationMP<Real_t>> fGlobalTrans; ///< global transformations for surfaces in the scene
-  std::vector<TransformationMP<Real_t>> fPVolTrans;    ///< Transformations to placed volumes
+  std::vector<TransformationMP<Real_t>> fPVolTrans;   ///< Transformations to placed volumes
   std::vector<FramedSurface> fLocalSurfaces;          ///< local surfaces per logical volume
   std::vector<FramedSurface> fFramedSurf;             ///< global surfaces
   std::vector<CommonSurface> fCommonSurfaces;         ///< common surfaces
@@ -102,6 +251,8 @@ struct CPUsurfData {
   std::vector<VecInt_t> fFrameIndExiting;  ///< list of start frame indices for exiting candidates: scene0...,scene1...
   std::vector<VecChar_t> fSidesEntering;   ///< list of relevant sides for entering candidates: scene0...,scene1...
   std::vector<VecChar_t> fSidesExiting;    ///< list of relevant sides for exiting candidates: scene0...,scene1...
+
+  std::vector<SideDivisionCPU> fSideDivisions; ///< list of divisions for all sides
 
 private:
   CPUsurfData() = default;
@@ -142,6 +293,7 @@ public:
     std::vector<VecInt_t>().swap(fFrameIndExiting);
     std::vector<VecChar_t>().swap(fSidesEntering);
     std::vector<VecChar_t>().swap(fSidesExiting);
+    std::vector<SideDivisionCPU>().swap(fSideDivisions);
   }
 
   VecInt_t &GetCandidatesEntering(int scene_id, int state_id)

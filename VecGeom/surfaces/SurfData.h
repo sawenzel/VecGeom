@@ -34,6 +34,7 @@ struct SurfData {
   using ZPhiMask_t     = ZPhiMask<Real_t>;
   using TriangleMask_t = TriangleMask<Real_t>;
   using QuadMask_t     = QuadrilateralMask<Real_t>;
+  using SideDivision_t = SideDivision<Real_t>;
 
   int fNscenes{0};
   int fNlocalTrans{0};
@@ -61,6 +62,9 @@ struct SurfData {
   int fNzphis{0};
   int fNtriangs{0};
   int fNquads{0};
+  int fNsideDivisions{0};
+  int fNslices{0};
+  int fNsliceCandidates{0};
 
   int *fSceneStartIndex{nullptr}; ///< Start indices for data indexed by state id (per scene)
   int *fSceneTouchables{nullptr}; ///< Number of touchables (per scene)
@@ -68,7 +72,7 @@ struct SurfData {
   /// Transformations.
   TransformationMP<Real_t> *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
   TransformationMP<Real_t> *fGlobalTrans{nullptr}; ///< Touchable global transformations
-  TransformationMP<Real_t> *fPVolTrans{nullptr};    ///< Transformations to placed volumes
+  TransformationMP<Real_t> *fPVolTrans{nullptr};   ///< Transformations to placed volumes
 
   /// Volume shells, indexed by the logical volume id
   VolumeShell *fShells{nullptr}; ///< volume shells
@@ -93,6 +97,9 @@ struct SurfData {
   CommonSurface *fCommonSurfaces{nullptr};     ///< common surfaces
   Candidates *fCandidates;                     ///< candidate surfaces per navigation state
   int *fSides{nullptr};                        ///< side surface indices
+  SideDivision_t *fSideDivisions{nullptr};     ///< [fNsideDivisions] side division helpers
+  SliceCand *fSlices{nullptr};                 ///< [fNslices] slice candidates
+  int *fSliceCandidates{nullptr};              ///< [fNsliceCandidates] frame indices for all slice candidates
   int *fSurfShellList{nullptr};                ///< indices of local surfaces used in shells
   logic_int *fLogicList{nullptr};              ///< list of logic expressions per volume
   int *fCandList{nullptr};                     ///< global list of candidate indices
@@ -115,6 +122,71 @@ struct SurfData {
     static SurfData<Real_t> gSurfData;
     return gSurfData;
 #endif
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  void Clear()
+  {
+    delete[] fWindowMasks;
+    fWindowMasks = nullptr;
+    delete[] fRingMasks;
+    fRingMasks = nullptr;
+    delete[] fZPhiMasks;
+    fZPhiMasks = nullptr;
+    delete[] fQuadMasks;
+    fQuadMasks = nullptr;
+    delete[] fTriangleMasks;
+    fTriangleMasks = nullptr;
+    delete[] fCylSphData;
+    fCylSphData = nullptr;
+    delete[] fConeData;
+    fConeData = nullptr;
+    delete[] fEllipData;
+    fEllipData = nullptr;
+    delete[] fTorusData;
+    fTorusData = nullptr;
+    delete[] fArb4Data;
+    fArb4Data = nullptr;
+    delete[] fGlobalTrans;
+    fGlobalTrans = nullptr;
+    delete[] fLocalTrans;
+    fLocalTrans = nullptr;
+    delete[] fFramedSurf;
+    fFramedSurf = nullptr;
+    delete[] fSides;
+    fSides = nullptr;
+    delete[] fSideDivisions;
+    fSideDivisions = nullptr;
+    delete[] fSlices;
+    fSlices = nullptr;
+    delete[] fSliceCandidates;
+    fSliceCandidates = nullptr;
+    delete[] fCommonSurfaces;
+    fCommonSurfaces = nullptr;
+    delete[] fCandList;
+    fCandList = nullptr;
+    delete[] fCandidates;
+    fCandidates = nullptr;
+    delete[] fLocalSurf;
+    fLocalSurf = nullptr;
+    delete[] fShells;
+    fShells = nullptr;
+    delete[] fSurfShellList;
+    fSurfShellList = nullptr;
+    delete[] fLogicList;
+    fLogicList = nullptr;
+    delete[] fShellExitingSurfaceList;
+    fShellExitingSurfaceList = nullptr;
+    delete[] fShellEnteringSurfaceList;
+    fShellEnteringSurfaceList = nullptr;
+    delete[] fShellEnteringSurfacePvolList;
+    fShellEnteringSurfacePvolList = nullptr;
+    delete[] fShellDaughterPvolTransList;
+    fShellDaughterPvolTransList = nullptr;
+    delete[] fShellDaughterLvolIdList;
+    fShellDaughterLvolIdList = nullptr;
+    delete[] fBVH;
+    fBVH = nullptr;
   }
 
   VECCORE_ATT_HOST_DEVICE

@@ -27,78 +27,12 @@ BrepHelper<Real_t>::~BrepHelper()
 }
 
 template <typename Real_t>
-template <typename Real_i>
-bool BrepHelper<Real_t>::ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_i> &t1,
-                                                   const vecgeom::Transformation3DMP<Real_i> &t2)
-{
-  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
-  for (int i = 0; i < 9; ++i)
-    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
-  return true;
-}
-
-template <typename Real_t>
 void BrepHelper<Real_t>::ClearData()
 {
   // Dispose of surface data and shrink the container
   fCPUdata.Clear();
-
-  delete[] fSurfData->fWindowMasks;
-  fSurfData->fWindowMasks = nullptr;
-  delete[] fSurfData->fRingMasks;
-  fSurfData->fRingMasks = nullptr;
-  delete[] fSurfData->fZPhiMasks;
-  fSurfData->fZPhiMasks = nullptr;
-  delete[] fSurfData->fQuadMasks;
-  fSurfData->fQuadMasks = nullptr;
-  delete[] fSurfData->fTriangleMasks;
-  fSurfData->fTriangleMasks = nullptr;
-  delete[] fSurfData->fCylSphData;
-  fSurfData->fCylSphData = nullptr;
-  delete[] fSurfData->fConeData;
-  fSurfData->fConeData = nullptr;
-  delete[] fSurfData->fEllipData;
-  fSurfData->fEllipData = nullptr;
-  delete[] fSurfData->fTorusData;
-  fSurfData->fTorusData = nullptr;
-  delete[] fSurfData->fArb4Data;
-  fSurfData->fArb4Data = nullptr;
-  delete[] fSurfData->fGlobalTrans;
-  fSurfData->fGlobalTrans = nullptr;
-  delete[] fSurfData->fLocalTrans;
-  fSurfData->fLocalTrans = nullptr;
-  delete[] fSurfData->fFramedSurf;
-  fSurfData->fFramedSurf = nullptr;
-  delete[] fSurfData->fSides;
-  fSurfData->fSides = nullptr;
-  delete[] fSurfData->fCommonSurfaces;
-  fSurfData->fCommonSurfaces = nullptr;
-  delete[] fSurfData->fCandList;
-  fSurfData->fCandList = nullptr;
-  delete[] fSurfData->fCandidates;
-  fSurfData->fCandidates = nullptr;
-  delete[] fSurfData->fLocalSurf;
-  fSurfData->fLocalSurf = nullptr;
-  delete[] fSurfData->fShells;
-  fSurfData->fShells = nullptr;
-  delete[] fSurfData->fSurfShellList;
-  fSurfData->fSurfShellList = nullptr;
-  delete[] fSurfData->fLogicList;
-  fSurfData->fLogicList = nullptr;
-  delete[] fSurfData->fShellExitingSurfaceList;
-  fSurfData->fShellExitingSurfaceList = nullptr;
-  delete[] fSurfData->fShellEnteringSurfaceList;
-  fSurfData->fShellEnteringSurfaceList = nullptr;
-  delete[] fSurfData->fShellEnteringSurfacePvolList;
-  fSurfData->fShellEnteringSurfacePvolList = nullptr;
-  delete[] fSurfData->fShellDaughterPvolTransList;
-  fSurfData->fShellDaughterPvolTransList = nullptr;
-  delete[] fSurfData->fShellDaughterLvolIdList;
-  fSurfData->fShellDaughterLvolIdList = nullptr;
-  delete[] fSurfData->fBVH;
-  fSurfData->fBVH = nullptr;
-
   // delete fSurfData;
+  fSurfData->Clear();
   fSurfData = nullptr;
 }
 
@@ -222,8 +156,7 @@ void BrepHelper<Real_t>::ComputePlaneExtent(Side &side)
   };
 
   // Setting initial mask for an extent.
-  constexpr Real_t kBig = 1.e30;
-  WindowMask_t ext{kBig, -kBig, kBig, -kBig};
+  WindowMask_t ext{vecgeom::kInfLength, -vecgeom::kInfLength, vecgeom::kInfLength, -vecgeom::kInfLength};
 
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
@@ -311,6 +244,211 @@ bool BrepHelper<Real_t>::ComputeCylinderExtent(Side &side)
   fCPUdata.fZPhiMasks.push_back(sideext_local);
   side.fExtent.id = id;
   return true;
+}
+
+template <typename Real_t>
+int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side)
+{
+  return -1;
+  // Get side extent
+  auto extent_full = fCPUdata.fZPhiMasks[side.fExtent.id];
+  SideDivisionCPU divisionZ(AxisType::kZ, extent_full.rangeZ[0], extent_full.rangeZ[1], side.fNsurf);
+  auto updateRangeZ = [](Real_t z, Real_t &zmin, Real_t &zmax) {
+    zmin = std::min(zmin, z);
+    zmax = std::max(zmax, z);
+  };
+  // loop through all extents on a side:
+  for (int i = 0; i < side.fNsurf; ++i) {
+    auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    assert(framed_surf.fFrame.type == FrameType::kZPhi);
+
+    Vector3D<Real_t> local;
+    Real_t zmin{vecgeom::InfinityLength<Real_t>()}, zmax{-vecgeom::InfinityLength<Real_t>()};
+    auto const &maskLocal = fSurfData->fZPhiMasks[framed_surf.fFrame.id];
+    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[0]});
+    updateRangeZ(local[2], zmin, zmax);
+    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[1]});
+    updateRangeZ(local[2], zmin, zmax);
+    divisionZ.AddCandidate(i, zmin, zmax);
+  }
+  if (divisionZ.Efficiency() > 0.01) {
+    // divisionZ.Print();
+    side.fDivision = fCPUdata.fSideDivisions.size();
+    fCPUdata.fSideDivisions.push_back(divisionZ);
+  }
+  return side.fDivision;
+}
+
+template <typename Real_t>
+int BrepHelper<Real_t>::ComputePlaneDivision(Side &side)
+{
+  // This is a helper-lambda that updates extents
+  // for all sides of common plane surfaces
+  auto updatePlaneExtent = [](WindowMask_t &e, Vector3D<Real_t> const &pt) {
+    e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
+    e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
+    e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
+    e.rangeV[1] = std::max(e.rangeV[1], pt[1]);
+  };
+  // Get side extent
+  auto extent_full = fCPUdata.fWindowMasks[side.fExtent.id];
+  // std::cout << "extent_full {" << extent_full.rangeU[0] << ", " << extent_full.rangeU[1] << "} {"
+  //           << extent_full.rangeV[0] << ", " << extent_full.rangeV[1] << "}\n";
+  // Special case if all frames are rings placed with id transformation
+  bool all_rings_id = true; // all frames are rings with id transformation
+  double ring_max =
+      0.5 * std::max(extent_full.rangeU[1] - extent_full.rangeU[0], extent_full.rangeV[1] - extent_full.rangeV[0]);
+  double ring_min = ring_max;
+  for (int i = 0; i < side.fNsurf; ++i) {
+    auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    FrameType frame_type = framed_surf.fFrame.type;
+    if (frame_type == FrameType::kRing && framed_surf.fTrans == 0) {
+      auto const &maskRing = fSurfData->fRingMasks[framed_surf.fFrame.id];
+      ring_min             = std::min(static_cast<double>(maskRing.rangeR[0]), ring_min);
+      ring_max             = std::max(static_cast<double>(maskRing.rangeR[1]), ring_max);
+    } else {
+      all_rings_id = false;
+      break;
+    }
+  }
+
+  // Create all supported division types. We could increase the number of slices potentially.
+  SideDivisionCPU divisionX(AxisType::kX, extent_full.rangeU[0], extent_full.rangeU[1], side.fNsurf);
+  SideDivisionCPU divisionY(AxisType::kY, extent_full.rangeV[0], extent_full.rangeV[1], side.fNsurf);
+  SideDivisionCPU divisionR(AxisType::kR, ring_min, ring_max, side.fNsurf);
+  SideDivisionCPU divisionXY(AxisType::kXY, extent_full.rangeU[0], extent_full.rangeU[1], extent_full.rangeV[0],
+                             extent_full.rangeV[1], side.fNsurf);
+  // loop through all extents on a side:
+  for (int i = 0; i < side.fNsurf; ++i) {
+    // convert surface frame to local coordinates
+    auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    FrameType frame_type = framed_surf.fFrame.type;
+    Vector3D<Real_t> local;
+
+    WindowMask_t extentL;
+    RingMask_t extentRing(0, 0, true);
+    // Calculating the limits
+    switch (frame_type) {
+    case FrameType::kWindow: {
+      auto const &maskLocal = fSurfData->fWindowMasks[framed_surf.fFrame.id];
+      maskLocal.GetExtent(extentL);
+      break;
+    }
+    case FrameType::kRing: {
+      auto const &maskLocal = fSurfData->fRingMasks[framed_surf.fFrame.id];
+      extentRing            = maskLocal;
+      maskLocal.GetExtent(extentL);
+      break;
+    }
+    case FrameType::kQuadrilateral: {
+      WindowMask_t extLocal;
+      auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
+      quad.GetExtent(extentL);
+      break;
+    }
+    case FrameType::kTriangle: {
+      TriangleMask_t extLocal;
+      auto const &maskLocal = fSurfData->fTriangleMasks[framed_surf.fFrame.id];
+      maskLocal.GetExtent(extentL);
+      break;
+    }
+    default:
+      assert(0 && "Not implemented");
+    } // case
+
+    if (all_rings_id) {
+      divisionR.AddCandidate(i, extentRing.rangeR[0], extentRing.rangeR[1]);
+    } else {
+      // This part converts the local extent to the side reference frame
+      WindowMask_t ext{vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>(),
+                       vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>()};
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
+      updatePlaneExtent(ext, local);
+      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
+          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
+      updatePlaneExtent(ext, local);
+      // std::cout << i << " : ext {" << ext.rangeU[0] << ", " << ext.rangeU[1] << "} {" << ext.rangeV[0] << ", "
+      //           << ext.rangeV[1] << "}\n";
+      divisionX.AddCandidate(i, ext.rangeU[0], ext.rangeU[1]);
+      divisionY.AddCandidate(i, ext.rangeV[0], ext.rangeV[1]);
+      if (side.fNsurf > 3) divisionXY.AddCandidate(i, ext.rangeU[0], ext.rangeU[1], ext.rangeV[0], ext.rangeV[1]);
+    }
+  }
+  if (all_rings_id) {
+    if (divisionR.Efficiency() > 0.01) {
+      // divisionR.Print();
+      side.fDivision = fCPUdata.fSideDivisions.size();
+      fCPUdata.fSideDivisions.push_back(divisionR);
+    }
+  } else {
+    SideDivisionCPU &divXorY = (divisionX.Efficiency() > divisionY.Efficiency()) ? divisionX : divisionY;
+    SideDivisionCPU &divBest =
+        (side.fNsurf < 4 || divXorY.Efficiency() > divisionXY.Efficiency()) ? divXorY : divisionXY;
+    if (divBest.Efficiency() > 0.01) {
+      // divBest.Print();
+      side.fDivision = fCPUdata.fSideDivisions.size();
+      fCPUdata.fSideDivisions.push_back(divBest);
+    }
+  }
+  return side.fDivision;
+}
+
+template <typename Real_t>
+void BrepHelper<Real_t>::ComputeSideDivisions()
+{
+  // Lambda for computing the division helper of a single side
+  auto computeSingleSideDivision = [&](SurfaceType type, Side &side) {
+    switch (type) {
+    case SurfaceType::kPlanar:
+      return ComputePlaneDivision(side);
+    case SurfaceType::kCylindrical:
+    case SurfaceType::kConical:
+      return ComputeCylinderDivision(side);
+    default:
+      return -1;
+    }
+  };
+
+  // Compute division helpers for all sides having more than one frame on all surfaces
+  for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
+    if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf > 1) {
+      computeSingleSideDivision(fSurfData->fCommonSurfaces[common_id].fType,
+                                fSurfData->fCommonSurfaces[common_id].fLeftSide);
+    }
+    if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf > 1) {
+      computeSingleSideDivision(fSurfData->fCommonSurfaces[common_id].fType,
+                                fSurfData->fCommonSurfaces[common_id].fRightSide);
+    }
+  }
+
+  // Copy division helpers to surface data
+  fSurfData->fNsideDivisions = fCPUdata.fSideDivisions.size();
+  size_t size_slices         = 0;
+  size_t size_slice_cand     = 0;
+  for (auto const &div : fCPUdata.fSideDivisions) {
+    size_slices += div.fNslices;
+    size_slice_cand += div.GetNcandidates();
+  }
+  fSurfData->fNslices          = size_slices;
+  fSurfData->fNsliceCandidates = size_slice_cand;
+  fSurfData->fSideDivisions    = new SideDivision<Real_t>[fSurfData->fNsideDivisions];
+  fSurfData->fSlices           = new SliceCand[size_slices];
+  fSurfData->fSliceCandidates  = new int[size_slice_cand];
+
+  SliceCand *slices     = fSurfData->fSlices;
+  int *slice_candidates = fSurfData->fSliceCandidates;
+  for (auto i = 0; i < fSurfData->fNsideDivisions; ++i) {
+    fCPUdata.fSideDivisions[i].CopyTo(fSurfData->fSideDivisions[i], slices, slice_candidates);
+    slices += fCPUdata.fSideDivisions[i].fSlices.size();
+    slice_candidates += fCPUdata.fSideDivisions[i].GetNcandidates();
+  }
 }
 
 template <typename Real_t>
@@ -1056,6 +1194,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
 
   // Compute extents for all sides of common surfaces
   ComputeExtents();
+  ComputeSideDivisions();
   if (fVerbose > 0) {
     for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf)
       PrintCommonSurface(isurf);
@@ -1519,6 +1658,11 @@ void BrepHelper<Real_t>::PrintSurfData()
   size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface) + fSurfData->fNsides * sizeof(int)) / megabyte;
   total += size;
   msg << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
+  size = float(fSurfData->fNsideDivisions * sizeof(SideDivision_t) + fSurfData->fNslices * sizeof(SliceCand) +
+               fSurfData->fNsliceCandidates * sizeof(int)) /
+         megabyte;
+  total += size;
+  msg << "    side divisions         = " << fSurfData->fNsideDivisions << " [" << size << " MB]\n";
   size = float(fSurfData->fSizeCandList * sizeof(int)) / megabyte;
   total += size;
   msg << "    candidates             = " << fSurfData->fSizeCandList << " [" << size << " MB]\n";
@@ -1614,7 +1758,7 @@ void BrepHelper<Real_t>::UpdateSurfData()
 
   // Volume transformations (used for placed volumes)
   fSurfData->fNvolTrans = fCPUdata.fPVolTrans.size();
-  fSurfData->fPVolTrans  = new TransformationMP<Real_t>[fCPUdata.fPVolTrans.size()];
+  fSurfData->fPVolTrans = new TransformationMP<Real_t>[fCPUdata.fPVolTrans.size()];
   for (size_t i = 0; i < fCPUdata.fPVolTrans.size(); ++i)
     fSurfData->fPVolTrans[i] = fCPUdata.fPVolTrans[i];
 
@@ -1690,6 +1834,7 @@ void BrepHelper<Real_t>::UpdateSurfData()
     fSurfData->fCommonSurfaces[i].fRightSide.fNumParents = fCPUdata.fCommonSurfaces[i].fRightSide.fNumParents;
   }
 
+  // Copy scenes
   auto nscenes        = fCPUdata.fSceneStartIndex.size();
   fSurfData->fNscenes = nscenes;
   // Copy start indices and sizes per scene

@@ -33,8 +33,9 @@ UnplacedSurface CreateUnplacedSurface(SurfaceType type, vecgeom::Precision *data
     cpudata.fArb4Data.push_back(
         {data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]});
     return UnplacedSurface(type, cpudata.fArb4Data.size() - 1);
+  default:
+    return UnplacedSurface(type);
   };
-  return UnplacedSurface(type);
 }
 
 // Creators for different types of frames.

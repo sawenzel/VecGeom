@@ -235,14 +235,14 @@ public:
     Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
                                static_cast<Real_t>(localdir[2]));
 
-    Real_t bstep = Real_t(step);
+    Real_t bstep = static_cast<Real_t>(step);
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
       // If the current distance is shorter than the distance to the node we can safely ignore it
       Real_t min{vecgeom::InfinityLength<Real_t>()}, max{-vecgeom::InfinityLength<Real_t>()};
       fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, min, max);
-      if (min > max || max < Real_t{0} || min >= static_cast<Real_t>(bstep)) {
+      if (min > max || max < Real_t{0} || min >= bstep) {
         continue;
       }
 
@@ -259,7 +259,8 @@ public:
             /* If distance to current child is smaller than current step, update step and hitcandidate */
             if (dist < step &&
                 !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
-              step = bstep = dist;
+              step               = dist;
+              bstep              = static_cast<Real_t>(dist);
               hitcandidate_index = prim;
             }
           }

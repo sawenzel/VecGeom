@@ -137,8 +137,7 @@ int main(int argc, char *argv[])
     printf("Using programmatic geometry...\n");
     CreateVecGeomWorld();
   }
-  if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesScenes()) return 2;
+  if (!BrepHelper::Instance().Convert()) return 1;
 
   const SurfData &surfData = BrepHelper::Instance().GetSurfData();
   TestHost(vpos, vdir);

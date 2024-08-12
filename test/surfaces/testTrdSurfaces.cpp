@@ -68,8 +68,7 @@ int main(int argc, char *argv[])
 
   BrepHelper::Instance().SetVerbosity(verbose);
 
-  if (!BrepHelper::Instance().CreateLocalSurfaces()) return 1;
-  if (!BrepHelper::Instance().CreateCommonSurfacesScenes()) return 2;
+  if (!BrepHelper::Instance().Convert()) return 1;
 
   switch (test) {
   case 0:
