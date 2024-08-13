@@ -10,7 +10,6 @@
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/kernel/GenericKernels.h"
 #include <VecCore/VecCore>
-#define kHalfPi 0.5 * kPi
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 

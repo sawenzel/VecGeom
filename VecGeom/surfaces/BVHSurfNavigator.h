@@ -242,9 +242,8 @@ public:
 
     auto const &surfdata = SurfData<Real_t>::Instance();
 
-    // printf("LVol ID: %d\n", in_state.GetLogicalId());
-
-    auto &bvh = surfdata.fBVH[surfdata.fShells[in_state.GetLogicalId()].fBVH];
+    auto ivol = in_state.GetLogicalId();
+    auto &bvh = surfdata.fBVH[surfdata.fShells[ivol].fBVH];
 
     vecgeom::Transformation3DMP<Real_t> lv_trans;
     in_state.TopMatrix(lv_trans);

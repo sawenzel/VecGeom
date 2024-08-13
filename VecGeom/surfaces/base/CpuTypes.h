@@ -193,7 +193,7 @@ struct SideDivisionCPU {
 
   double Efficiency() const
   {
-    assert(fSlices[0].size() * fSlices[fNslices - 1].size() > 0);
+    // assert(fSlices[0].size() * fSlices[fNslices - 1].size() > 0); // except kXY
     double average = 0;
     for (auto i = 0; i < fNslices; ++i)
       average += fSlices[i].size();

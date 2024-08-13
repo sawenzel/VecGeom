@@ -10,7 +10,6 @@
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/kernel/GenericKernels.h"
 #include <iomanip>
-#define kHalfPi 0.5 * kPi
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -68,14 +67,14 @@ public:
     if (fSTheta > kPi / 2) tempfSTheta = kPi - fSTheta;
     if (fETheta > kPi / 2) tempfETheta = kPi - fETheta;
 
-    tanSTheta                                               = tan(tempfSTheta);
-    tanSTheta2                                              = tanSTheta * tanSTheta;
-    tanETheta                                               = tan(tempfETheta);
-    tanETheta2                                              = tanETheta * tanETheta;
-    tanBisector                                             = tan(tempfSTheta + (fDTheta / 2));
+    tanSTheta   = tan(tempfSTheta);
+    tanSTheta2  = tanSTheta * tanSTheta;
+    tanETheta   = tan(tempfETheta);
+    tanETheta2  = tanETheta * tanETheta;
+    tanBisector = tan(tempfSTheta + (fDTheta / 2));
     if (fSTheta > kPi / 2 && fETheta > kPi / 2) tanBisector = tan(tempfSTheta - (fDTheta / 2));
-    slope1                                                  = tan(kPi / 2 - fSTheta);
-    slope2                                                  = tan(kPi / 2 - fETheta);
+    slope1 = tan(kPi / 2 - fSTheta);
+    slope2 = tan(kPi / 2 - fETheta);
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -101,8 +100,8 @@ public:
    * @output : Vector3D : calculated normal at the input point.
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<typename Backend::precision_v> GetNormal1(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<typename Backend::precision_v> GetNormal1(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     Vector3D<typename Backend::precision_v> normal(2. * point.x(), 2. * point.y(), -2. * tanSTheta2 * point.z());
@@ -114,16 +113,16 @@ public:
   }
 
   /* Function to calculate normal at a point to the Cone formed at
-  *  by EndTheta.
-  *
-  * @inputs : Vector3D : Point at which normal needs to be calculated
-  *
-  * @output : Vector3D : calculated normal at the input point.
-  */
+   *  by EndTheta.
+   *
+   * @inputs : Vector3D : Point at which normal needs to be calculated
+   *
+   * @output : Vector3D : calculated normal at the input point.
+   */
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<typename Backend::precision_v> GetNormal2(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<typename Backend::precision_v> GetNormal2(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     Vector3D<typename Backend::precision_v> normal(2 * point.x(), 2 * point.y(), -2 * tanETheta2 * point.z());
@@ -145,8 +144,8 @@ public:
    * functions, but this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function
    */
   template <typename Backend, bool ForStartTheta>
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<typename Backend::precision_v> GetNormal(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE Vector3D<typename Backend::precision_v> GetNormal(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     if (ForStartTheta) {
@@ -178,8 +177,8 @@ public:
    * this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function.
    */
   template <typename Backend, bool ForStartTheta>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsOnSurfaceGeneric(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsOnSurfaceGeneric(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -190,8 +189,7 @@ public:
       rhs = Abs(tanETheta * point.z());
     }
     Float_t rho2 = point.Perp2();
-    return rho2 >= MakeMinusTolerantSquare<true>(rhs) &&
-           rho2 <= MakePlusTolerantSquare<true>(rhs);
+    return rho2 >= MakeMinusTolerantSquare<true>(rhs) && rho2 <= MakePlusTolerantSquare<true>(rhs);
   }
 
   /* Function Name : IsPointOnSurfaceAndMovingOut<Backend, ForStartTheta, MovingOut>
@@ -213,9 +211,8 @@ public:
    * Very useful for DistanceToIn and DistanceToOut.
    */
   template <typename Backend, bool ForStartTheta, bool MovingOut>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsPointOnSurfaceAndMovingOut(Vector3D<typename Backend::precision_v> const &point,
-                                                        Vector3D<typename Backend::precision_v> const &dir) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsPointOnSurfaceAndMovingOut(
+      Vector3D<typename Backend::precision_v> const &point, Vector3D<typename Backend::precision_v> const &dir) const
   {
 
     if (MovingOut) {
@@ -228,8 +225,7 @@ public:
   }
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v Contains(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Contains(Vector3D<typename Backend::precision_v> const &point) const
   {
 
     typedef typename Backend::bool_v Bool_t;
@@ -240,14 +236,13 @@ public:
   }
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v ContainsWithBoundary(Vector3D<typename Backend::precision_v> const & /*point*/) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v ContainsWithBoundary(
+      Vector3D<typename Backend::precision_v> const & /*point*/) const
   {
   }
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::inside_v Inside(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::inside_v Inside(Vector3D<typename Backend::precision_v> const &point) const
   {
 
     typedef typename Backend::bool_v Bool_t;
@@ -264,8 +259,8 @@ public:
    * the point is located outside the ThetaCone
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::precision_v SafetyToIn(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::precision_v SafetyToIn(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -315,8 +310,8 @@ public:
    * the point is located inside the ThetaCone ( within the defining phi angle )
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::precision_v SafetyToOut(Vector3D<typename Backend::precision_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::precision_v SafetyToOut(
+      Vector3D<typename Backend::precision_v> const &point) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -357,9 +352,9 @@ public:
   }
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::precision_v DistanceToLine(Precision const &slope, typename Backend::precision_v const &x,
-                                               typename Backend::precision_v const &y) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::precision_v DistanceToLine(Precision const &slope,
+                                                                       typename Backend::precision_v const &x,
+                                                                       typename Backend::precision_v const &y) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -371,11 +366,12 @@ public:
    * estimate of the distance to the ThetaCone boundary with given direction
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
-                    Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distThetaCone1,
-                    typename Backend::precision_v &distThetaCone2, typename Backend::bool_v &intsect1,
-                    typename Backend::bool_v &intsect2) const
+  VECCORE_ATT_HOST_DEVICE void DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
+                                            Vector3D<typename Backend::precision_v> const &dir,
+                                            typename Backend::precision_v &distThetaCone1,
+                                            typename Backend::precision_v &distThetaCone2,
+                                            typename Backend::bool_v &intsect1,
+                                            typename Backend::bool_v &intsect2) const
   {
 
     {
@@ -489,11 +485,12 @@ public:
   }
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
-                     Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distThetaCone1,
-                     typename Backend::precision_v &distThetaCone2, typename Backend::bool_v &intsect1,
-                     typename Backend::bool_v &intsect2) const
+  VECCORE_ATT_HOST_DEVICE void DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
+                                             Vector3D<typename Backend::precision_v> const &dir,
+                                             typename Backend::precision_v &distThetaCone1,
+                                             typename Backend::precision_v &distThetaCone2,
+                                             typename Backend::bool_v &intsect1,
+                                             typename Backend::bool_v &intsect2) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -546,7 +543,7 @@ public:
           if (fSTheta) zs = dirRho2 / tanSTheta;
           Float_t ze(kInfLength);
           if (fETheta) ze = dirRho2 / tanETheta;
-          Bool_t cond     = (point.x() == 0. && point.y() == 0. && point.z() == 0. && dir.z() < zs && dir.z() < ze);
+          Bool_t cond = (point.x() == 0. && point.y() == 0. && point.z() == 0. && dir.z() < zs && dir.z() < ze);
           vecCore__MaskedAssignFunc(distThetaCone1, cond, Float_t(0.0));
           vecCore__MaskedAssignFunc(distThetaCone2, cond, Float_t(0.0));
           intsect1 |= cond;
@@ -606,7 +603,7 @@ public:
           if (tanSTheta) zs = -dirRho2 / tanSTheta;
           Float_t ze(-kInfLength);
           if (tanETheta) ze = -dirRho2 / tanETheta;
-          Bool_t cond       = (point.x() == 0. && point.y() == 0. && point.z() == 0. && dir.z() > zs && dir.z() > ze);
+          Bool_t cond = (point.x() == 0. && point.y() == 0. && point.z() == 0. && dir.z() > zs && dir.z() > ze);
           vecCore__MaskedAssignFunc(distThetaCone1, cond, Float_t(0.0));
           vecCore__MaskedAssignFunc(distThetaCone2, cond, Float_t(0.0));
           // intsect1 |= (cond && tr);
@@ -634,8 +631,8 @@ public:
 
   // This could be useful in case somebody just want to check whether point is completely inside ThetaRange
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsCompletelyInside(Vector3D<typename Backend::precision_v> const &localPoint) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsCompletelyInside(
+      Vector3D<typename Backend::precision_v> const &localPoint) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -710,8 +707,8 @@ public:
 
   // This could be useful in case somebody just want to check whether point is completely outside ThetaRange
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsCompletelyOutside(Vector3D<typename Backend::precision_v> const &localPoint) const
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsCompletelyOutside(
+      Vector3D<typename Backend::precision_v> const &localPoint) const
   {
 
     typedef typename Backend::precision_v Float_t;
@@ -788,10 +785,9 @@ public:
   }
 
   template <typename Backend, bool ForInside>
-  VECCORE_ATT_HOST_DEVICE
-  void GenericKernelForContainsAndInside(Vector3D<typename Backend::precision_v> const &localPoint,
-                                         typename Backend::bool_v &completelyinside,
-                                         typename Backend::bool_v &completelyoutside) const
+  VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(
+      Vector3D<typename Backend::precision_v> const &localPoint, typename Backend::bool_v &completelyinside,
+      typename Backend::bool_v &completelyoutside) const
   {
     if (ForInside) completelyinside = IsCompletelyInside<Backend>(localPoint);
 
@@ -799,7 +795,7 @@ public:
   }
 
 }; // end of class ThetaCone
-}
-} // end of namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif /* VECGEOM_VOLUMES_THETACONE_H_ */
