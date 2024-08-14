@@ -213,9 +213,13 @@ public:
   static void ComputeSurfaceABBox(vgbrep::FramedSurface const &framedSurface,
                                   Transformation3DMP<Real_t> const &surfaceTransform,
                                   Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
-                                  vgbrep::SurfData<Real_t> const &surfData)
+                                  vgbrep::SurfData<Real_t> const &surfData, LogicalVolume const *lvol)
   {
     Vector3D<Real_t> lowert, uppert;
+
+    // bounding box of volume that the surface belongs to
+    Vector3D<Precision> lower_vol, upper_vol;
+    lvol->GetUnplacedVolume()->Extent(lower_vol, upper_vol);
 
     // Get the frame bounding box
     framedSurface.Extent3D(lowert, uppert, surfData);
@@ -227,12 +231,19 @@ public:
 
     // Apply the transformation with respect to the mother LV
     TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
+    TransformBoundingBox<Transformation3D>(lower_vol, upper_vol, volumeTransform);
 
-    lowerc.Set(lower.x() - 1E-3, lower.y() - 1E-3, lower.z() - 1E-3);
-    upperc.Set(upper.x() + 1E-3, upper.y() + 1E-3, upper.z() + 1E-3);
+    lowerc.Set(std::max(lower_vol.x(), lower.x()) - 1E-3, std::max(lower_vol.y(), lower.y()) - 1E-3,
+               std::max(lower_vol.z(), lower.z()) - 1E-3);
+    upperc.Set(std::min(upper_vol.x(), upper.x()) + 1E-3, std::min(upper_vol.y(), upper.y()) + 1E-3,
+               std::min(upper_vol.z(), upper.z()) + 1E-3);
 
-    // lowerc.Set(lower.x(), lower.y(), lower.z());
-    // upperc.Set(upper.x(), upper.y(), upper.z());
+    // if surface bounding box is outside of volume bounding box, remove it entirely
+    if (lower.x() > upper_vol.x() + 1E-3 || upper.x() < lower_vol.x() - 1E-3 || lower.y() > upper_vol.y() + 1E-3 ||
+        upper.y() < lower_vol.y() - 1E-3 || lower.z() > upper_vol.z() + 1E-3 || upper.z() < lower_vol.z() - 1E-3) {
+      lowerc.Set(0., 0., 0.);
+      upperc.Set(0., 0., 0.);
+    }
   }
 
   static ABBoxManager<Real_b> &Instance()
@@ -339,7 +350,7 @@ public:
       auto const &surfaceTransform = surfData.fLocalTrans[localSurface.fTrans];
 
       ComputeSurfaceABBox(localSurface, surfaceTransform, *identityTransform, boxes[2 * motherSurfIndex],
-                          boxes[2 * motherSurfIndex + 1], surfData);
+                          boxes[2 * motherSurfIndex + 1], surfData, lvol);
     }
 
     // Now, iterate again over the daughters, and fill the array of AABBs
@@ -359,7 +370,8 @@ public:
         auto daughterTransform = pvol->GetTransformation();
         ComputeSurfaceABBox<Real_t>(localSurface, surfaceTransform, *daughterTransform,
                                     boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces)],
-                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces) + 1], surfData);
+                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces) + 1], surfData,
+                                    pvol->GetLogicalVolume());
         localSurfIndex++;
       }
     }
