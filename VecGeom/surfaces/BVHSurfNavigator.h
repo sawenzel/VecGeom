@@ -232,6 +232,7 @@ public:
                                                           vecgeom::NavigationState &out_state, CrossedSurface &hit_FS,
                                                           Real_t stepmax = vecgeom::InfinityLength<Real_t>())
   {
+    out_state      = in_state;
     auto in_navind = in_state.GetNavIndex();
     if (in_navind == 0) return vecgeom::InfinityLength<Real_t>();
 
@@ -253,8 +254,9 @@ public:
     auto bvhstep            = stepmax;
     auto hitcandidate_index = BVHSurfNavigator::TestBVHCheckDaughterIntersections(bvh, localpoint, localdir, bvhstep);
     // If there is no physics step limitation, a surface must be found
-    if (hitcandidate_index < 0 && stepmax == vecgeom::InfinityLength<Real_t>()) {
-      hit_FS.Set(0, -1, 0); // frame_id = -1 indicates extruding overlap
+    if (hitcandidate_index < 0) {
+      if (stepmax == vecgeom::InfinityLength<Real_t>())
+        hit_FS.Set(0, -1, 0); // frame_id = -1 indicates extruding overlap
       // This can happen if the exit point is outside the mother volume (extrusion)
       // To recover, one can return the mother state as output and a zero distance
       return stepmax;
@@ -321,6 +323,7 @@ public:
 
     // Fix the out_state if pointing to a 0 scene
     if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
+    out_state.SetBoundaryState(true);
 
     return bvhstep;
   }
