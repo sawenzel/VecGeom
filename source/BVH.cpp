@@ -47,7 +47,7 @@ enum class BVH::ConstructionAlgorithm : unsigned int {
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
 
-BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::SurfData<Precision> const *surfData, int depth)
+BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Precision> const *cpudata, int depth)
     : fRootId(volume.id())
 {
   int n;
@@ -55,7 +55,7 @@ BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::SurfData<Precisi
 
   /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
   if (surfacesBVH) {
-    ptr = ABBoxManager<Precision>::Instance().GetSurfaceABBoxes(volume.id(), n, *surfData);
+    ptr = ABBoxManager<Precision>::Instance().GetSurfaceABBoxes(volume.id(), n, *cpudata);
   } else {
     ptr = ABBoxManager<Precision>::Instance().GetABBoxes(&volume, n);
   }

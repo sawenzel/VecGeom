@@ -15,7 +15,7 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
+bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool intersection = false)
 {
   using RingMask_t   = RingMask<Real_t>;
   using ZPhiMask_t   = ZPhiMask<Real_t>;
@@ -49,6 +49,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.z(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
   // surface at -dz
   isurf = builder::CreateLocalSurface<Real_t>(
@@ -56,6 +57,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -tube.z(), 0, 180, -sphid - ephid}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(isurf);
   // inner cylinder
@@ -67,6 +69,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
                                      ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmin(), tube.rmin(), sphi, ephi}),
         /*identity transformation*/ 0);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
     logic.push_back(land);
     logic.push_back(isurf);
   }
@@ -78,6 +81,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
                                    ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmax(), tube.rmax(), sphi, ephi}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(isurf);
 
@@ -93,6 +97,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
           {Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(lplus); // '('
   logic.push_back(isurf);
@@ -105,6 +110,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id)
           {Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);
   logic.push_back(lminus); // ')'

@@ -15,7 +15,8 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, int logical_id)
+bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, int logical_id,
+                                  bool intersection = false)
 {
   using ZPhiMask_t   = ZPhiMask<Real_t>;
   using WindowMask_t = WindowMask<Real_t>;
@@ -37,6 +38,8 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.GetDz(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
+  builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
   assert(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
@@ -49,6 +52,8 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -tube.GetDz(), 0, 180, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
+  builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
   assert(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
@@ -67,6 +72,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
                                                                 static_cast<vecgeom::Precision>(360)}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
   assert(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;

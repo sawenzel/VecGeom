@@ -326,11 +326,18 @@ public:
     return fSidesExiting[fSceneStartIndex[scene_id] + state_id];
   }
 
-  void GetMask(int id, WindowMask_t const *&mask) { mask = &fWindowMasks[id]; }
-  void GetMask(int id, RingMask_t const *&mask) { mask = &fRingMasks[id]; }
-  void GetMask(int id, ZPhiMask_t const *&mask) { mask = &fZPhiMasks[id]; }
-  void GetMask(int id, TriangleMask_t const *&mask) { mask = &fTriangleMasks[id]; }
-  void GetMask(int id, QuadMask_t const *&mask) { mask = &fQuadMasks[id]; }
+  WindowMask_t const &GetWindowMask(int id) const { return fWindowMasks[id]; }
+  RingMask_t const &GetRingMask(int id) const { return fRingMasks[id]; }
+  ZPhiMask_t const &GetZPhiMask(int id) const { return fZPhiMasks[id]; }
+  TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
+  QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
+
+  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
+  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
+  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
+  EllipData_t const &GetEllipData(int id) const { return fEllipData[id]; }
+  TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
+  Arb4Data_t const &GetArb4Data(int id) const { return fArb4Data[id]; }
 
   /// @brief Trampoline function to to the frame embedding checker
   /// @param f1 Parent framed surface
@@ -349,28 +356,23 @@ public:
 
     switch (f1.fFrame.type) {
     case FrameType::kRing: {
-      RingMask_t const *mask1 = nullptr;
-      GetMask(f1.fFrame.id, mask1);
+      RingMask_t const mask1 = GetRingMask(f1.fFrame.id);
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
-        RingMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, RingMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
+        return FrameChecker<Real_t, RingMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
-        WindowMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, RingMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
+        return FrameChecker<Real_t, RingMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
-        TriangleMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, RingMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
+        return FrameChecker<Real_t, RingMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
-        QuadMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, RingMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
+        return FrameChecker<Real_t, RingMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -378,13 +380,11 @@ public:
       break;
     }
     case FrameType::kZPhi: {
-      ZPhiMask_t const *mask1 = nullptr;
-      GetMask(f1.fFrame.id, mask1);
+      ZPhiMask_t const mask1 = GetZPhiMask(f1.fFrame.id);
       switch (f2.fFrame.type) {
       case FrameType::kZPhi: {
-        ZPhiMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, ZPhiMask_t, ZPhiMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        ZPhiMask_t const mask2 = GetZPhiMask(f2.fFrame.id);
+        return FrameChecker<Real_t, ZPhiMask_t, ZPhiMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -392,28 +392,23 @@ public:
       break;
     }
     case FrameType::kWindow: {
-      WindowMask_t const *mask1 = nullptr;
-      GetMask(f1.fFrame.id, mask1);
+      WindowMask_t const mask1 = GetWindowMask(f1.fFrame.id);
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
-        RingMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, WindowMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
+        return FrameChecker<Real_t, WindowMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
-        WindowMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, WindowMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
+        return FrameChecker<Real_t, WindowMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
-        TriangleMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, WindowMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
+        return FrameChecker<Real_t, WindowMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
-        QuadMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, WindowMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
+        return FrameChecker<Real_t, WindowMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -421,28 +416,23 @@ public:
       break;
     }
     case FrameType::kTriangle: {
-      TriangleMask_t const *mask1 = nullptr;
-      GetMask(f1.fFrame.id, mask1);
+      TriangleMask_t const mask1 = GetTriangleMask(f1.fFrame.id);
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
-        RingMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, TriangleMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
+        return FrameChecker<Real_t, TriangleMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
-        WindowMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, TriangleMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
+        return FrameChecker<Real_t, TriangleMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
-        TriangleMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, TriangleMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
+        return FrameChecker<Real_t, TriangleMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
-        QuadMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, TriangleMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
+        return FrameChecker<Real_t, TriangleMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -450,28 +440,23 @@ public:
       break;
     }
     case FrameType::kQuadrilateral: {
-      QuadMask_t const *mask1 = nullptr;
-      GetMask(f1.fFrame.id, mask1);
+      QuadMask_t const mask1 = GetQuadMask(f1.fFrame.id);
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
-        RingMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, QuadMask_t, RingMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
+        return FrameChecker<Real_t, QuadMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
-        WindowMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, QuadMask_t, WindowMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
+        return FrameChecker<Real_t, QuadMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
-        TriangleMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, QuadMask_t, TriangleMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
+        return FrameChecker<Real_t, QuadMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
-        QuadMask_t const *mask2 = nullptr;
-        GetMask(f2.fFrame.id, mask2);
-        return FrameChecker<Real_t, QuadMask_t, QuadMask_t>::IsEmbedding(*mask1, *mask2, trans);
+        QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
+        return FrameChecker<Real_t, QuadMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
       }
       default:
         log_not_supported();

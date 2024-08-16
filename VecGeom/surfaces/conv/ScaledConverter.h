@@ -10,7 +10,7 @@ namespace vgbrep {
 namespace conv {
 
 template <typename Real_t>
-bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int logical_id);
+bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int logical_id, bool intersection = false);
 
 } // namespace conv
 } // namespace vgbrep

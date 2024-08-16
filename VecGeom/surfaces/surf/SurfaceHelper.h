@@ -10,7 +10,8 @@ namespace vgbrep {
 /// @tparam Real_t Precision type
 /// @tparam Stype Surface type
 template <SurfaceType Stype, typename Real_t>
-struct SurfaceHelper {};
+struct SurfaceHelper {
+};
 
 } // namespace vgbrep
 

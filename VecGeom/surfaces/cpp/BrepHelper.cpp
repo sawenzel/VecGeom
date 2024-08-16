@@ -1124,6 +1124,15 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     fCPUdata.fSidesExiting.insert(fCPUdata.fSidesExiting.end(), nt, {});
   }
 
+  // before we construct the common surfaces from the local surfaces, we can mark convex boolean surfaces such that they
+  // are treated as non-boolean surfaces. this requires the bounding boxes of the BVH. Init the information needed to
+  // contruct and use the BVH
+  InitBVHData();
+
+  vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(fCPUdata);
+  FindConvexBooleanSurfaces();
+  vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(fCPUdata, /*crop=*/true);
+
   std::fill(visited.begin(), visited.end(), false);
   createCommonSurfaces(world);
 
@@ -1165,29 +1174,30 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
   state.Clear();
   validateExitingCandidates(world);
 
-  // Init the information needed to contruct and use the BVH
-  InitBVHData();
-
   // Now update the surface data structure used for navigation
   UpdateSurfData();
 
   ////////////////////////// BVH /////////////////////////////
 
-  // Now that we have all necessary info in the surface data structure, use it to initialize
-  // the bounding boxes of surfaces
+  // bounding boxes are already initialized as they were needed for convexity check of boolean surfaces
 
-  vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(*fSurfData);
-
-  // Then initialize the BVH for each Logical Volume
+  // Initialize the BVH for each Logical Volume
   std::vector<vecgeom::LogicalVolume const *> lvols;
   vecgeom::GeoManager::Instance().GetAllLogicalVolumes(lvols);
+
+  // Allocate space for the BVHs
+  using Real_b    = typename SurfData<Real_t>::Real_b;
+  fSurfData->fBVH = new bvh::BVHsurf<Real_b>[fCPUdata.fShells.size()];
+
   for (auto logical_volume : lvols) {
     // Get the index allocated for this shell's BVH
-    int bvh_index = fSurfData->fShells[logical_volume->id()].fBVH;
-    // Destroy the empty BVH object
+    int bvh_index = fCPUdata.fShells[logical_volume->id()].fBVH;
+
+    // Note: we construct the BVH directly in the surface data and do not copy it from the CPU data. Still, we use the
+    // CPUdata to get the indices and data needed for initialization. Destroy the empty BVH object
     fSurfData->fBVH[bvh_index].Clear();
     // Construct the correct BVH from the logical volume
-    bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVH[bvh_index], *fSurfData);
+    bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVH[bvh_index], fCPUdata);
   }
 
   ////////////////////////////////////////////////////////////
@@ -1401,6 +1411,145 @@ void BrepHelper<Real_t>::InitBVHData()
       }
     }
   }
+}
+
+template <typename Real_t>
+void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
+{
+  using Real_b = typename SurfData<Real_t>::Real_b;
+
+  std::vector<vecgeom::LogicalVolume const *> lvols;
+  vecgeom::GeoManager::Instance().GetAllLogicalVolumes(lvols);
+
+  long nsurf_bool      = 0;
+  long nsurf_bool_conv = 0;
+
+  for (auto lvol : lvols) {
+    // Get the shell of the root LV
+    auto &rootShell = fCPUdata.fShells[lvol->id()];
+
+    std::cout << " CHECKING SHELL WITH ID " << lvol->id() << std::endl;
+    // for accessing the AABBs we need the BVH AABB precision Real_b
+    auto boxes = vecgeom::ABBoxManager<Real_b>::Instance().fVolToSurfaceABBoxesMap[lvol->id()];
+
+    // loop over all exiting surfaces of the shell to check each surfaces for convexity
+    for (auto idsurf = 0u; idsurf < rootShell.fExitingSurfaces.size(); idsurf++) {
+
+      bool surf_convex = true;
+      bool inner_surf  = false;
+      // Get the surface
+      auto exiting_ind = rootShell.fExitingSurfaces[idsurf];
+      auto &localSurface =
+          fCPUdata.fLocalSurfaces[rootShell.fSurfaces[exiting_ind]]; // NOT const because we potentially change the
+                                                                     // logic id!
+
+      if (localSurface.fLogicId == 0) continue; // skip non-boolean surfaces
+      nsurf_bool++;
+      if (localSurface.fLogicId < 0) continue; // flipped surfaces cannot be made non-boolean at this point
+
+      if (localSurface.fSkipConvexity) continue;
+      switch (localSurface.fSurface.type) {
+      case SurfaceType::kCylindrical:
+      case SurfaceType::kSpherical:
+        if (fCPUdata.fCylSphData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
+        break;
+      case SurfaceType::kConical:
+        if (fCPUdata.fConeData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
+        break;
+      case SurfaceType::kTorus:
+        if (fCPUdata.fTorusData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
+        break;
+      default:
+        break;
+      }
+      // Local transformation of this surface
+      auto const &surfaceTransform    = fCPUdata.fLocalTrans[localSurface.fTrans];
+      auto const inv_surfaceTransform = surfaceTransform.Inverse();
+
+      printf("\n\nStart checking convexity of surface %i with transformation \n", idsurf);
+      surfaceTransform.Print();
+      printf("\n");
+      for (auto other_idsurf = 0u; other_idsurf < rootShell.fExitingSurfaces.size(); other_idsurf++) {
+
+        if (other_idsurf == idsurf) continue;
+
+        auto other_exiting_ind        = rootShell.fExitingSurfaces[other_idsurf];
+        auto const other_localSurface = fCPUdata.fLocalSurfaces[rootShell.fSurfaces[other_exiting_ind]];
+
+        // skip flipped surfaces if the checked surface is also flipped, because the bounding box can be fully inside,
+        // while the surface is still outside, leading to false convex surfaces
+        switch (other_localSurface.fSurface.type) {
+        case SurfaceType::kCylindrical:
+        case SurfaceType::kSpherical:
+          if (fCPUdata.fCylSphData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
+          break;
+        case SurfaceType::kConical:
+          if (fCPUdata.fConeData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
+          break;
+        case SurfaceType::kTorus:
+          if (fCPUdata.fTorusData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
+          break;
+        default:
+          break;
+        }
+
+        bool flip = localSurface.fLogicId < 0;
+        flip ^= other_localSurface.fLogicId < 0;
+        Real_t tol = other_localSurface.fLogicId < 0 ? 10000 * vecgeom::kToleranceStrict<Real_t>
+                                                     : vecgeom::kToleranceStrict<Real_t>;
+        // auto const &other_surfaceTransform = fCPUdata.fLocalTrans[other_localSurface.fTrans];
+        // printf("checking other surface %i with transformation \n", other_idsurf);
+        // other_surfaceTransform.Print();
+        // printf("\n");
+
+        // get other bounding box
+        auto const other_lowert = boxes[2 * other_idsurf];
+        auto const other_uppert = boxes[2 * other_idsurf + 1];
+        Vector3D<double> other_lower(other_lowert[0], other_lowert[1], other_lowert[2]);
+        Vector3D<double> other_upper(other_uppert[0], other_uppert[1], other_uppert[2]);
+        // printf("BB: lower other %f %f %f\n", other_lower.x(), other_lower.y(), other_lower.z());
+        // printf("BB: upper other %f %f %f\n", other_upper.x(), other_upper.y(), other_upper.z());
+
+        // transform bounding into frame of the surface to check against
+        vecgeom::ABBoxManager<double>::Instance().TransformBoundingBox(other_lower, other_upper, inv_surfaceTransform);
+        // define the 8 corner points of the bounding box
+        Vector3D<Real_t> corner1(other_lower.x(), other_lower.y(), other_lower.z());
+        Vector3D<Real_t> corner2(other_upper.x(), other_lower.y(), other_lower.z());
+        Vector3D<Real_t> corner3(other_lower.x(), other_upper.y(), other_lower.z());
+        Vector3D<Real_t> corner4(other_upper.x(), other_upper.y(), other_lower.z());
+        Vector3D<Real_t> corner5(other_lower.x(), other_lower.y(), other_upper.z());
+        Vector3D<Real_t> corner6(other_upper.x(), other_lower.y(), other_upper.z());
+        Vector3D<Real_t> corner7(other_lower.x(), other_upper.y(), other_upper.z());
+        Vector3D<Real_t> corner8(other_upper.x(), other_upper.y(), other_upper.z());
+        // check for inside
+        bool inside_c1 = localSurface.fSurface.Inside(corner1, fCPUdata, flip, tol);
+        bool inside_c2 = localSurface.fSurface.Inside(corner2, fCPUdata, flip, tol);
+        bool inside_c3 = localSurface.fSurface.Inside(corner3, fCPUdata, flip, tol);
+        bool inside_c4 = localSurface.fSurface.Inside(corner4, fCPUdata, flip, tol);
+        bool inside_c5 = localSurface.fSurface.Inside(corner5, fCPUdata, flip, tol);
+        bool inside_c6 = localSurface.fSurface.Inside(corner6, fCPUdata, flip, tol);
+        bool inside_c7 = localSurface.fSurface.Inside(corner7, fCPUdata, flip, tol);
+        bool inside_c8 = localSurface.fSurface.Inside(corner8, fCPUdata, flip, tol);
+
+        // printf(" Is inside ? 8 corners: %i %i %i %i %i %i %i %i\n", inside_c1, inside_c2, inside_c3, inside_c4, inside_c5, inside_c6, inside_c7, inside_c8);
+        // printf(" z value ? 2 values: lower point in z %.15f upper point in z %.15f\n", other_lower.z(), other_upper.z());
+
+        surf_convex &=
+            inside_c1 && inside_c2 && inside_c3 && inside_c4 && inside_c5 && inside_c6 && inside_c7 && inside_c8;
+      } // inner loop over each surface that is checked against
+      if (surf_convex) {
+        // printf("Found Convex surface, setting logicId to 0");
+        localSurface.fLogicId = 0;
+        nsurf_bool_conv++;
+      } else {
+        // printf("Surface concave, need to do full boolean check");
+      }
+    } // loop over initial surfaces
+  }
+  if (fVerbose > 0)
+    printf("\n Boolean Surface Convexity Check:\n convex boolean surfaces: %li total number of boolean surfaces %li "
+           "ratio: %f\n",
+           nsurf_bool_conv, nsurf_bool, double(nsurf_bool_conv) / nsurf_bool);
 }
 
 template <typename Real_t>
@@ -2018,10 +2167,6 @@ void BrepHelper<Real_t>::UpdateSurfData()
 
     fSurfData->fShells[i].fBVH = fCPUdata.fShells[i].fBVH;
   }
-
-  // Allocate space for the BVHs
-  using Real_b    = typename SurfData<Real_t>::Real_b;
-  fSurfData->fBVH = new bvh::BVHsurf<Real_b>[fSurfData->fNshells];
 }
 
 // Template instantiations for float and double, allowing to precompile these types

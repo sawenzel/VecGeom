@@ -15,7 +15,7 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
+bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, bool intersection = false)
 {
   using RingMask_t = RingMask<Real_t>;
 
@@ -51,6 +51,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmin, rtor + rmin, fullCirc, sphi, ephi}),
       /*identity transformation*/ 0, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
 
   // outer torus
@@ -63,6 +64,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmax, rtor + rmax, fullCirc, sphi, ephi}),
       /*identity transformation*/ 0, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(isurf);
 
@@ -81,6 +83,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
           {rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(lplus); // '('
   logic.push_back(isurf);
@@ -95,6 +98,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id)
           {rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(smallerPi ? land : lor);
   logic.push_back(isurf);
   logic.push_back(lminus); // ')'

@@ -42,8 +42,9 @@ struct ReducedPoly {
     for (int i = 0; i < Nvert; i++) {
       j = (i + 1) % Nvert;
       k = (i + 2) % Nvert;
-      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[j]], verty[ind_arr[j]], 0},
-                        {vertx[ind_arr[k]], verty[ind_arr[k]], 0}))
+      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0},
+                                            {vertx[ind_arr[j]], verty[ind_arr[j]], 0},
+                                            {vertx[ind_arr[k]], verty[ind_arr[k]], 0}))
         return false;
     }
     return true;
@@ -60,8 +61,9 @@ struct ReducedPoly {
     for (int i = 0; i < Nvert; i++) {
       if (i == i1 || i == i2) continue;
 
-      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0}, {vertx[ind_arr[i1]], verty[ind_arr[i1]], 0},
-                        {vertx[ind_arr[i2]], verty[ind_arr[i2]], 0}))
+      if (!IsRightSided<vecgeom::Precision>({vertx[ind_arr[i]], verty[ind_arr[i]], 0},
+                                            {vertx[ind_arr[i1]], verty[ind_arr[i1]], 0},
+                                            {vertx[ind_arr[i2]], verty[ind_arr[i2]], 0}))
         return false;
     }
     return true;
@@ -194,7 +196,7 @@ struct ReducedPoly {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logical_id)
+bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logical_id, bool intersection = false)
 {
   using Vector3 = vecgeom::Vector3D<vecgeom::Precision>;
 
@@ -261,6 +263,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
         if (input_poly.IsRealSurface(i, n_vertices)) {
           // create real surface with frame
           isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+          if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
           // Make the surface for now non-embedding, in future this needs to be done only for surfaces sitting on the
           // same common plane
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -270,6 +273,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
                                                       Frame{FrameType::kNoFrame},
                                                       builder::CreateLocalTransformation<Real_t>(transformation));
+          if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         }
 
@@ -309,6 +313,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           // create real surface with frame
           isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+          if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         } else {
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
@@ -316,6 +321,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
                                                       Frame{FrameType::kNoFrame},
                                                       builder::CreateLocalTransformation<Real_t>(transformation));
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+          if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         }
         logic.push_back(isurf);
         if (i < input_poly.Nconvex - 1) {
@@ -405,12 +411,14 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
                 section_origin1 + section_scale1 * triangle_var[0]};
     isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
     builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+    if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
 
     // top triangles
     vertices = {section_origin2 + section_scale2 * triangle_var[0], section_origin2 + section_scale2 * triangle_var[1],
                 section_origin2 + section_scale2 * triangle_var[2]};
     isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
     builder::GetSurface<Real_t>(isurf).fEmbedding = false;
+    if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   }
 
   // bottom virtual surface
@@ -418,6 +426,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetLowerZ(), 0, 180, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
   logic.push_back(land);
 
@@ -426,6 +435,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetUpperZ(), 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
 
   builder::AddLogicToShell<Real_t>(logical_id, logic);

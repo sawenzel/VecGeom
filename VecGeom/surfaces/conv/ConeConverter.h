@@ -15,7 +15,7 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
+bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool intersection = false)
 {
   using RingMask_t = RingMask<Real_t>;
   using ZPhiMask_t = ZPhiMask<Real_t>;
@@ -56,6 +56,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, dz, 0, 0, 0}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
   // surface at -Dz
   isurf = builder::CreateLocalSurface<Real_t>(
@@ -63,6 +64,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
       builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -dz, 0, 180, -sphid - ephid}));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(isurf);
   // inner cone
@@ -75,6 +77,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, rmin1, rmin2, sphi, ephi}),
         /*identity transformation*/ 0);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+    if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
     logic.push_back(land);
     logic.push_back(isurf);
   }
@@ -87,6 +90,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, rmax1, rmax2, sphi, ephi}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
   logic.push_back(isurf);
 
@@ -111,6 +115,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   // plane cap at sphi
   vert  = {corners[0], corners[1], corners[2], corners[3]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   if (isurf >= 0) {
     if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
     logic.push_back(land);
@@ -121,6 +126,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id)
   // plane cap at sphi+dphi
   vert  = {corners[4], corners[5], corners[6], corners[7]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   if (isurf >= 0) {
     if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
     logic.push_back(smallerPi ? land : lor);

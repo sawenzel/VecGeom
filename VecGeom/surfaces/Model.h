@@ -40,24 +40,25 @@ struct UnplacedSurface {
   /// @param surfdata data container with the surface data
   /// @param flip flipping the tolerance for inside (needed for negated booleans)
   /// @return Inside half-space
-  template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata, bool flip) const
+  template <typename Real_t, typename DataContainer>
+  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, DataContainer const &data, bool flip,
+                                      Real_t tol = vecgeom::kToleranceStrict<Real_t>) const
   {
     switch (type) {
     case SurfaceType::kPlanar:
-      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point, flip, tol);
     case SurfaceType::kCylindrical:
-      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(data.GetCylData(id)).Inside(point, flip, tol);
     case SurfaceType::kConical:
-      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kConical, Real_t>(data.GetConeData(id)).Inside(point, flip, tol);
     case SurfaceType::kElliptical:
-      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kElliptical, Real_t>(data.GetEllipData(id)).Inside(point, flip, tol);
     case SurfaceType::kSpherical:
-      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(data.GetSphData(id)).Inside(point, flip, tol);
     case SurfaceType::kTorus:
-      return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kTorus, Real_t>(data.GetTorusData(id)).Inside(point, flip, tol);
     case SurfaceType::kArb4:
-      return SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(id)).Inside(point, flip);
+      return SurfaceHelper<SurfaceType::kArb4, Real_t>(data.GetArb4Data(id)).Inside(point, flip, tol);
     default:
       return false;
     };
@@ -209,30 +210,29 @@ struct Frame {
     return Real_t(0);
   }
 
-  template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax,
-                                        SurfData<Real_t> const &surfdata) const
+  template <typename Real_t, typename DataContainer>
+  VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax, DataContainer const &data) const
   {
     switch (type) {
     case FrameType::kRing:
       // printf("Frame type: Ring. ");
-      surfdata.GetRingMask(id).Extent3D(aMin, aMax);
+      data.GetRingMask(id).Extent3D(aMin, aMax);
       break;
     case FrameType::kZPhi:
       // printf("Frame type: ZPhi. ");
-      surfdata.GetZPhiMask(id).Extent3D(aMin, aMax);
+      data.GetZPhiMask(id).Extent3D(aMin, aMax);
       break;
     case FrameType::kWindow:
       // printf("Frame type: Window. ");
-      surfdata.GetWindowMask(id).Extent3D(aMin, aMax);
+      data.GetWindowMask(id).Extent3D(aMin, aMax);
       break;
     case FrameType::kTriangle:
       // printf("Frame type: Triangle. ");
-      surfdata.GetTriangleMask(id).Extent3D(aMin, aMax);
+      data.GetTriangleMask(id).Extent3D(aMin, aMax);
       break;
     case FrameType::kQuadrilateral:
       // printf("Frame type: Quadrilateral. ");
-      surfdata.GetQuadMask(id).Extent3D(aMin, aMax);
+      data.GetQuadMask(id).Extent3D(aMin, aMax);
       break;
     case FrameType::kRangeZ:;
     case FrameType::kRangeSph:;
@@ -288,6 +288,8 @@ struct FramedSurface {
   bool fEmbedding{true};      ///< The frame always embeds daughter state frames if on the same CS
   bool fOverlapping{false};   ///< The frame is overlapping another frame and requires a relocation after crossing
   bool fVirtualParent{false}; ///< The parent frame is a virtual surface of a boolean
+  bool fSkipConvexity{false}; ///< whether the convexity check for booleans can be skipped (only the case for end caps
+                              ///< of elliptical tubes)
 
   FramedSurface() = default;
   FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,
@@ -314,9 +316,8 @@ struct FramedSurface {
     return false;
   }
 
-  template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax,
-                                        SurfData<Real_t> const &surfdata) const
+  template <typename Real_t, typename DataContainer>
+  VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax, DataContainer const &data) const
   {
     aMin.Set(0, 0, 0);
     aMax.Set(0, 0, 0);
@@ -327,11 +328,11 @@ struct FramedSurface {
     if (fNeverCheck) {
       // Special cases where the bounding box is computed based on the UnplacedSurface
       if (fSurface.type == SurfaceType::kTorus)
-        SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(fSurface.id)).Extent3D(aMin, aMax);
+        SurfaceHelper<SurfaceType::kTorus, Real_t>(data.GetTorusData(fSurface.id)).Extent3D(aMin, aMax);
       else if (fSurface.type == SurfaceType::kArb4)
-        SurfaceHelper<SurfaceType::kArb4, Real_t>(surfdata.GetArb4Data(fSurface.id)).Extent3D(aMin, aMax);
+        SurfaceHelper<SurfaceType::kArb4, Real_t>(data.GetArb4Data(fSurface.id)).Extent3D(aMin, aMax);
     } else
-      fFrame.Extent3D(aMin, aMax, surfdata);
+      fFrame.Extent3D(aMin, aMax, data);
   }
 
   /// @brief Get the parent state index for the framed surface

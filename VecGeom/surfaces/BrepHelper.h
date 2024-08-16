@@ -132,6 +132,9 @@ private:
   /// @brief Iterates over all logical volumes and initializes the data needed for BVH construction and navigation
   void InitBVHData();
 
+  /// @brief Iterates over all logical volumes and identifies convex surfaces in booleans, which can be treated as normal surfaces
+  void FindConvexBooleanSurfaces();
+
   /// @brief Print the list of common surface candidates for a given state
   /// @param state Full state (not just local scene state)
   void PrintCandidates(vecgeom::NavigationState const &state);

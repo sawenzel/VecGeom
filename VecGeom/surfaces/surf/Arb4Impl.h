@@ -35,8 +35,9 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
   /// @param flip flipping the tolerance for inside (needed for negated booleans)
+  /// @param tol tolerance for determining if a point is inside or not
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point, bool flip)
+  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
   {
     Real_t dz     = fArb4Data->halfH;
     Real_t dz_inv = fArb4Data->halfH_inv;
@@ -60,7 +61,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
     Real_t py = point.y() - vertexY[0];
 
     int sign = !flip ? 1 : -1;
-    return (dx * py - dy * px) < sign * vecgeom::kTolerance;
+    return (dx * py - dy * px) < sign * tol;
   }
 
   VECGEOM_FORCE_INLINE

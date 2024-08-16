@@ -33,71 +33,71 @@ namespace conv {
 /// @return Conversion success
 template <typename Real_t>
 bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
-                         TransformationMP<Real_t> *localtrans = nullptr)
+                         TransformationMP<Real_t> *localtrans = nullptr, bool intersection = false)
 {
   bool success{true};
   auto &cpudata     = CPUsurfData<Real_t>::Instance();
   auto const &shell = cpudata.fShells[volId];
   auto isurf_first  = shell.fSurfaces.size();
 
-  auto createSurfacesLocal = [](vecgeom::VUnplacedVolume const *solid, int volId) {
+  auto createSurfacesLocal = [](vecgeom::VUnplacedVolume const *solid, int volId, bool intersection = false) {
     auto box = dynamic_cast<vecgeom::UnplacedBox const *>(solid);
-    if (box) return conv::CreateBoxSurfaces<Real_t>(*box, volId);
+    if (box) return conv::CreateBoxSurfaces<Real_t>(*box, volId, intersection);
 
     auto tube = dynamic_cast<vecgeom::UnplacedTube const *>(solid);
-    if (tube) return conv::CreateTubeSurfaces<Real_t>(*tube, volId);
+    if (tube) return conv::CreateTubeSurfaces<Real_t>(*tube, volId, intersection);
 
     auto etube = dynamic_cast<vecgeom::UnplacedEllipticalTube const *>(solid);
-    if (etube) return conv::CreateEllipticalTubeSurfaces<Real_t>(*etube, volId);
+    if (etube) return conv::CreateEllipticalTubeSurfaces<Real_t>(*etube, volId, intersection);
 
     auto cuttube = dynamic_cast<vecgeom::UnplacedCutTube const *>(solid);
-    if (cuttube) return conv::CreateTubeSurfaces<Real_t>(*cuttube, volId);
+    if (cuttube) return conv::CreateTubeSurfaces<Real_t>(*cuttube, volId, intersection);
 
     auto para = dynamic_cast<vecgeom::UnplacedParallelepiped const *>(solid);
-    if (para) return conv::CreateParallelepipedSurfaces<Real_t>(*para, volId);
+    if (para) return conv::CreateParallelepipedSurfaces<Real_t>(*para, volId, intersection);
 
     auto cone = dynamic_cast<vecgeom::UnplacedCone const *>(solid);
-    if (cone) return conv::CreateConeSurfaces<Real_t>(*cone, volId);
+    if (cone) return conv::CreateConeSurfaces<Real_t>(*cone, volId, intersection);
 
     auto polycone = dynamic_cast<vecgeom::UnplacedPolycone const *>(solid);
-    if (polycone) return conv::CreatePolyconeSurfaces<Real_t>(*polycone, volId);
+    if (polycone) return conv::CreatePolyconeSurfaces<Real_t>(*polycone, volId, intersection);
 
     auto torus = dynamic_cast<vecgeom::UnplacedTorus2 const *>(solid);
-    if (torus) return conv::CreateTorusSurfaces<Real_t>(*torus, volId);
+    if (torus) return conv::CreateTorusSurfaces<Real_t>(*torus, volId, intersection);
 
     auto xtru = dynamic_cast<vecgeom::UnplacedSExtruVolume const *>(solid);
-    if (xtru) return conv::CreateSExtrudedSurfaces<Real_t>(*xtru, volId);
+    if (xtru) return conv::CreateSExtrudedSurfaces<Real_t>(*xtru, volId, intersection);
 
     auto trd = dynamic_cast<vecgeom::UnplacedTrd const *>(solid);
-    if (trd) return conv::CreateTrdSurfaces<Real_t>(*trd, volId);
+    if (trd) return conv::CreateTrdSurfaces<Real_t>(*trd, volId, intersection);
 
     auto trap = dynamic_cast<vecgeom::UnplacedTrapezoid const *>(solid);
-    if (trap) return conv::CreateTrapezoidSurfaces<Real_t>(*trap, volId);
+    if (trap) return conv::CreateTrapezoidSurfaces<Real_t>(*trap, volId, intersection);
 
     auto gentrap = dynamic_cast<vecgeom::UnplacedGenTrap const *>(solid);
     if (gentrap) return conv::CreateGenTrapSurfaces<Real_t>(*gentrap, volId);
 
     auto tet = dynamic_cast<vecgeom::UnplacedTet const *>(solid);
-    if (tet) return conv::CreateTetSurfaces<Real_t>(*tet, volId);
+    if (tet) return conv::CreateTetSurfaces<Real_t>(*tet, volId, intersection);
 
     auto polyhedron = dynamic_cast<vecgeom::UnplacedPolyhedron const *>(solid);
-    if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId);
+    if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId, intersection);
 
     auto scaled = dynamic_cast<vecgeom::cxx::UnplacedScaledShape const *>(solid);
-    if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId);
+    if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId, intersection);
 
     auto bstruct = vecgeom::BooleanHelper::GetBooleanStruct(solid);
-    if (bstruct) return conv::CreateBooleanSurfaces<Real_t>(*bstruct, volId);
+    if (bstruct) return conv::CreateBooleanSurfaces<Real_t>(*bstruct, volId, intersection);
 
     auto sphere = dynamic_cast<vecgeom::UnplacedSphere const *>(solid);
-    if (sphere) return conv::CreateSphereSurfaces<Real_t>(*sphere, volId);
+    if (sphere) return conv::CreateSphereSurfaces<Real_t>(*sphere, volId, intersection);
 
     VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid;
 
     return false;
   };
 
-  success = createSurfacesLocal(solid, volId);
+  success = createSurfacesLocal(solid, volId, intersection);
 
   // If there is a local transformation, apply it to all surfaces
   if (success && localtrans) {
@@ -125,14 +125,14 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int logical_id)
+bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int logical_id, bool intersection)
 {
   auto const &vec_scale = scaled.GetScale().Scale();
   if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<vecgeom::Precision>{1, 1, -1})) {
     VECGEOM_LOG(error) << "UnplacedScaledShape having scale " << vec_scale << " not supported";
     return false;
   }
-  auto success = CreateSolidSurfaces<Real_t>(scaled.UnscaledShape(), logical_id);
+  auto success = CreateSolidSurfaces<Real_t>(scaled.UnscaledShape(), logical_id, /*localtrans=*/nullptr, intersection);
   // Reflect all framed surfaces held by the shell
   auto &cpudata     = CPUsurfData<Real_t>::Instance();
   auto const &shell = cpudata.fShells[logical_id];
@@ -153,10 +153,10 @@ bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int l
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id)
+bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id, bool intersection)
 {
   TransformationMP<Real_t> trans;
-  if (!AppendLogicTo<Real_t>(bstruct, trans, logical_id)) return false;
+  if (!AppendLogicTo<Real_t>(bstruct, trans, logical_id, intersection)) return false;
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   // Finalize logic expression
@@ -181,11 +181,13 @@ bool CreateBooleanSurfaces(vecgeom::BooleanStruct const &bstruct, int logical_id
 }
 
 template <typename Real_t>
-bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, TransformationMP<Real_t> const &trans, int logical_id)
+bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, TransformationMP<Real_t> const &trans, int logical_id,
+                   bool intersection)
 {
   bool success  = true;
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   auto &logic   = cpudata.fShells[logical_id].fLogic;
+  intersection |= bstruct.fOp == vecgeom::kIntersection;
   // left node
   // open parenthesis
   logic.push_back(lplus);
@@ -196,7 +198,7 @@ bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, TransformationMP<Real_
   if (bstruct_left)
     success = AppendLogicTo<Real_t>(*bstruct_left, tr_left, logical_id);
   else
-    success = CreateSolidSurfaces<Real_t>(unplaced_left, logical_id, &tr_left);
+    success = CreateSolidSurfaces<Real_t>(unplaced_left, logical_id, &tr_left, intersection);
   if (!success) return false;
   // close parenthesis
   logic.push_back(lminus);
@@ -225,7 +227,7 @@ bool AppendLogicTo(vecgeom::BooleanStruct const &bstruct, TransformationMP<Real_
   if (bstruct_right)
     success = AppendLogicTo<Real_t>(*bstruct_right, tr_right, logical_id);
   else
-    success = CreateSolidSurfaces<Real_t>(unplaced_right, logical_id, &tr_right);
+    success = CreateSolidSurfaces<Real_t>(unplaced_right, logical_id, &tr_right, intersection);
   if (!success) return false;
   // close parenthesis
   logic.push_back(lminus);

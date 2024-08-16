@@ -15,7 +15,7 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id)
+bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id, bool intersection = false)
 {
   // using Vector3D     = vecgeom::Vector3D<Real_t>;
   // const auto &sphstr = sph.GetStruct();
@@ -31,6 +31,7 @@ bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id)
                                    ZPhiMask<Real_t>{-rmax, rmax, true, 0., rmax, 0., vecgeom::kTwoPi}),
       /*identity transformation*/ 0);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
 
   builder::AddLogicToShell<Real_t>(logical_id, logic);

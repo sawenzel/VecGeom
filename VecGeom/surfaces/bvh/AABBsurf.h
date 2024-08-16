@@ -220,7 +220,7 @@ struct AABBsurf {
     bool hit = tmin <= tmax && tmax >= Real_t(0) && tmin < step;
     // note: to prevent errors in large geometries, the looser tolerance of kToleranceDist is needed
     approach = (hit && tmin > vecgeom::kToleranceDist<Real_t>)
-                   ? vecgeom::MakeMinusTolerantRel(tmin, vecgeom::kToleranceDist<Real_t>)
+                   ? vecgeom::MakeMinusTolerantRel(tmin, 10 * vecgeom::kToleranceDist<Real_t>)
                    : Real_t(0);
     return hit;
   }

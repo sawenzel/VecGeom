@@ -20,7 +20,8 @@
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/volumes/kernel/BoxImplementation.h"
 
-#include "VecGeom/surfaces/SurfData.h"
+#include "VecGeom/surfaces/SurfData.h" // still need this for the init bvh function, then we can cut this
+#include "VecGeom/surfaces/base/CpuTypes.h"
 
 #include <map>
 #include <vector>
@@ -63,8 +64,9 @@ public:
 
   using FP_t = HitBoxComparatorFunctor;
 
-private:
   std::vector<ABBoxContainer_t> fVolToSurfaceABBoxesMap;
+
+private:
   std::vector<ABBoxContainer_t> fVolToABBoxesMap;
   std::vector<ABBoxContainer_v> fVolToABBoxesMap_v;
 
@@ -209,40 +211,46 @@ public:
     upper.Set(maxx, maxy, maxz);
   }
 
-  template <typename Real_t>
   static void ComputeSurfaceABBox(vgbrep::FramedSurface const &framedSurface,
-                                  Transformation3DMP<Real_t> const &surfaceTransform,
+                                  Transformation3DMP<Precision> const &surfaceTransform,
                                   Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
-                                  vgbrep::SurfData<Real_t> const &surfData, LogicalVolume const *lvol)
+                                  vgbrep::CPUsurfData<Precision> const &cpudata, LogicalVolume const *lvol,
+                                  const bool crop)
   {
-    Vector3D<Real_t> lowert, uppert;
+    Vector3D<Precision> lowert, uppert;
 
     // bounding box of volume that the surface belongs to
     Vector3D<Precision> lower_vol, upper_vol;
-    lvol->GetUnplacedVolume()->Extent(lower_vol, upper_vol);
+    if (crop) lvol->GetUnplacedVolume()->Extent(lower_vol, upper_vol);
 
     // Get the frame bounding box
-    framedSurface.Extent3D(lowert, uppert, surfData);
+    framedSurface.Extent3D(lowert, uppert, cpudata);
     Vector3D<Precision> lower(lowert[0], lowert[1], lowert[2]);
     Vector3D<Precision> upper(uppert[0], uppert[1], uppert[2]);
 
     // Apply the local transformation
-    TransformBoundingBox<Transformation3DMP<Real_t>>(lower, upper, surfaceTransform);
+    TransformBoundingBox<Transformation3DMP<Precision>>(lower, upper, surfaceTransform);
 
     // Apply the transformation with respect to the mother LV
     TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
-    TransformBoundingBox<Transformation3D>(lower_vol, upper_vol, volumeTransform);
+    if (crop) TransformBoundingBox<Transformation3D>(lower_vol, upper_vol, volumeTransform);
 
-    lowerc.Set(std::max(lower_vol.x(), lower.x()) - 1E-3, std::max(lower_vol.y(), lower.y()) - 1E-3,
-               std::max(lower_vol.z(), lower.z()) - 1E-3);
-    upperc.Set(std::min(upper_vol.x(), upper.x()) + 1E-3, std::min(upper_vol.y(), upper.y()) + 1E-3,
-               std::min(upper_vol.z(), upper.z()) + 1E-3);
+    if (!crop) {
+      lowerc.Set(lower.x(), lower.y(), lower.z());
+      upperc.Set(upper.x(), upper.y(), upper.z());
+    } else {
+      lowerc.Set(std::max(lower_vol.x() - 1e-3, lower.x()), std::max(lower_vol.y() - 1e-3, lower.y()),
+                 std::max(lower_vol.z() - 1e-3, lower.z()));
+      upperc.Set(std::min(upper_vol.x() + 1e-3, upper.x()), std::min(upper_vol.y() + 1e-3, upper.y()),
+                 std::min(upper_vol.z() + 1e-3, upper.z()));
 
-    // if surface bounding box is outside of volume bounding box, remove it entirely
-    if (lower.x() > upper_vol.x() + 1E-3 || upper.x() < lower_vol.x() - 1E-3 || lower.y() > upper_vol.y() + 1E-3 ||
-        upper.y() < lower_vol.y() - 1E-3 || lower.z() > upper_vol.z() + 1E-3 || upper.z() < lower_vol.z() - 1E-3) {
-      lowerc.Set(0., 0., 0.);
-      upperc.Set(0., 0., 0.);
+      // if surface bounding box is outside of volume bounding box, remove it entirely
+      if (lower.x() > upper_vol.x() + vecgeom::kTolerance || upper.x() < lower_vol.x() - vecgeom::kTolerance ||
+          lower.y() > upper_vol.y() + vecgeom::kTolerance || upper.y() < lower_vol.y() - vecgeom::kTolerance ||
+          lower.z() > upper_vol.z() + vecgeom::kTolerance || upper.z() < lower_vol.z() - vecgeom::kTolerance) {
+        lowerc.Set(0., 0., 0.);
+        upperc.Set(0., 0., 0.);
+      }
     }
   }
 
@@ -323,81 +331,88 @@ public:
   }
 
   // Initialize AABoxes for the surfaces of a LogicalVolume and those of its daughters
-  template <typename Real_t>
-  void InitSurfaceABBoxesVol(LogicalVolume const *lvol, vgbrep::SurfData<Real_t> &surfData)
+  void InitSurfaceABBoxesVol(LogicalVolume const *lvol, vgbrep::CPUsurfData<Precision> &cpudata, bool crop = false)
   {
-    if (fVolToSurfaceABBoxesMap[lvol->id()] != nullptr) {
+    if (fVolToSurfaceABBoxesMap[lvol->id()] != nullptr && !crop) {
       // remove old boxes first
       RemoveSurfaceABBoxes(lvol);
     }
 
     // Get the shell of the root LV
-    auto &rootShell = surfData.fShells[lvol->id()];
+    auto &rootShell = cpudata.fShells[lvol->id()];
 
-    // Allocate space for the AABBs (2 corners per surface)
-    ABBox_s *boxes = new ABBox_s[2 * rootShell.fNExitingSurfaces + 2 * rootShell.fNEnteringSurfaces];
-    fVolToSurfaceABBoxesMap[lvol->id()] = boxes;
+    ABBox_s *boxes;
+    if (!crop) {
+      // Allocate space for the AABBs (2 corners per surface)
+      boxes = new ABBox_s[2 * rootShell.fExitingSurfaces.size() + 2 * rootShell.fEnteringSurfaces.size()];
+      fVolToSurfaceABBoxesMap[lvol->id()] = boxes;
+    } else {
+      boxes = fVolToSurfaceABBoxesMap[lvol->id()];
+    }
 
     auto const identityTransform = new Transformation3D();
 
     // Create AABBs for the Exiting surfaces of this volume
-    for (int motherSurfIndex = 0; motherSurfIndex < rootShell.fNExitingSurfaces; motherSurfIndex++) {
+    for (auto motherSurfIndex = 0u; motherSurfIndex < rootShell.fExitingSurfaces.size(); motherSurfIndex++) {
       // Get the surface
       auto exiting_ind        = rootShell.fExitingSurfaces[motherSurfIndex];
-      auto const localSurface = surfData.fLocalSurf[rootShell.fSurfaces[exiting_ind]];
+      auto const localSurface = cpudata.fLocalSurfaces[rootShell.fSurfaces[exiting_ind]];
 
       // Local transformation of this surface
-      auto const &surfaceTransform = surfData.fLocalTrans[localSurface.fTrans];
+      auto const &surfaceTransform = cpudata.fLocalTrans[localSurface.fTrans];
 
       ComputeSurfaceABBox(localSurface, surfaceTransform, *identityTransform, boxes[2 * motherSurfIndex],
-                          boxes[2 * motherSurfIndex + 1], surfData, lvol);
+                          boxes[2 * motherSurfIndex + 1], cpudata, lvol, crop);
     }
 
     // Now, iterate again over the daughters, and fill the array of AABBs
     // We need to go over the daughters since we need to know their transformation
-    // Also initialize the local visible surfaces list in surfData
+    // Also initialize the local visible surfaces list in cpudata
     int localSurfIndex = 0;
     for (auto pvol : lvol->GetDaughters()) {
       // Get the shell
-      auto shell = surfData.fShells[pvol->GetLogicalVolume()->id()];
+      auto shell = cpudata.fShells[pvol->GetLogicalVolume()->id()];
       // Iterate over the local surfaces in this shell
-      for (int i = 0; i < shell.fNExitingSurfaces; i++) {
+      for (auto i = 0u; i < shell.fExitingSurfaces.size(); i++) {
         auto exiting_ind         = shell.fExitingSurfaces[i];
-        auto const &localSurface = surfData.fLocalSurf[shell.fSurfaces[exiting_ind]];
+        auto const &localSurface = cpudata.fLocalSurfaces[shell.fSurfaces[exiting_ind]];
         // Local transformation of the surface within this daughter volume
-        auto const &surfaceTransform = surfData.fLocalTrans[localSurface.fTrans];
+        auto const &surfaceTransform = cpudata.fLocalTrans[localSurface.fTrans];
         // Transformation of this daughter volume with respect to its mother
         auto daughterTransform = pvol->GetTransformation();
-        ComputeSurfaceABBox<Real_t>(localSurface, surfaceTransform, *daughterTransform,
-                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces)],
-                                    boxes[2 * (localSurfIndex + rootShell.fNExitingSurfaces) + 1], surfData,
-                                    pvol->GetLogicalVolume());
+        ComputeSurfaceABBox(localSurface, surfaceTransform, *daughterTransform,
+                            boxes[2 * (localSurfIndex + rootShell.fExitingSurfaces.size())],
+                            boxes[2 * (localSurfIndex + rootShell.fExitingSurfaces.size()) + 1], cpudata,
+                            pvol->GetLogicalVolume(), crop);
         localSurfIndex++;
       }
     }
   }
 
   // Initialize AABoxes for the surfaces of a list of LogicalVolumes and those of their daughters
-  template <typename Container, typename Real_t>
-  void InitSurfaceABBoxes(Container const &lvolumes, vgbrep::SurfData<Real_t> &surfData)
+  template <typename Container>
+  void InitSurfaceABBoxes(Container const &lvolumes, vgbrep::CPUsurfData<Precision> &cpudata, bool crop = false)
   {
     for (auto lvol : lvolumes) {
-      InitSurfaceABBoxesVol<Real_t>(lvol, surfData);
+      InitSurfaceABBoxesVol(lvol, cpudata, crop);
     }
   }
 
   // Initialize ABBoxes for all registered LogicalVolumes
-  template <typename Real_t>
-  void InitABBoxesForSurfaces(vgbrep::SurfData<Real_t> &surfData)
+  void InitABBoxesForSurfaces(vgbrep::CPUsurfData<Precision> &cpudata, bool crop = false)
   {
     auto &container = GeoManager::Instance().GetLogicalVolumesMap();
-    fVolToSurfaceABBoxesMap.resize(container.size(), nullptr);
     std::vector<LogicalVolume const *> logicalvolumes;
-    logicalvolumes.reserve(container.size());
-    for (const auto &p : container) {
-      logicalvolumes.push_back(p.second);
+    if (!crop) {
+      fVolToSurfaceABBoxesMap.resize(container.size(), nullptr);
+      logicalvolumes.reserve(container.size());
+      for (const auto &p : container) {
+        logicalvolumes.push_back(p.second);
+      }
+    } else {
+      GeoManager::Instance().GetAllLogicalVolumes(logicalvolumes);
     }
-    InitSurfaceABBoxes(logicalvolumes, surfData);
+    InitSurfaceABBoxes(logicalvolumes, cpudata, crop);
   }
 
   void InitABBoxesForCompleteGeometry()
@@ -425,10 +440,9 @@ public:
   }
 
   // Returns the list of AABBs associated to a LogicalVolume
-  template <typename Real_t>
-  ABBoxContainer_t GetSurfaceABBoxes(int ivol, int &size, vgbrep::SurfData<Real_t> const &surfData)
+  ABBoxContainer_t GetSurfaceABBoxes(int ivol, int &size, vgbrep::CPUsurfData<Precision> const &cpudata)
   {
-    size = surfData.fShells[ivol].fNExitingSurfaces + surfData.fShells[ivol].fNEnteringSurfaces;
+    size = cpudata.fShells[ivol].fExitingSurfaces.size() + cpudata.fShells[ivol].fEnteringSurfaces.size();
     return fVolToSurfaceABBoxesMap[ivol];
   }
 

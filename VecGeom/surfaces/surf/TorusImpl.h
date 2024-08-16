@@ -29,8 +29,9 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
   VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
+  /// @param tol tolerance for determining if a point is inside or not
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point, bool flip = false)
+  bool Inside(Vector3D<Real_t> const &point, bool flip = false, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
   {
     if (!fTorusData->InsidePhi(point, flip)) return false;
 
@@ -40,9 +41,9 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
     Real_t rTor  = fTorusData->Radius();
     Real_t rTube = fTorusData->RadiusTube();
 
-    bool check1 = (rho - (rTor - rTube)) > -flipsign * vecgeom::kTolerance;
-    bool check2 = (rho - (rTor + rTube)) < flipsign * vecgeom::kTolerance;
-    bool check3 = Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube < flipsign * vecgeom::kTolerance;
+    bool check1 = (rho - (rTor - rTube)) > -flipsign * tol;
+    bool check2 = (rho - (rTor + rTube)) < flipsign * tol;
+    bool check3 = Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube < flipsign * tol;
 
     if (!flipped) {
       return check1 && check2 && check3;

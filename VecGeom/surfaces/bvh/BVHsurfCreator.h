@@ -235,13 +235,13 @@ void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, in
 
 template <typename Real_t>
 static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b> &bvh,
-                    vgbrep::SurfData<Real_t> const &surfData, int depth = 0)
+                    vgbrep::CPUsurfData<Precision> const &cpudata, int depth = 0)
 {
   using Real_b = typename vgbrep::SurfData<Real_t>::Real_b;
   uint aRootId = ivol;
   int n;
   /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
-  auto ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(ivol, n, surfData);
+  auto ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(ivol, n, cpudata);
 
   if (n <= 0) throw std::logic_error("Cannot construct BVH for volume with no surfaces!");
 

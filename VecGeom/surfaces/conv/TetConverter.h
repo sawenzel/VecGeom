@@ -15,15 +15,16 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id)
+bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id, bool intersection = false)
 {
-  using Vector3D   = vecgeom::Vector3D<Real_t>;
+  using Vector3D = vecgeom::Vector3D<Real_t>;
 
   const auto &tetstr = tet.GetStruct();
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 & 1 & 2 & 3
   vecgeom::Transformation3D transf;
-  std::vector<Vector3D> vert; // Stores coordinates of the four corners that define a tet. It is initialised with 3D coordinates.
+  std::vector<Vector3D>
+      vert; // Stores coordinates of the four corners that define a tet. It is initialised with 3D coordinates.
 
   // corners represented as vectors
   auto const *corners = tetstr.fVertex;
@@ -32,28 +33,32 @@ bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id)
   };
 
   // surface 1:
-  vert   = {corners[0], corners[1], corners[2]};
+  vert  = {corners[0], corners[1], corners[2]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   assertFace(isurf);
   logic.push_back(isurf);
 
   // surface 2:
-  vert   = {corners[0], corners[2], corners[3]};
+  vert  = {corners[0], corners[2], corners[3]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface 3:
-  vert   = {corners[0], corners[3], corners[1]};
+  vert  = {corners[0], corners[3], corners[1]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);
 
   // surface 4:
-  vert   = {corners[1], corners[3], corners[2]};
+  vert  = {corners[1], corners[3], corners[2]};
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
+  if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   assertFace(isurf);
   logic.push_back(land);
   logic.push_back(isurf);

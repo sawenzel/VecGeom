@@ -33,18 +33,9 @@ Retrieved from: http://en.literateprograms.org/Shunting_yard_algorithm_(C)?oldid
 
 namespace shunt {
 
-bool eval_not(bool a1, bool a2)
-{
-  return !a1;
-}
-bool eval_and(bool a1, bool a2)
-{
-  return a1 && a2;
-}
-bool eval_or(bool a1, bool a2)
-{
-  return a1 || a2;
-}
+bool eval_not(bool a1, bool a2) { return !a1; }
+bool eval_and(bool a1, bool a2) { return a1 && a2; }
+bool eval_or(bool a1, bool a2) { return a1 || a2; }
 
 enum { ASSOC_NONE = 0, ASSOC_LEFT, ASSOC_RIGHT };
 

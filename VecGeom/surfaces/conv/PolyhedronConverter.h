@@ -14,7 +14,7 @@ namespace conv {
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logical_id)
+bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logical_id, bool intersection = false)
 {
   using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
@@ -89,6 +89,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
             builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
+        if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         if (iseg > 0) logic.push_back(land);
         logic.push_back(isurf);
         isurfZlast = isurf;
@@ -105,6 +106,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
                     {rMax[iseg + 1] * conv * csphi, rMax[iseg + 1] * conv * ssphi, z2}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         if (realSeg) {
           if (nseg > 1 || iside > 0) logic.push_back(land);
           logic.push_back(isurf);
@@ -126,6 +128,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMin[iseg] * conv * cephi, rMin[iseg] * conv * sephi, z1},
                     {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         if (realSeg) {
           if (iside == 0) {
             logic.push_back(land);
@@ -153,6 +156,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                   {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1},
                   {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1}};
       isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+      if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
       builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(land);
       logic.push_back(lplus); // '('
@@ -163,6 +167,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                   {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2},
                   {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2}};
       isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+      if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
       builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);
@@ -178,6 +183,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg] * conv * csphi, rMax[iseg] * conv * ssphi, z1},
                     {rMin[iseg] * conv * csphi, rMin[iseg] * conv * ssphi, z1}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         // the bottom surface may be degenerated
         if (isurf >= 0) {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -193,6 +199,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
                     {rMax[iseg + 1] * conv * cephi, rMax[iseg + 1] * conv * sephi, z2},
                     {rMin[iseg + 1] * conv * cephi, rMin[iseg + 1] * conv * sephi, z2}};
         isurf    = builder::CreateLocalSurfaceFromVertices<Real_t>(vertices, logical_id);
+        if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         // the top surface may be degenerated
         if (isurf >= 0) {
           builder::GetSurface<Real_t>(isurf).fEmbedding = false;

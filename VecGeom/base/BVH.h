@@ -15,10 +15,10 @@
 
 #include <vector>
 
-// Forward-declare SurfData
+// Forward-declare CPUsurfData
 namespace vgbrep {
 template <typename Real_t>
-struct SurfData;
+struct CPUsurfData;
 }
 
 namespace vecgeom {
@@ -70,7 +70,7 @@ public:
    * the actual depth will be chosen dynamically based on the number of child volumes.
    * When a fixed depth is chosen, it cannot be larger than @p BVH_MAX_DEPTH.
    */
-  BVH(LogicalVolume const &volume, bool surfacesBVH = false, vgbrep::SurfData<Precision> const *surfData = nullptr,
+  BVH(LogicalVolume const &volume, bool surfacesBVH = false, vgbrep::CPUsurfData<Precision> const *surfData = nullptr,
       int depth = 0);
 
   /** Destructor. */
@@ -147,9 +147,9 @@ public:
    * sum of children in the left+right child nodes will be less than for the current node.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(
-      const Vector3D<Precision> &localpoint, const Vector3D<Precision> &localdir,
-      Precision &step, long const last_exited_id, long &hitcandidate_index) const
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(const Vector3D<Precision> &localpoint,
+                                                          const Vector3D<Precision> &localdir, Precision &step,
+                                                          long const last_exited_id, long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;

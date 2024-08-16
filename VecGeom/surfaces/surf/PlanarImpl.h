@@ -16,11 +16,12 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
   VECCORE_ATT_HOST_DEVICE
   /// @brief Inside half-space function
   /// @param point Point in local surface coordinates
+  /// @param tol tolerance for determining if a point is inside or not
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point, bool flip)
+  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
   {
     int flipsign = !flip ? 1 : -1;
-    return point.z() < flipsign * vecgeom::kToleranceStrict<Real_t>;
+    return point.z() < flipsign * tol;
   }
 
   VECGEOM_FORCE_INLINE
