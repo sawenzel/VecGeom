@@ -1428,7 +1428,7 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
     // Get the shell of the root LV
     auto &rootShell = fCPUdata.fShells[lvol->id()];
 
-    std::cout << " CHECKING SHELL WITH ID " << lvol->id() << std::endl;
+    // std::cout << " CHECKING SHELL WITH ID " << lvol->id() << std::endl;
     // for accessing the AABBs we need the BVH AABB precision Real_b
     auto boxes = vecgeom::ABBoxManager<Real_b>::Instance().fVolToSurfaceABBoxesMap[lvol->id()];
 
@@ -1466,9 +1466,9 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
       auto const &surfaceTransform    = fCPUdata.fLocalTrans[localSurface.fTrans];
       auto const inv_surfaceTransform = surfaceTransform.Inverse();
 
-      printf("\n\nStart checking convexity of surface %i with transformation \n", idsurf);
-      surfaceTransform.Print();
-      printf("\n");
+      // printf("\n\nStart checking convexity of surface %i with transformation \n", idsurf);
+      // surfaceTransform.Print();
+      // printf("\n");
       for (auto other_idsurf = 0u; other_idsurf < rootShell.fExitingSurfaces.size(); other_idsurf++) {
 
         if (other_idsurf == idsurf) continue;
@@ -1495,8 +1495,9 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
 
         bool flip = localSurface.fLogicId < 0;
         flip ^= other_localSurface.fLogicId < 0;
-        Real_t tol = other_localSurface.fLogicId < 0 ? 10000 * vecgeom::kToleranceStrict<Real_t>
-                                                     : vecgeom::kToleranceStrict<Real_t>;
+        Real_t tol = 10000 * vecgeom::kToleranceStrict<Real_t>;
+        // Real_t tol = other_localSurface.fLogicId < 0 ? 10000 * vecgeom::kToleranceStrict<Real_t>
+        //                                              : 10000 * vecgeom::kToleranceStrict<Real_t>;
         // auto const &other_surfaceTransform = fCPUdata.fLocalTrans[other_localSurface.fTrans];
         // printf("checking other surface %i with transformation \n", other_idsurf);
         // other_surfaceTransform.Print();
