@@ -8,6 +8,7 @@
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/volumes/kernel/GenericKernels.h>
 #include <VecGeom/navigation/NavigationState.h>
+#include <VecGeom/management/Logger.h>
 
 namespace vgbrep {
 
@@ -277,6 +278,21 @@ struct Segment2D {
     return SegmentIntersect::kIntersect;
   }
 
+  bool BoundingBoxOverlap(Segment2D<Real_t> const &other)
+  {
+    Real_t min_x1 = std::min(fP1.x(), fP2.x());
+    Real_t max_x1 = std::max(fP1.x(), fP2.x());
+    Real_t min_y1 = std::min(fP1.y(), fP2.y());
+    Real_t max_y1 = std::max(fP1.y(), fP2.y());
+
+    Real_t min_x2 = std::min(other.fP1.x(), other.fP2.x());
+    Real_t max_x2 = std::max(other.fP1.x(), other.fP2.x());
+    Real_t min_y2 = std::min(other.fP1.y(), other.fP2.y());
+    Real_t max_y2 = std::max(other.fP1.y(), other.fP2.y());
+
+    return !(max_x1 < min_x2 || max_x2 < min_x1 || max_y1 < min_y2 || max_y2 < min_y1);
+  }
+
   /// @brief Intersection with another segment
   /// @param other Other segment
   /// @return Intersection type
@@ -284,6 +300,10 @@ struct Segment2D {
   {
     // Return kNoIntersect if one of the segments is degenerated
     if (fDegen || other.fDegen) return SegmentIntersect::kNoIntersect;
+
+    // Perform bounding box overlap check
+    if (!BoundingBoxOverlap(other)) return SegmentIntersect::kNoIntersect;
+
     auto v12  = other.fP2 - fP1;
     auto s    = v12.CrossZ(other.fV);
     auto t    = v12.CrossZ(fV);
@@ -310,12 +330,34 @@ struct Segment2D {
         // The segments are parallel
         return SegmentIntersect::kNoIntersect;
     }
-    s /= norm;
-    t /= norm;
-    if (s > vecgeom::MakePlusTolerant<true, Real_t>(0) && s < vecgeom::MakeMinusTolerant<true, Real_t>(1) &&
-        t > vecgeom::MakePlusTolerant<true, Real_t>(0) && t < vecgeom::MakeMinusTolerant<true, Real_t>(1))
-      // The segments are crossing in range
+
+    // Calculate the intersection points using both segments
+    auto intersectionPoint1 = fP1 + s * fV;
+    auto intersectionPoint2 = other.fP1 + t * other.fV;
+
+    auto PointInSegmentBounds = [](const Vector2D<Real_t> &point, const Segment2D<Real_t> &seg) {
+      return (point.x() >= vecgeom::MakeMinusTolerant<true, Real_t>(std::min(seg.fP1.x(), seg.fP2.x())) &&
+              point.x() <= vecgeom::MakePlusTolerant<true, Real_t>(std::max(seg.fP1.x(), seg.fP2.x())) &&
+              point.y() >= vecgeom::MakeMinusTolerant<true, Real_t>(std::min(seg.fP1.y(), seg.fP2.y())) &&
+              point.y() <= vecgeom::MakePlusTolerant<true, Real_t>(std::max(seg.fP1.y(), seg.fP2.y())));
+    };
+
+    // Check if both intersection points are within the bounds of the respective segments
+    bool isWithinBounds1 =
+        PointInSegmentBounds(intersectionPoint1, *this) && PointInSegmentBounds(intersectionPoint1, other);
+    bool isWithinBounds2 =
+        PointInSegmentBounds(intersectionPoint2, *this) && PointInSegmentBounds(intersectionPoint2, other);
+
+    if ((isWithinBounds1 != isWithinBounds2)) {
+      VECGEOM_LOG(warning) << " Check for intersection points using segment 1 and segment 2 differ. This should really "
+                              "not be happening! Check for numerical problems.";
+    }
+
+    // If both points are within bounds, consider it an intersection
+    if (isWithinBounds1 && isWithinBounds2) {
       return SegmentIntersect::kIntersect;
+    }
+
     // No intersection in range
     return SegmentIntersect::kNoIntersect;
   }
