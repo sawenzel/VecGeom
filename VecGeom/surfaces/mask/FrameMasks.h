@@ -60,12 +60,8 @@ struct FrameChecker<Real_t, RingMask<Real_t>, RingMask<Real_t>> {
     }
     // General case: check if Safety inside for the center of the frame2 circle is large enough
     Vector3D<Real_t> center;
-    Real_t safety     = frame1.SafetyInside(trans.InverseTransform(center));
-    bool is_embedding = frame2.rangeR[1] < vecgeom::MakePlusTolerant<true, Real_t>(safety);
-    if (!(is_embedding))
-      VECGEOM_LOG(warning) << "Non-embedded Ring frame in Ring parent frame detected. This could be a general case "
-                              "that is not treated or an extruding overlap.";
-    return is_embedding;
+    Real_t safety = frame1.SafetyInside(trans.InverseTransform(center));
+    return frame2.rangeR[1] < vecgeom::MakePlusTolerant<true, Real_t>(safety);
   }
 };
 

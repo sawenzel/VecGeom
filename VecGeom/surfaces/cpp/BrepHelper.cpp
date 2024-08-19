@@ -65,7 +65,37 @@ void BrepHelper<Real_t>::SortSides(int common_id)
           // Check if the frame is embedded in ANY of the parents
           if (!child_frame.fEmbedded) {
             child_frame.fEmbedded = fCPUdata.IsEmbedding(parent_frame, child_frame);
-            if (parent_frame.fEmbedding && child_frame.fLogicId == 0 && !child_frame.fEmbedded) {
+          }
+          child_frame.fParent = parent_ind;
+        }
+      }
+    }
+
+    // rerun loop to check if non-embedded children have embedding parents
+    for (auto parent_ind = top_parent; parent_ind >= 0; --parent_ind) {
+      auto &parent_frame = fCPUdata.fFramedSurf[side.fSurfaces[parent_ind]];
+      // Non-embedding frames may be several on the side
+      auto parent_navind = parent_frame.fState;
+      for (int i = 0; i < parent_ind; ++i) {
+        auto &child_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
+        auto navind       = child_frame.fState;
+        if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) {
+          // Check if the frame is embedded in ANY of the parents
+          if (!child_frame.fEmbedded) {
+
+            // if there are multiple parents on the same surface (e.g., on a polycone) we should not print the warning
+            // of non-embedded surfaces having embedded parents since the parents are in fact embedding, but we would
+            // need to check the daughters against the union of their parents. since parents are next to each other, we
+            // just check if the previous or next surface to the parent has the same state as the checked surface to see
+            // if there are multiple parents Note that this might suppress real overlaps for all surfaces with multiple
+            // parents
+            bool multi_parent = false;
+            if (parent_ind != top_parent)
+              multi_parent = fCPUdata.fFramedSurf[side.fSurfaces[parent_ind + 1]].fState == parent_navind;
+            if (parent_ind != 0)
+              multi_parent |= fCPUdata.fFramedSurf[side.fSurfaces[parent_ind - 1]].fState == parent_navind;
+            if (multi_parent) continue;
+            if (parent_frame.fEmbedding && child_frame.fLogicId == 0) {
               VECGEOM_LOG(warning) << "Non-embedded frame " << i << " having embedding parent " << parent_ind
                                    << " on CS " << common_id;
               if (fVerbose > 0) {
@@ -76,7 +106,6 @@ void BrepHelper<Real_t>::SortSides(int common_id)
               }
             }
           }
-          child_frame.fParent = parent_ind;
         }
       }
     }
