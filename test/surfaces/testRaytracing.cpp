@@ -96,6 +96,16 @@ void LocateSurf(int nrays, Vector3D<Real_t> const *points, NavigationState *out_
   }
 }
 //==================================================================================
+void LocateSurfBVH(int nrays, Vector3D<Real_t> const *points, NavigationState *out_states)
+{
+  for (auto i = 0; i < nrays; ++i) {
+    auto const &pos = points[i];
+    // Locate with surface-based model
+    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(GeoManager::Instance().GetWorld()->id(), pos,
+                                                              out_states[i], true);
+  }
+}
+//==================================================================================
 int ValidateLocate(int nrays, Vector3D<Precision> const *points, Vector3D<Real_t> const *points_RT,
                    NavigationState const *in_states, NavigationState *out_states, bool debug)
 {
@@ -434,12 +444,14 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
                        int max_cross = vecgeom::kMaximumInt, bool test_bvh = false, bool validate_results = true)
 {
   // allocate storage
-  NavigationState *origStates   = new NavigationState[nrays];
-  NavigationState *outputStates = new NavigationState[nrays];
+  NavigationState *origStates      = new NavigationState[nrays];
+  NavigationState *outputStates    = new NavigationState[nrays];
+  NavigationState *outputStatesBVH = new NavigationState[nrays];
 
   Precision *ref_safeties{nullptr}, *safeties{nullptr};
   CrossingSeq *ref_crossings{nullptr}, *crossings{nullptr}, *bvh_crossings{nullptr};
   int num_errors          = 0;
+  int num_errors_bvh_loc  = 0;
   int num_errors_safe     = 0;
   int num_errors_dist     = 0;
   int num_errors_dist_bvh = 0;
@@ -482,14 +494,39 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   LocateSurf(nrays, points_RT, outputStates);
   auto time_locate_surf = timer.Stop();
 
+  for (auto i = 0; i < nrays; ++i)
+    outputStatesBVH[i].Clear();
+
+  timer.Start();
+  if (test_bvh)
+    LocateSurfBVH(nrays, points_RT, outputStatesBVH);
+  auto time_locate_surf_bvh = timer.Stop();
+
   // Correctness for locating points
   if (validate_results) {
     num_errors = ValidateLocate(nrays, points, points_RT, origStates, outputStates, debug);
     if (num_errors > 0) std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
   }
+
+  if (test_bvh) {
+    // Validate BVH Locate
+    if (validate_results) {
+      num_errors_bvh_loc = ValidateLocate(nrays, points, points_RT, origStates, outputStatesBVH, debug);
+      if (num_errors_bvh_loc > 0) std::cout << "*** HOST: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+    }
+  }
+
   if (!debug) {
     std::cout << "HOST: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
-              << "  locate_surf: " << time_locate_surf << "\n";
+              << "  locate_surf: " << time_locate_surf;
+    if(test_bvh)
+    {
+      std::cout << " locate_surf_BVH: " << time_locate_surf_bvh << "\n";
+    }
+    else
+    {
+      std::cout << "\n";
+    }
   }
 
   // Safety for solids model (reference)

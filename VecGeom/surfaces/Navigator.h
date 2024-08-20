@@ -5,14 +5,12 @@
 #include <VecGeom/surfaces/SurfData.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/LogicEvaluator.h>
-#include <VecGeom/surfaces/BVHSurfNavigator.h>
+// #include <VecGeom/surfaces/BVHSurfNavigator.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Algorithms.h>
 
 #include <VecGeom/volumes/utilities/VolumeUtilities.h>
 #include <VecGeom/base/BVH.h>
-
-#include <VecGeom/surfaces/BVHSurfNavigator.h>
 
 #include <iomanip>
 

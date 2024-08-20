@@ -51,12 +51,14 @@ using LogicExpressionCPU = std::vector<logic_int>;
 // Note: the local surfaces defined by solids will have local references that will be changed by
 // the flattening process, depending on the scene on which the parent volume will be flattened
 struct VolumeShellCPU {
-  std::vector<int> fSurfaces;         ///< Local surface id's for this volume
-  std::vector<int> fExitingSurfaces;  ///< Local surface id's for this volume, excluding virtual ones
-  std::vector<int> fEnteringSurfaces; ///< Local surface id's for all surfaces of daughters, excluding virtual ones
-  std::vector<int> fEnteringSurfacesPvol;
-  std::vector<int> fDaughterPvolTrans; ///< Array of ids to daughter placed volume transformations
-  std::vector<int> fDaughterLvolIds;   ///< Array of ids to daughter logical volumes
+  std::vector<int> fSurfaces;             ///< Local surface id's for this volume
+  std::vector<int> fExitingSurfaces;      ///< Local surface id's for this volume, excluding virtual ones
+  std::vector<int> fEnteringSurfaces;     ///< Local surface id's for all surfaces of daughters, excluding virtual ones
+  std::vector<int> fEnteringSurfacesPvol; ///< Global PVol ids for the daughter surfaces of this volume
+  std::vector<int> fEnteringSurfacesPvolTrans; ///< Array of ids to daughter placed volume transformations
+  std::vector<int> fEnteringSurfacesLvolIds;   ///< Array of ids to daughter logical volumes
+  std::vector<int> fDaughterPvolIds;           ///< Global PV Ids of the daughter PVs of this Volume
+  std::vector<int> fDaughterPvolTrans;         ///< Transformations of the daughter PVs of this Volume
 
   LogicExpressionCPU fLogic; ///< Logic expression for the solid
   bool fSimplified{false};   ///< The logic was simplified

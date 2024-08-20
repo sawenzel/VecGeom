@@ -48,6 +48,15 @@ __global__ void LocateSurf(int nrays, Vector3D<Real_t> const *points, Navigation
   }
 }
 //==================================================================================
+__global__ void LocateSurfBVH(int nrays, Vector3D<Real_t> const *points, NavigationState *out_states,
+                              const VPlacedVolume *world)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    // Locate with surface-based model + BVH
+    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(world->id(), points[i], out_states[i], true);
+  }
+}
+//==================================================================================
 __global__ void ResetStates(int nrays, NavigationState *out_states)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x)
@@ -299,6 +308,8 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaMalloc(&origStates, nrays * sizeof(NavigationState)));
   NavigationState *outputStates;
   BREP_CUDA_CHECK(cudaMalloc(&outputStates, nrays * sizeof(NavigationState)));
+  NavigationState *outputStatesBVH;
+  BREP_CUDA_CHECK(cudaMalloc(&outputStatesBVH, nrays * sizeof(NavigationState)));
   Precision *refSafeties{nullptr};
   Precision *safeties{nullptr};
   Precision *refLength_over_crossings{nullptr};
@@ -314,6 +325,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   }
 
   int num_errors          = 0;
+  int num_errors_bvh_loc  = 0;
   int num_better_safety   = 0;
   int num_worse_safety    = 0;
   int num_errors_dist     = 0;
@@ -351,15 +363,40 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_locate_surf = timer.Stop();
 
+  // Locating the global points with surface model + BVH
+  timer.Start();
+  if(test_bvh)
+    LocateSurfBVH<<<initBlocks, initThreads>>>(nrays, points_RT, outputStatesBVH, world_dev);
+  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  auto time_locate_surf_bvh = timer.Stop();
+
   // Corectness for locating points
   ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStates, num_errors_d);
   BREP_CUDA_CHECK(cudaMemcpy(&num_errors, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
   if (num_errors > 0) std::cout << "CUDA: Point locate errors: " << num_errors << "\n";
+
+  // Validate BVH Locate
+  ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStatesBVH, num_errors_d);
+  BREP_CUDA_CHECK(cudaMemcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+  
+  
   if (!debug)
+  {
     std::cout << "CUDA: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
-              << "  locate_surf: " << time_locate_surf << "\n";
+              << "  locate_surf: " << time_locate_surf;
+    if(test_bvh)
+    {
+      std::cout << " locate_surf_BVH: " << time_locate_surf_bvh << "\n";
+    }
+    else
+    {
+      std::cout << "\n";
+    }
+  }
 
   // Safety for solids model (reference)
   timer.Start();
@@ -467,6 +504,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaFree(dirs_RT));
   BREP_CUDA_CHECK(cudaFree(origStates));
   BREP_CUDA_CHECK(cudaFree(outputStates));
+  BREP_CUDA_CHECK(cudaFree(outputStatesBVH));
   if (validate_results) // These arrays will be nullptr if we are not doing validation
   {
     BREP_CUDA_CHECK(cudaFree(refSafeties));

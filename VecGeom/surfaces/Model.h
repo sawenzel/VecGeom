@@ -574,17 +574,20 @@ struct CommonSurface {
 
 /// @brief A volume shell holding indices for all placed surfaces belonging to a volume.
 struct VolumeShell {
-  LogicExpression fLogic;              ///< Logic expression for local surfaces
-  int fBVH{0};                         ///< The BVH index for this logical volume
-  int fNsurf{0};                       ///< Number of local surfaces
-  int fNExitingSurfaces{0};            ///< Number of framed exiting surfaces
-  int fNEnteringSurfaces{0};           ///< Number of framed entering surfaces
-  int *fSurfaces{nullptr};             ///< Local surface id's
-  int *fExitingSurfaces{nullptr};      ///< Indices of real surfaces in the fSurfaces array
-  int *fEnteringSurfaces{nullptr};     ///< List of framed entering surfaces
-  int *fEnteringSurfacesPvol{nullptr}; ///< Pvol id per framed surface
-  int *fDaughterPvolTrans{nullptr};    ///< Array to ids to daughter placed volume transformations
-  int *fDaughterLvolIds{nullptr};      ///< Array of ids to daughter logical volumes
+  LogicExpression fLogic;                   ///< Logic expression for local surfaces
+  int fBVH{0};                              ///< The BVH index for this logical volume
+  int fNsurf{0};                            ///< Number of local surfaces
+  int fNExitingSurfaces{0};                 ///< Number of framed exiting surfaces
+  int fNEnteringSurfaces{0};                ///< Number of framed entering surfaces
+  int fNDaughterPvols{0};                   ///< Number of daughter volumes
+  int *fSurfaces{nullptr};                  ///< Local surface id's
+  int *fExitingSurfaces{nullptr};           ///< Indices of real surfaces in the fSurfaces array
+  int *fEnteringSurfaces{nullptr};          ///< List of framed entering surfaces
+  int *fEnteringSurfacesPvol{nullptr};      ///< Pvol id per framed surface
+  int *fEnteringSurfacesPvolTrans{nullptr}; ///< Array of ids to daughter placed volume transformations
+  int *fEnteringSurfacesLvolIds{nullptr};   ///< Array of ids to daughter logical volumes
+  int *fDaughterPvolIds{nullptr};           ///< Global PV Ids of the daughter PVs of this Volume
+  int *fDaughterPvolTrans{nullptr};           ///< Transformations of the daughter PVs of this Volume
 
   /// @brief Check if a point is inside the volume defined by surfaces
   /// @tparam Real_t Floating-point precision type

@@ -233,27 +233,44 @@ void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, in
   ComputeNodes(2 * id + 2, pivot, last, nodes, aPrimId, aNChild, aOffset, aNodes, aAABBs, constructionAlgorithm);
 }
 
+/// @brief Compute a BVH tree for the specified LogicalVolume
+/// @tparam Real_t
+/// @param ivol ID of the logical volume for which this BVH is built
+/// @param bvh BVH instance that will be initialized
+/// @param surfData
+/// @param surfacesBVH If false, build the BVH from the AABBs of the daughter volumes, instead of the AABBs of the entering and exiting surfaces
+/// @param depth Optionally, the depth of the binary tree
 template <typename Real_t>
 static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b> &bvh,
-                    vgbrep::CPUsurfData<Precision> const &cpudata, int depth = 0)
+                    vgbrep::CPUsurfData<Precision> const &cpudata,
+                    Vector3D<typename vgbrep::SurfData<Real_t>::Real_b> *boxes, int nBoxes, int depth = 0)
 {
   using Real_b = typename vgbrep::SurfData<Real_t>::Real_b;
   uint aRootId = ivol;
-  int n;
   /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
-  auto ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(ivol, n, cpudata);
+  // Vector3D<Real_b> *ptr;
+  // auto ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(ivol, n, surfData);
 
-  if (n <= 0) throw std::logic_error("Cannot construct BVH for volume with no surfaces!");
+  // if(surfacesBVH)
+  // {
+  //   ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(aRootId, n, cpudata);
+  // }
+  // else
+  // {
+  //   ptr = ABBoxManager<Real_b>::Instance().GetABBoxes(vol, n);
+  // }
 
-  auto aRootNChild = n;
+  if (nBoxes <= 0) throw std::logic_error("Cannot construct BVH for volume with no surfaces!");
 
-  auto aAABBs = new AABBsurf<Real_b>[n];
-  for (auto i = 0; i < n; ++i)
-    aAABBs[i] = AABBsurf(ptr[2 * i], ptr[2 * i + 1]);
+  auto aRootNChild = nBoxes;
+
+  auto aAABBs = new AABBsurf<Real_b>[nBoxes];
+  for (auto i = 0; i < nBoxes; ++i)
+    aAABBs[i] = AABBsurf(boxes[2 * i], boxes[2 * i + 1]);
 
   /* Initialize map of primitive ids (i.e. child volume ids) as {0, 1, 2, ...}. */
-  auto aPrimId = new int[n];
-  std::iota(aPrimId, aPrimId + n, 0);
+  auto aPrimId = new int[nBoxes];
+  std::iota(aPrimId, aPrimId + nBoxes, 0);
 
   /*
    * If depth = 0, choose depth dynamically based on the number of child volumes, up to the fixed
@@ -261,7 +278,7 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
    * volumes, or roughly at most 4 children per leaf node. For example, for 1000 volumes, the
    * default depth would be log2(500) = 8.96 -> 8, with 2^8 - 1 = 511 nodes, and 256 leaf nodes.
    */
-  int aDepth = std::min(depth ? depth : std::max(0, (int)std::log2(n / 2)), BVHsurf<Real_b>::BVH_MAX_DEPTH);
+  int aDepth = std::min(depth ? depth : std::max(0, (int)std::log2(nBoxes / 2)), BVHsurf<Real_b>::BVH_MAX_DEPTH);
 
   unsigned int nodes = (2 << aDepth) - 1;
 
@@ -272,7 +289,7 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
   std::fill(aOffset, aOffset + nodes, -1);
 
   /* Recursively initialize BVH nodes starting at the root node */
-  ComputeNodes(0, aPrimId, aPrimId + n, nodes, aPrimId, aNChild, aOffset, aNodes, aAABBs,
+  ComputeNodes(0, aPrimId, aPrimId + nBoxes, nodes, aPrimId, aNChild, aOffset, aNodes, aAABBs,
                ConstructionAlgorithm::SurfaceAreaHeuristic);
 
   /* Mark internal nodes with a negative number of children to simplify traversal */

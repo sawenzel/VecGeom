@@ -445,7 +445,8 @@ public:
    */
   template <typename Navigator>
   VECCORE_ATT_HOST_DEVICE bool LevelLocate(long const exclude_item_id, Vector3D<Real_t> const &localpoint,
-                                           long &container_id, Vector3D<Real_t> &daughterlocalpoint) const
+                                           long &container_id, vecgeom::NavigationState &path) const
+                                          //  Vector3D<Real_t> &daughterlocalpoint) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -458,7 +459,7 @@ public:
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Contains(localpoint)) {
             if (!Navigator::SkipItem(fRootId, prim, exclude_item_id) &&
-                Navigator::CandidateContains(fRootId, prim, localpoint, daughterlocalpoint)) {
+                Navigator::CandidateContains(fRootId, prim, localpoint, path)) {// , daughterlocalpoint)) {
               container_id = Navigator::ItemId(fRootId, prim);
               return true;
             }

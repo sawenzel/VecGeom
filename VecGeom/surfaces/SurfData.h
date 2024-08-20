@@ -3,7 +3,7 @@
 
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/bvh/BVHsurf.h>
-//#include <VecGeom/base/BVH.h>
+#include <VecGeom/base/BVH.h>
 
 namespace vgbrep {
 
@@ -65,6 +65,7 @@ struct SurfData {
   int fNsideDivisions{0};
   int fNslices{0};
   int fNsliceCandidates{0};
+  int fNPlacedVolumes{0};
 
   int *fSceneStartIndex{nullptr}; ///< Start indices for data indexed by state id (per scene)
   int *fSceneTouchables{nullptr}; ///< Number of touchables (per scene)
@@ -106,9 +107,14 @@ struct SurfData {
   int *fShellExitingSurfaceList{nullptr};      ///< List of surfaces of a volume, having a frame
   int *fShellEnteringSurfaceList{nullptr};     ///< List of surfaces of the daughters of a volume, having a frame
   int *fShellEnteringSurfacePvolList{nullptr}; ///< Id of the PlacedVolume each entering surface belongs to
-  int *fShellDaughterPvolTransList{nullptr};   ///< Id of the volume transformation each entering surface belongs to
-  int *fShellDaughterLvolIdList{nullptr};      ///< Id of the logical volume each entering surface belongs to
-  bvh::BVHsurf<Real_b> *fBVH{nullptr};         ///< BVH per volume shell
+  int *fShellEnteringSurfacePvolTransList{
+      nullptr};                                  ///< Id of the volume transformation each entering surface belongs to
+  int *fShellEnteringSurfaceLvolIdList{nullptr}; ///< Id of the logical volume each entering surface belongs to
+  int *fShellDaughterPvolIdList{nullptr};        ///< Global PV Ids of the daughter PVs of each Volume
+  int *fShellDaughterPvolTransList{nullptr};     ///< Transformations of the daughter PVs of each Volume
+  bvh::BVHsurf<Real_b> *fBVH{
+      nullptr}; ///< BVH per volume shell, built from the AABBs of its entering and exiting surfaces
+  bvh::BVHsurf<Real_b> *fBVHSolids{nullptr}; ///< BVH per volume shell, built from the AABBs of the daughter volumes
 
   SurfData() = default;
 
@@ -181,10 +187,12 @@ struct SurfData {
     fShellEnteringSurfaceList = nullptr;
     delete[] fShellEnteringSurfacePvolList;
     fShellEnteringSurfacePvolList = nullptr;
-    delete[] fShellDaughterPvolTransList;
-    fShellDaughterPvolTransList = nullptr;
-    delete[] fShellDaughterLvolIdList;
-    fShellDaughterLvolIdList = nullptr;
+    delete[] fShellEnteringSurfacePvolTransList;
+    fShellEnteringSurfacePvolTransList = nullptr;
+    delete[] fShellEnteringSurfaceLvolIdList;
+    fShellEnteringSurfaceLvolIdList = nullptr;
+    delete[] fShellDaughterPvolIdList;
+    fShellDaughterPvolIdList = nullptr;
     delete[] fBVH;
     fBVH = nullptr;
   }

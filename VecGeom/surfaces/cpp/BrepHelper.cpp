@@ -1208,25 +1208,45 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
 
   ////////////////////////// BVH /////////////////////////////
 
-  // bounding boxes are already initialized as they were needed for convexity check of boolean surfaces
+  // Surf bounding boxes are already initialized as they were needed for convexity check of boolean surfaces
 
-  // Initialize the BVH for each Logical Volume
+  // At this point, the AABBs for solids, templated by vecgeom::Precision have already been
+  // initialized. In case vecgeom::Precision and Real_t are different, we need to also initialize
+  // them for ABBoxManager<Real_t>
+  vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForCompleteGeometry();
+
+  // Then initialize the BVH for each Logical Volume
   std::vector<vecgeom::LogicalVolume const *> lvols;
   vecgeom::GeoManager::Instance().GetAllLogicalVolumes(lvols);
 
   // Allocate space for the BVHs
   using Real_b    = typename SurfData<Real_t>::Real_b;
   fSurfData->fBVH = new bvh::BVHsurf<Real_b>[fCPUdata.fShells.size()];
+  fSurfData->fBVHSolids =
+      new bvh::BVHsurf<Real_b>[fCPUdata.fShells.size()]; // Auxiliary BVH for location, built from solid AABBs
 
   for (auto logical_volume : lvols) {
     // Get the index allocated for this shell's BVH
     int bvh_index = fCPUdata.fShells[logical_volume->id()].fBVH;
+    int nSolidBoxes{0};
+    int nSurfBoxes{0};
+    Vector3D<Real_b> *surfBoxes{nullptr};
+    Vector3D<Real_b> *solidBoxes{nullptr};
+    surfBoxes = vecgeom::ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(logical_volume->id(), nSurfBoxes, fCPUdata);
+    solidBoxes = vecgeom::ABBoxManager<Real_b>::Instance().GetABBoxes(logical_volume, nSolidBoxes);
 
     // Note: we construct the BVH directly in the surface data and do not copy it from the CPU data. Still, we use the
     // CPUdata to get the indices and data needed for initialization. Destroy the empty BVH object
     fSurfData->fBVH[bvh_index].Clear();
     // Construct the correct BVH from the logical volume
-    bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVH[bvh_index], fCPUdata);
+    // bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVH[bvh_index], *fSurfData);
+    bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVH[bvh_index], fCPUdata, surfBoxes, nSurfBoxes);
+    // Construct the solids BVH
+    if (logical_volume->GetDaughters().size() > 0) {
+      // For solids, we can only construct a BVH if there are daughter volumes
+      // Otherwise the instance remains uninitialized
+      bvh::InitBVH<Real_t>(logical_volume->id(), fSurfData->fBVHSolids[bvh_index], fCPUdata, solidBoxes, nSolidBoxes);
+    }
   }
 
   ////////////////////////////////////////////////////////////
@@ -1419,12 +1439,18 @@ void BrepHelper<Real_t>::InitBVHData()
     }
 
     for (const auto &pvol : lvol->GetDaughters()) {
+      // Add the PVol ID to the root shell
+      rootShell.fDaughterPvolIds.push_back(pvol->id());
+
       // Get the shell
       const auto &shell = fCPUdata.fShells[pvol->GetLogicalVolume()->id()];
 
       // get transformation to placed volume
       int vol_trans_id = fCPUdata.fPVolTrans.size();
       fCPUdata.fPVolTrans.push_back(vecgeom::Transformation3DMP<vecgeom::Precision>(*pvol->GetTransformation()));
+
+      // Add the PVol transformation to the root shell
+      rootShell.fDaughterPvolTrans.push_back(vol_trans_id);
 
       // Iterate over the local surfaces which have a frame in this shell
       for (uint i = 0; i < shell.fSurfaces.size(); i++) {
@@ -1434,8 +1460,8 @@ void BrepHelper<Real_t>::InitBVHData()
           // Add the id of the Pvol to which this surface belongs
           rootShell.fEnteringSurfacesPvol.push_back(pvol->id());
           // store transformation to placed volume and id to logical volume
-          rootShell.fDaughterPvolTrans.push_back(vol_trans_id);
-          rootShell.fDaughterLvolIds.push_back(pvol->GetLogicalVolume()->id());
+          rootShell.fEnteringSurfacesPvolTrans.push_back(vol_trans_id);
+          rootShell.fEnteringSurfacesLvolIds.push_back(pvol->GetLogicalVolume()->id());
         }
       }
     }
@@ -2134,18 +2160,23 @@ void BrepHelper<Real_t>::UpdateSurfData()
     fSurfData->fNExitingSurfaces += shell.fExitingSurfaces.size();
     fSurfData->fNEnteringSurfaces += shell.fEnteringSurfaces.size();
   }
+  fSurfData->fNPlacedVolumes = vecgeom::GeoManager::Instance().GetPlacedVolumesCount();
 
-  fSurfData->fShellExitingSurfaceList      = new int[fSurfData->fNExitingSurfaces];
-  fSurfData->fShellEnteringSurfaceList     = new int[fSurfData->fNEnteringSurfaces];
-  fSurfData->fShellEnteringSurfacePvolList = new int[fSurfData->fNEnteringSurfaces];
-  fSurfData->fShellDaughterPvolTransList   = new int[fSurfData->fNEnteringSurfaces];
-  fSurfData->fShellDaughterLvolIdList      = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellExitingSurfaceList           = new int[fSurfData->fNExitingSurfaces];
+  fSurfData->fShellEnteringSurfaceList          = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellEnteringSurfacePvolList      = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellEnteringSurfacePvolTransList = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellEnteringSurfaceLvolIdList    = new int[fSurfData->fNEnteringSurfaces];
+  fSurfData->fShellDaughterPvolIdList           = new int[fSurfData->fNPlacedVolumes];
+  fSurfData->fShellDaughterPvolTransList        = new int[fSurfData->fNPlacedVolumes];
 
-  int *currentExitingSurface         = fSurfData->fShellExitingSurfaceList;
-  int *currentEnteringSurface        = fSurfData->fShellEnteringSurfaceList;
-  int *currentEnteringSurfacePvol    = fSurfData->fShellEnteringSurfacePvolList;
-  int *currentShellDaughterPvolTrans = fSurfData->fShellDaughterPvolTransList;
-  int *currentShellDaughterLvolId    = fSurfData->fShellDaughterLvolIdList;
+  int *currentExitingSurface                = fSurfData->fShellExitingSurfaceList;
+  int *currentEnteringSurface               = fSurfData->fShellEnteringSurfaceList;
+  int *currentEnteringSurfacePvol           = fSurfData->fShellEnteringSurfacePvolList;
+  int *currentShellEnteringSurfacePvolTrans = fSurfData->fShellEnteringSurfacePvolTransList;
+  int *currentShellEnteringSurfaceLvolId    = fSurfData->fShellEnteringSurfaceLvolIdList;
+  int *currentShellDaughterPvolId           = fSurfData->fShellDaughterPvolIdList;
+  int *currentShellDaughterPvolTrans        = fSurfData->fShellDaughterPvolTransList;
 
   for (size_t i = 0; i < numShells; ++i) {
     auto const &surfaces         = fCPUdata.fShells[i].fSurfaces;
@@ -2163,37 +2194,51 @@ void BrepHelper<Real_t>::UpdateSurfData()
       fSurfData->fShells[i].fLogic.data_[iitem++] = item;
     current_logic += nlogic;
 
-    auto const &exitingSurfaces      = fCPUdata.fShells[i].fExitingSurfaces;
-    auto const &enteringSurfaces     = fCPUdata.fShells[i].fEnteringSurfaces;
-    auto const &enteringSurfacesPvol = fCPUdata.fShells[i].fEnteringSurfacesPvol;
-    auto const &DaughterPvolTrans    = fCPUdata.fShells[i].fDaughterPvolTrans;
-    auto const &DaughterLvolIds      = fCPUdata.fShells[i].fDaughterLvolIds;
-    auto nExitingSurf                = exitingSurfaces.size();
-    auto nEnteringSurf               = enteringSurfaces.size();
+    auto const &exitingSurfaces           = fCPUdata.fShells[i].fExitingSurfaces;
+    auto const &enteringSurfaces          = fCPUdata.fShells[i].fEnteringSurfaces;
+    auto const &enteringSurfacesPvol      = fCPUdata.fShells[i].fEnteringSurfacesPvol;
+    auto const &enteringSurfacesPvolTrans = fCPUdata.fShells[i].fEnteringSurfacesPvolTrans;
+    auto const &enteringSurfacesLvolIds   = fCPUdata.fShells[i].fEnteringSurfacesLvolIds;
+    auto const &daughterPvolIds           = fCPUdata.fShells[i].fDaughterPvolIds;
+    auto const &daughterPvolTrans         = fCPUdata.fShells[i].fDaughterPvolTrans;
+    auto nExitingSurf                     = exitingSurfaces.size();
+    auto nEnteringSurf                    = enteringSurfaces.size();
+    auto nDaughterPvol                    = daughterPvolIds.size();
     // Init number of exiting/entering surfaces in shell
     fSurfData->fShells[i].fNExitingSurfaces  = nExitingSurf;
     fSurfData->fShells[i].fNEnteringSurfaces = nEnteringSurf;
+    fSurfData->fShells[i].fNDaughterPvols    = nDaughterPvol;
     // Copy indices corresponding to this shell to surfData
     for (size_t isurf = 0; isurf < nExitingSurf; isurf++)
       currentExitingSurface[isurf] = exitingSurfaces[isurf];
     for (size_t isurf = 0; isurf < nEnteringSurf; isurf++) {
-      currentEnteringSurface[isurf]        = enteringSurfaces[isurf];
-      currentEnteringSurfacePvol[isurf]    = enteringSurfacesPvol[isurf];
-      currentShellDaughterPvolTrans[isurf] = DaughterPvolTrans[isurf];
-      currentShellDaughterLvolId[isurf]    = DaughterLvolIds[isurf];
+      currentEnteringSurface[isurf]               = enteringSurfaces[isurf];
+      currentEnteringSurfacePvol[isurf]           = enteringSurfacesPvol[isurf];
+      currentShellEnteringSurfacePvolTrans[isurf] = enteringSurfacesPvolTrans[isurf];
+      currentShellEnteringSurfaceLvolId[isurf]    = enteringSurfacesLvolIds[isurf];
     }
+    // Copy PV global IDs
+    for (size_t ivol = 0; ivol < nDaughterPvol; ivol++) {
+      currentShellDaughterPvolId[ivol]    = daughterPvolIds[ivol];
+      currentShellDaughterPvolTrans[ivol] = daughterPvolTrans[ivol];
+    }
+
     // Set the members of this shell to point to the newly copied data
-    fSurfData->fShells[i].fExitingSurfaces      = currentExitingSurface;
-    fSurfData->fShells[i].fEnteringSurfaces     = currentEnteringSurface;
-    fSurfData->fShells[i].fEnteringSurfacesPvol = currentEnteringSurfacePvol;
-    fSurfData->fShells[i].fDaughterPvolTrans    = currentShellDaughterPvolTrans;
-    fSurfData->fShells[i].fDaughterLvolIds      = currentShellDaughterLvolId;
+    fSurfData->fShells[i].fExitingSurfaces           = currentExitingSurface;
+    fSurfData->fShells[i].fEnteringSurfaces          = currentEnteringSurface;
+    fSurfData->fShells[i].fEnteringSurfacesPvol      = currentEnteringSurfacePvol;
+    fSurfData->fShells[i].fEnteringSurfacesPvolTrans = currentShellEnteringSurfacePvolTrans;
+    fSurfData->fShells[i].fEnteringSurfacesLvolIds   = currentShellEnteringSurfaceLvolId;
+    fSurfData->fShells[i].fDaughterPvolIds           = currentShellDaughterPvolId;
+    fSurfData->fShells[i].fDaughterPvolTrans         = currentShellDaughterPvolTrans;
     // Move the pointers in surfData for the next shell
     currentExitingSurface += nExitingSurf;
     currentEnteringSurface += nEnteringSurf;
     currentEnteringSurfacePvol += nEnteringSurf;
-    currentShellDaughterPvolTrans += nEnteringSurf;
-    currentShellDaughterLvolId += nEnteringSurf;
+    currentShellEnteringSurfacePvolTrans += nEnteringSurf;
+    currentShellEnteringSurfaceLvolId += nEnteringSurf;
+    currentShellDaughterPvolId += nDaughterPvol;
+    currentShellDaughterPvolTrans += nDaughterPvol;
 
     fSurfData->fShells[i].fBVH = fCPUdata.fShells[i].fBVH;
   }
