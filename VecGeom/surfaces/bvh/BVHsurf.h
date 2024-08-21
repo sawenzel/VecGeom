@@ -257,7 +257,7 @@ public:
                 fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
             dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step &&
+            if (dist < step && dist > -vecgeom::kToleranceDist<Real_i> &&
                 !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
               step               = dist;
               bstep              = static_cast<Real_t>(dist);
@@ -446,7 +446,7 @@ public:
   template <typename Navigator>
   VECCORE_ATT_HOST_DEVICE bool LevelLocate(long const exclude_item_id, Vector3D<Real_t> const &localpoint,
                                            long &container_id, vecgeom::NavigationState &path) const
-                                          //  Vector3D<Real_t> &daughterlocalpoint) const
+  //  Vector3D<Real_t> &daughterlocalpoint) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -459,7 +459,7 @@ public:
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Contains(localpoint)) {
             if (!Navigator::SkipItem(fRootId, prim, exclude_item_id) &&
-                Navigator::CandidateContains(fRootId, prim, localpoint, path)) {// , daughterlocalpoint)) {
+                Navigator::CandidateContains(fRootId, prim, localpoint, path)) { // , daughterlocalpoint)) {
               container_id = Navigator::ItemId(fRootId, prim);
               return true;
             }
