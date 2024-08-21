@@ -216,31 +216,56 @@ public:
     return bvh.template ComputeSafety<BVHSurfNavigator>(localpoint, safety);
   }
 
-    /*
+  VECCORE_ATT_HOST_DEVICE
+  static double ComputeSafety(Vector3D<Real_t> const &point, vecgeom::NavigationState const &in_state)
+  {
+    auto in_navind = in_state.GetNavIndex();
+    if (in_navind == 0) return vecgeom::InfinityLength<Real_t>();
+
+    // Get the SurfData instance
+    auto const &surfdata = SurfData<Real_t>::Instance();
+
+    // Get the shell
+    auto lv_index = in_state.GetLogicalId();
+    auto const &shell = surfdata.fShells[lv_index];
+
+    // Get the BVH
+    auto &bvh = surfdata.fBVH[shell.fBVH];
+
+    vecgeom::Transformation3D lv_trans;
+    in_state.TopMatrix(lv_trans);
+    auto localpoint = lv_trans.Transform(point);
+
+    double safety{vecgeom::InfinityLength<Real_t>()};
+    return bvh.template ComputeSafety<BVHSurfNavigator<Real_t>>(localpoint, safety);
+  }
+
+  /*
    * @param[in] aLVIndex Global index of a LogicalVolume
    * @param[in] index Index within the list of daughters of the specified LogicalVolume
    * @returns The global id of the PlacedVolume defined by @p aLVIndex and @p index
    */
   VECCORE_ATT_HOST_DEVICE
-  static uint ItemId(int lv_index, int index) {
+  static uint ItemId(int lv_index, int index)
+  {
     auto surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
     auto const &shell = surfdata.fShells[lv_index];
     return shell.fDaughterPvolIds[index];
   }
 
-    /*
+  /*
    * @param[in] lv_index Global index of a LogicalVolume
    * @param[in] index Index within the list of daughters of the specified LogicalVolume
    * @param[in] localpoint Point in the local coordinates of the LV specified by @aLVIndex
    * @returns Whether @localpoint falls within the PlacedVolume defined by @p aLVIndex and @p index
    */
   VECCORE_ATT_HOST_DEVICE
-  static bool CandidateContains(int lv_index, int index, Vector3D<Real_t> const &localpoint, 
+  static bool CandidateContains(int lv_index, int index, Vector3D<Real_t> const &localpoint,
                                 vecgeom::NavigationState &path) //, Vector3D<Real_t> &daughterlocalpoint)
   {
     // Get the SurfData instance
-    auto const &surfdata     = SurfData<Real_t>::Instance();
+    auto const &surfdata = SurfData<Real_t>::Instance();
     // Get the shell
     auto const &shell = surfdata.fShells[lv_index];
     // Get the global PV id for this daughter
@@ -267,25 +292,23 @@ public:
   };
 
   VECCORE_ATT_HOST_DEVICE
-  static long LocatePointIn(long pvol_id, Vector3D<Real_t> const &point,
-                                vecgeom::NavigationState &path, bool top,
-                                long *exclude = nullptr)
+  static long LocatePointIn(long pvol_id, Vector3D<Real_t> const &point, vecgeom::NavigationState &path, bool top,
+                            long *exclude = nullptr)
   {
-    // TEMPORARY: Since for now NavState::Push doesn't work with just an ID, we need to 
+    // TEMPORARY: Since for now NavState::Push doesn't work with just an ID, we need to
     // retrieve the actual Pvol just for this purpose, but it can't be used for anything else
     auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
     //////////////////////////////////////////
 
     // Get the SurfData instance
-    auto const &surfdata     = SurfData<Real_t>::Instance();
+    auto const &surfdata = SurfData<Real_t>::Instance();
 
     path.Push(pvol);
     // path.Push(pvol_id);
-    
+
     if (top) {
       // assert(vol != nullptr); TODO: What is an equivalent check using the ID?
-      if (!vgbrep::protonav::LogicInsideLocal(point, path.GetLogicalId(), surfdata))
-      {
+      if (!vgbrep::protonav::LogicInsideLocal(point, path.GetLogicalId(), surfdata)) {
         path.Pop();
         return -1;
       }
@@ -293,15 +316,14 @@ public:
 
     Vector3D<Real_t> currentpoint(point);
     Vector3D<Real_t> daughterlocalpoint;
-    long exclude_id = -1;
-    long daughter_id     = -1;
+    long exclude_id  = -1;
+    long daughter_id = -1;
 
     // Get the shell
     auto shell = surfdata.fShells[path.GetLogicalId()]; // Assuming path corresponds to pvol_id
 
     // Keep going down as long as the current volume has daughters
-    while(shell.fNEnteringSurfaces > 0)
-    {
+    while (shell.fNEnteringSurfaces > 0) {
       // Get the BVH
       auto &bvh = surfdata.fBVHSolids[shell.fBVH];
 
@@ -313,11 +335,9 @@ public:
 
       // daughter_id will be the global id of the placed volume
       if (!bvh.template LevelLocate<BVHSurfNavigator<Real_t>>(exclude_id, currentpoint, daughter_id, path)) break;
-      // if (!bvh.template LevelLocate<BVHSurfNavigator<Real_t>>(exclude_id, currentpoint, daughter_id, path, daughterlocalpoint)) break;
 
       // TEMPORARY: Get the Pvol ///////////////
       auto daughter_pvol = vecgeom::NavigationState::ToPlacedVolume(daughter_id);
-      // auto daughter_pvol = pvol->GetLogicalVolume()->GetDaughters()[daughter_id]; 
       path.Push(daughter_pvol);
       //////////////////////////////////////////
       // path.Push(daughter_id);
@@ -325,7 +345,7 @@ public:
 
       // Compute the transformed point
       // TODO: This can be done cheaper if we use the transformation stored in the shell
-      // This saves computing the full global transformation in TopMatrix, but for now we don't have 
+      // This saves computing the full global transformation in TopMatrix, but for now we don't have
       // the index of the daughter from the BVH
       vecgeom::Transformation3DMP<Real_t> trans;
       path.TopMatrix(trans);
@@ -336,7 +356,7 @@ public:
 
       // Update the current volume shell
       shell = surfdata.fShells[path.GetLogicalId()];
-      
+
       // Only exclude the placed volume once since we could enter it again via a
       // different volume history.
       if (exclude != nullptr) {
@@ -383,9 +403,7 @@ public:
     auto localpoint = lv_trans.Transform(point);
     auto localdir   = lv_trans.TransformDirection(direction);
 
-    auto bvhstep            = stepmax;
-    // auto hitcandidate_index = BVHSurfNavigator::TestBVHCheckDaughterIntersections(bvh, localpoint, localdir, bvhstep);
-    // auto hitcandidate_index = BVHSurfNavigator::(bvh, localpoint, localdir, bvhstep);
+    auto bvhstep = stepmax;
     long hitcandidate_index = -1;
     long last_exited_id     = -1;
     bvh.template CheckDaughterIntersections<BVHSurfNavigator>(localpoint, localdir, bvhstep, last_exited_id,

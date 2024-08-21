@@ -247,18 +247,6 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
 {
   using Real_b = typename vgbrep::SurfData<Real_t>::Real_b;
   uint aRootId = ivol;
-  /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
-  // Vector3D<Real_b> *ptr;
-  // auto ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(ivol, n, surfData);
-
-  // if(surfacesBVH)
-  // {
-  //   ptr = ABBoxManager<Real_b>::Instance().GetSurfaceABBoxes(aRootId, n, cpudata);
-  // }
-  // else
-  // {
-  //   ptr = ABBoxManager<Real_b>::Instance().GetABBoxes(vol, n);
-  // }
 
   if (nBoxes <= 0) throw std::logic_error("Cannot construct BVH for volume with no surfaces!");
 

@@ -87,6 +87,20 @@ __global__ void ComputeSafetiesSurf(int nrays, Vector3D<Real_t> const *points, N
   }
 }
 //==================================================================================
+__global__ void ComputeSafetiesSurfBVH(int nrays, Vector3D<Real_t> const *points, NavigationState *in_states,
+                                    Precision *safeties, bool validate_results)
+{
+  if (validate_results) {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+      safeties[i] = vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeSafety(points[i], in_states[i]);
+    }
+  } else {
+    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+      vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeSafety(points[i], in_states[i]);
+    }
+  }
+}
+//==================================================================================
 __global__ void ComputeSafetiesSolid(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
                                      Precision *ref_safeties, bool validate_results)
 {
@@ -113,8 +127,8 @@ __global__ void ValidateSafety(int nrays, Precision const *safeties, Precision c
                                int *num_better_safety, int *num_worse_safety)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    atomicAdd(num_better_safety, int(safeties[i] > refSafeties[i] + kTolerance));
-    atomicAdd(num_worse_safety, int(safeties[i] < refSafeties[i] - kTolerance));
+    atomicAdd(num_better_safety, int(safeties[i] > refSafeties[i] + kToleranceBVH));
+    atomicAdd(num_worse_safety, int(safeties[i] < refSafeties[i] - kToleranceBVH));
   }
 }
 //==================================================================================
@@ -312,6 +326,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaMalloc(&outputStatesBVH, nrays * sizeof(NavigationState)));
   Precision *refSafeties{nullptr};
   Precision *safeties{nullptr};
+  Precision *bvhSafeties{nullptr};
   Precision *refLength_over_crossings{nullptr};
   Precision *length_over_crossings{nullptr};
   Precision *length_over_crossings_bvh{nullptr};
@@ -319,6 +334,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   if (validate_results) {
     BREP_CUDA_CHECK(cudaMalloc(&refSafeties, nrays * sizeof(Precision)));
     BREP_CUDA_CHECK(cudaMalloc(&safeties, nrays * sizeof(Precision)));
+    BREP_CUDA_CHECK(cudaMalloc(&bvhSafeties, nrays * sizeof(Precision)));
     BREP_CUDA_CHECK(cudaMalloc(&refLength_over_crossings, nrays * sizeof(Precision)));
     BREP_CUDA_CHECK(cudaMalloc(&length_over_crossings, nrays * sizeof(Precision)));
     BREP_CUDA_CHECK(cudaMalloc(&length_over_crossings_bvh, nrays * sizeof(Precision)));
@@ -416,6 +432,12 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
   auto time_safety_surf = timer.Stop();
 
+  timer.Start();
+  if(test_bvh)
+    ComputeSafetiesSurfBVH<<<initBlocks, initThreads>>>(nrays, points_RT, origStates, bvhSafeties, validate_results);
+  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  auto time_safety_surf_bvh = timer.Stop();
+
   if (validate_results) {
     ValidateSafety<<<initBlocks, initThreads>>>(nrays, safeties, refSafeties, num_better_safety_d, num_worse_safety_d);
     BREP_CUDA_CHECK(cudaMemcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
@@ -424,12 +446,37 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
 
     if (num_better_safety > 0) std::cout << "CUDA:    number of better safety values: " << num_better_safety << "\n";
     if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: " << num_worse_safety << "\n";
+  
+    if(test_bvh)
+    {
+      // Init counters
+      num_better_safety = num_worse_safety = 0;
+      BREP_CUDA_CHECK(cudaMemcpy(num_better_safety_d, &num_better_safety, sizeof(int), cudaMemcpyHostToDevice));
+      BREP_CUDA_CHECK(cudaMemcpy(num_worse_safety_d, &num_worse_safety, sizeof(int), cudaMemcpyHostToDevice));
+
+      ValidateSafety<<<initBlocks, initThreads>>>(nrays, bvhSafeties, refSafeties, num_better_safety_d, num_worse_safety_d);
+      BREP_CUDA_CHECK(cudaMemcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+      BREP_CUDA_CHECK(cudaMemcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+      BREP_CUDA_CHECK(cudaDeviceSynchronize());
+
+      if (num_better_safety > 0) std::cout << "CUDA:    BVH number of better safety values: " << num_better_safety << "\n";
+      if (num_worse_safety > 0) std::cout << "CUDA:    BVH number of worse safety values: " << num_worse_safety << "\n";
+    }
   }
 
   if (!debug)
+  {
     std::cout << "CUDA: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
-              << "  safety_surf: " << time_safety_surf << "\n";
-
+              << "  safety_surf: " << time_safety_surf;
+    if(test_bvh)
+    {
+      std::cout << "  safety_surf_bvh: " << time_safety_surf_bvh << "\n";
+    }
+    else
+    {
+      std::cout << "\n";
+    }
+  }
   // Traversal for solids model (reference)
   timer.Start();
   PropagateRaysSolid<LoopNavigator><<<initBlocks, initThreads>>>(

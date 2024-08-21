@@ -61,6 +61,12 @@ inline constexpr double kToleranceCone<double> = double(1e-7);
 template <>
 inline constexpr float kToleranceCone<float> = float(1e-3);
 
+#ifdef VECGEOM_BVH_SINGLE
+  constexpr double kToleranceBVH = double(1e-4);
+#else
+  constexpr float kToleranceBVH = float(1e-9);
+#endif
+
 using namespace vecCore::math;
 
 VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;

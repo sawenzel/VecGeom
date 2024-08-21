@@ -175,6 +175,20 @@ void ComputeSafetiesSurf(int nrays, Vector3D<Real_t> const *points, NavigationSt
   }
 }
 //==================================================================================
+void ComputeSafetiesSurfBVH(int nrays, Vector3D<Real_t> const *points, NavigationState const *in_states,
+                         Precision *safeties, bool validate_results)
+{
+  if (validate_results) {
+    for (auto i = 0; i < nrays; ++i) {
+      safeties[i] = vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeSafety(points[i], in_states[i]);
+    }
+  } else {
+    for (auto i = 0; i < nrays; ++i) {
+      vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeSafety(points[i], in_states[i]);
+    }
+  }
+}
+//==================================================================================
 bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_state, double safety, int nsamples)
 {
   // Generate nsamples random points in a sphere with the safety radius and check if
@@ -205,8 +219,8 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
   int num_errors   = 0;
   int num_warnings = 0;
   for (auto i = 0; i < nrays; ++i) {
-    num_better_safety += (safeties[i] > refSafeties[i] + kTolerance);
-    num_worse_safety += (safeties[i] < refSafeties[i] - kTolerance);
+    num_better_safety += (safeties[i] > refSafeties[i] + kToleranceBVH);
+    num_worse_safety += (safeties[i] < refSafeties[i] - kToleranceBVH);
     if (safeties[i] / refSafeties[i] < tolerance) {
       VECGEOM_LOG(critical) << std::setprecision(16)
                             << "Safety of surface model below critical tolerance for point index " << i
@@ -214,7 +228,7 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
                             << " safety surf = " << safeties[i]
                             << " and ratio surf/solid = " << (safeties[i] / refSafeties[i]) << std::endl;
     }
-    if (debug && num_warnings < 10 && safeties[i] < refSafeties[i] - kTolerance) {
+    if (debug && num_warnings < 10 && safeties[i] < refSafeties[i] - kToleranceBVH) {
       num_warnings++;
       printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g ratio surf/solid = %g\n", i, points[i][0],
              points[i][1], points[i][2], refSafeties[i], safeties[i], (safeties[i] / refSafeties[i]));
@@ -223,7 +237,7 @@ int ValidateSafety(int nrays, Vector3D<Real_t> const *points, NavigationState co
       int exit_surf = 0;
       vgbrep::protonav::ComputeSafety(points[i], in_states[i], exit_surf);
     }
-    if (debug && safeties[i] > refSafeties[i] + kTolerance) {
+    if (debug && safeties[i] > refSafeties[i] + kToleranceBVH) {
       bool safesafe = CheckSafety(points[i], in_states[i], safeties[i], 1000);
       if (!safesafe && num_errors < 10) {
         num_errors++;
@@ -448,11 +462,12 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   NavigationState *outputStates    = new NavigationState[nrays];
   NavigationState *outputStatesBVH = new NavigationState[nrays];
 
-  Precision *ref_safeties{nullptr}, *safeties{nullptr};
+  Precision *ref_safeties{nullptr}, *safeties{nullptr}, *bvh_safeties{nullptr};
   CrossingSeq *ref_crossings{nullptr}, *crossings{nullptr}, *bvh_crossings{nullptr};
   int num_errors          = 0;
-  int num_errors_bvh_loc  = 0;
+  int num_errors_loc_bvh  = 0;
   int num_errors_safe     = 0;
+  int num_errors_safe_bvh = 0;
   int num_errors_dist     = 0;
   int num_errors_dist_bvh = 0;
   int num_better_safety   = 0;
@@ -465,6 +480,9 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
     safeties = new Precision[nrays];
     memset(safeties, 0, sizeof(Precision) * nrays);
+
+    bvh_safeties = new Precision[nrays];
+    memset(bvh_safeties, 0, sizeof(Precision) * nrays);
 
     ref_crossings = new CrossingSeq[nrays];
     crossings     = new CrossingSeq[nrays];
@@ -511,8 +529,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   if (test_bvh) {
     // Validate BVH Locate
     if (validate_results) {
-      num_errors_bvh_loc = ValidateLocate(nrays, points, points_RT, origStates, outputStatesBVH, debug);
-      if (num_errors_bvh_loc > 0) std::cout << "*** HOST: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+      num_errors_loc_bvh = ValidateLocate(nrays, points, points_RT, origStates, outputStatesBVH, debug);
+      if (num_errors_loc_bvh > 0) std::cout << "*** HOST: BVH point locate errors: " << num_errors_loc_bvh << "\n";
     }
   }
 
@@ -544,20 +562,48 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   ComputeSafetiesSurf(nrays, points_RT, origStates, safeties, validate_results);
   auto time_safety_surf = timer.Stop();
 
+  // Safety for surface model with BVH
+  timer.Start();
+  if (test_bvh)
+    ComputeSafetiesSurfBVH(nrays, points_RT, origStates, bvh_safeties, validate_results);
+  auto time_safety_surf_bvh = timer.Stop();
+
   // Correctness for safety
   if (validate_results) {
     num_errors_safe = ValidateSafety(nrays, points_RT, origStates, safeties, ref_safeties, debug, num_better_safety,
                                      num_worse_safety, safety_tolerance);
+                                     
     num_errors += num_errors_safe;
+    
     if (num_errors_safe > 0) std::cout << "*** HOST: Safety errors: " << num_errors_safe << "\n";
     if (num_better_safety > 0) printf("HOST:    number of better safety values: %d\n", num_better_safety);
     if (num_worse_safety > 0) printf("HOST:    number of worse safety values: %d\n", num_worse_safety);
+
+    if(test_bvh)
+    {
+      num_better_safety = 0;
+      num_worse_safety = 0;
+      num_errors_safe_bvh = ValidateSafety(nrays, points_RT, origStates, bvh_safeties, ref_safeties, debug, num_better_safety,
+                                      num_worse_safety, safety_tolerance);
+      num_errors += num_errors_safe_bvh;
+      if (num_errors_safe_bvh > 0) std::cout << "*** HOST: BVH safety errors: " << num_errors_safe_bvh << "\n";
+      if (num_better_safety > 0) printf("HOST:    BVH number of better safety values: %d\n", num_better_safety);
+      if (num_worse_safety > 0) printf("HOST:    BVH number of worse safety values: %d\n", num_worse_safety);
+    }
   }
 
   // Report timing
   if (!debug) {
     std::cout << "HOST: safety_solids: " << time_safety_solids << "  safety_solids_BVH: " << time_safety_solids_bvh
-              << "  safety_surf: " << time_safety_surf << "\n";
+              << "  safety_surf: " << time_safety_surf;
+    if(test_bvh)
+    {
+      std::cout << "  safety_surf_bvh: " << time_safety_surf_bvh << "\n";
+    }
+    else
+    {
+      std::cout << "\n";
+    }
   }
 
   // Distance computation + relocation for solid model

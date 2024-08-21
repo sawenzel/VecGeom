@@ -401,13 +401,15 @@ public:
     do {
       const unsigned int id = *--ptr;
 
+      // If the current distance is shorter than the distance to the node we can safely ignore it
+      if (fNodes[id].Safety(localpoint) > safety) {
+        continue;
+      }
+
       if (fNChild[id] >= 0) {
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Safety(localpoint) < safety) {
-
-            // printf("// BVH Call, AABB safety: %lf\n", fAABBs[prim].Safety(localpoint));
-
             const Real_t dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
             if (dist < safety) safety = dist;
           }
@@ -423,11 +425,11 @@ public:
         const bool traverseR = safetyR < safety;
 
         if (safetyR < safetyL) {
-          if (traverseR) *ptr++ = childR;
           if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
         } else {
-          if (traverseL) *ptr++ = childL;
           if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
         }
       }
     } while (ptr > stack);
