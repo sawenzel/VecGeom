@@ -13,9 +13,10 @@ static __global__ void Test(Vector3D<Precision> pos, Vector3D<Precision> dir, Na
 {
   vgbrep::CrossedSurface crossed_surf;
   NavigationState out;
-  vecgeom::Precision distance = vgbrep::protonav::ComputeStepAndHit(pos, dir, state, out, crossed_surf);
-  int common_id               = crossed_surf.hit_surf.GetCSindex();
-  vecgeom::Precision safety   = vgbrep::protonav::ComputeSafety(pos, state, common_id);
+  vecgeom::Precision distance =
+      vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, state, out, crossed_surf);
+  int common_id             = crossed_surf.hit_surf.GetCSindex();
+  vecgeom::Precision safety = vgbrep::protonav::ComputeSafety<Precision, Precision>(pos, state, common_id);
   printf("Surf@DEVICE: distance = %f, safety = %f\n", distance, safety);
 }
 

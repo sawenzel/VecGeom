@@ -220,16 +220,16 @@ public:
    */
   template <typename Navigator, typename Real_i>
   VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(const Vector3D<Real_i> &localpoint,
-                                                          const Vector3D<Real_i> &localdir, Real_i &step,
+                                                          const Vector3D<Real_i> &localdir, double &step,
                                                           long const last_exited_id, long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[0])),
-                             static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[1])),
-                             static_cast<Real_t>(1.0 / vecgeom::NonZero(localdir[2])));
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[0]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[1]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[2]));
     Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
                                  static_cast<Real_t>(localpoint[2]));
     Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),

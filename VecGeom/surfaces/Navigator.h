@@ -346,14 +346,16 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LogicSafety(vecgeom::Vector3
 /// @param top The top volume must be checked also
 /// @param exclude Placed volume to exclude from checking
 /// @return Placed volume pointer containing the point
-template <typename Real_t>
+template <typename Real_i, typename Real_t>
 VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol,
-                                                                    vecgeom::Vector3D<Real_t> const &point,
+                                                                    vecgeom::Vector3D<Real_i> const &point_i,
                                                                     vecgeom::NavigationState &path, bool top,
                                                                     vecgeom::VPlacedVolume const *exclude = nullptr)
 {
   using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
   auto const &surfdata     = SurfData<Real_t>::Instance();
+
+  vecgeom::Vector3D<Real_t> point(point_i);
 
   if (top) {
     assert(vol != nullptr);
@@ -438,15 +440,19 @@ VECCORE_ATT_HOST_DEVICE bool VolumeHasCommonSurface(vecgeom::NavigationState &pa
 /// @param crossed_surf FSLocator holding the highest exited framed surface
 /// @param distance distance of the last step
 /// @return Placed volume pointer containing the point
-template <typename Real_t>
+template <typename Real_i, typename Real_t>
 VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::NavigationState &starting_path,
-                                                                      vecgeom::Vector3D<Real_t> const &point,
-                                                                      vecgeom::Vector3D<Real_t> const &direction,
+                                                                      vecgeom::Vector3D<Real_i> const &point_i,
+                                                                      vecgeom::Vector3D<Real_i> const &direction_i,
                                                                       vecgeom::NavigationState &path,
-                                                                      FSlocator const &crossed_surf, Real_t distance)
+                                                                      FSlocator const &crossed_surf, Real_i distance_i)
 {
   using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
   auto const &surfdata     = SurfData<Real_t>::Instance();
+
+  vecgeom::Vector3D<Real_t> point(point_i);
+  vecgeom::Vector3D<Real_t> direction(direction_i);
+  Real_t distance = static_cast<Real_t>(distance_i);
 
   // set path to be starting path to check for daughters
   path                             = starting_path;
@@ -599,7 +605,6 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
         inside = false;
       } else {
 
-        // if (vecgeom::BooleanHelper::GetBooleanStruct(currentvolume->GetUnplacedVolume())) {
         if (is_boolean) {
           final_point = point + kPushDistance * direction;
           if (daughter == prev_volume) {
@@ -880,18 +885,23 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
 /// @param exit_FS CrossedSurface storing common surface id, framed surface id, and side of highest exited framed surface and of last hit framed surface (entered or exited)
 /// @param stepmax maximum step
 /// @return Distance to next surface.
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point,
-                                                 vecgeom::Vector3D<Real_t> const &direction,
+template <typename Real_i, typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point_i,
+                                                 vecgeom::Vector3D<Real_t> const &direction_i,
                                                  vecgeom::NavigationState const &in_state,
                                                  vecgeom::NavigationState &out_state, CrossedSurface &exit_FS,
-                                                 Real_t stepmax = vecgeom::InfinityLength<Real_t>())
+                                                 Real_i stepmax = vecgeom::InfinityLength<Real_t>())
 {
   // Get the list of candidate surfaces for in_state
   auto in_navind = in_state.GetNavIndex();
-  if (in_navind == 0) return vecgeom::InfinityLength<Real_t>();
-  auto const &surfdata    = SurfData<Real_t>::Instance();
-  Real_t distance         = stepmax;
+  if (in_navind == 0) return vecgeom::InfinityLength<Real_i>();
+  auto const &surfdata = SurfData<Real_t>::Instance();
+
+  // cast to Real_t
+  vecgeom::Vector3D<Real_t> point(point_i);
+  vecgeom::Vector3D<Real_t> direction(direction_i);
+
+  Real_i distance         = stepmax;
   unsigned short scene_id = 0, newscene_id = 0;
   bool is_scene        = in_state.GetSceneId(scene_id, newscene_id);
   auto const &cand     = surfdata.GetCandidates(scene_id, in_state.GetId());
@@ -949,7 +959,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     }
     if (!inframe) continue;
     found     = true;
-    distance  = dist;
+    distance  = Real_i(dist);
     out_state = out_frame.state;
     continue; // there may be closer surfaces being crossed
   }
@@ -1028,7 +1038,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
     exit_FS.hit_surf = tmp_hit_FS; // store the entering surface information in hit_FS. Needed for correctly marking
                                    // surfaces as overlapping
     // This surface is certainly hit because the parent frame is hit
-    distance = dist;
+    distance = Real_i(dist);
     // compute exited state
     out_state = out_frame.state;
   }
@@ -1048,14 +1058,15 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 /// @param surfdata Surface data storage
 /// @param exit_surf Input: surface to be skipped, output: crossed surface index
 /// @return Distance to next surface
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point,
+template <typename Real_i, typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &point_i,
                                              vecgeom::NavigationState const &in_state, int &closest_surf)
 {
   constexpr char kLside = 0x01;
   constexpr char kRside = 0x02;
   using vecgeom::NavigationState;
   auto const &surfdata = SurfData<Real_t>::Instance();
+  vecgeom::Vector3D<Real_t> point(point_i);
   closest_surf         = 0;
   int last_logic_volid = 0;
   Real_t safety        = vecgeom::InfinityLength<Real_t>();
