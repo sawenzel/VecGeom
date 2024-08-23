@@ -42,12 +42,13 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
   // We need angles in degrees for transformations
   auto sphid = vecgeom::kRadToDeg * sphi;
   auto ephid = vecgeom::kRadToDeg * ephi;
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   // surface at +dz
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.z(), 0, 0, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., tube.z(), 0., 0., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
@@ -55,7 +56,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{tube.rmin(), tube.rmax(), fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -tube.z(), 0, 180, -sphid - ephid}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., -tube.z(), 0., 180., -sphid - ephid));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
@@ -67,7 +68,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                      ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmin(), tube.rmin(), sphi, ephi}),
-        /*identity transformation*/ 0);
+        /*identity transformation*/ identity);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
     logic.push_back(land);
@@ -79,7 +80,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                    ZPhiMask_t{-tube.z(), tube.z(), fullCirc, tube.rmax(), tube.rmax(), sphi, ephi}),
-      /*identity transformation*/ 0);
+      /*identity transformation*/ identity);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
@@ -93,8 +94,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
-          {Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0, sphid, 90, 0}));
+      vecgeom::Transformation3DMP<Precision>(Rmean * std::cos(sphi), Rmean * std::sin(sphi), 0., sphid, 90., 0.));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -106,8 +106,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{Rdiff, tube.z()}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
-          {Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0, ephid, -90, 0}));
+      vecgeom::Transformation3DMP<Precision>(Rmean * std::cos(ephi), Rmean * std::sin(ephi), 0., ephid, -90., 0.));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;

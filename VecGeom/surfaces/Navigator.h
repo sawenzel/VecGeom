@@ -74,7 +74,7 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(Vector3D<Real_t> const &point, Vector3D<Real_t> const &direction,
                                             Real_t distance, Vector3D<Real_t> const &onsurf,
                                             vecgeom::NavigationState const &exited_state,
-                                            FramedSurface const &framedsurf, NavIndex_t &last_bool_state,
+                                            FramedSurface<Real_t> const &framedsurf, NavIndex_t &last_bool_state,
                                             SurfData<Real_t> const &surfdata)
 {
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
@@ -142,11 +142,11 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
     vecgeom::Transformation3DMP<Real_t> scene_trans;
     state.SceneMatrix(scene_trans);
     auto local_scene = scene_trans.Transform(point + distance * direction);
-    onsurf_crt       = surfdata.fGlobalTrans[surf.fTrans].Transform(local_scene);
+    onsurf_crt       = surf.fTrans.Transform(local_scene);
   }
 
   // Adjust the state to reflect the topmost exited frame
-  auto setTopExited = [&](FramedSurface const &framed_surf, int ind) {
+  auto setTopExited = [&](FramedSurface<Real_t> const &framed_surf, int ind) {
     surf_index = framed_surf.fSurfIndex;
     parent_ind = framed_surf.fParent;
     framed_surf.GetParentState(top_exit_state);
@@ -242,7 +242,7 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
   };
 
   // Lambda for checking if the pushed point is in the Boolean volume
-  auto insideBoolean = [&](FramedSurface const &surf) {
+  auto insideBoolean = [&](FramedSurface<Real_t> const &surf) {
     auto checked_state = in_state;
     if (surf.fState) {
       if (is_scene_surface && checked_state.GetNavIndex() > 0)
@@ -684,7 +684,7 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
       // We are in a scene volume, so use TopMatrix
       out_frame.state.TopMatrix(scene_trans);
       auto local_scene = scene_trans.Transform(point + hit_dist * direction);
-      auto onsurf      = surfdata.fGlobalTrans[portal.fTrans].Transform(local_scene);
+      auto onsurf      = portal.fTrans.Transform(local_scene);
       // Is this a new scene
       is_scene = out_frame.state.GetSceneId(scene_id, newscene_id);
       iframe   = FindFrameOnEnteringSide(portal_side, out_frame.state, out_frame.state.GetNavIndex(), is_scene,
@@ -741,7 +741,7 @@ VECCORE_ATT_HOST_DEVICE bool ExitCS(FSlocator &hit_frame, bool is_hit, Vector3D<
     out_state             = hit_FS.state;
     // Moving to a parent scene, we need to recompute the local point on surface
     auto const &surf_crossed = surfdata.GetCommonSurface(hit_FS);
-    onsurf                   = surfdata.fGlobalTrans[surf_crossed.fTrans].Transform(local_propagated);
+    onsurf                   = surf_crossed.fTrans.Transform(local_propagated);
   }
   // Relocate on the other side of the CS
   hit_frame.Set(isurfcross, -1, relocated_left_side);
@@ -766,13 +766,14 @@ VECCORE_ATT_HOST_DEVICE bool ExitCS(FSlocator &hit_frame, bool is_hit, Vector3D<
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &point_volume,
                                                  vecgeom::Vector3D<Real_t> const &direction_volume, int volId,
-                                                 SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
-                                                 bool exiting, bool &surfhit, Real_t &safety)
+                                                 SurfData<Real_t> const &surfdata,
+                                                 FramedSurface<Real_t> const &framedsurf, bool exiting, bool &surfhit,
+                                                 Real_t &safety)
 {
   bool two_solutions             = false;
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   // Convert point and direction to surface frame
-  auto const &trans         = surfdata.fLocalTrans[framedsurf.fTrans];
+  auto const &trans         = framedsurf.fTrans;
   Vector3D<Real_t> local    = trans.Transform(point_volume);
   Vector3D<Real_t> localdir = trans.TransformDirection(direction_volume);
   // Check if the surface is a flipped one
@@ -826,7 +827,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   auto const &surf      = surfdata.fCommonSurfaces[isurf];
 
   // Convert point and direction to surface frame
-  auto const &trans = surfdata.fGlobalTrans[surf.fTrans];
+  auto const &trans = surf.fTrans;
   local             = trans.Transform(point);
   localdir          = trans.TransformDirection(direction);
 
@@ -1093,7 +1094,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
     if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
 
     // Convert point to surface frame
-    auto const &trans      = surfdata.fGlobalTrans[surf.fTrans];
+    auto const &trans      = surf.fTrans;
     Vector3D<Real_t> local = trans.Transform(local_scene);
     Vector3D<Real_t> onsurf_crt;
     Real_t safety_surf;
@@ -1161,7 +1162,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
     if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
 
     // Convert point to surface frame
-    auto const &trans      = surfdata.fGlobalTrans[surf.fTrans];
+    auto const &trans      = surf.fTrans;
     Vector3D<Real_t> local = trans.Transform(local_scene);
     Vector3D<Real_t> onsurf_crt;
     Real_t safety_surf;

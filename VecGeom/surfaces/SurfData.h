@@ -37,10 +37,8 @@ struct SurfData {
   using SideDivision_t = SideDivision<Real_t>;
 
   int fNscenes{0};
-  int fNlocalTrans{0};
 
   int fNvolTrans{0};
-  int fNglobalTrans{0};
   int fNlocalSurf{0};
   int fNExitingSurfaces{0};
   int fNEnteringSurfaces{0};
@@ -71,16 +69,14 @@ struct SurfData {
   int *fSceneTouchables{nullptr}; ///< Number of touchables (per scene)
 
   /// Transformations.
-  TransformationMP<Real_t> *fLocalTrans{nullptr};  ///< Local surface transformations per logical volume
-  TransformationMP<Real_t> *fGlobalTrans{nullptr}; ///< Touchable global transformations
-  TransformationMP<Real_t> *fPVolTrans{nullptr};   ///< Transformations to placed volumes
+  TransformationMP<Real_t> *fPVolTrans{nullptr}; ///< Transformations to placed volumes
 
   /// Volume shells, indexed by the logical volume id
   VolumeShell *fShells{nullptr}; ///< volume shells
 
   // Local and global framed surfaces
-  FramedSurface *fLocalSurf{nullptr};  ///< local surfaces
-  FramedSurface *fFramedSurf{nullptr}; ///< global surfaces
+  FramedSurface<Real_t> *fLocalSurf{nullptr};  ///< local surfaces
+  FramedSurface<Real_t> *fFramedSurf{nullptr}; ///< global surfaces
 
   /// Cylindrical surface data (radius)
   CylData_t *fCylSphData{nullptr};  ///< Cyl and sphere data
@@ -90,23 +86,23 @@ struct SurfData {
   Arb4Data_t *fArb4Data{nullptr};   ///< Arb4 data
 
   // Frame data
-  WindowMask_t *fWindowMasks{nullptr};         ///< rectangular masks
-  RingMask_t *fRingMasks{nullptr};             ///< ring masks
-  ZPhiMask_t *fZPhiMasks{nullptr};             ///< cylindrical masks
-  TriangleMask_t *fTriangleMasks{nullptr};     ///< triangular masks
-  QuadMask_t *fQuadMasks{nullptr};             ///< quadrilateral masks
-  CommonSurface *fCommonSurfaces{nullptr};     ///< common surfaces
-  Candidates *fCandidates;                     ///< candidate surfaces per navigation state
-  int *fSides{nullptr};                        ///< side surface indices
-  SideDivision_t *fSideDivisions{nullptr};     ///< [fNsideDivisions] side division helpers
-  SliceCand *fSlices{nullptr};                 ///< [fNslices] slice candidates
-  int *fSliceCandidates{nullptr};              ///< [fNsliceCandidates] frame indices for all slice candidates
-  int *fSurfShellList{nullptr};                ///< indices of local surfaces used in shells
-  logic_int *fLogicList{nullptr};              ///< list of logic expressions per volume
-  int *fCandList{nullptr};                     ///< global list of candidate indices
-  int *fShellExitingSurfaceList{nullptr};      ///< List of surfaces of a volume, having a frame
-  int *fShellEnteringSurfaceList{nullptr};     ///< List of surfaces of the daughters of a volume, having a frame
-  int *fShellEnteringSurfacePvolList{nullptr}; ///< Id of the PlacedVolume each entering surface belongs to
+  WindowMask_t *fWindowMasks{nullptr};             ///< rectangular masks
+  RingMask_t *fRingMasks{nullptr};                 ///< ring masks
+  ZPhiMask_t *fZPhiMasks{nullptr};                 ///< cylindrical masks
+  TriangleMask_t *fTriangleMasks{nullptr};         ///< triangular masks
+  QuadMask_t *fQuadMasks{nullptr};                 ///< quadrilateral masks
+  CommonSurface<Real_t> *fCommonSurfaces{nullptr}; ///< common surfaces
+  Candidates *fCandidates;                         ///< candidate surfaces per navigation state
+  int *fSides{nullptr};                            ///< side surface indices
+  SideDivision_t *fSideDivisions{nullptr};         ///< [fNsideDivisions] side division helpers
+  SliceCand *fSlices{nullptr};                     ///< [fNslices] slice candidates
+  int *fSliceCandidates{nullptr};                  ///< [fNsliceCandidates] frame indices for all slice candidates
+  int *fSurfShellList{nullptr};                    ///< indices of local surfaces used in shells
+  logic_int *fLogicList{nullptr};                  ///< list of logic expressions per volume
+  int *fCandList{nullptr};                         ///< global list of candidate indices
+  int *fShellExitingSurfaceList{nullptr};          ///< List of surfaces of a volume, having a frame
+  int *fShellEnteringSurfaceList{nullptr};         ///< List of surfaces of the daughters of a volume, having a frame
+  int *fShellEnteringSurfacePvolList{nullptr};     ///< Id of the PlacedVolume each entering surface belongs to
   int *fShellEnteringSurfacePvolTransList{
       nullptr};                                  ///< Id of the volume transformation each entering surface belongs to
   int *fShellEnteringSurfaceLvolIdList{nullptr}; ///< Id of the logical volume each entering surface belongs to
@@ -153,10 +149,6 @@ struct SurfData {
     fTorusData = nullptr;
     delete[] fArb4Data;
     fArb4Data = nullptr;
-    delete[] fGlobalTrans;
-    fGlobalTrans = nullptr;
-    delete[] fLocalTrans;
-    fLocalTrans = nullptr;
     delete[] fFramedSurf;
     fFramedSurf = nullptr;
     delete[] fSides;
@@ -244,8 +236,8 @@ struct SurfData {
   VECGEOM_FORCE_INLINE
   UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
   {
-    FramedSurface const &framedsurf = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
-    flipped                         = fCommonSurfaces[isurf].fFlipped;
+    FramedSurface<Real_t> const &framedsurf = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
+    flipped                                 = fCommonSurfaces[isurf].fFlipped;
     return framedsurf.fSurface;
   }
 
@@ -256,7 +248,7 @@ struct SurfData {
   /// @return Frame pointed by the locator
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  FramedSurface const &GetFramedSurface(FSlocator const &locator) const
+  FramedSurface<Real_t> const &GetFramedSurface(FSlocator const &locator) const
   {
     auto const &surf = fCommonSurfaces[locator.GetCSindex()];
     auto const &side = locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
@@ -329,7 +321,7 @@ struct SurfData {
   /// @return CS pointed by the locator
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CommonSurface const &GetCommonSurface(FSlocator const &locator) const
+  CommonSurface<Real_t> const &GetCommonSurface(FSlocator const &locator) const
   {
     return fCommonSurfaces[locator.GetCSindex()];
   }

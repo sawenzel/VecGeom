@@ -36,7 +36,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.GetDz(), 0, 0, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., tube.GetDz(), 0., 0., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -50,7 +50,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.GetDx(), tube.GetDy()}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -tube.GetDz(), 0, 180, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., -tube.GetDz(), 0., 180., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -59,6 +59,8 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(isurf);
   logic.push_back(land);
+
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   // outer cylinder
   surfdata[0] = tube.GetDx();
@@ -70,7 +72,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-surfdata[2], surfdata[2], /* full_circle=*/1, rmax,
                                                                 rmax, static_cast<vecgeom::Precision>(0),
                                                                 static_cast<vecgeom::Precision>(360)}),
-      /*identity transformation*/ 0);
+      /*identity transformation*/ identity);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"

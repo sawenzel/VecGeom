@@ -84,27 +84,9 @@ Frame CreateFrame(FrameType type, TriangleMask<Real_t> const &mask)
   return Frame(type, id);
 }
 
-template <typename Real_t, typename Real_i>
-int CreateLocalTransformation(std::initializer_list<Real_i> values)
-{
-  TransformationMP<Real_t> trans(values);
-  auto &cpudata = CPUsurfData<Real_t>::Instance();
-  int id        = cpudata.fLocalTrans.size();
-  cpudata.fLocalTrans.push_back(trans);
-  return id;
-}
-
 template <typename Real_t>
-int CreateLocalTransformation(TransformationMP<Real_t> const &trans)
-{
-  auto &cpudata = CPUsurfData<Real_t>::Instance();
-  int id        = cpudata.fLocalTrans.size();
-  cpudata.fLocalTrans.push_back(trans);
-  return id;
-}
-
-template <typename Real_t>
-int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, bool never_check = false)
+int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
+                       bool never_check = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   int id        = cpudata.fLocalSurfaces.size();
@@ -113,7 +95,7 @@ int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, int 
 }
 
 template <typename Real_t>
-FramedSurface &GetSurface(int isurf)
+FramedSurface<Real_t> &GetSurface(int isurf)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   assert(size_t(isurf) < cpudata.fLocalSurfaces.size());
@@ -271,8 +253,8 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id)
   auto transformation = TransformationFromPlanarPoints<Real_t>(vertices);
   auto frame          = CreateFrameFromVertices<Real_t>(vertices, transformation);
   if (vertices.size() != 4 || PointsOnPlane(vertices)) {
-    auto itrans = CreateLocalTransformation<Real_t>(transformation);
-    isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, itrans);
+    isurf =
+        builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), frame, transformation);
   } else { // creating Arb4 surface
     vecgeom::Precision surfdata[10];
     surfdata[0] = points[0].x();
@@ -286,8 +268,9 @@ int CreateLocalSurfaceFromVertices(Container &points, int logical_id)
     surfdata[8] = points[3].x();
     surfdata[9] = points[3].y();
     // we are using the frame above although it is never used for the Arb4
+    vecgeom::Transformation3DMP<Real_t> identity;
     isurf = builder::CreateLocalSurface<Real_t>(CreateUnplacedSurface<Real_t>(SurfaceType::kArb4, surfdata), frame,
-                                                /*identity transformation*/ 0, /*never_check=*/1);
+                                                /*identity transformation*/ identity, /*never_check=*/1);
   }
   AddSurfaceToShell<Real_t>(logical_id, isurf);
   return isurf;

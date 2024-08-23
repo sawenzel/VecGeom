@@ -228,18 +228,16 @@ struct CPUsurfData {
   std::vector<RingMask_t> fRingMasks;     ///< ring masks
   std::vector<ZPhiMask_t> fZPhiMasks;     ///< cylindrical masks
   std::vector<TriangleMask_t> fTriangleMasks;
-  std::vector<QuadMask_t> fQuadMasks;                 ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;                 ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;                  ///< data for conical surfaces
-  std::vector<EllipData_t> fEllipData;                ///< data for elliptical surfaces
-  std::vector<TorusData_t> fTorusData;                ///< data for torus surfaces
-  std::vector<Arb4Data_t> fArb4Data;                  ///< data for Arb4 surfaces
-  std::vector<TransformationMP<Real_t>> fLocalTrans;  ///< local transformations
-  std::vector<TransformationMP<Real_t>> fGlobalTrans; ///< global transformations for surfaces in the scene
+  std::vector<QuadMask_t> fQuadMasks;  ///< quadrilateral masks
+  std::vector<CylData_t> fCylSphData;  ///< data for cyl surfaces
+  std::vector<ConeData_t> fConeData;   ///< data for conical surfaces
+  std::vector<EllipData_t> fEllipData; ///< data for elliptical surfaces
+  std::vector<TorusData_t> fTorusData; ///< data for torus surfaces
+  std::vector<Arb4Data_t> fArb4Data;   ///< data for Arb4 surfaces
   std::vector<TransformationMP<Real_t>> fPVolTrans;   ///< Transformations to placed volumes
-  std::vector<FramedSurface> fLocalSurfaces;          ///< local surfaces per logical volume
-  std::vector<FramedSurface> fFramedSurf;             ///< global surfaces
-  std::vector<CommonSurface> fCommonSurfaces;         ///< common surfaces
+  std::vector<FramedSurface<Real_t>> fLocalSurfaces;  ///< local surfaces per logical volume
+  std::vector<FramedSurface<Real_t>> fFramedSurf;     ///< global surfaces
+  std::vector<CommonSurface<Real_t>> fCommonSurfaces; ///< common surfaces
   std::vector<VolumeShellCPU> fShells;                ///< vector of local volume surfaces
   std::vector<VolumeShellCPU> fSceneShells;           ///< vector of scene volume surfaces
 
@@ -278,12 +276,10 @@ public:
     std::vector<ConeData_t>().swap(fConeData);
     std::vector<EllipData_t>().swap(fEllipData);
     std::vector<TorusData_t>().swap(fTorusData);
-    std::vector<TransformationMP<Real_t>>().swap(fLocalTrans);
-    std::vector<TransformationMP<Real_t>>().swap(fGlobalTrans);
     std::vector<TransformationMP<Real_t>>().swap(fPVolTrans);
-    std::vector<FramedSurface>().swap(fLocalSurfaces);
-    std::vector<FramedSurface>().swap(fFramedSurf);
-    std::vector<CommonSurface>().swap(fCommonSurfaces);
+    std::vector<FramedSurface<Real_t>>().swap(fLocalSurfaces);
+    std::vector<FramedSurface<Real_t>>().swap(fFramedSurf);
+    std::vector<CommonSurface<Real_t>>().swap(fCommonSurfaces);
     std::vector<VolumeShellCPU>().swap(fShells);
     std::vector<VolumeShellCPU>().swap(fSceneShells);
     VecInt_t().swap(fSceneStartIndex);
@@ -345,14 +341,14 @@ public:
   /// @param f1 Parent framed surface
   /// @param f2 Child framed surface
   /// @return Child is embedded in parent
-  bool IsEmbedding(FramedSurface const &f1, FramedSurface const &f2)
+  bool IsEmbedding(FramedSurface<Real_t> const &f1, FramedSurface<Real_t> const &f2)
   {
     auto log_not_supported = [&]() {
       VECGEOM_LOG(error) << "Embedding check " << to_cstring(f1.fFrame.type) << " - " << to_cstring(f2.fFrame.type)
                          << " not supported";
     };
-    TransformationMP<Real_t> const &t1 = fGlobalTrans[f1.fTrans];
-    TransformationMP<Real_t> const &t2 = fGlobalTrans[f2.fTrans];
+    TransformationMP<Real_t> const &t1 = f1.fTrans;
+    TransformationMP<Real_t> const &t2 = f2.fTrans;
     TransformationMP<Real_t> trans     = t2 * t1.Inverse();
     trans.SetProperties();
 

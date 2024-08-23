@@ -101,7 +101,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmin_prev, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, -sphid - ephid}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z1, 0., 180., -sphid - ephid));
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -112,7 +112,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_prev, rmax1, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, -sphid - ephid}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z1, 0., 180., -sphid - ephid));
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -122,9 +122,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
       // add virtual surface at z1 if there is no real one
       if (!has_inner_ring && !has_outer_ring) {
-        isurf = builder::CreateLocalSurface<Real_t>(
-            builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, 0}));
+        isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                    Frame{FrameType::kNoFrame},
+                                                    vecgeom::Transformation3DMP<Precision>(0., 0., z1, 0., 180., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         logic.push_back(isurf);
@@ -143,7 +143,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmin_next, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z2, 0, 0, 0}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z2, 0., 0., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -154,7 +154,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmax_next, rmax2, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z2, 0, 0, 0}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z2, 0., 0., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
@@ -164,9 +164,9 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
 
       // add virtual surface at z2 if there is no real one
       if (!has_inner_ring && !has_outer_ring) {
-        isurf = builder::CreateLocalSurface<Real_t>(
-            builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z2, 0, 0, 0}));
+        isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
+                                                    Frame{FrameType::kNoFrame},
+                                                    vecgeom::Transformation3DMP<Precision>(0., 0., z2, 0., 0., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         logic.push_back(isurf);
@@ -181,7 +181,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z1, 0, 180, -sphid - ephid}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z1, 0., 180., -sphid - ephid));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -197,7 +197,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
             builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z2, 0, 0, 0}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., z2, 0., 0., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         builder::GetSurface<Real_t>(isurf).fEmbedding = false;
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -217,7 +217,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
           builder::CreateUnplacedSurface<Real_t>(stype, surfdata, /*flipped=*/true),
           builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                        ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, rmin1, rmin2, sphi, ephi}),
-          builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z_shift, 0, 0, 0}));
+          vecgeom::Transformation3DMP<Precision>(0., 0., z_shift, 0., 0., 0.));
       builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
       // Only a convex inner cone is embedding, since this is practically a boolean union.
       auto is_convex = IsConvexConcave<vecgeom::Precision>(2 * i, zArray, rMinArray, /*convex_check=*/1, 2 * nSect);
@@ -237,7 +237,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
         builder::CreateUnplacedSurface<Real_t>(stype, surfdata),
         builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                      ZPhiMask_t{z1 - z_shift, z2 - z_shift, fullCirc, rmax1, rmax2, sphi, ephi}),
-        builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, z_shift, 0, 0, 0}));
+        vecgeom::Transformation3DMP<Precision>(0., 0., z_shift, 0., 0., 0.));
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     // Only a concave outer cone is embedding, since this is practically a boolean union.
     auto is_concave = IsConvexConcave<vecgeom::Precision>(2 * i, zArray, rMaxArray, /*convex_check=*/0, 2 * nSect);

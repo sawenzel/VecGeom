@@ -87,7 +87,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
       if (iseg != (nseg - 1)) {
         isurf = builder::CreateLocalSurface<Real_t>(
             builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-            builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, zPlanes[iseg + 1], 0, 0, 0}));
+            vecgeom::Transformation3DMP<Precision>(0., 0., zPlanes[iseg + 1], 0., 0., 0.));
         builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         if (iseg > 0) logic.push_back(land);

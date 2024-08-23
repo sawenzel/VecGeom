@@ -105,15 +105,10 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
     for (size_t i = isurf_first; i < isurf_last; ++i) {
       auto &surf = cpudata.fLocalSurfaces[shell.fSurfaces[i]];
       TransformationMP<Real_t> trans(*localtrans);
-      if (surf.fTrans) {
-        trans.MultiplyFromRight(cpudata.fLocalTrans[surf.fTrans]);
-        cpudata.fLocalTrans[surf.fTrans] = trans;
-      } else {
-        int itrans = cpudata.fLocalTrans.size();
-        cpudata.fLocalTrans.push_back(trans);
-        surf.fTrans = itrans;
+      if (!surf.fTrans.IsIdentity()) {
+        trans.MultiplyFromRight(surf.fTrans);
       }
-      cpudata.fLocalTrans[surf.fTrans] = trans;
+      surf.fTrans = trans;
     }
   }
   return success;
@@ -137,12 +132,12 @@ bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int l
   auto &cpudata     = CPUsurfData<Real_t>::Instance();
   auto const &shell = cpudata.fShells[logical_id];
   for (int lsurf_id : shell.fSurfaces) {
-    FramedSurface const &lsurf = cpudata.fLocalSurfaces[lsurf_id];
-    auto const &trans          = cpudata.fLocalTrans[lsurf.fTrans];
+    FramedSurface<Real_t> &lsurf = cpudata.fLocalSurfaces[lsurf_id];
+    auto const &trans            = lsurf.fTrans;
     // Reflect the framed surface
     TransformationMP<Real_t> scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
     TransformationMP<Real_t> refl_trans = trans * scalez;
-    cpudata.fLocalTrans[lsurf.fTrans]   = refl_trans;
+    lsurf.fTrans                        = refl_trans;
   }
   return success;
 }

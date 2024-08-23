@@ -13,8 +13,9 @@ namespace protonav {
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &local,
                                                  vecgeom::Vector3D<Real_t> const &localdir, int volId,
-                                                 SurfData<Real_t> const &surfdata, FramedSurface const &framedsurf,
-                                                 bool exiting, bool &surfhit, Real_t &safety);
+                                                 SurfData<Real_t> const &surfdata,
+                                                 FramedSurface<Real_t> const &framedsurf, bool exiting, bool &surfhit,
+                                                 Real_t &safety);
 
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LocalLogicSafety(vecgeom::Vector3D<Real_t> const &localpoint,
@@ -55,7 +56,7 @@ public:
     // Get the shell for this volume
     auto const &shell = surfdata.fShells[lv_index];
 
-    FramedSurface *framed_surface;
+    FramedSurface<Real_t> *framed_surface;
     bool exiting{false};
 
     // Retrieve the candidate local surface
@@ -113,7 +114,7 @@ public:
 
     Vector3D<Real_t> surface_point;
     Vector3D<Real_t> surface_dir;
-    FramedSurface *framed_surface;
+    FramedSurface<Real_t> *framed_surface;
     bool exiting{false};
 
     // Retrieve the candidate local surface
@@ -126,7 +127,7 @@ public:
       // Get the transformation
       auto const &pvol_trans = surfdata.fPVolTrans[shell.fEnteringSurfacesPvolTrans[entering_index]];
       // Compute the transformation to the surface reference frame
-      auto const &surf_trans = surfdata.fLocalTrans[framed_surface->fTrans];
+      auto const &surf_trans = framed_surface->fTrans;
       auto volume_trans      = surf_trans * pvol_trans;
 
       // Convert the point to surface coordinates
@@ -139,7 +140,7 @@ public:
       auto exiting_index = shell.fExitingSurfaces[index];
       framed_surface     = &(surfdata.fLocalSurf[shell.fSurfaces[exiting_index]]);
       // Get the local transformation of the surface
-      TransformationMP<Real_t> &local_trans = surfdata.fLocalTrans[framed_surface->fTrans];
+      TransformationMP<Real_t> &local_trans = framed_surface->fTrans;
       // In the case of exiting surfaces we only need to apply this transformation
       surface_point = local_trans.Transform(localpoint);
     }
@@ -455,7 +456,7 @@ public:
       hit_FS_tmp.state = in_state;
       // Get the onsurf point in CS coordinates
       auto surf                    = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
-      auto CS_trans                = surfdata.fGlobalTrans[surf.fTrans];
+      auto CS_trans                = surf.fTrans;
       Vector3D<Real_t> CS_local    = CS_trans.Transform(local_scene);
       Vector3D<Real_t> CS_localdir = CS_trans.TransformDirection(localdir_scene);
 
@@ -482,7 +483,7 @@ public:
       hit_FS.hit_surf.state = in_state;
       // Get the onsurf point in CS coordinates
       auto surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
-      auto CS_trans = surfdata.fGlobalTrans[surf.fTrans];
+      auto CS_trans = surf.fTrans;
       Vector3D<Real_t> CS_local, CS_localdir;
 
       unsigned short scene_id = 0, newscene_id = 0;

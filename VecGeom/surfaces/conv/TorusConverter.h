@@ -38,6 +38,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
   // We need angles in degrees for transformations
   auto sphid = vecgeom::kRadToDeg * sphi;
   auto ephid = vecgeom::kRadToDeg * ephi;
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   // inner torus
   // Note that the torus surface needs to be fully checked already in the surface check.
@@ -49,7 +50,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kTorus, surfdata, /*flipped=*/true),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmin, rtor + rmin, fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, /*never_check=*/true);
+      /*identity transformation*/ identity, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
@@ -62,7 +63,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kTorus, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rtor - rmax, rtor + rmax, fullCirc, sphi, ephi}),
-      /*identity transformation*/ 0, /*never_check=*/true);
+      /*identity transformation*/ identity, /*never_check=*/true);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
@@ -79,8 +80,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
       builder::CreateFrame<Real_t>(FrameType::kRing,
                                    RingMask_t{rmin, rmax, /*fullcircle=*/true, static_cast<vecgeom::Precision>(0),
                                               static_cast<vecgeom::Precision>(360)}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
-          {rtor * std::cos(sphi), rtor * std::sin(sphi), 0, sphid, 90, 0}));
+      vecgeom::Transformation3DMP<Precision>(rtor * std::cos(sphi), rtor * std::sin(sphi), 0., sphid, 90., 0.));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
@@ -94,8 +94,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
       builder::CreateFrame<Real_t>(FrameType::kRing,
                                    RingMask_t{rmin, rmax, /*fullcircle=*/true, static_cast<vecgeom::Precision>(0),
                                               static_cast<vecgeom::Precision>(360)}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
-          {rtor * std::cos(ephi), rtor * std::sin(ephi), 0, ephid, -90, 0}));
+      vecgeom::Transformation3DMP<Precision>(rtor * std::cos(ephi), rtor * std::sin(ephi), 0., ephid, -90., 0.));
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;

@@ -74,7 +74,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, tube.z(), phid_top - 90, -thetad_top, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., tube.z(), phid_top - 90, -thetad_top, 0.));
   auto &surf = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) surf.fSkipConvexity = true;
@@ -93,14 +93,15 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
               tube.rmax(),
               static_cast<vecgeom::Precision>(
                   tube.rmax() / cos(vecgeom::kPi - bottom_normal.Theta()))}), // static_cast since cos returns double
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>(
-          {0, 0, -tube.z(), phid_bottom - 90, -thetad_bottom, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., -tube.z(), phid_bottom - 90, -thetad_bottom, 0.));
   auto &surf2 = cpudata.fLocalSurfaces[isurf];
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) surf2.fSkipConvexity = true;
   // Make the surface "logical"
   surf2.fLogicId = isurf;
   logic.push_back(isurf);
+
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   // inner cylinder
   if (tube.rmin() > vecgeom::kTolerance) {
@@ -109,7 +110,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
         builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                      ZPhiMask_t{aMin[2], aMax[2], fullCirc, tube.rmin(), tube.rmin(), sphi, ephi}),
-        /*identity transformation*/ 0);
+        /*identity transformation*/ identity);
     auto &surf3 = cpudata.fLocalSurfaces[isurf];
     if (intersection) surf3.fSkipConvexity = true;
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
@@ -124,7 +125,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kCylindrical, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                    ZPhiMask_t{aMin[2], aMax[2], fullCirc, tube.rmax(), tube.rmax(), sphi, ephi}),
-      /*identity transformation*/ 0);
+      /*identity transformation*/ identity);
   auto &surf4 = cpudata.fLocalSurfaces[isurf];
   if (intersection) surf4.fSkipConvexity = true;
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);

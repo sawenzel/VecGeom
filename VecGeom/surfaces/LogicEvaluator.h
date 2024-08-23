@@ -27,7 +27,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
   auto insideSurf = [&](int isurf, bool flip) {
     // Convert point from volume to local surface coordinates
     auto itrans                 = surfdata.fLocalSurf[isurf].fTrans;
-    Vector3D<Real_t> plocalSurf = surfdata.fLocalTrans[itrans].Transform(plocalVol);
+    Vector3D<Real_t> plocalSurf = itrans.Transform(plocalVol);
     auto const &unplaced        = surfdata.fLocalSurf[isurf].fSurface;
     return unplaced.Inside(plocalSurf, surfdata, flip);
   };
@@ -96,8 +96,8 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
   Vector3D<Real_t> onsurf_crt;
   auto safetySurf = [&](int isurf, Real_t &safety_surf) {
     // Convert point from volume to local surface coordinates
-    auto itrans            = surfdata.fLocalSurf[isurf].fTrans;
-    Vector3D<Real_t> local = surfdata.fLocalTrans[itrans].Transform(plocalVol);
+    auto trans             = surfdata.fLocalSurf[isurf].fTrans;
+    Vector3D<Real_t> local = trans.Transform(plocalVol);
     auto const &framedsurf = surfdata.fLocalSurf[isurf];
     bool flipped           = framedsurf.fLogicId < 0;
     auto const &unplaced   = framedsurf.fSurface;

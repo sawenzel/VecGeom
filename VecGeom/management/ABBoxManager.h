@@ -211,8 +211,7 @@ public:
     upper.Set(maxx, maxy, maxz);
   }
 
-  static void ComputeSurfaceABBox(vgbrep::FramedSurface const &framedSurface,
-                                  Transformation3DMP<Precision> const &surfaceTransform,
+  static void ComputeSurfaceABBox(vgbrep::FramedSurface<Precision> const &framedSurface,
                                   Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
                                   vgbrep::CPUsurfData<Precision> const &cpudata, LogicalVolume const *lvol,
                                   const bool crop)
@@ -229,7 +228,7 @@ public:
     Vector3D<Precision> upper(uppert[0], uppert[1], uppert[2]);
 
     // Apply the local transformation
-    TransformBoundingBox<Transformation3DMP<Precision>>(lower, upper, surfaceTransform);
+    TransformBoundingBox<Transformation3DMP<Precision>>(lower, upper, framedSurface.fTrans);
 
     // Apply the transformation with respect to the mother LV
     TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
@@ -358,11 +357,8 @@ public:
       auto exiting_ind        = rootShell.fExitingSurfaces[motherSurfIndex];
       auto const localSurface = cpudata.fLocalSurfaces[rootShell.fSurfaces[exiting_ind]];
 
-      // Local transformation of this surface
-      auto const &surfaceTransform = cpudata.fLocalTrans[localSurface.fTrans];
-
-      ComputeSurfaceABBox(localSurface, surfaceTransform, *identityTransform, boxes[2 * motherSurfIndex],
-                          boxes[2 * motherSurfIndex + 1], cpudata, lvol, crop);
+      ComputeSurfaceABBox(localSurface, *identityTransform, boxes[2 * motherSurfIndex], boxes[2 * motherSurfIndex + 1],
+                          cpudata, lvol, crop);
     }
 
     // Now, iterate again over the daughters, and fill the array of AABBs
@@ -376,11 +372,9 @@ public:
       for (auto i = 0u; i < shell.fExitingSurfaces.size(); i++) {
         auto exiting_ind         = shell.fExitingSurfaces[i];
         auto const &localSurface = cpudata.fLocalSurfaces[shell.fSurfaces[exiting_ind]];
-        // Local transformation of the surface within this daughter volume
-        auto const &surfaceTransform = cpudata.fLocalTrans[localSurface.fTrans];
         // Transformation of this daughter volume with respect to its mother
         auto daughterTransform = pvol->GetTransformation();
-        ComputeSurfaceABBox(localSurface, surfaceTransform, *daughterTransform,
+        ComputeSurfaceABBox(localSurface, *daughterTransform,
                             boxes[2 * (localSurfIndex + rootShell.fExitingSurfaces.size())],
                             boxes[2 * (localSurfIndex + rootShell.fExitingSurfaces.size()) + 1], cpudata,
                             pvol->GetLogicalVolume(), crop);

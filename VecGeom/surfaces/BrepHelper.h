@@ -146,7 +146,7 @@ private:
 
   /// @brief Print verbose info for a framed surface
   /// @param surf Framed surface
-  void PrintFramedSurface(FramedSurface const &surf);
+  void PrintFramedSurface(FramedSurface<Real_t> const &surf);
 
   /// @brief Reserve container slots based on the number of registered volumes
   /// @param nvolumes Number of registered volumes

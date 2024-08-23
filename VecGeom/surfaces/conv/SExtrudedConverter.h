@@ -271,8 +271,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
           isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-                                                      Frame{FrameType::kNoFrame},
-                                                      builder::CreateLocalTransformation<Real_t>(transformation));
+                                                      Frame{FrameType::kNoFrame}, transformation);
           if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
         }
@@ -318,8 +317,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
           // create virtual surface without frame
           transformation = builder::TransformationFromPlanarPoints<Real_t>(vertices);
           isurf = builder::CreateLocalSurface<Real_t>(builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
-                                                      Frame{FrameType::kNoFrame},
-                                                      builder::CreateLocalTransformation<Real_t>(transformation));
+                                                      Frame{FrameType::kNoFrame}, transformation);
           builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
           if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
         }
@@ -424,7 +422,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   // bottom virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetLowerZ(), 0, 180, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., shell.GetLowerZ(), 0., 180., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
@@ -433,7 +431,7 @@ bool CreateSExtrudedSurfaces(vecgeom::UnplacedSExtruVolume const &xtru, int logi
   // top virtual surface
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar), Frame{FrameType::kNoFrame},
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, shell.GetUpperZ(), 0, 0, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., shell.GetUpperZ(), 0., 0., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);

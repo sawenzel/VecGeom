@@ -224,17 +224,13 @@ void BrepHelper<Real_t>::ComputePlaneExtent(Side &side)
     } // case
 
     // This part updates extent
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-        Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
     updatePlaneExtent(ext, local);
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-        Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
     updatePlaneExtent(ext, local);
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-        Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
     updatePlaneExtent(ext, local);
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-        Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
     updatePlaneExtent(ext, local);
   } // for
 
@@ -250,8 +246,7 @@ bool BrepHelper<Real_t>::ComputeCylinderExtent(Side &side)
   // Setting initial extent mask
   side.fExtent.type  = FrameType::kZPhi;
   ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
-  auto sideext_local =
-      sideext.InverseTransform(fSurfData->fGlobalTrans[fSurfData->fFramedSurf[side.fSurfaces[0]].fTrans]);
+  auto sideext_local = sideext.InverseTransform(fSurfData->fFramedSurf[side.fSurfaces[0]].fTrans);
 
   // loop over remaining frames on the side
   for (int i = 1; i < side.fNsurf; ++i) {
@@ -259,7 +254,7 @@ bool BrepHelper<Real_t>::ComputeCylinderExtent(Side &side)
     auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
     // Transform the ZPhi mask to the local system
     ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
-    auto extFrame              = extLocal.InverseTransform(fSurfData->fGlobalTrans[framed_surf.fTrans]);
+    auto extFrame              = extLocal.InverseTransform(framed_surf.fTrans);
     // Combine with current extent
     bool success = sideext_local.CombineWith(extFrame);
     if (!success) {
@@ -294,9 +289,9 @@ int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side)
     Vector3D<Real_t> local;
     Real_t zmin{vecgeom::InfinityLength<Real_t>()}, zmax{-vecgeom::InfinityLength<Real_t>()};
     auto const &maskLocal = fSurfData->fZPhiMasks[framed_surf.fFrame.id];
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[0]});
+    local                 = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[0]});
     updateRangeZ(local[2], zmin, zmax);
-    local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[1]});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[1]});
     updateRangeZ(local[2], zmin, zmax);
     divisionZ.AddCandidate(i, zmin, zmax);
   }
@@ -331,7 +326,7 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side)
   for (int i = 0; i < side.fNsurf; ++i) {
     auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
     FrameType frame_type = framed_surf.fFrame.type;
-    if (frame_type == FrameType::kRing && framed_surf.fTrans == 0) {
+    if (frame_type == FrameType::kRing && framed_surf.fTrans.IsIdentity()) {
       auto const &maskRing = fSurfData->fRingMasks[framed_surf.fFrame.id];
       ring_min             = std::min(static_cast<double>(maskRing.rangeR[0]), ring_min);
       ring_max             = std::max(static_cast<double>(maskRing.rangeR[1]), ring_max);
@@ -391,17 +386,13 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side)
       // This part converts the local extent to the side reference frame
       WindowMask_t ext{vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>(),
                        vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>()};
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = fSurfData->fGlobalTrans[framed_surf.fTrans].InverseTransform(
-          Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
       // std::cout << i << " : ext {" << ext.rangeU[0] << ", " << ext.rangeU[1] << "} {" << ext.rangeV[0] << ", "
       //           << ext.rangeV[1] << "}\n";
@@ -535,24 +526,27 @@ void BrepHelper<Real_t>::ConvertTransformations(int idsurf)
   auto &surf = fCPUdata.fCommonSurfaces[idsurf];
   // Adopt the transformation of the first surface on left for the common surface
   surf.fTrans = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans;
+  TransformationMP<vecgeom::Precision> identity;
+
   // Set transformation of first surface on left to identity
-  fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = 0;
+  fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fTrans = identity;
 
   // Set flip status of common surface based on first framed surface after sorting
   fCPUdata.fCommonSurfaces[idsurf].fFlipped = fCPUdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]].fLogicId < 0 ? 1 : 0;
 
-  TransformationMP<vecgeom::Precision> tsurfinv = fCPUdata.fGlobalTrans[surf.fTrans].Inverse();
+  TransformationMP<vecgeom::Precision> tsurfinv = surf.fTrans.Inverse();
 
   // Skip first surface on left side
   for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
     int idglob = surf.fLeftSide.fSurfaces[i];
     auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<vecgeom::Precision> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+    TransformationMP<vecgeom::Precision> tnew(surf.fTrans);
+
     tnew *= tsurfinv;
-    if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
-      surf.fTrans = 0;
+    if (ApproxEqualTransformation(tnew, identity)) {
+      surf.fTrans = identity;
     } else {
-      fCPUdata.fGlobalTrans[surf.fTrans] = tnew;
+      surf.fTrans = tnew;
     }
   }
 
@@ -560,12 +554,12 @@ void BrepHelper<Real_t>::ConvertTransformations(int idsurf)
   for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
     int idglob = surf.fRightSide.fSurfaces[i];
     auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<vecgeom::Precision> tnew(fCPUdata.fGlobalTrans[surf.fTrans]);
+    TransformationMP<vecgeom::Precision> tnew(surf.fTrans);
     tnew *= tsurfinv;
-    if (ApproxEqualTransformation(tnew, fCPUdata.fGlobalTrans[0])) {
-      surf.fTrans = 0;
+    if (ApproxEqualTransformation(tnew, identity)) {
+      surf.fTrans = identity;
     } else {
-      fCPUdata.fGlobalTrans[surf.fTrans] = tnew;
+      surf.fTrans = tnew;
     }
   }
 }
@@ -701,10 +695,10 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
   constexpr char kRside = 0x02;
   bool flip{false}, flip_bool{false};
   auto approxEqual = [&](int idglob1, int idglob2) {
-    flip                    = false;
-    flip_bool               = false;
-    FramedSurface const &s1 = fCPUdata.fFramedSurf[idglob1];
-    FramedSurface const &s2 = fCPUdata.fFramedSurf[idglob2];
+    flip                            = false;
+    flip_bool                       = false;
+    FramedSurface<Real_t> const &s1 = fCPUdata.fFramedSurf[idglob1];
+    FramedSurface<Real_t> const &s2 = fCPUdata.fFramedSurf[idglob2];
     // Surfaces may be in future "compatible" even if they are not the same, for now enforce equality
     if (s1.fSurface.type != s2.fSurface.type) return false;
 
@@ -726,8 +720,8 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
     }
 
     // Check if the 2 surfaces are parallel
-    vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-    vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = s1.fTrans;
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = s2.fTrans;
     // Check if the rotations are matching. The z axis inverse-transformed
     // with the two rotations should end up as aligned vectors. This is
     // true for planes (Z is the normal) but also for tubes/cones where
@@ -793,8 +787,8 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
 
   auto surfHash = [&](int idglobal, double tolerance = 100 * vecgeom::kTolerance) {
     // Compute hash for the surface rotation and translation
-    FramedSurface const &surf                                    = fCPUdata.fFramedSurf[idglobal];
-    vecgeom::Transformation3DMP<vecgeom::Precision> const &trans = fCPUdata.fGlobalTrans[surf.fTrans];
+    auto const &surf                                             = fCPUdata.fFramedSurf[idglobal];
+    vecgeom::Transformation3DMP<vecgeom::Precision> const &trans = surf.fTrans;
 
     // get normal vector of surface
     vecgeom::Vector3D<vecgeom::Precision> normal;
@@ -847,9 +841,9 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
     return hash;
   };
 
-  FramedSurface const &surf = fCPUdata.fFramedSurf[idglob];
-  bool is_scene_surf        = (scene_id > 0) && (surf.fState == 0);
-  auto hash                 = surfHash(idglob, 1000 * vecgeom::kTolerance);
+  auto const &surf   = fCPUdata.fFramedSurf[idglob];
+  bool is_scene_surf = (scene_id > 0) && (surf.fState == 0);
+  auto hash          = surfHash(idglob, 1000 * vecgeom::kTolerance);
   // Get the compatible surfaces
   auto range          = fCPUdata.fSurfHash[scene_id].equal_range(hash);
   bool found_dup_surf = false;
@@ -993,18 +987,16 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     if (is_scene && !visited[ivol]) allocateExitingCandidates(newscene_id, 0, nsurf_local);
 
     for (int lsurf_id : shell.fSurfaces) {
-      FramedSurface &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
+      FramedSurface<Precision> &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
 
       // Ignore 'inside' helper surfaces having no frame
       if (lsurf.fFrame.type == FrameType::kNoFrame) continue;
-      TransformationMP<vecgeom::Precision> surftrans(fCPUdata.fLocalTrans[lsurf.fTrans]);
+      TransformationMP<vecgeom::Precision> surftrans = lsurf.fTrans;
       surftrans *= trans;
-      int trans_id = fCPUdata.fGlobalTrans.size();
-      fCPUdata.fGlobalTrans.push_back(surftrans);
 
       // Create the surface in the current scene using the local navigation index in the scene
       int id_surf = fCPUdata.fFramedSurf.size();
-      fCPUdata.fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, trans_id, nav_ind, lsurf.fNeverCheck});
+      fCPUdata.fFramedSurf.push_back({lsurf.fSurface, lsurf.fFrame, surftrans, nav_ind, lsurf.fNeverCheck});
       auto &framed_surf      = fCPUdata.fFramedSurf[id_surf];
       framed_surf.fLogicId   = lsurf.fLogicId;
       framed_surf.fSurfIndex = lsurf.fSurfIndex;
@@ -1027,10 +1019,8 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
           // Make a new top framed surface in the new scene
           int id_surf_scene = fCPUdata.fFramedSurf.size();
           // Store the local transformation of the scene volume surface
-          trans_id = fCPUdata.fGlobalTrans.size();
-          fCPUdata.fGlobalTrans.push_back(fCPUdata.fLocalTrans[lsurf.fTrans]);
           fCPUdata.fFramedSurf.push_back(
-              {lsurf.fSurface, lsurf.fFrame, trans_id, 0 /*top in scene*/, lsurf.fNeverCheck});
+              {lsurf.fSurface, lsurf.fFrame, lsurf.fTrans, 0 /*top in scene*/, lsurf.fNeverCheck});
           // Watchout: evil bug: cannot use the framed_surf reference after this point, because after
           // inserting a new frame the array may be re-allocated internally by the vector
           fCPUdata.fFramedSurf[id_surf_scene].fLogicId   = lsurf.fLogicId;
@@ -1126,9 +1116,6 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     return true;
   };
 
-  // add identity first in the list of global transformations
-  TransformationMP<vecgeom::Precision> identity;
-  fCPUdata.fGlobalTrans.push_back(identity);
   // add a dummy common surface since index 0 is not allowed for correctly handling sides
   fCPUdata.fCommonSurfaces.push_back({});
 
@@ -1273,8 +1260,6 @@ bool BrepHelper<Real_t>::CreateLocalSurfaces()
 {
   // add identity first in the list of local transformations
   TransformationMP<vecgeom::Precision> identity;
-  assert(fCPUdata.fLocalTrans.size() == 0);
-  fCPUdata.fLocalTrans.push_back(identity);
   //  Iterate logical volumes and create local surfaces
   std::vector<vecgeom::LogicalVolume *> volumes;
   auto n_registered_volumes = vecgeom::GeoManager::Instance().GetRegisteredVolumesCount();
@@ -1306,9 +1291,9 @@ bool BrepHelper<Real_t>::CreateLocalSurfaces()
       printf("shell %d for volume %s:\n", volume->id(), volume->GetName());
       logichelper::print_logic(shell.fLogic);
       for (int lsurf_id : shell.fSurfaces) {
-        FramedSurface const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
+        auto const &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
         printf(" local surf %d (logic_id=%d): ", lsurf_id, lsurf.fLogicId);
-        fCPUdata.fLocalTrans[lsurf.fTrans].Print();
+        lsurf.fTrans.Print();
         printf("\n");
       }
     }
@@ -1332,12 +1317,12 @@ bool BrepHelper<Real_t>::EqualFrames(Side const &side, int i1, int i2)
 {
   using Vector3D = vecgeom::Vector3D<vecgeom::Precision>;
 
-  FramedSurface const &s1 = fCPUdata.fFramedSurf[side.fSurfaces[i1]];
-  FramedSurface const &s2 = fCPUdata.fFramedSurf[side.fSurfaces[i2]];
+  auto const &s1 = fCPUdata.fFramedSurf[side.fSurfaces[i1]];
+  auto const &s2 = fCPUdata.fFramedSurf[side.fSurfaces[i2]];
   if (s1.fFrame.type != s2.fFrame.type) return false;
   // Get displacement vector between the 2 frame centers and check if it has null length
-  vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = fCPUdata.fGlobalTrans[s1.fTrans];
-  vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = fCPUdata.fGlobalTrans[s2.fTrans];
+  vecgeom::Transformation3DMP<vecgeom::Precision> const &t1 = s1.fTrans;
+  vecgeom::Transformation3DMP<vecgeom::Precision> const &t2 = s2.fTrans;
   Vector3D tdiff                                            = t1.Translation() - t2.Translation();
   // TODO: Check if this has to always hold with the new mask types!!
   if (!ApproxEqualVector(tdiff, {0, 0, 0})) return false;
@@ -1518,7 +1503,7 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
         break;
       }
       // Local transformation of this surface
-      auto const &surfaceTransform    = fCPUdata.fLocalTrans[localSurface.fTrans];
+      auto const &surfaceTransform    = localSurface.fTrans;
       auto const inv_surfaceTransform = surfaceTransform.Inverse();
 
       // printf("\n\nStart checking convexity of surface %i with transformation \n", idsurf);
@@ -1662,7 +1647,7 @@ void BrepHelper<Real_t>::PrintCandidateLists()
 }
 
 template <typename Real_t>
-void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface const &surf)
+void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface<Real_t> const &surf)
 {
   // get frame data
   std::stringstream framedata;
@@ -1733,13 +1718,13 @@ void BrepHelper<Real_t>::PrintCommonSurface(int common_id)
   vecgeom::Vector3D<Real_t> normal;
   const vecgeom::Vector3D<Real_t> lnorm(0, 0, 1);
   auto const &surf = fSurfData->fCommonSurfaces[common_id];
-  fSurfData->fGlobalTrans[surf.fTrans].InverseTransformDirection(lnorm, normal);
+  surf.fTrans.InverseTransformDirection(lnorm, normal);
   vecgeom::NavigationState default_state(surf.fDefaultState);
   int scene_id = surf.GetSceneId();
   printf("\n== common surface %d: type: %s, scene %d, default state: ", common_id, to_cstring(surf.fType), scene_id);
   default_state.Print();
-  printf(" transformation %d: ", surf.fTrans);
-  fSurfData->fGlobalTrans[surf.fTrans].Print();
+  printf(" transformation: ");
+  surf.fTrans.Print();
   switch (surf.fType) {
   case SurfaceType::kPlanar: {
     WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
@@ -1845,22 +1830,16 @@ void BrepHelper<Real_t>::PrintSurfData()
   size = float(fSurfData->fNExitingSurfaces * 4 * sizeof(int) + fSurfData->fNExitingSurfaces * sizeof(int)) / megabyte;
   total += size;
   msg << "    Exiting surface list   = " << fSurfData->fNExitingSurfaces << " [" << size << " MB]\n";
-  size = float(fSurfData->fNlocalTrans * sizeof(Transformation)) / megabyte;
-  total += size;
-  msg << "    local transformations  = " << fSurfData->fNlocalTrans << " [" << size << " MB]\n";
-  size = float(fSurfData->fNglobalTrans * sizeof(Transformation)) / megabyte;
-  total += size;
-  msg << "    global transformations = " << fSurfData->fNglobalTrans << " [" << size << " MB]\n";
   size = float(fSurfData->fNvolTrans * sizeof(Transformation)) / megabyte;
   total += size;
   msg << "    volume transformations = " << fSurfData->fNvolTrans << " [" << size << " MB]\n";
-  size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface)) / megabyte;
+  size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface<Real_t>)) / megabyte;
   total += size;
   msg << "    local surfaces         = " << fSurfData->fNlocalSurf << " [" << size << " MB]\n";
-  size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface)) / megabyte;
+  size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface<Real_t>)) / megabyte;
   total += size;
   msg << "    global surfaces        = " << fSurfData->fNglobalSurf << " [" << size << " MB]\n";
-  size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface) + fSurfData->fNsides * sizeof(int)) / megabyte;
+  size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface<Real_t>) + fSurfData->fNsides * sizeof(int)) / megabyte;
   total += size;
   msg << "    common surfaces        = " << fSurfData->fNcommonSurf << " [" << size << " MB]\n";
   size = float(fSurfData->fNsideDivisions * sizeof(SideDivision_t) + fSurfData->fNslices * sizeof(SliceCand) +
@@ -1874,7 +1853,7 @@ void BrepHelper<Real_t>::PrintSurfData()
   size = float(fSurfData->fNwindows * sizeof(WindowMask_t)) / megabyte;
   total += size;
   msg << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
-  size = float(fSurfData->fNcylsph * sizeof(FramedSurface)) / megabyte;
+  size = float(fSurfData->fNcylsph * sizeof(CylData_t)) / megabyte;
   total += size;
   msg << "    cyl/sph masks          = " << fSurfData->fNcylsph << " [" << size << " MB]\n";
   size = float(fSurfData->fNrings * sizeof(RingMask_t)) / megabyte;
@@ -1949,17 +1928,6 @@ template <typename Real_t>
 void BrepHelper<Real_t>::UpdateSurfData()
 {
   // Create and copy surface data
-  // Local transformations (per volume local surfaces)
-  fSurfData->fNlocalTrans = fCPUdata.fLocalTrans.size();
-  fSurfData->fLocalTrans  = new TransformationMP<Real_t>[fCPUdata.fLocalTrans.size()];
-  for (size_t i = 0; i < fCPUdata.fLocalTrans.size(); ++i)
-    fSurfData->fLocalTrans[i] = fCPUdata.fLocalTrans[i];
-
-  // Global transformations (used for placed surfaces)
-  fSurfData->fNglobalTrans = fCPUdata.fGlobalTrans.size();
-  fSurfData->fGlobalTrans  = new TransformationMP<Real_t>[fCPUdata.fGlobalTrans.size()];
-  for (size_t i = 0; i < fCPUdata.fGlobalTrans.size(); ++i)
-    fSurfData->fGlobalTrans[i] = fCPUdata.fGlobalTrans[i];
 
   // Volume transformations (used for placed volumes)
   fSurfData->fNvolTrans = fCPUdata.fPVolTrans.size();
@@ -1970,14 +1938,14 @@ void BrepHelper<Real_t>::UpdateSurfData()
   // Local surfaces (per volume)
   auto numLocalSurf      = fCPUdata.fLocalSurfaces.size();
   fSurfData->fNlocalSurf = numLocalSurf;
-  fSurfData->fLocalSurf  = new FramedSurface[numLocalSurf];
+  fSurfData->fLocalSurf  = new FramedSurface<Real_t>[numLocalSurf];
   for (size_t i = 0; i < numLocalSurf; ++i)
     fSurfData->fLocalSurf[i] = fCPUdata.fLocalSurfaces[i];
 
   // Global surfaces (used on common surfaces)
   auto numGlobalSurf      = fCPUdata.fFramedSurf.size();
   fSurfData->fNglobalSurf = numGlobalSurf;
-  fSurfData->fFramedSurf  = new FramedSurface[numGlobalSurf];
+  fSurfData->fFramedSurf  = new FramedSurface<Real_t>[numGlobalSurf];
   for (size_t i = 0; i < numGlobalSurf; ++i)
     fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
 
@@ -2018,7 +1986,7 @@ void BrepHelper<Real_t>::UpdateSurfData()
   fSurfData->fSides          = new int[size_sides];
   int *current_side          = fSurfData->fSides;
   fSurfData->fNcommonSurf    = fCPUdata.fCommonSurfaces.size();
-  fSurfData->fCommonSurfaces = new CommonSurface[fSurfData->fNcommonSurf];
+  fSurfData->fCommonSurfaces = new CommonSurface<Real_t>[fSurfData->fNcommonSurf];
   for (size_t i = 0; i < fCPUdata.fCommonSurfaces.size(); ++i) {
     // Raw copy of surface (wrong pointers in sides)
     fSurfData->fCommonSurfaces[i] = fCPUdata.fCommonSurfaces[i];

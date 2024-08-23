@@ -269,32 +269,43 @@ struct Frame {
 // volumes, and a given local surface can be referenced by multiple portals (less memory)
 
 /// @brief A placed surface on a scene having a frame and a navigation state associated to a touchable
+template <typename Real_t>
 struct FramedSurface {
   using NavState_t = vecgeom::NavigationState::Value_t;
-  UnplacedSurface fSurface;   ///< Surface identifier
-  Frame fFrame;               ///< Frame
-  int fTrans{-1};             ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fParent{-1};            ///< Index of the first parent frame on the common surface
-  int fLogicId{0};            ///< Logic flag for surface:
-                              ///<   0        = non-Bool
-                              ///<   positive = true logic surface
-                              ///<   negative = negated logic surface
-  int fSceneCS{0};            ///< The frame may belong to a daughter scene common surface
-  int fSceneCSind{0};         ///< Index of the corresponding frame on the scene CS
-  unsigned fSurfIndex{0};     ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
-  NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
-  bool fNeverCheck{false};    ///< The frame should never be checked
-  bool fEmbedded{false};      ///< The surface is embedded in the parent surface if any
-  bool fEmbedding{true};      ///< The frame always embeds daughter state frames if on the same CS
-  bool fOverlapping{false};   ///< The frame is overlapping another frame and requires a relocation after crossing
-  bool fVirtualParent{false}; ///< The parent frame is a virtual surface of a boolean
+  UnplacedSurface fSurface;        ///< Surface identifier
+  Frame fFrame;                    ///< Frame
+  TransformationMP<Real_t> fTrans; ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fParent{-1};                 ///< Index of the first parent frame on the common surface
+  int fLogicId{0};                 ///< Logic flag for surface:
+                                   ///<   0        = non-Bool
+                                   ///<   positive = true logic surface
+                                   ///<   negative = negated logic surface
+  int fSceneCS{0};                 ///< The frame may belong to a daughter scene common surface
+  int fSceneCSind{0};              ///< Index of the corresponding frame on the scene CS
+  unsigned fSurfIndex{0};          ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
+  NavIndex_t fState{0};            ///< sub-path navigation state id in the parent scene
+  bool fNeverCheck{false};         ///< The frame should never be checked
+  bool fEmbedded{false};           ///< The surface is embedded in the parent surface if any
+  bool fEmbedding{true};           ///< The frame always embeds daughter state frames if on the same CS
+  bool fOverlapping{false};        ///< The frame is overlapping another frame and requires a relocation after crossing
+  bool fVirtualParent{false};      ///< The parent frame is a virtual surface of a boolean
   bool fSkipConvexity{false}; ///< whether the convexity check for booleans can be skipped (only the case for end caps
                               ///< of elliptical tubes)
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, int trans, NavIndex_t index = 0,
-                const bool never_check = 0)
+  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
+                NavIndex_t index = 0, const bool never_check = 0)
       : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fNeverCheck(never_check)
+  {
+  }
+
+  template <typename Real_i>
+  FramedSurface(const FramedSurface<Real_i> &other)
+      : fSurface(other.fSurface), fFrame(other.fFrame), fTrans(other.fTrans), fParent(other.fParent),
+        fLogicId(other.fLogicId), fSceneCS(other.fSceneCS), fSceneCSind(other.fSceneCSind),
+        fSurfIndex(other.fSurfIndex), fState(other.fState), fNeverCheck(other.fNeverCheck), fEmbedded(other.fEmbedded),
+        fEmbedding(other.fEmbedding), fOverlapping(other.fOverlapping), fVirtualParent(other.fVirtualParent),
+        fSkipConvexity(other.fSkipConvexity)
   {
   }
 
@@ -316,7 +327,7 @@ struct FramedSurface {
     return false;
   }
 
-  template <typename Real_t, typename DataContainer>
+  template <typename DataContainer>
   VECCORE_ATT_HOST_DEVICE void Extent3D(Vector3D<Real_t> &aMin, Vector3D<Real_t> &aMax, DataContainer const &data) const
   {
     aMin.Set(0, 0, 0);
@@ -363,22 +374,19 @@ struct FramedSurface {
   void PrintState() const { vecgeom::NavigationState::PrintTopImpl(fState); }
 
   /// Transform point and direction to the local frame
-  template <typename Real_t>
   void Transform(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, Vector3D<Real_t> &localpoint,
-                 Vector3D<Real_t> &localdir, SurfData<Real_t> const &surfdata) const
+                 Vector3D<Real_t> &localdir) const
   {
-    auto &localRef = surfdata.LocalT(fTrans);
-    localpoint     = localRef.Transform(point);
-    localdir       = localRef.TransformDirection(dir);
+    localpoint = fTrans.Transform(point);
+    localdir   = fTrans.TransformDirection(dir);
   }
 
   ///< Check if the propagated point on surface is within the frame
-  template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE bool InsideFrame(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localpoint(point);
     // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
-    if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
+    if (!fTrans.IsIdentity()) localpoint = fTrans.Transform(point);
     return fFrame.Inside(localpoint, surfdata);
   }
 
@@ -389,13 +397,12 @@ struct FramedSurface {
   /// @param safetySurf Safety to the surface
   /// @param surfdata Surface data storage
   /// @return Combined safety surface+frame
-  template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE Real_t SafetyFrame(Vector3D<Real_t> const &point, Real_t safetySurf,
                                              SurfData<Real_t> const &surfdata, bool &valid) const
   {
     Vector3D<Real_t> localpoint(point);
     // For single-frame surfaces, fTrans is zero, so it may be worth testing this.
-    if (fTrans) localpoint = surfdata.fGlobalTrans[fTrans].Transform(point);
+    if (!fTrans.IsIdentity()) localpoint = fTrans.Transform(point);
     return fFrame.Safety(localpoint, safetySurf, surfdata, valid);
   }
 
@@ -406,7 +413,6 @@ struct FramedSurface {
   /// @param safetySurf Safety to the surface
   /// @param surfdata Surface data storage
   /// @return Combined safety surface+frame
-  template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE Real_t LocalSafetyFrame(Vector3D<Real_t> const &point, Real_t safetySurf,
                                                   SurfData<Real_t> const &surfdata, bool &valid) const
   {
@@ -447,14 +453,15 @@ struct Side {
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasChildren() const { return fNsurf > fNumParents; }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface &GetSurface(int index,
-                                                                         SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface<Real_t> &GetSurface(int index,
+                                                                                 SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[index]];
   }
 
   template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface const &TopSurface(SurfData<Real_t> const &surfdata) const
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE FramedSurface<Real_t> const &TopSurface(
+      SurfData<Real_t> const &surfdata) const
   {
     return surfdata.fFramedSurf[fSurfaces[fNsurf - 1]];
   }
@@ -532,10 +539,11 @@ struct SideIterator {
 };
 
 /// @brief A common surface made of two sides, having a global transformation.
+template <typename Real_t>
 struct CommonSurface {
   SurfaceType fType{SurfaceType::kPlanar}; ///< Type of surface
   int fSceneId{0};                         ///< Scene id. if negative, it is a top scene id
-  int fTrans{-1};                          ///< Transformation of the first left frame
+  TransformationMP<Real_t> fTrans;         ///< Transformation of the first left frame
   NavIndex_t fDefaultState{0};             ///< The default state for this surface (deepest mother)
   Side fLeftSide;                          ///< Left-side (behind normal)
   Side fRightSide;                         ///< Right-side (alongside normal)
@@ -550,6 +558,13 @@ struct CommonSurface {
     fFlipped = flipped;
   };
 
+  template <typename Real_i>
+  CommonSurface(const CommonSurface<Real_i> &other)
+      : fType(other.fType), fSceneId(other.fSceneId), fTrans(other.fTrans), fDefaultState(other.fDefaultState),
+        fLeftSide(other.fLeftSide), fRightSide(other.fRightSide), fFlipped(other.fFlipped)
+  {
+  }
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int GetSceneId() const { return std::abs(fSceneId); }
@@ -559,12 +574,11 @@ struct CommonSurface {
   bool IsSceneSurface() const { return (fSceneId < 0); }
 
   ///< Get the normal to the surface from a point on surface
-  template <typename Real_t>
   void GetNormal(Vector3D<Real_t> const &point, Vector3D<Real_t> &normal, SurfData<Real_t> const &surfdata) const
   {
     Vector3D<Real_t> localnorm;
     // point to local frame
-    auto const &trans      = surfdata.fGlobalTrans[fTrans];
+    auto const &trans      = fTrans;
     auto localpoint        = trans.Transform(point);
     auto const &framedsurf = fLeftSide.GetSurface(0, surfdata);
     framedsurf.fSurface.GetNormal(localpoint, localnorm, surfdata);
@@ -587,29 +601,8 @@ struct VolumeShell {
   int *fEnteringSurfacesPvolTrans{nullptr}; ///< Array of ids to daughter placed volume transformations
   int *fEnteringSurfacesLvolIds{nullptr};   ///< Array of ids to daughter logical volumes
   int *fDaughterPvolIds{nullptr};           ///< Global PV Ids of the daughter PVs of this Volume
-  int *fDaughterPvolTrans{nullptr};           ///< Transformations of the daughter PVs of this Volume
+  int *fDaughterPvolTrans{nullptr};         ///< Transformations of the daughter PVs of this Volume
 
-  /// @brief Check if a point is inside the volume defined by surfaces
-  /// @tparam Real_t Floating-point precision type
-  /// @param point Point in the local volume coordinates
-  /// @return Inside volume
-  template <typename Real_t>
-  VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, SurfData<Real_t> const &surfdata)
-  {
-    /*** IMPORTANT ***/
-    // The current implementation works only if a volume is a Boolean intersection (logical AND)
-    // of the half-spaces represented by its surfaces. In future we need a proper logical evaluator
-    //****************/
-    Vector3D<Real_t> local;
-    // This loop is less efficient than the specialized shape treatment, but this is
-    // not important since the Inside function is called only once per track in the surface model
-    for (int isurf = 0; isurf < fNsurf; ++isurf) {
-      local                = surfdata.fLocalTrans[fSurfaces[isurf]].Transform(point);
-      auto const &unplaced = surfdata.fLocalSurf[fSurfaces[isurf]].fSurface;
-      if (!unplaced.Inside(local, surfdata)) return false;
-    }
-    return true;
-  }
 };
 } // namespace vgbrep
 

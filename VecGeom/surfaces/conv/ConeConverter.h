@@ -49,12 +49,13 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool 
   // We need angles in degrees for transformations
   auto sphid = vecgeom::kRadToDeg * sphi;
   auto ephid = vecgeom::kRadToDeg * ephi;
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   // surface at +Dz
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin2, rmax2, fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, dz, 0, 0, 0}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., dz, 0., 0., 0.));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);
@@ -62,7 +63,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool 
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kRing, RingMask_t{rmin1, rmax1, fullCirc, sphi, ephi}),
-      builder::CreateLocalTransformation<Real_t, vecgeom::Precision>({0, 0, -dz, 0, 180, -sphid - ephid}));
+      vecgeom::Transformation3DMP<Precision>(0., 0., -dz, 0., 180., -sphid - ephid));
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);
@@ -75,7 +76,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool 
     isurf       = builder::CreateLocalSurface<Real_t>(
         builder::CreateUnplacedSurface<Real_t>(stype, surfdata, /*flipped=*/true),
         builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, rmin1, rmin2, sphi, ephi}),
-        /*identity transformation*/ 0);
+        /*identity transformation*/ identity);
     builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
     if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
     logic.push_back(land);
@@ -88,7 +89,7 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool 
   isurf       = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(stype, surfdata),
       builder::CreateFrame<Real_t>(FrameType::kZPhi, ZPhiMask_t{-dz, dz, fullCirc, rmax1, rmax2, sphi, ephi}),
-      /*identity transformation*/ 0);
+      /*identity transformation*/ identity);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(land);

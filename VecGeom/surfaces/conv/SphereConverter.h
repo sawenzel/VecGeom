@@ -22,6 +22,7 @@ bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id, bo
   auto rmax = sph.GetRmax();
   int isurf;
   LogicExpressionCPU logic; // AND logic: 0 (just Rmax supported for the moment)
+  vecgeom::Transformation3DMP<Real_t> identity;
 
   vecgeom::Precision surfdata[1];
   surfdata[0] = rmax;
@@ -29,7 +30,7 @@ bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id, bo
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kSpherical, surfdata, /*flipped=*/true),
       builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                    ZPhiMask<Real_t>{-rmax, rmax, true, 0., rmax, 0., vecgeom::kTwoPi}),
-      /*identity transformation*/ 0);
+      /*identity transformation*/ identity);
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   logic.push_back(isurf);

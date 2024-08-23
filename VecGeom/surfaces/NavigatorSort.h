@@ -13,11 +13,11 @@ namespace protonav {
 ///< a given index. Writes into a sorted array of candidate indices, and into a sorted array of distances.
 ///< Returns the number of valid sorted candidates.
 template <typename Real_t, size_t MAXSIZE>
-VECCORE_ATT_HOST_DEVICE
-int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector3D<Real_t> const &direction,
-                           NavIndex_t in_navind, Real_t dist_min, Candidates const &cand, int startind, int ncand,
-                           int skip_surf, SurfData<Real_t> const &surfdata, int *sorted_cand, Real_t *sorted_dist,
-                           vecgeom::Vector3D<Real_t> *sorted_onsurf)
+VECCORE_ATT_HOST_DEVICE int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point,
+                                                   vecgeom::Vector3D<Real_t> const &direction, NavIndex_t in_navind,
+                                                   Real_t dist_min, Candidates const &cand, int startind, int ncand,
+                                                   int skip_surf, SurfData<Real_t> const &surfdata, int *sorted_cand,
+                                                   Real_t *sorted_dist, vecgeom::Vector3D<Real_t> *sorted_onsurf)
 {
   Real_t unsorted_dist[MAXSIZE];
   int unsorted_cand[MAXSIZE];
@@ -31,7 +31,7 @@ int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vect
     auto const &surf = surfdata.fCommonSurfaces[isurf];
     bool left_side   = cand[icand] > 0;
     // Convert point and direction to surface frame
-    auto const &trans         = surfdata.fGlobalTrans[surf.fTrans];
+    auto const &trans         = surf.fTrans;
     Vector3D<Real_t> local    = trans.Transform(point);
     Vector3D<Real_t> localdir = trans.TransformDirection(direction);
     Vector3D<Real_t> onsurf;
@@ -63,10 +63,10 @@ int SortCandidateDistances(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vect
 ///< a given index. Writes into a sorted array of candidate indices, and into a sorted array of distances.
 ///< Returns the number of valid sorted candidates.
 template <typename Real_t, size_t MAXSIZE>
-VECCORE_ATT_HOST_DEVICE
-int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_navind, Real_t safe_min,
-                          Candidates const &cand, int startind, int ncand, SurfData<Real_t> const &surfdata,
-                          int *sorted_cand, Real_t *sorted_dist, vecgeom::Vector3D<Real_t> *sorted_onsurf)
+VECCORE_ATT_HOST_DEVICE int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_navind,
+                                                  Real_t safe_min, Candidates const &cand, int startind, int ncand,
+                                                  SurfData<Real_t> const &surfdata, int *sorted_cand,
+                                                  Real_t *sorted_dist, vecgeom::Vector3D<Real_t> *sorted_onsurf)
 {
   Real_t unsorted_dist[MAXSIZE];
   int unsorted_cand[MAXSIZE];
@@ -81,7 +81,7 @@ int SortCandidateSafeties(vecgeom::Vector3D<Real_t> const &point, NavIndex_t in_
     bool left_side   = cand[icand] > 0;
     bool flip_normal = exiting ^ left_side;
     // Convert point and direction to surface frame
-    auto const &trans      = surfdata.fGlobalTrans[surf.fTrans];
+    auto const &trans      = surf.fTrans;
     Vector3D<Real_t> local = trans.Transform(point);
     Vector3D<Real_t> onsurf;
     // Compute signed closest distance to surface. The closest projected point on surface is computed, except for:
@@ -183,10 +183,11 @@ vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol, v
 /// @param exit_surf Input: surface to be skipped, output: crossed surface index
 /// @return Distance to next surface
 template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE
-Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector3D<Real_t> const &direction,
-                         vecgeom::NavStateIndex const &in_state, vecgeom::NavStateIndex &out_state,
-                         SurfData<Real_t> const &surfdata, int &exit_surf)
+VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point,
+                                                 vecgeom::Vector3D<Real_t> const &direction,
+                                                 vecgeom::NavStateIndex const &in_state,
+                                                 vecgeom::NavStateIndex &out_state, SurfData<Real_t> const &surfdata,
+                                                 int &exit_surf)
 {
   // Get the list of candidate surfaces for in_state
   out_state         = in_state;
@@ -364,9 +365,9 @@ Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const &point, vecgeom::Vector
 /// @param exit_surf Input: surface to be skipped, output: crossed surface index
 /// @return Distance to next surface
 template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE
-Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point, vecgeom::NavStateIndex const &in_state,
-                     SurfData<Real_t> const &surfdata, int &closest_surf)
+VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_t> const &point,
+                                             vecgeom::NavStateIndex const &in_state, SurfData<Real_t> const &surfdata,
+                                             int &closest_surf)
 {
   // Get the list of visible candidate surfaces for in_state
   closest_surf  = 0;

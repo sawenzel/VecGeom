@@ -116,7 +116,7 @@ static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
   current_entering_surface_pvol_trans = surfData->fShellEnteringSurfacePvolTransList;
   current_entering_surface_lvol_id    = surfData->fShellEnteringSurfaceLvolIdList;
   current_daughter_pvol_id            = surfData->fShellDaughterPvolIdList;
-  current_daughter_pvol_trans            = surfData->fShellDaughterPvolTransList;
+  current_daughter_pvol_trans         = surfData->fShellDaughterPvolTransList;
   for (int i = 0; i < surfData->fNshells; i++) {
     surfData->fShells[i].fSurfaces = current;
     current += surfData->fShells[i].fNsurf;
@@ -199,18 +199,6 @@ public:
     size_t sizeInBytes;
 
     // Allocate and copy transformations
-    fSurfDataStaging.fNlocalTrans = surfData.fNlocalTrans;
-    sizeInBytes                   = sizeof(surfData.fLocalTrans[0]) * surfData.fNlocalTrans;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLocalTrans, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fLocalTrans, surfData.fLocalTrans, sizeInBytes, cudaMemcpyHostToDevice));
-
-    fSurfDataStaging.fNglobalTrans = surfData.fNglobalTrans;
-    sizeInBytes                    = sizeof(surfData.fGlobalTrans[0]) * surfData.fNglobalTrans;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fGlobalTrans, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fGlobalTrans, surfData.fGlobalTrans, sizeInBytes, cudaMemcpyHostToDevice));
-
     fSurfDataStaging.fNvolTrans = surfData.fNvolTrans;
     sizeInBytes                 = sizeof(surfData.fPVolTrans[0]) * surfData.fNvolTrans;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fPVolTrans, sizeInBytes));
@@ -292,16 +280,16 @@ public:
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfaceLvolIdList, sizeInBytes));
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfaceLvolIdList,
                                surfData.fShellEnteringSurfaceLvolIdList, sizeInBytes, cudaMemcpyHostToDevice));
-    
+
     sizeInBytes = sizeof(surfData.fShellDaughterPvolIdList[0]) * surfData.fNPlacedVolumes;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterPvolIdList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolIdList,
-                               surfData.fShellDaughterPvolIdList, sizeInBytes, cudaMemcpyHostToDevice));
-    
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolIdList, surfData.fShellDaughterPvolIdList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
+
     sizeInBytes = sizeof(surfData.fShellDaughterPvolTransList[0]) * surfData.fNPlacedVolumes;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterPvolTransList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolTransList,
-                               surfData.fShellDaughterPvolTransList, sizeInBytes, cudaMemcpyHostToDevice));
+    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolTransList, surfData.fShellDaughterPvolTransList,
+                               sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate space for the BVHs
     // Surface BVHs
@@ -437,10 +425,6 @@ public:
 
   void Cleanup()
   {
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLocalTrans));
-    fSurfDataStaging.fLocalTrans = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fGlobalTrans));
-    fSurfDataStaging.fGlobalTrans = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fPVolTrans));
     fSurfDataStaging.fPVolTrans = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCylSphData));
