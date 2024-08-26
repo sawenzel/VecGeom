@@ -205,17 +205,6 @@ public:
     BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fPVolTrans, surfData.fPVolTrans, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy surface data
-    fSurfDataStaging.fNcylsph = surfData.fNcylsph;
-    sizeInBytes               = sizeof(surfData.fCylSphData[0]) * surfData.fNcylsph;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCylSphData, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fCylSphData, surfData.fCylSphData, sizeInBytes, cudaMemcpyHostToDevice));
-
-    fSurfDataStaging.fNcone = surfData.fNcone;
-    sizeInBytes             = sizeof(surfData.fConeData[0]) * surfData.fNcone;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fConeData, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fConeData, surfData.fConeData, sizeInBytes, cudaMemcpyHostToDevice));
-
     fSurfDataStaging.fNellip = surfData.fNellip;
     sizeInBytes              = sizeof(surfData.fEllipData[0]) * surfData.fNellip;
     BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fEllipData, sizeInBytes));
@@ -427,10 +416,6 @@ public:
   {
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fPVolTrans));
     fSurfDataStaging.fPVolTrans = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCylSphData));
-    fSurfDataStaging.fCylSphData = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fConeData));
-    fSurfDataStaging.fConeData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fEllipData));
     fSurfDataStaging.fEllipData = nullptr;
     BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fTorusData));

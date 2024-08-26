@@ -71,8 +71,8 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
     Real_t tubeDistance = 0;
 
     // if point is outside bounding tube of the torus, propagate to the bounding tube.
-    if (!(SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData()).Inside(localpoint, false) &&
-          SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData()).Inside(localpoint, false)) ||
+    if (!(SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Inside(localpoint, false, fTorusData->InnerBCRadius()) &&
+          SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Inside(localpoint, false, fTorusData->OuterBCRadius())) ||
         (Abs(localpoint[2]) > Abs(RadTube_R0 + vecgeom::kTolerance))) {
 
       Real_t tmp   = vecgeom::InfinityLength<Real_t>();
@@ -111,8 +111,8 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
 
       // check outer cylinder
       localpoint = point / fTorusData->Radius();
-      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetOuterCylData())
-              .Intersect(localpoint, dir, false, tmp, two_solutions, safety)) {
+      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Intersect(localpoint, dir, false, tmp, two_solutions,
+                                                                       safety, fTorusData->OuterBCRadius())) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {
@@ -125,8 +125,8 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
 
       // check inner cylinder
       localpoint = point / fTorusData->Radius();
-      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>(fTorusData->GetInnerCylData())
-              .Intersect(localpoint, dir, false, tmp, two_solutions, safety)) {
+      if (SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Intersect(localpoint, dir, false, tmp, two_solutions,
+                                                                       safety, fTorusData->InnerBCRadius())) {
         tmppoint = point / fTorusData->Radius() + tmp * dir;
         if (tmp > -vecgeom::kTolerance && (Abs(tmppoint[2]) < Abs(RadTube_R0 + vecgeom::kTolerance))) {
           if (tubeDistance > -vecgeom::kTolerance) {

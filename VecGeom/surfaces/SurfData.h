@@ -23,10 +23,7 @@ struct SurfData {
 #else
   using Real_b = double;
 #endif
-  using CylData_t      = CylData<Real_t>;
-  using ConeData_t     = ConeData<Real_t>;
   using EllipData_t    = EllipData<Real_t>;
-  using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
   using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
@@ -43,8 +40,6 @@ struct SurfData {
   int fNExitingSurfaces{0};
   int fNEnteringSurfaces{0};
   int fNglobalSurf{0};
-  int fNcylsph{0};
-  int fNcone{0};
   int fNellip{0};
   int fNtorus{0};
   int fNarb4{0};
@@ -78,9 +73,6 @@ struct SurfData {
   FramedSurface<Real_t> *fLocalSurf{nullptr};  ///< local surfaces
   FramedSurface<Real_t> *fFramedSurf{nullptr}; ///< global surfaces
 
-  /// Cylindrical surface data (radius)
-  CylData_t *fCylSphData{nullptr};  ///< Cyl and sphere data
-  ConeData_t *fConeData{nullptr};   ///< Cone data
   EllipData_t *fEllipData{nullptr}; ///< Elliptical data
   TorusData_t *fTorusData{nullptr}; ///< Torus data
   Arb4Data_t *fArb4Data{nullptr};   ///< Arb4 data
@@ -139,10 +131,6 @@ struct SurfData {
     fQuadMasks = nullptr;
     delete[] fTriangleMasks;
     fTriangleMasks = nullptr;
-    delete[] fCylSphData;
-    fCylSphData = nullptr;
-    delete[] fConeData;
-    fConeData = nullptr;
     delete[] fEllipData;
     fEllipData = nullptr;
     delete[] fTorusData;
@@ -199,15 +187,6 @@ struct SurfData {
   /// Surface data accessors by component id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   EllipData_t const &GetEllipData(int id) const { return fEllipData[id]; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -234,7 +213,7 @@ struct SurfData {
   // Accessors by common surface id
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  UnplacedSurface const &GetUnplaced(int isurf, bool &flipped) const
+  UnplacedSurface<Real_t> const &GetUnplaced(int isurf, bool &flipped) const
   {
     FramedSurface<Real_t> const &framedsurf = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
     flipped                                 = fCommonSurfaces[isurf].fFlipped;

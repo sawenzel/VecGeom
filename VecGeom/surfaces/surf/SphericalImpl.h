@@ -8,11 +8,10 @@ namespace vgbrep {
 
 template <typename Real_t>
 struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
-  SphData<Real_t> const *fSphData{nullptr};
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  SurfaceHelper(SphData<Real_t> const &sphdata) { fSphData = &sphdata; }
+  SurfaceHelper() {}
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -20,13 +19,12 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
   /// @param point Point in local surface coordinates
   /// @param tol tolerance for determining if a point is inside or not
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
+  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t radius, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
   {
-    int flipsign      = fSphData->IsFlipped() ? -1 : 1;
+    int flipsign      = (radius < 0) ? -1 : 1;
     int bool_flipsign = !flip ? 1 : -1;
-    Real_t sphR       = fSphData->Radius();
     Real_t rho        = point.Mag();
-    return flipsign * (rho - sphR) < bool_flipsign * tol;
+    return flipsign * (rho - Abs(radius)) < bool_flipsign * tol;
   }
 
   VECGEOM_FORCE_INLINE
@@ -38,13 +36,13 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions, Real_t &safety)
+                 bool &two_solutions, Real_t &safety, Real_t radius)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
     int numroots      = 0;
-    bool flip_exiting = left_side ^ fSphData->IsFlipped();
-    SphereEq<Real_t>(point, dir, fSphData->Radius(), coef);
+    bool flip_exiting = left_side ^ (radius < 0);
+    SphereEq<Real_t>(point, dir, radius, coef);
     QuadraticSolver(coef, roots, numroots);
     two_solutions = (numroots == 2 && roots[0] > -vecgeom::kToleranceStrict<Real_t> &&
                      roots[1] > -vecgeom::kToleranceStrict<Real_t>);
@@ -55,9 +53,9 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
-        if (distance < -vecgeom::kToleranceStrict<Real_t> && distance < -fSphData->Radius()) {
+        if (distance < -vecgeom::kToleranceStrict<Real_t> && distance < -radius) {
           Real_t rho = point.Mag();
-          safety     = fSphData->Radius() - rho;
+          safety     = Abs(radius) - rho;
         }
         return true;
       }
@@ -73,11 +71,11 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
   /// @param distance Computed isotropic safety
   /// @param onsurf Projection of the point on surface
   /// @return Validity of the calculation
-  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf) const
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf,
+              Real_t radius) const
   {
-    Real_t sphR = fSphData->Radius();
-    Real_t rho  = point.Mag();
-    distance    = left_side ? sphR - rho : rho - sphR;
+    Real_t rho = point.Mag();
+    distance   = left_side ? Abs(radius) - rho : rho - Abs(radius);
     // the onsurf computation code is missing below
 
     return true;

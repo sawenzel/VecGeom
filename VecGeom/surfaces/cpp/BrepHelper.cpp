@@ -745,11 +745,9 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
       if (std::abs(ldir[2]) > vecgeom::kTolerance) return false;
       break;
     case SurfaceType::kCylindrical:
-      if (std::abs(fCPUdata.fCylSphData[s1.fSurface.id].Radius() - fCPUdata.fCylSphData[s2.fSurface.id].Radius()) >
-          vecgeom::kTolerance)
-        return false;
+      if (std::abs(s1.fSurface.Radius() - s2.fSurface.Radius()) > vecgeom::kTolerance) return false;
       // Check if the cylynders are flipped with respect to each other
-      flip = fCPUdata.fCylSphData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fCylSphData[s2.fSurface.id].IsFlipped();
+      flip = (s1.fSurface.IsFlipped()) ^ (s2.fSurface.IsFlipped());
       if (same_tr) break;
       tdiff.Normalize();
       t1.TransformDirection(tdiff, ldir);
@@ -757,15 +755,14 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
       if (!ApproxEqualVector(ldir, {0, 0, ldir[2]})) return false;
       break;
     case SurfaceType::kConical:
-      if (std::abs(fCPUdata.fConeData[s1.fSurface.id].RadiusZ(-Abs(t1.Translation()[2])) -
-                   fCPUdata.fConeData[s2.fSurface.id].RadiusZ(-Abs(t2.Translation()[2]))) > vecgeom::kTolerance) {
-        return false;
-      }
-      if (std::abs(fCPUdata.fConeData[s1.fSurface.id].slope - fCPUdata.fConeData[s2.fSurface.id].slope) >
+      if (std::abs(s1.fSurface.RadiusZ(-Abs(t1.Translation()[2])) - s2.fSurface.RadiusZ(-Abs(t2.Translation()[2]))) >
           vecgeom::kTolerance) {
         return false;
       }
-      flip = fCPUdata.fConeData[s1.fSurface.id].IsFlipped() ^ fCPUdata.fConeData[s2.fSurface.id].IsFlipped();
+      if (std::abs(s1.fSurface.fSlope - s2.fSurface.fSlope) > vecgeom::kTolerance) {
+        return false;
+      }
+      flip = s1.fSurface.IsFlipped() ^ s2.fSurface.IsFlipped();
       if (same_tr) break;
       tdiff.Normalize();
       t1.TransformDirection(tdiff, ldir);
@@ -813,8 +810,7 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
       break;
     case SurfaceType::kCylindrical:
       // use radius and normal for hashing
-      hash = hash_combine(hash,
-                          static_cast<long>(std::round(fCPUdata.fCylSphData[surf.fSurface.id].Radius() / tolerance)));
+      hash = hash_combine(hash, static_cast<long>(std::round(surf.fSurface.Radius() / tolerance)));
 
       for (int i = 0; i < 3; i++) {
         hash = hash_combine(hash, static_cast<long>(std::round(normal[i] / tolerance)));
@@ -822,10 +818,9 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
       break;
     case SurfaceType::kConical:
       // use radius at origin, slope, and normal for hashing
-      hash = hash_combine(hash,
-                          static_cast<long>(std::round(
-                              fCPUdata.fConeData[surf.fSurface.id].RadiusZ(-Abs(trans.Translation()[2])) / tolerance)));
-      hash = hash_combine(hash, static_cast<long>(std::round(fCPUdata.fConeData[surf.fSurface.id].slope / tolerance)));
+      hash = hash_combine(
+          hash, static_cast<long>(std::round(surf.fSurface.RadiusZ(-Abs(trans.Translation()[2])) / tolerance)));
+      hash = hash_combine(hash, static_cast<long>(std::round(surf.fSurface.fSlope / tolerance)));
       for (int i = 0; i < 3; i++) {
         hash = hash_combine(hash, static_cast<long>(std::round(normal[i] / tolerance)));
       }
@@ -1491,10 +1486,10 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
       switch (localSurface.fSurface.type) {
       case SurfaceType::kCylindrical:
       case SurfaceType::kSpherical:
-        if (fCPUdata.fCylSphData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
+        if (localSurface.fSurface.IsFlipped()) inner_surf = true;
         break;
       case SurfaceType::kConical:
-        if (fCPUdata.fConeData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
+        if (localSurface.fSurface.IsFlipped()) inner_surf = true;
         break;
       case SurfaceType::kTorus:
         if (fCPUdata.fTorusData[localSurface.fSurface.id].IsFlipped()) inner_surf = true;
@@ -1521,10 +1516,10 @@ void BrepHelper<Real_t>::FindConvexBooleanSurfaces()
         switch (other_localSurface.fSurface.type) {
         case SurfaceType::kCylindrical:
         case SurfaceType::kSpherical:
-          if (fCPUdata.fCylSphData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
+          if ((other_localSurface.fSurface.IsFlipped()) && inner_surf) surf_convex = false;
           break;
         case SurfaceType::kConical:
-          if (fCPUdata.fConeData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
+          if (other_localSurface.fSurface.IsFlipped() && inner_surf) surf_convex = false;
           break;
         case SurfaceType::kTorus:
           if (fCPUdata.fTorusData[other_localSurface.fSurface.id].IsFlipped() && inner_surf) surf_convex = false;
@@ -1736,20 +1731,21 @@ void BrepHelper<Real_t>::PrintCommonSurface(int common_id)
   }
   case SurfaceType::kCylindrical: {
     ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-    CylData_t const &cyld  = fSurfData->fCylSphData[fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.id];
     printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
            "%g}}, {radius{%g}}\n",
            surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
-           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1], cyld.radius);
+           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1],
+           fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius);
     break;
   }
   case SurfaceType::kConical: {
-    ZPhiMask_t const &extL  = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-    ConeData_t const &coned = fSurfData->fConeData[fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.id];
+    ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
     printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d:  {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
            "%g}}, {radius{%g}, slope{%g}}\n",
            surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
-           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1], coned.radius, coned.slope);
+           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1],
+           fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius,
+           fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fSlope);
     break;
   }
   case SurfaceType::kElliptical:
@@ -1853,9 +1849,6 @@ void BrepHelper<Real_t>::PrintSurfData()
   size = float(fSurfData->fNwindows * sizeof(WindowMask_t)) / megabyte;
   total += size;
   msg << "    window masks           = " << fSurfData->fNwindows << " [" << size << " MB]\n";
-  size = float(fSurfData->fNcylsph * sizeof(CylData_t)) / megabyte;
-  total += size;
-  msg << "    cyl/sph masks          = " << fSurfData->fNcylsph << " [" << size << " MB]\n";
   size = float(fSurfData->fNrings * sizeof(RingMask_t)) / megabyte;
   total += size;
   msg << "    ring masks             = " << fSurfData->fNrings << " [" << size << " MB]\n";
@@ -1950,16 +1943,6 @@ void BrepHelper<Real_t>::UpdateSurfData()
     fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
 
   // Unplaced surface data
-  fSurfData->fNcylsph    = fCPUdata.fCylSphData.size();
-  fSurfData->fCylSphData = new CylData_t[fCPUdata.fCylSphData.size()];
-  for (size_t i = 0; i < fCPUdata.fCylSphData.size(); ++i)
-    fSurfData->fCylSphData[i] = fCPUdata.fCylSphData[i];
-
-  fSurfData->fNcone    = fCPUdata.fConeData.size();
-  fSurfData->fConeData = new ConeData_t[fCPUdata.fConeData.size()];
-  for (size_t i = 0; i < fCPUdata.fConeData.size(); ++i)
-    fSurfData->fConeData[i] = fCPUdata.fConeData[i];
-
   fSurfData->fNellip    = fCPUdata.fEllipData.size();
   fSurfData->fEllipData = new EllipData_t[fCPUdata.fEllipData.size()];
   for (size_t i = 0; i < fCPUdata.fEllipData.size(); ++i)

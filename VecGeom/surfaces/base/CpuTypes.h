@@ -212,11 +212,8 @@ struct CPUsurfData {
   using VecChar_t      = std::vector<char>;
   using MultimapInt_t  = std::multimap<long, int>;
   using SurfData_t     = SurfData<Real_t>;
-  using CylData_t      = CylData<Real_t>;
-  using ConeData_t     = ConeData<Real_t>;
   using EllipData_t    = EllipData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
-  using SphData_t      = SphData<Real_t>;
   using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
   using RingMask_t     = RingMask<Real_t>;
@@ -228,12 +225,11 @@ struct CPUsurfData {
   std::vector<RingMask_t> fRingMasks;     ///< ring masks
   std::vector<ZPhiMask_t> fZPhiMasks;     ///< cylindrical masks
   std::vector<TriangleMask_t> fTriangleMasks;
-  std::vector<QuadMask_t> fQuadMasks;  ///< quadrilateral masks
-  std::vector<CylData_t> fCylSphData;  ///< data for cyl surfaces
-  std::vector<ConeData_t> fConeData;   ///< data for conical surfaces
-  std::vector<EllipData_t> fEllipData; ///< data for elliptical surfaces
-  std::vector<TorusData_t> fTorusData; ///< data for torus surfaces
-  std::vector<Arb4Data_t> fArb4Data;   ///< data for Arb4 surfaces
+  std::vector<QuadMask_t> fQuadMasks; ///< quadrilateral masks
+
+  std::vector<EllipData_t> fEllipData;                ///< data for elliptical surfaces
+  std::vector<TorusData_t> fTorusData;                ///< data for torus surfaces
+  std::vector<Arb4Data_t> fArb4Data;                  ///< data for Arb4 surfaces
   std::vector<TransformationMP<Real_t>> fPVolTrans;   ///< Transformations to placed volumes
   std::vector<FramedSurface<Real_t>> fLocalSurfaces;  ///< local surfaces per logical volume
   std::vector<FramedSurface<Real_t>> fFramedSurf;     ///< global surfaces
@@ -272,8 +268,6 @@ public:
     std::vector<ZPhiMask_t>().swap(fZPhiMasks);
     std::vector<TriangleMask_t>().swap(fTriangleMasks);
     std::vector<QuadMask_t>().swap(fQuadMasks);
-    std::vector<CylData_t>().swap(fCylSphData);
-    std::vector<ConeData_t>().swap(fConeData);
     std::vector<EllipData_t>().swap(fEllipData);
     std::vector<TorusData_t>().swap(fTorusData);
     std::vector<TransformationMP<Real_t>>().swap(fPVolTrans);
@@ -330,9 +324,6 @@ public:
   TriangleMask_t const &GetTriangleMask(int id) const { return fTriangleMasks[id]; }
   QuadMask_t const &GetQuadMask(int id) const { return fQuadMasks[id]; }
 
-  CylData_t const &GetCylData(int id) const { return fCylSphData[id]; }
-  SphData_t const &GetSphData(int id) const { return fCylSphData[id]; }
-  ConeData_t const &GetConeData(int id) const { return fConeData[id]; }
   EllipData_t const &GetEllipData(int id) const { return fEllipData[id]; }
   TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
   Arb4Data_t const &GetArb4Data(int id) const { return fArb4Data[id]; }

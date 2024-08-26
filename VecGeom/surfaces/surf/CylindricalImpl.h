@@ -8,11 +8,10 @@ namespace vgbrep {
 
 template <typename Real_t>
 struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
-  CylData<Real_t> const *fCylData{nullptr};
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  SurfaceHelper(CylData<Real_t> const &cyldata) { fCylData = &cyldata; }
+  SurfaceHelper() {}
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -20,13 +19,12 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param point Point in local surface coordinates
   /// @param tol tolerance for determining if a point is inside or not
   /// @return True if the point is behind the normal within kTolerance (surface is included)
-  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
+  bool Inside(Vector3D<Real_t> const &point, bool flip, Real_t radius, Real_t tol = vecgeom::kToleranceStrict<Real_t>)
   {
-    int flipsign      = fCylData->IsFlipped() ? -1 : 1;
+    int flipsign      = (radius < 0) ? -1 : 1;
     int bool_flipsign = !flip ? 1 : -1;
-    Real_t cylR       = fCylData->Radius();
     Real_t rho        = point.Perp();
-    return flipsign * (rho - cylR) < bool_flipsign * tol;
+    return flipsign * (rho - Abs(radius)) < bool_flipsign * tol;
   }
 
   VECGEOM_FORCE_INLINE
@@ -39,13 +37,13 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param two_solutions whether there are two possible solutions
   /// @return Validity of the intersection
   bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side, Real_t &distance,
-                 bool &two_solutions, Real_t &safety)
+                 bool &two_solutions, Real_t &safety, Real_t radius)
   {
     QuadraticCoef<Real_t> coef;
     Real_t roots[2];
     int numroots      = 0;
-    bool flip_exiting = left_side ^ fCylData->IsFlipped();
-    CylinderEq<Real_t>(point, dir, fCylData->Radius(), coef);
+    bool flip_exiting = left_side ^ (radius < 0);
+    CylinderEq<Real_t>(point, dir, Abs(radius), coef);
     QuadraticSolver(coef, roots, numroots);
     two_solutions = (numroots == 2 && roots[0] > -vecgeom::kToleranceStrict<Real_t> &&
                      roots[1] > -vecgeom::kToleranceStrict<Real_t>);
@@ -56,9 +54,9 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
-        if (distance < -vecgeom::kToleranceStrict<Real_t> && distance < -fCylData->Radius()) {
+        if (distance < -vecgeom::kToleranceStrict<Real_t> && distance < -Abs(radius)) {
           Real_t rho = point.Perp();
-          safety     = fCylData->Radius() - rho;
+          safety     = Abs(radius) - rho;
         }
         return true;
       }
@@ -75,12 +73,12 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
   /// @param compute_onsurf Instructs to compute the projection of the point on surface
   /// @param onsurf Projection of the point on surface
   /// @return Validity of the calculation
-  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf) const
+  bool Safety(Vector3D<Real_t> const &point, bool left_side, Real_t &distance, Vector3D<Real_t> &onsurf,
+              Real_t radius) const
   {
-    Real_t cylR       = fCylData->Radius();
     Real_t rho        = point.Perp();
-    bool flip_exiting = left_side ^ fCylData->IsFlipped();
-    distance          = flip_exiting ? cylR - rho : rho - cylR;
+    bool flip_exiting = left_side ^ (radius < 0);
+    distance          = flip_exiting ? Abs(radius) - rho : rho - Abs(radius);
     onsurf            = point; // we only need the z of the projected point
     return true;
   }

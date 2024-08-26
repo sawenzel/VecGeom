@@ -363,60 +363,6 @@ struct Segment2D {
   }
 };
 
-/// @brief Data for cylindrical and spherical surfaces
-/// @tparam Real_t Storage type
-template <typename Real_t>
-struct CylData {
-  Real_t radius{0}; ///< Cylinder radius. Stored negative if flipped.
-
-  CylData() = default;
-  /// @tparam Real_i precision type of inputs
-  template <typename Real_i>
-  CylData(Real_i rad, bool flip = false) : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad))
-  {
-  }
-  template <typename Real_i>
-  CylData(const CylData<Real_i> &other) : radius(static_cast<Real_t>(other.radius))
-  {
-  }
-  VECCORE_ATT_HOST_DEVICE
-  Real_t Radius() const { return std::abs(Real_t(radius)); }
-  VECCORE_ATT_HOST_DEVICE
-  bool IsFlipped() const { return radius < 0; }
-};
-
-template <typename Real_t>
-using SphData = CylData<Real_t>;
-
-/// @brief Data for conical surfaces
-/// @tparam Real_t Storage type
-/// @tparam Real_s Interface type
-template <typename Real_t>
-struct ConeData {
-  Real_t radius{0}; ///< Cone radus at Z = 0: 0.5 * (rbottom + rup) Stored negative if flipped.
-  Real_t slope{0};  ///< Cone slope  0.5 * (rtop - rbottom)/dz --> for cyl extension this would be 0
-
-  ConeData() = default;
-  /// @tparam Real_i precision type of inputs
-  template <typename Real_i>
-  ConeData(Real_i rad, Real_i slope_i, bool flip = false)
-      : radius(flip ? static_cast<Real_t>(-rad) : static_cast<Real_t>(rad)), slope(static_cast<Real_t>(slope_i))
-  {
-  }
-  template <typename Real_i>
-  ConeData(const ConeData<Real_i> &other)
-      : radius(static_cast<Real_t>(other.radius)), slope(static_cast<Real_t>(other.slope))
-  {
-  }
-
-  VECCORE_ATT_HOST_DEVICE
-  Real_t Radius() const { return std::abs(Real_t(radius)); }
-  VECCORE_ATT_HOST_DEVICE
-  Real_t RadiusZ(Real_t z) const { return Radius() + z * slope; }
-  VECCORE_ATT_HOST_DEVICE
-  bool IsFlipped() const { return radius < 0; }
-};
-
 /// @brief Data for conical surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type
@@ -671,8 +617,8 @@ struct TorusData {
   AngleVector<Real_t> vecEPhi{vecCore::NumericLimits<Real_t>::Max(),
                               vecCore::NumericLimits<Real_t>::Max()}; ///< Cartesian coordinates of vectors that
                                                                       ///< represents the end of the phi-cut.
-  CylData<Real_t> inner_cycl_data; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
-  CylData<Real_t> outer_cycl_data; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
+  Real_t inner_BC_radius{0}; ///< Cylindrical data for the inner bouding cylinder, normalized to rTor
+  Real_t outer_BC_radius{0}; ///< Cylindrical data for the outer bouding cylinder, normalized to rTor
 
   /// @brief Check if local point is in the phi range
   /// @param local Point in local coordinates
@@ -699,8 +645,8 @@ struct TorusData {
       : rTor(static_cast<Real_t>(rad)), rTube(flip ? static_cast<Real_t>(-rad_tube) : static_cast<Real_t>(rad_tube)),
         vecSPhi(static_cast<Real_t>(vecgeom::Cos(sphi)), static_cast<Real_t>(vecgeom::Sin(sphi))),
         vecEPhi(static_cast<Real_t>(vecgeom::Cos(ephi)), static_cast<Real_t>(vecgeom::Sin(ephi))),
-        inner_cycl_data(1. - rad_tube / vecgeom::NonZero(rad), true),
-        outer_cycl_data(1. + rad_tube / vecgeom::NonZero(rad), false)
+        inner_BC_radius(-(1. - rad_tube / vecgeom::NonZero(rad))),
+        outer_BC_radius(1. + rad_tube / vecgeom::NonZero(rad))
   {
   }
   template <typename Real_i>
@@ -708,24 +654,24 @@ struct TorusData {
       : rTor(static_cast<Real_t>(other.rTor)), rTube(static_cast<Real_t>(other.rTube)),
         vecSPhi(static_cast<Real_t>(other.vecSPhi[0]), static_cast<Real_t>(other.vecSPhi[1])),
         vecEPhi(static_cast<Real_t>(other.vecEPhi[0]), static_cast<Real_t>(other.vecEPhi[1])),
-        inner_cycl_data(static_cast<CylData<Real_t>>(other.inner_cycl_data)),
-        outer_cycl_data(static_cast<CylData<Real_t>>(other.outer_cycl_data))
+        inner_BC_radius(static_cast<Real_t>(other.inner_BC_radius)),
+        outer_BC_radius(static_cast<Real_t>(other.outer_BC_radius))
   {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  Real_t Radius() const { return std::abs(Real_t(rTor)); }
+  Real_t Radius() const { return std::abs(rTor); }
   VECCORE_ATT_HOST_DEVICE
-  Real_t RadiusTube() const { return std::abs(Real_t(rTube)); }
+  Real_t RadiusTube() const { return std::abs(rTube); }
   VECCORE_ATT_HOST_DEVICE
   VECCORE_ATT_HOST_DEVICE
   bool IsFlipped() const { return rTube < 0; }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData<Real_t> const &GetInnerCylData() const { return inner_cycl_data; }
+  Real_t InnerBCRadius() const { return std::abs(inner_BC_radius); }
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  CylData<Real_t> const &GetOuterCylData() const { return outer_cycl_data; }
+  Real_t OuterBCRadius() const { return std::abs(outer_BC_radius); }
 };
 
 } // namespace vgbrep

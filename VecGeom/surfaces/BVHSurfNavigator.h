@@ -146,7 +146,7 @@ public:
     }
 
     // Get the unplaced
-    UnplacedSurface &unplaced_surface = framed_surface->fSurface;
+    UnplacedSurface<Real_t> &unplaced_surface = framed_surface->fSurface;
 
     // Compute the safety
     // First check coming from left side

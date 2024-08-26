@@ -23,15 +23,44 @@ using Extent = Frame;
 ///   - Unplaced cylinders, cones and tori have the z axis as axis of symmetry. Normals pointing outwards.
 ///   - Unplaced spheres have the origin as center, normal pointing outwards.
 /// The type does not store the surface data, but only an id to an external storage.
+template <typename Real_t>
 struct UnplacedSurface {
   SurfaceType type{SurfaceType::kPlanar}; ///< surface type
   int id{-1};                             ///< surface id
+  Real_t fRadius{0.};
+  Real_t fSlope{0.};
+
+  VECCORE_ATT_HOST_DEVICE
+  Real_t Radius() const { return std::abs(Real_t(fRadius)); }
+  VECCORE_ATT_HOST_DEVICE
+  Real_t RadiusZ(Real_t z) const { return std::abs(fRadius) + z * fSlope; }
+  VECCORE_ATT_HOST_DEVICE
+  bool IsFlipped() const { return fRadius < 0; }
 
   UnplacedSurface() = default;
+
   UnplacedSurface(SurfaceType stype, int sid = -1)
   {
-    type = stype;
-    id   = sid;
+    type    = stype;
+    id      = sid;
+    fRadius = static_cast<Real_t>(0);
+    fSlope  = static_cast<Real_t>(0);
+  }
+
+  template <typename Real_i>
+  UnplacedSurface(SurfaceType stype, int sid = -1, Real_i radius = 0, Real_i slope = 0, bool flip = false)
+  {
+    type    = stype;
+    id      = sid;
+    fRadius = flip ? static_cast<Real_t>(-radius) : static_cast<Real_t>(radius);
+    fSlope  = static_cast<Real_t>(slope);
+  }
+
+  template <typename Real_i>
+  UnplacedSurface(const UnplacedSurface<Real_i> &other)
+      : type(other.type), id(other.id), fRadius(static_cast<Real_t>(other.fRadius)),
+        fSlope(static_cast<Real_t>(other.fSlope))
+  {
   }
 
   /// @brief A local point is inside if behind the normal within tolerance
@@ -40,7 +69,7 @@ struct UnplacedSurface {
   /// @param surfdata data container with the surface data
   /// @param flip flipping the tolerance for inside (needed for negated booleans)
   /// @return Inside half-space
-  template <typename Real_t, typename DataContainer>
+  template <typename DataContainer>
   VECCORE_ATT_HOST_DEVICE bool Inside(Vector3D<Real_t> const &point, DataContainer const &data, bool flip,
                                       Real_t tol = vecgeom::kToleranceStrict<Real_t>) const
   {
@@ -48,13 +77,13 @@ struct UnplacedSurface {
     case SurfaceType::kPlanar:
       return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Inside(point, flip, tol);
     case SurfaceType::kCylindrical:
-      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(data.GetCylData(id)).Inside(point, flip, tol);
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Inside(point, flip, fRadius, tol);
     case SurfaceType::kConical:
-      return SurfaceHelper<SurfaceType::kConical, Real_t>(data.GetConeData(id)).Inside(point, flip, tol);
+      return SurfaceHelper<SurfaceType::kConical, Real_t>().Inside(point, flip, fRadius, fSlope, tol);
     case SurfaceType::kElliptical:
       return SurfaceHelper<SurfaceType::kElliptical, Real_t>(data.GetEllipData(id)).Inside(point, flip, tol);
     case SurfaceType::kSpherical:
-      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(data.GetSphData(id)).Inside(point, flip, tol);
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>().Inside(point, flip, fRadius, tol);
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(data.GetTorusData(id)).Inside(point, flip, tol);
     case SurfaceType::kArb4:
@@ -72,7 +101,6 @@ struct UnplacedSurface {
   /// @param surfdata Surface data storage.
   /// @param distance Computed distance to surface
   /// @return Validity of the intersection
-  template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE bool Intersect(Vector3D<Real_t> const &point, Vector3D<Real_t> const &dir, bool left_side,
                                          SurfData<Real_t> const &surfdata, Real_t &distance, bool &two_solutions,
                                          Real_t &safety) const
@@ -82,17 +110,17 @@ struct UnplacedSurface {
       return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Intersect(point, dir, left_side, distance, two_solutions,
                                                                      safety);
     case SurfaceType::kCylindrical:
-      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions, safety);
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Intersect(point, dir, left_side, distance,
+                                                                          two_solutions, safety, fRadius);
     case SurfaceType::kConical:
-      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions, safety);
+      return SurfaceHelper<SurfaceType::kConical, Real_t>().Intersect(point, dir, left_side, distance, two_solutions,
+                                                                      safety, fRadius, fSlope);
     case SurfaceType::kElliptical:
       return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id))
           .Intersect(point, dir, left_side, distance, two_solutions, safety);
     case SurfaceType::kSpherical:
-      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
-          .Intersect(point, dir, left_side, distance, two_solutions, safety);
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>().Intersect(point, dir, left_side, distance, two_solutions,
+                                                                        safety, fRadius);
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
           .Intersect(point, dir, left_side, distance, two_solutions, safety);
@@ -112,7 +140,6 @@ struct UnplacedSurface {
   /// @param distance Computed isotropic safety
   /// @param onsurf Projection of the point on surface
   /// @return
-  template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE bool Safety(Vector3D<Real_t> const &point, bool left_side, SurfData<Real_t> const &surfdata,
                                       Real_t &distance, Vector3D<Real_t> &onsurf) const
   {
@@ -120,17 +147,14 @@ struct UnplacedSurface {
     case SurfaceType::kPlanar:
       return SurfaceHelper<SurfaceType::kPlanar, Real_t>().Safety(point, left_side, distance, onsurf);
     case SurfaceType::kCylindrical:
-      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>(surfdata.GetCylData(id))
-          .Safety(point, left_side, distance, onsurf);
+      return SurfaceHelper<SurfaceType::kCylindrical, Real_t>().Safety(point, left_side, distance, onsurf, fRadius);
     case SurfaceType::kConical:
-      return SurfaceHelper<SurfaceType::kConical, Real_t>(surfdata.GetConeData(id))
-          .Safety(point, left_side, distance, onsurf);
+      return SurfaceHelper<SurfaceType::kConical, Real_t>().Safety(point, left_side, distance, onsurf, fRadius, fSlope);
     case SurfaceType::kElliptical:
       return SurfaceHelper<SurfaceType::kElliptical, Real_t>(surfdata.GetEllipData(id))
           .Safety(point, left_side, distance, onsurf);
     case SurfaceType::kSpherical:
-      return SurfaceHelper<SurfaceType::kSpherical, Real_t>(surfdata.GetSphData(id))
-          .Safety(point, left_side, distance, onsurf);
+      return SurfaceHelper<SurfaceType::kSpherical, Real_t>().Safety(point, left_side, distance, onsurf, fRadius);
     case SurfaceType::kTorus:
       return SurfaceHelper<SurfaceType::kTorus, Real_t>(surfdata.GetTorusData(id))
           .Safety(point, left_side, distance, onsurf);
@@ -272,28 +296,28 @@ struct Frame {
 template <typename Real_t>
 struct FramedSurface {
   using NavState_t = vecgeom::NavigationState::Value_t;
-  UnplacedSurface fSurface;        ///< Surface identifier
-  Frame fFrame;                    ///< Frame
-  TransformationMP<Real_t> fTrans; ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
-  int fParent{-1};                 ///< Index of the first parent frame on the common surface
-  int fLogicId{0};                 ///< Logic flag for surface:
-                                   ///<   0        = non-Bool
-                                   ///<   positive = true logic surface
-                                   ///<   negative = negated logic surface
-  int fSceneCS{0};                 ///< The frame may belong to a daughter scene common surface
-  int fSceneCSind{0};              ///< Index of the corresponding frame on the scene CS
-  unsigned fSurfIndex{0};          ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
-  NavIndex_t fState{0};            ///< sub-path navigation state id in the parent scene
-  bool fNeverCheck{false};         ///< The frame should never be checked
-  bool fEmbedded{false};           ///< The surface is embedded in the parent surface if any
-  bool fEmbedding{true};           ///< The frame always embeds daughter state frames if on the same CS
-  bool fOverlapping{false};        ///< The frame is overlapping another frame and requires a relocation after crossing
-  bool fVirtualParent{false};      ///< The parent frame is a virtual surface of a boolean
+  UnplacedSurface<Real_t> fSurface; ///< Surface identifier
+  Frame fFrame;                     ///< Frame
+  TransformationMP<Real_t> fTrans;  ///< Transformation of the surface in the compacted sub-hierarchy top volume frame
+  int fParent{-1};                  ///< Index of the first parent frame on the common surface
+  int fLogicId{0};                  ///< Logic flag for surface:
+                                    ///<   0        = non-Bool
+                                    ///<   positive = true logic surface
+                                    ///<   negative = negated logic surface
+  int fSceneCS{0};                  ///< The frame may belong to a daughter scene common surface
+  int fSceneCSind{0};               ///< Index of the corresponding frame on the scene CS
+  unsigned fSurfIndex{0};     ///< Surface index in the volume shell (can be optimized by compacting with fLogicId)
+  NavIndex_t fState{0};       ///< sub-path navigation state id in the parent scene
+  bool fNeverCheck{false};    ///< The frame should never be checked
+  bool fEmbedded{false};      ///< The surface is embedded in the parent surface if any
+  bool fEmbedding{true};      ///< The frame always embeds daughter state frames if on the same CS
+  bool fOverlapping{false};   ///< The frame is overlapping another frame and requires a relocation after crossing
+  bool fVirtualParent{false}; ///< The parent frame is a virtual surface of a boolean
   bool fSkipConvexity{false}; ///< whether the convexity check for booleans can be skipped (only the case for end caps
                               ///< of elliptical tubes)
 
   FramedSurface() = default;
-  FramedSurface(UnplacedSurface const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
+  FramedSurface(UnplacedSurface<Real_t> const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
                 NavIndex_t index = 0, const bool never_check = 0)
       : fSurface(unplaced), fFrame(frame), fTrans(trans), fState(index), fNeverCheck(never_check)
   {
@@ -602,7 +626,6 @@ struct VolumeShell {
   int *fEnteringSurfacesLvolIds{nullptr};   ///< Array of ids to daughter logical volumes
   int *fDaughterPvolIds{nullptr};           ///< Global PV Ids of the daughter PVs of this Volume
   int *fDaughterPvolTrans{nullptr};         ///< Transformations of the daughter PVs of this Volume
-
 };
 } // namespace vgbrep
 

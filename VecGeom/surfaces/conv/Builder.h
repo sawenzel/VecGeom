@@ -10,31 +10,29 @@ namespace vgbrep {
 namespace builder {
 
 template <typename Real_t>
-UnplacedSurface CreateUnplacedSurface(SurfaceType type, vecgeom::Precision *data = nullptr, bool flip = false)
+UnplacedSurface<Real_t> CreateUnplacedSurface(SurfaceType type, vecgeom::Precision *data = nullptr, bool flip = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   switch (type) {
   case SurfaceType::kPlanar:
-    return UnplacedSurface(type);
+    return UnplacedSurface<Real_t>(type);
   case SurfaceType::kCylindrical:
   case SurfaceType::kSpherical:
-    cpudata.fCylSphData.push_back({data[0], flip});
-    return UnplacedSurface(type, cpudata.fCylSphData.size() - 1);
+    return UnplacedSurface<Real_t>(type, -1, data[0], 0., flip);
   case SurfaceType::kElliptical:
     cpudata.fEllipData.push_back({data[0], data[1], data[2]});
-    return UnplacedSurface(type, cpudata.fEllipData.size() - 1);
+    return UnplacedSurface<Real_t>(type, cpudata.fEllipData.size() - 1);
   case SurfaceType::kConical:
-    cpudata.fConeData.push_back({data[0], data[1], flip});
-    return UnplacedSurface(type, cpudata.fConeData.size() - 1);
+    return UnplacedSurface<Real_t>(type, -1, data[0], data[1], flip);
   case SurfaceType::kTorus:
     cpudata.fTorusData.push_back({data[0], data[1], data[2], data[3], flip});
-    return UnplacedSurface(type, cpudata.fTorusData.size() - 1);
+    return UnplacedSurface<Real_t>(type, cpudata.fTorusData.size() - 1);
   case SurfaceType::kArb4:
     cpudata.fArb4Data.push_back(
         {data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]});
-    return UnplacedSurface(type, cpudata.fArb4Data.size() - 1);
+    return UnplacedSurface<Real_t>(type, cpudata.fArb4Data.size() - 1);
   default:
-    return UnplacedSurface(type);
+    return UnplacedSurface<Real_t>(type);
   };
 }
 
@@ -85,7 +83,7 @@ Frame CreateFrame(FrameType type, TriangleMask<Real_t> const &mask)
 }
 
 template <typename Real_t>
-int CreateLocalSurface(UnplacedSurface const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
+int CreateLocalSurface(UnplacedSurface<Real_t> const &unplaced, Frame const &frame, TransformationMP<Real_t> trans,
                        bool never_check = false)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();

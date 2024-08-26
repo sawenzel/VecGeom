@@ -25,10 +25,7 @@ namespace vgbrep {
 template <typename Real_t>
 class BrepHelper {
   using SurfData_t     = SurfData<Real_t>;
-  using CylData_t      = CylData<Real_t>;
-  using ConeData_t     = ConeData<Real_t>;
   using EllipData_t    = EllipData<Real_t>;
-  using SphData_t      = SphData<Real_t>;
   using TorusData_t    = TorusData<Real_t>;
   using Arb4Data_t     = Arb4Data<Real_t>;
   using WindowMask_t   = WindowMask<Real_t>;
