@@ -52,7 +52,7 @@ public:
   static Real_t CandidateDistanceToIn(int lv_index, int index, Vector3D<Real_t> localpoint, Vector3D<Real_t> localdir,
                                       Real_t step)
   {
-    auto surfdata = vgbrep::SurfData<Real_t>::Instance();
+    auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
     auto const &shell = surfdata.fShells[lv_index];
 
@@ -108,9 +108,9 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static Real_t CandidateSafetyToIn(int lv_index, int index, Vector3D<Real_t> localpoint)
   {
-    auto surfdata = vgbrep::SurfData<Real_t>::Instance();
+    auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
-    auto shell = surfdata.fShells[lv_index];
+    auto const &shell = surfdata.fShells[lv_index];
 
     Vector3D<Real_t> surface_point;
     Vector3D<Real_t> surface_dir;
@@ -250,7 +250,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static uint ItemId(int lv_index, int index)
   {
-    auto surfdata = vgbrep::SurfData<Real_t>::Instance();
+    auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
     auto const &shell = surfdata.fShells[lv_index];
     return shell.fDaughterPvolIds[index];
@@ -277,7 +277,7 @@ public:
     auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
 
     Vector3D<Real_t> daughterlocalpoint;
-    auto trans = surfdata.fPVolTrans[shell.fDaughterPvolTrans[index]];
+    auto const &trans = surfdata.fPVolTrans[shell.fDaughterPvolTrans[index]];
     trans.Transform(localpoint, daughterlocalpoint);
 
     // TODO: Instead, push the global PV id to the path when the option is available
@@ -446,7 +446,7 @@ public:
     }
 
     // Now identify the common surface
-    auto currentShell = surfdata.fShells[in_state.GetLogicalId()];
+    auto const &currentShell = surfdata.fShells[in_state.GetLogicalId()];
     if (hitcandidate_index < currentShell.fNExitingSurfaces) {
       // If the hit candidate is an exiting surface
       auto exiting_index = currentShell.fExitingSurfaces[hitcandidate_index];
@@ -455,8 +455,8 @@ public:
       FSlocator out_frame;
       hit_FS_tmp.state = in_state;
       // Get the onsurf point in CS coordinates
-      auto surf                    = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
-      auto CS_trans                = surf.fTrans;
+      auto const &surf                    = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
+      auto const &CS_trans                = surf.fTrans;
       Vector3D<Real_t> CS_local    = CS_trans.Transform(local_scene);
       Vector3D<Real_t> CS_localdir = CS_trans.TransformDirection(localdir_scene);
 
@@ -470,7 +470,7 @@ public:
 
       auto entering_index   = hitcandidate_index - currentShell.fNExitingSurfaces;
       auto local_surface_id = currentShell.fEnteringSurfaces[entering_index];
-      auto framed_surface   = surfdata.fLocalSurf[local_surface_id];
+      auto const &framed_surface   = surfdata.fLocalSurf[local_surface_id];
       auto pvol_id          = currentShell.fEnteringSurfacesPvol[entering_index];
       // Get the placed volume the hit candidate belongs to
       auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
@@ -482,8 +482,8 @@ public:
       surfdata.SceneToTouchableLocator(pvol_navstate, framed_surface.fSurfIndex, hit_FS.hit_surf);
       hit_FS.hit_surf.state = in_state;
       // Get the onsurf point in CS coordinates
-      auto surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
-      auto CS_trans = surf.fTrans;
+      auto const &surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
+      auto const &CS_trans = surf.fTrans;
       Vector3D<Real_t> CS_local, CS_localdir;
 
       unsigned short scene_id = 0, newscene_id = 0;
