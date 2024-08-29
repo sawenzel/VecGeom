@@ -446,7 +446,6 @@ struct FramedSurface {
 
 /// @brief A side represents all common placed surfaces
 struct Side {
-  Extent fExtent;          ///< Extent on a side.
   int fNumParents{0};      ///< number of different parent volumes contributing to this side
   int fNsurf{0};           ///< Number of placed surfaces on this side
   int fDivision{-1};       ///< Division helper for the side
@@ -473,7 +472,6 @@ struct Side {
     return (fNsurf > 0) ? GetSurfaceIndex(fNsurf - 1) : -1;
   }
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetSurfaceIndex(int isurf) const { return fSurfaces[isurf]; }
-  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasExtent() const { return fExtent.id >= 0; }
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool HasChildren() const { return fNsurf > fNumParents; }
 
   template <typename Real_t>

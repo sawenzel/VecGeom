@@ -76,27 +76,29 @@ private:
 
   /// @brief  Computes the division helper for a cylindrical side.
   /// @param side Side to which the extent is computed
+  /// @param extent_full extent of the side
   /// @return Index of the helper
-  int ComputeCylinderDivision(Side &side);
+  int ComputeCylinderDivision(Side &side, ZPhiMask_t extent_full);
 
   // Computes bounding extent on a side of cylindrical surface
-  bool ComputeCylinderExtent(Side &side);
+  ZPhiMask_t ComputeCylinderExtent(const Side &side);
 
   /// @brief  Computes the division helper for a planar side.
   /// @param side Side to which the extent is computed
+  /// @param extent_full extent of the side
   /// @return Index of the helper
-  int ComputePlaneDivision(Side &side);
+  int ComputePlaneDivision(Side &side, WindowMask_t extent_full);
 
   /// @brief  Computes the bounding extent on a planar side.
   /// @param side Side to which the extent is computed
-  void ComputePlaneExtent(Side &side);
+  WindowMask_t ComputePlaneExtent(const Side &side);
 
   /// @brief Computes division helpers for all sides
   void ComputeSideDivisions();
 
-  /// @brief Computes extents for the sides of all common surfaces
-  /// @return Operation success
-  bool ComputeExtents();
+  // /// @brief Computes extents for the sides of all common surfaces
+  // /// @return Operation success
+  // bool ComputeExtents();
 
   ///< This method uses the transformation T1 of the first placed surface on the left side (which always exists)
   ///< as transformation for the common surface, then recalculates the transformations of all placed

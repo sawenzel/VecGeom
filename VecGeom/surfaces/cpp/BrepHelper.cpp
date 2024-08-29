@@ -173,7 +173,7 @@ void BrepHelper<Real_t>::ComputeDefaultStates(int common_id)
 }
 
 template <typename Real_t>
-void BrepHelper<Real_t>::ComputePlaneExtent(Side &side)
+WindowMask<Real_t> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
 {
   // This is a helper-lambda that updates extents
   // for all sides of common plane surfaces
@@ -234,17 +234,12 @@ void BrepHelper<Real_t>::ComputePlaneExtent(Side &side)
     updatePlaneExtent(ext, local);
   } // for
 
-  // Add new extent mask to vector
-  int id = fCPUdata.fWindowMasks.size();
-  fCPUdata.fWindowMasks.push_back(ext);
-  side.fExtent.id = id;
+  return ext;
 }
 
 template <typename Real_t>
-bool BrepHelper<Real_t>::ComputeCylinderExtent(Side &side)
+ZPhiMask<Real_t> BrepHelper<Real_t>::ComputeCylinderExtent(const Side &side)
 {
-  // Setting initial extent mask
-  side.fExtent.type  = FrameType::kZPhi;
   ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
   auto sideext_local = sideext.InverseTransform(fSurfData->fFramedSurf[side.fSurfaces[0]].fTrans);
 
@@ -259,23 +254,16 @@ bool BrepHelper<Real_t>::ComputeCylinderExtent(Side &side)
     bool success = sideext_local.CombineWith(extFrame);
     if (!success) {
       VECGEOM_LOG(critical) << "ComputeCylinderExtent error";
-      return false;
     }
   }
 
-  // Add new extent mask to the vector
-  int id = fCPUdata.fZPhiMasks.size();
-  fCPUdata.fZPhiMasks.push_back(sideext_local);
-  side.fExtent.id = id;
-  return true;
+  return sideext_local;
 }
 
 template <typename Real_t>
-int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side)
+int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask_t extent_full)
 {
   return -1;
-  // Get side extent
-  auto extent_full = fCPUdata.fZPhiMasks[side.fExtent.id];
   SideDivisionCPU divisionZ(AxisType::kZ, extent_full.rangeZ[0], extent_full.rangeZ[1], side.fNsurf);
   auto updateRangeZ = [](Real_t z, Real_t &zmin, Real_t &zmax) {
     zmin = std::min(zmin, z);
@@ -304,7 +292,7 @@ int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side)
 }
 
 template <typename Real_t>
-int BrepHelper<Real_t>::ComputePlaneDivision(Side &side)
+int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask_t extent_full)
 {
   // This is a helper-lambda that updates extents
   // for all sides of common plane surfaces
@@ -314,10 +302,6 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side)
     e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
     e.rangeV[1] = std::max(e.rangeV[1], pt[1]);
   };
-  // Get side extent
-  auto extent_full = fCPUdata.fWindowMasks[side.fExtent.id];
-  // std::cout << "extent_full {" << extent_full.rangeU[0] << ", " << extent_full.rangeU[1] << "} {"
-  //           << extent_full.rangeV[0] << ", " << extent_full.rangeV[1] << "}\n";
   // Special case if all frames are rings placed with id transformation
   bool all_rings_id = true; // all frames are rings with id transformation
   double ring_max =
@@ -426,11 +410,15 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
   // Lambda for computing the division helper of a single side
   auto computeSingleSideDivision = [&](SurfaceType type, Side &side) {
     switch (type) {
-    case SurfaceType::kPlanar:
-      return ComputePlaneDivision(side);
+    case SurfaceType::kPlanar: {
+      auto extent_plane = ComputePlaneExtent(side);
+      return ComputePlaneDivision(side, extent_plane);
+    }
     case SurfaceType::kCylindrical:
-    case SurfaceType::kConical:
-      return ComputeCylinderDivision(side);
+    case SurfaceType::kConical: {
+      auto extent_cyl = ComputeCylinderExtent(side);
+      return ComputeCylinderDivision(side, extent_cyl);
+    }
     default:
       return -1;
     }
@@ -471,45 +459,45 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
   }
 }
 
-template <typename Real_t>
-bool BrepHelper<Real_t>::ComputeExtents()
-{
-  // Lambda for computing the extent of a single side
-  auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
-    bool success = true;
-    switch (type) {
-    case SurfaceType::kPlanar:
-      ComputePlaneExtent(side);
-      break;
-    case SurfaceType::kCylindrical:
-    case SurfaceType::kConical:
-      success = ComputeCylinderExtent(side);
-      break;
-    default:
-      VECGEOM_LOG(debug) << "Computing side extents dropped to default";
-      break;
-    }
-    return success;
-  };
+// template <typename Real_t>
+// bool BrepHelper<Real_t>::ComputeExtents()
+// {
+//   // Lambda for computing the extent of a single side
+//   auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
+//     bool success = true;
+//     switch (type) {
+//     case SurfaceType::kPlanar:
+//       ComputePlaneExtent(side);
+//       break;
+//     case SurfaceType::kCylindrical:
+//     case SurfaceType::kConical:
+//       success = ComputeCylinderExtent(side);
+//       break;
+//     default:
+//       VECGEOM_LOG(debug) << "Computing side extents dropped to default";
+//       break;
+//     }
+//     return success;
+//   };
 
-  // Compute extents for all sides on all surfaces
-  for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
-    bool success = true;
-    if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf) {
-      success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-                                        fSurfData->fCommonSurfaces[common_id].fLeftSide);
-    }
-    if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf) {
-      success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-                                        fSurfData->fCommonSurfaces[common_id].fRightSide);
-    }
-    if (!success) return false;
-  }
+//   // Compute extents for all sides on all surfaces
+//   for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
+//     bool success = true;
+//     if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf) {
+//       success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
+//                                         fSurfData->fCommonSurfaces[common_id].fLeftSide);
+//     }
+//     if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf) {
+//       success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
+//                                         fSurfData->fCommonSurfaces[common_id].fRightSide);
+//     }
+//     if (!success) return false;
+//   }
 
-  // We created new masks, update them.
-  UpdateMaskData();
-  return true;
-}
+//   // We created new masks, update them.
+//   UpdateMaskData();
+//   return true;
+// }
 
 template <typename Real_t>
 bool BrepHelper<Real_t>::Convert()
@@ -1233,8 +1221,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
 
   ////////////////////////////////////////////////////////////
 
-  // Compute extents for all sides of common surfaces
-  ComputeExtents();
+  // Compute side divisions for all sides of common surfaces
   ComputeSideDivisions();
   if (fVerbose > 0) {
     for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf)
@@ -1722,29 +1709,19 @@ void BrepHelper<Real_t>::PrintCommonSurface(int common_id)
   surf.fTrans.Print();
   switch (surf.fType) {
   case SurfaceType::kPlanar: {
-    WindowMask_t const &extL = fSurfData->fWindowMasks[surf.fLeftSide.fExtent.id];
-    printf("\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, %g, "
+    printf("\n   \x1B[34mleft:\x1B[0m %d surfaces, num_parents=%d, normal: (%g, %g, "
            "%g)\n",
-           surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeU[0], extL.rangeU[1],
-           extL.rangeV[0], extL.rangeV[1], round0(normal[0]), round0(normal[1]), round0(normal[2]));
+           surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, round0(normal[0]), round0(normal[1]), round0(normal[2]));
     break;
   }
   case SurfaceType::kCylindrical: {
-    ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-    printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
-           "%g}}, {radius{%g}}\n",
-           surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
-           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1],
-           fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius);
+    printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, {radius{%g}}\n", surf.fLeftSide.fNsurf,
+           surf.fLeftSide.fNumParents, fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius);
     break;
   }
   case SurfaceType::kConical: {
-    ZPhiMask_t const &extL = fSurfData->fZPhiMasks[surf.fLeftSide.fExtent.id];
-    printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, extent %d:  {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
-           "%g}}, {radius{%g}, slope{%g}}\n",
-           surf.fLeftSide.fNsurf, surf.fLeftSide.fNumParents, surf.fLeftSide.fExtent.id, extL.rangeZ[0], extL.rangeZ[1],
-           extL.vecSPhi[0], extL.vecSPhi[1], extL.vecEPhi[0], extL.vecEPhi[1],
-           fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius,
+    printf("\n   \x1B[34mleft\x1B[0m: %d surfaces, num_parents=%d, {radius{%g}, slope{%g}}\n", surf.fLeftSide.fNsurf,
+           surf.fLeftSide.fNumParents, fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fRadius,
            fSurfData->fFramedSurf[surf.fLeftSide.fSurfaces[0]].fSurface.fSlope);
     break;
   }
@@ -1764,28 +1741,20 @@ void BrepHelper<Real_t>::PrintCommonSurface(int common_id)
   if (surf.fRightSide.fNsurf > 0) {
     switch (surf.fType) {
     case SurfaceType::kPlanar: {
-      WindowMask_t const &extR = fSurfData->fWindowMasks[surf.fRightSide.fExtent.id];
-      printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {u{%g, %g}, v{%g, %g}}, normal: (%g, "
+      printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, normal: (%g, "
              "%g, %g)\n",
-             surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeU[0],
-             extR.rangeU[1], extR.rangeV[0], extR.rangeV[1], round0(-normal[0]), round0(-normal[1]),
+             surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, round0(-normal[0]), round0(-normal[1]),
              round0(-normal[2]));
       break;
     }
     case SurfaceType::kCylindrical: {
-      ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-      printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d, extent %d: {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
-             "%g}}\n",
-             surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeZ[0],
-             extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
+      printf("   \x1B[31mright:\x1B[0m %d surfaces, num_parents=%d}\n", surf.fRightSide.fNsurf,
+             surf.fRightSide.fNumParents);
       break;
     }
     case SurfaceType::kConical: {
-      ZPhiMask_t const &extR = fSurfData->fZPhiMasks[surf.fRightSide.fExtent.id];
-      printf("\n   \x1B[31mright\x1B[0m: %d surfaces, num_parents=%d, extent %d:  {z{%g, %g}, sphi{%g, %g}, ephi{%g, "
-             "%g}}\n",
-             surf.fRightSide.fNsurf, surf.fRightSide.fNumParents, surf.fRightSide.fExtent.id, extR.rangeZ[0],
-             extR.rangeZ[1], extR.vecSPhi[0], extR.vecSPhi[1], extR.vecEPhi[0], extR.vecEPhi[1]);
+      printf("\n   \x1B[31mright\x1B[0m: %d surfaces, num_parents=%d\n", surf.fRightSide.fNsurf,
+             surf.fRightSide.fNumParents);
       break;
     }
     case SurfaceType::kElliptical:

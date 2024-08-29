@@ -1006,11 +1006,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
     FSlocator out_frame;
     auto EnterFrameCheck = [&](auto left_side, auto &onsurf, auto dist) -> int {
-      auto const &surf = surfdata.fCommonSurfaces[isurf];
-      auto &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
-      // first check the extent of the entry side using onsurf
-      if (entry_side.HasExtent() && !entry_side.fExtent.Inside(onsurf, surfdata)) return -1;
-
       // Seek and cross entering frames
       // Bootstrap the temporary frame locator with the hit CS side
       tmp_hit_FS.Set(isurf, -1, left_side);
