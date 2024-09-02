@@ -53,6 +53,10 @@ public:
                           Precision const *z); // z coordinate of these corners
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::genericpolycone; }
+
+  VECCORE_ATT_HOST_DEVICE
   GenericPolyconeStruct<Precision> const &GetStruct() const { return fGenericPolycone; }
 
   /*

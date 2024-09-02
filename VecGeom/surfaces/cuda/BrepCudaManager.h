@@ -8,6 +8,7 @@
 #include <VecGeom/surfaces/SurfData.h>
 #include "VecGeom/surfaces/bvh/AABBsurf.h"
 #include "VecGeom/surfaces/bvh/BVHsurf.h"
+#include "VecGeom/volumes/VolumeTree.h"
 
 namespace vgbrep {
 
@@ -97,6 +98,13 @@ void CopyBVH(const bvh::BVHsurf<Real_t> &hBVH, bvh::BVHsurf<Real_t> *dBVH)
 }
 
 // This function sets the correct pointers on device memory in the data structures that were copied
+static __global__ void FinishVolumeTreeTransfer(vecgeom::VolumeTree *volumeTree, long shift_children)
+{
+  volumeTree->Relocate(shift_children);
+  vecgeom::globaldevicegeomdata::gVolumeTree = volumeTree;
+}
+
+// This function sets the correct pointers on device memory in the data structures that were copied
 template <typename Real_t>
 static __global__ void BrepCudaManagerFinishTransfer(SurfData<Real_t> *surfData)
 {
@@ -181,8 +189,10 @@ template <typename Real_t>
 class BrepCudaManager {
   using SurfData_t = SurfData<Real_t>;
 
-  SurfData_t fSurfDataStaging;     ///< Host memory to stage data for the GPU
-  SurfData_t *fSurfData = nullptr; ///< Device pointer to the data structure
+  SurfData_t fSurfDataStaging;               ///< Host memory to stage data for the GPU
+  SurfData_t *fSurfData{nullptr};            ///< Device pointer to the data structure
+  vecgeom::VolumeTree fVolumeTreeStaging;    ///< Host memory to stage the volume tree for the GPU
+  vecgeom::VolumeTree *fVolumeTree{nullptr}; ///< Device pointer to the volume tree
 
 public:
   static BrepCudaManager &Instance()
@@ -192,11 +202,52 @@ public:
   }
 
   const SurfData_t *GetDevicePtr() const { return fSurfData; }
+  const vecgeom::VolumeTree *GetVolumeTreeDevicePtr() const { return fVolumeTree; }
+
+  void TransferVolumeTree(const vecgeom::VolumeTree &volumeTree)
+  {
+    fVolumeTreeStaging  = volumeTree;
+    size_t sizeLogical  = volumeTree.fNlogical * sizeof(vecgeom::LogicalId);
+    size_t sizePlaced   = volumeTree.fNplaced * sizeof(vecgeom::PlacedId);
+    size_t sizeChildren = volumeTree.fNplacedC * sizeof(vecgeom::PlacedId);
+    // Allocate the buffer on device
+    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fLogical, sizeLogical));
+    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fPlaced, sizePlaced));
+    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fChildren, sizeChildren));
+    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTreeStaging.fLogical, volumeTree.fLogical, sizeLogical, cudaMemcpyHostToDevice));
+    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTreeStaging.fPlaced, volumeTree.fPlaced, sizePlaced, cudaMemcpyHostToDevice));
+    BREP_CUDA_CHECK(
+        cudaMemcpy(fVolumeTreeStaging.fChildren, volumeTree.fChildren, sizeChildren, cudaMemcpyHostToDevice));
+    // long shift_placed = reinterpret_cast<long>(fVolumeTreeStaging.fPlaced) -
+    // reinterpret_cast<long>(volumeTree.fPlaced);
+    long shift_children =
+        reinterpret_cast<long>(fVolumeTreeStaging.fChildren) - reinterpret_cast<long>(volumeTree.fChildren);
+
+    // Now copy the staged data to the GPU
+    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTree, sizeof(vecgeom::VolumeTree)));
+    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTree, &fVolumeTreeStaging, sizeof(vecgeom::VolumeTree), cudaMemcpyHostToDevice));
+
+    // Finally finish the transfer by calling a kernel to write some pointers
+    FinishVolumeTreeTransfer<<<1, 1>>>(fVolumeTree, shift_children);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    // The arrays in the staging area are device pointers, null them to avoid deletion
+    fVolumeTreeStaging.fLogical  = nullptr;
+    fVolumeTreeStaging.fPlaced   = nullptr;
+    fVolumeTreeStaging.fChildren = nullptr;
+  }
 
   void TransferSurfData(const SurfData_t &surfData)
   {
     using Real_b = typename SurfData_t::Real_b;
     size_t sizeInBytes;
+
+    // Transfer the volume tree first
+    auto const &volumeTree = vecgeom::VolumeTree::Instance();
+    if (!volumeTree.fValid) {
+      VECGEOM_LOG(critical) << "Volume tree is invalid";
+      return;
+    }
+    TransferVolumeTree(volumeTree);
 
     // Allocate and copy transformations
     fSurfDataStaging.fNvolTrans = surfData.fNvolTrans;

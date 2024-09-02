@@ -270,19 +270,13 @@ public:
     auto const &surfdata = SurfData<Real_t>::Instance();
     // Get the shell
     auto const &shell = surfdata.fShells[lv_index];
-    // Get the global PV id for this daughter
-    auto pvol_id = shell.fDaughterPvolIds[index];
-
-    // TEMPORARY: Get the PV using the global PV id and the daughter index
-    auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
 
     Vector3D<Real_t> daughterlocalpoint;
     auto const &trans = surfdata.fPVolTrans[shell.fDaughterPvolTrans[index]];
     trans.Transform(localpoint, daughterlocalpoint);
 
-    // TODO: Instead, push the global PV id to the path when the option is available
     // Push to path
-    path.Push(pvol);
+    path.PushDaughter(index);
 
     // Call LogicInside
     auto inside = vgbrep::protonav::LogicInsideLocal(daughterlocalpoint, path.GetLogicalId(), surfdata);
@@ -294,34 +288,27 @@ public:
   };
 
   VECCORE_ATT_HOST_DEVICE
-  static long LocatePointIn(long pvol_id, Vector3D<Precision> const &point_i, vecgeom::NavigationState &path, bool top,
-                            long *exclude = nullptr)
+  static int LocatePointIn(int pvol_id, Vector3D<Precision> const &point_i, vecgeom::NavigationState &path, bool top,
+                           int *exclude = nullptr)
   {
-    // TEMPORARY: Since for now NavState::Push doesn't work with just an ID, we need to
-    // retrieve the actual Pvol just for this purpose, but it can't be used for anything else
-    auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
-    //////////////////////////////////////////
-
+    using NavigationState = vecgeom::NavigationState;
     vecgeom::Vector3D<Real_t> point(point_i);
 
     // Get the SurfData instance
     auto const &surfdata = SurfData<Real_t>::Instance();
 
-    path.Push(pvol);
-    // path.Push(pvol_id);
-
     if (top) {
-      // assert(vol != nullptr); TODO: What is an equivalent check using the ID?
-      if (!vgbrep::protonav::LogicInsideLocal(point, path.GetLogicalId(), surfdata)) {
-        path.Pop();
-        return -1;
-      }
+      assert(pvol_id >= 0);
+      auto ivol   = NavigationState::ToPlacedId(pvol_id).fVolume.fId;
+      auto inside = vgbrep::protonav::LogicInsideLocal(point, ivol, surfdata);
+      if (!inside) return -1;
     }
 
+    path.Push(pvol_id);
     Vector3D<Real_t> currentpoint(point);
     Vector3D<Real_t> daughterlocalpoint;
-    long exclude_id  = -1;
-    long daughter_id = -1;
+    int exclude_id  = -1;
+    int daughter_id = -1;
 
     // Get the shell
     auto shell = surfdata.fShells[path.GetLogicalId()]; // Assuming path corresponds to pvol_id
@@ -340,12 +327,7 @@ public:
       // daughter_id will be the global id of the placed volume
       if (!bvh.template LevelLocate<BVHSurfNavigator<Real_t>>(exclude_id, currentpoint, daughter_id, path)) break;
 
-      // TEMPORARY: Get the Pvol ///////////////
-      auto daughter_pvol = vecgeom::NavigationState::ToPlacedVolume(daughter_id);
-      path.Push(daughter_pvol);
-      //////////////////////////////////////////
-      // path.Push(daughter_id);
-      //////////////////////////////////////////
+      path.Push(daughter_id);
 
       // Compute the transformed point
       // TODO: This can be done cheaper if we use the transformation stored in the shell
@@ -368,8 +350,7 @@ public:
       }
     }
 
-    // TEMPORARY
-    return path.Top()->id();
+    return path.TopId();
   }
 
   /// @brief Method computing the distance to the next surface and state after crossing it
@@ -455,8 +436,8 @@ public:
       FSlocator out_frame;
       hit_FS_tmp.state = in_state;
       // Get the onsurf point in CS coordinates
-      auto const &surf                    = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
-      auto const &CS_trans                = surf.fTrans;
+      auto const &surf             = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
+      auto const &CS_trans         = surf.fTrans;
       Vector3D<Real_t> CS_local    = CS_trans.Transform(local_scene);
       Vector3D<Real_t> CS_localdir = CS_trans.TransformDirection(localdir_scene);
 
@@ -468,16 +449,15 @@ public:
 
     } else {
 
-      auto entering_index   = hitcandidate_index - currentShell.fNExitingSurfaces;
-      auto local_surface_id = currentShell.fEnteringSurfaces[entering_index];
-      auto const &framed_surface   = surfdata.fLocalSurf[local_surface_id];
-      auto pvol_id          = currentShell.fEnteringSurfacesPvol[entering_index];
-      // Get the placed volume the hit candidate belongs to
-      auto pvol = vecgeom::NavigationState::ToPlacedVolume(pvol_id);
+      auto entering_index        = hitcandidate_index - currentShell.fNExitingSurfaces;
+      auto local_surface_id      = currentShell.fEnteringSurfaces[entering_index];
+      auto const &framed_surface = surfdata.fLocalSurf[local_surface_id];
+      auto pvol_id               = currentShell.fEnteringSurfacesPvol[entering_index];
       // Create a copy of the navigation state
       auto pvol_navstate(in_state);
       // Get the navigation state of the daughter
-      pvol_navstate.Push(pvol);
+      // pvol_navstate.Push(pvol);
+      pvol_navstate.Push(pvol_id);
       // set hit_FS.hit_surf
       surfdata.SceneToTouchableLocator(pvol_navstate, framed_surface.fSurfIndex, hit_FS.hit_surf);
       hit_FS.hit_surf.state = in_state;

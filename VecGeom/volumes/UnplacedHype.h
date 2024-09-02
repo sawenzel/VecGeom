@@ -61,6 +61,10 @@ public:
     ComputeBBox();
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::hyperboloid; }
+
   /// Getter for the structure storing hyperboloid data.
   VECCORE_ATT_HOST_DEVICE
   HypeStruct<Precision> const &GetStruct() const { return fHype; }

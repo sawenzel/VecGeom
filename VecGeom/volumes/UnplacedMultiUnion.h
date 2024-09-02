@@ -57,6 +57,10 @@ public:
   VPlacedVolume const *GetNode(size_t i) const { return fMultiUnion.fVolumes[i]; }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::multiunion; }
+
+  VECCORE_ATT_HOST_DEVICE
   MultiUnionStruct const &GetStruct() const { return fMultiUnion; }
 
   VECCORE_ATT_HOST_DEVICE
@@ -82,9 +86,9 @@ public:
   std::string GetEntityType() const { return "MultiUnion"; }
 
   VECCORE_ATT_HOST_DEVICE
-  virtual void Print() const override{};
+  virtual void Print() const override {};
 
-  virtual void Print(std::ostream & /*os*/) const override{};
+  virtual void Print(std::ostream & /*os*/) const override {};
 
   VECCORE_ATT_DEVICE
   static VPlacedVolume *Create(LogicalVolume const *const logical_volume, Transformation3D const *const transformation,

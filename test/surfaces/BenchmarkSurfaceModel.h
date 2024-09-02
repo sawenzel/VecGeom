@@ -107,8 +107,7 @@ bool ValidateNavigation(int npoints, Precision worldX, Precision worldY, Precisi
     vgbrep::CrossedSurface crossed_surf;
     bool safesafe = true;
     NavigationState in_state, out_state, surflocate_state;
-    vgbrep::protonav::LocatePointIn<Precision, Precision>(GeoManager::Instance().GetWorld(), pos, surflocate_state,
-                                                          true);
+    vgbrep::protonav::LocatePointIn<Precision, Precision>(NavigationState::WorldId(), pos, surflocate_state, true);
     auto distance =
         vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, *origStates[i], out_state, crossed_surf);
     int common_id = crossed_surf.hit_surf.GetCSindex();

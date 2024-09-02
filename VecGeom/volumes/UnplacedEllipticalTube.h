@@ -50,6 +50,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedEllipticalTube(Precision dx, Precision dy, Precision dz);
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::ellipticaltube; }
+
   /// Getter for the structure storing elliptical cone data
   VECCORE_ATT_HOST_DEVICE
   EllipticalTubeStruct<Precision> const &GetStruct() const { return fEllipticalTube; }

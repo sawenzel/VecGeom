@@ -74,6 +74,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedParallelepiped() : fPara(0., 0., 0., 0., 0., 0.) { fGlobalConvexity = true; }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::parallelepiped; }
+
   /// Getter for the structure storing parallepiped data.
   VECCORE_ATT_HOST_DEVICE
   ParallelepipedStruct<Precision> const &GetStruct() const { return fPara; }

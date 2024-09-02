@@ -10,11 +10,9 @@
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/base/Transformation3DMP.h"
 #include "VecGeom/volumes/PlacedVolume.h"
+#include "VecGeom/volumes/VolumeTree.h"
 #include "VecGeom/management/GeoManager.h"
-
-#ifdef VECGEOM_ENABLE_CUDA
-#include "VecGeom/management/CudaManager.h"
-#endif
+#include "VecGeom/management/DeviceGlobals.h"
 
 #include <iostream>
 #include <list>
@@ -289,24 +287,52 @@ public:
 #endif
   }
 
-  /// @brief Implementation for getting the number of daughters for a given navigation index
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static unsigned int GetLogicalIdImpl(NavIndex_t nav_index)
+  static int WorldId() { return NavInd(2); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static vecgeom::PlacedId const &ToPlacedId(size_t iplaced)
   {
-    if (!nav_index) return 0;
-    return NavInd(NavInd(nav_index + 3));
+    return vecgeom::VolumeTree::Instance().fPlaced[iplaced];
   }
 
-  /// @brief Implementation for getting the number of daughters for a given navigation index
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static vecgeom::LogicalId const &ToLogicalId(size_t iplaced)
+  {
+    return vecgeom::VolumeTree::Instance().fPlaced[iplaced].fVolume;
+  }
+
+  /// @brief Implementation for getting the logical id for a given navigation index
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static unsigned int GetLogicalIdImpl(NavIndex_t nav_index) { return nav_index ? NavInd(NavInd(nav_index + 4)) : 0; }
+
+  /// @brief Implementation for getting the logical id for a given navigation tuple
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   static unsigned int GetLogicalIdImpl(NavTuple_t const &nav_tuple) { return GetLogicalIdImpl(nav_tuple.Top()); }
 
+  /// @brief Implementation for getting the child id for a given navigation index
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static int GetChildIdImpl(NavIndex_t const &nav_index)
+  {
+    auto content_ichild = reinterpret_cast<const int *>(NavIndAddr(nav_index + 2));
+    return *content_ichild;
+  }
+
+  /// @brief Implementation for getting the child id for a given navigation tuple
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static int GetChildIdImpl(NavTuple_t const &nav_tuple) { return GetChildIdImpl(nav_tuple.Top()); }
+
   /// @brief Implementation for getting the number of daughters for a given navigation tuple
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static unsigned int GetNdaughtersImpl(NavTuple_t const &nav_tuple) { return NavInd(NavInd(nav_tuple.Top() + 3) + 1); }
+  static unsigned int GetNdaughtersImpl(NavTuple_t const &nav_tuple) { return NavInd(NavInd(nav_tuple.Top() + 4) + 1); }
 
   /// @brief Implementation for getting the scene id for a given navigation index
   VECCORE_ATT_HOST_DEVICE
@@ -316,7 +342,7 @@ public:
     scene_id    = 0;
     newscene_id = 0;
     if (nav_ind == 0) return false;
-    auto scenes = reinterpret_cast<const unsigned short *>(NavIndAddr(nav_ind + 4));
+    auto scenes = reinterpret_cast<const unsigned short *>(NavIndAddr(nav_ind + 5));
     scene_id    = scenes[0];
     newscene_id = scenes[1];
     return (newscene_id != scene_id);
@@ -358,7 +384,7 @@ public:
   {
     if (nav_tuple.fLevel < 1) return 0;
     auto top_parent = nav_tuple[nav_tuple.fLevel - 1];
-    return *reinterpret_cast<const unsigned short *>(NavIndAddr(top_parent + 4));
+    return *reinterpret_cast<const unsigned short *>(NavIndAddr(top_parent + 5));
   }
 
   /// @brief Implementation for getting the parent scene id
@@ -377,7 +403,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static unsigned char GetLevelImpl(NavIndex_t nav_ind)
   {
-    auto content_level = reinterpret_cast<const unsigned char *>(NavIndAddr(nav_ind + 5));
+    auto content_level = reinterpret_cast<const unsigned char *>(NavIndAddr(nav_ind + 6));
     return *content_level;
   }
 
@@ -414,7 +440,7 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  static NavIndex_t GetIdImpl(NavIndex_t nav_ind) { return (nav_ind > 0) ? NavInd(nav_ind + 2) : 0; }
+  static NavIndex_t GetIdImpl(NavIndex_t nav_ind) { return (nav_ind > 0) ? NavInd(nav_ind + 3) : 0; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -466,7 +492,7 @@ public:
   {
     auto top = nav_tuple.Top();
     if (top) {
-      auto child       = NavInd(NavInd(top + 3) + 2 + v->GetChildId());
+      auto child       = NavInd(NavInd(top + 4) + 2 + v->GetChildId());
       bool on_newscene = NavInd(child) == 0;
       if (on_newscene) {
         nav_tuple.fLevel++;
@@ -480,6 +506,33 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  static void PushDaughterImpl(NavTuple_t &nav_tuple, int idaughter)
+  {
+    auto top = nav_tuple.Top();
+    if (top) {
+      assert(idaughter >= 0 && idaughter < int(GetNdaughtersImpl(top)));
+      auto child       = NavInd(NavInd(top + 4) + 2 + idaughter);
+      bool on_newscene = NavInd(child) == 0;
+      if (on_newscene) {
+        nav_tuple.fLevel++;
+        assert(nav_tuple.fLevel < NavTuple_t::GetMaxDepth());
+      }
+      nav_tuple.Set(child);
+    } else {
+      nav_tuple.Set(1);
+    }
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static void PushImpl(NavTuple_t &nav_tuple, int iplaced)
+  {
+    auto const &pv_ind = ToPlacedId(iplaced);
+    PushDaughterImpl(nav_tuple, pv_ind.fChildId);
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   static VPlacedVolume const *TopImpl(NavTuple_t const &nav_tuple)
   {
     auto top = nav_tuple.Top();
@@ -488,11 +541,19 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  static int TopIdImpl(NavTuple_t const &nav_tuple)
+  {
+    auto top = nav_tuple.Top();
+    return (top > 0) ? int(NavInd(top + 1)) : -1;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   static void ReadTransformation(NavIndex_t nav_ind, Transformation3D &trans)
   {
     assert(trans.IsIdentity() && "ReadTransformation: destination must be an identity");
     auto record       = NavIndAddr(nav_ind);
-    auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 5);
+    auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 6);
     bool has_trans    = *(content_lhtr + 2) > 0;
     bool has_rot      = *(content_lhtr + 3) > 0;
     if (!(has_trans | has_rot)) return; // identity
@@ -510,7 +571,7 @@ public:
   {
     assert(trans.IsIdentity() && "ReadTransformation: destination must be an identity");
     auto record       = NavIndAddr(nav_ind);
-    auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 5);
+    auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 6);
     bool has_trans    = *(content_lhtr + 2) > 0;
     bool has_rot      = *(content_lhtr + 3) > 0;
     if (!(has_trans | has_rot)) return; // identity
@@ -626,6 +687,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  int GetLastIdExited() const { return TopIdImpl(fLastExited); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   void SetLastExited() { fLastExited = fNavTuple; }
 
   VECGEOM_FORCE_INLINE
@@ -639,6 +704,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   unsigned int GetLogicalId() const { return GetLogicalIdImpl(fNavTuple); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  int GetChildId() const { return GetChildIdImpl(fNavTuple); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -684,6 +753,14 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  void Push(int iplaced) { PushImpl(fNavTuple, iplaced); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void PushDaughter(int idaughter) { PushDaughterImpl(fNavTuple, idaughter); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   void PushScene(NavIndex_t nav_ind)
   {
     fNavTuple.fLevel++;
@@ -704,6 +781,10 @@ public:
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   VPlacedVolume const *Top() const { return TopImpl(fNavTuple); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  int TopId() const { return TopIdImpl(fNavTuple); }
 
   /**
    * returns the number of FILLED LEVELS such that

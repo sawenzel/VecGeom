@@ -80,6 +80,10 @@ public:
     ComputeBBox();
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::trd; }
+
   /// Getter for the structure storing Trd data
   VECCORE_ATT_HOST_DEVICE
   TrdStruct<Precision> const &GetStruct() const { return fTrd; }

@@ -15,6 +15,7 @@
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/management/GeoVisitor.h"
 #include "VecGeom/management/Logger.h"
+#include <VecGeom/volumes/VolumeTree.h>
 
 #include <dlfcn.h>
 #include <stdio.h>
@@ -22,6 +23,7 @@
 #include <vector>
 #include <set>
 #include <functional>
+#include <iomanip>
 
 namespace vecgeom {
 
@@ -220,6 +222,13 @@ void GeoManager::CloseGeometry()
 
   CompactifyMemory();
   vecgeom::ABBoxManager<Precision>::Instance().InitABBoxesForCompleteGeometry();
+  CreateIndexHierarchy();
+  VolumeTree::Instance().fValid = true;
+
+  // if (CheckIndexHierarchy())
+  //   VolumeTree::Instance().fValid = true;
+  // else
+  //   VECGEOM_LOG(critical) << "Could not validate index hierarchy";
   fIsClosed = true;
 
 #if defined(VECGEOM_USE_NAVINDEX) || defined(VECGEOM_USE_NAVTUPLE)
@@ -229,6 +238,111 @@ void GeoManager::CloseGeometry()
     VECGEOM_LOG(critical) << "GeoManager::CloseGeometry: The navigation table has errors";
   }
 #endif
+}
+
+void GeoManager::CreateIndexHierarchy() const
+{
+  // Loop all defined logical volumes by index
+  auto &volTree = VolumeTree::Instance();
+  int nvol      = GetRegisteredVolumesCount();
+  int nplaced   = GetPlacedVolumesCount();
+
+  // Count number of PlacedId needed for children
+  int nplaced_children = 0;
+  for (int ivol = 0; ivol < nvol; ++ivol) {
+    auto lvol = GetLogicalVolume(ivol);
+    nplaced_children += lvol->GetDaughters().size();
+  }
+  if (nplaced_children > nplaced) {
+    VECGEOM_LOG(critical) << "Too many children placed volumes\n";
+  }
+  volTree.Allocate(nvol, nplaced, nplaced_children);
+  PlacedId *children = volTree.fChildren;
+
+  // Fill the logical volumes
+  for (int ivol = 0; ivol < nvol; ++ivol) {
+    auto lvol       = GetLogicalVolume(ivol);
+    auto solid_type = lvol->GetUnplacedVolume()->GetType();
+    assert(int(lvol->id()) == ivol); // id must be the index in the list
+    int nchildren = lvol->GetDaughters().size();
+    volTree.fLogical[ivol].Set(ivol, solid_type, nchildren, children);
+    children += nchildren;
+    assert(ivol == volTree.fLogical[ivol].fId && nchildren == volTree.fLogical[ivol].fNplaced);
+  }
+
+  // Fill the placed volumes
+  for (int iplaced = 0; iplaced < nplaced; ++iplaced) {
+    auto pvol = GetPlacedVolume(iplaced);
+    assert(int(pvol->id()) == iplaced); // id must be the index in the list
+    auto lvol = pvol->GetLogicalVolume();
+    int ivol  = lvol->id();
+    volTree.fPlaced[iplaced].Set(iplaced, pvol->GetCopyNo(), pvol->GetChildId(), volTree.fLogical[ivol]);
+  }
+
+  // Fill the children placed volumes
+  for (int ivol = 0; ivol < nvol; ++ivol) {
+    auto lvol = GetLogicalVolume(ivol);
+    for (size_t i = 0; i < lvol->GetDaughters().size(); ++i) {
+      int iplaced                         = (lvol->GetDaughters())[i]->id();
+      volTree.fLogical[ivol].fChildren[i] = volTree.fPlaced[iplaced];
+    }
+  }
+
+  // Set the world placed id
+  assert(fWorld);
+  volTree.fWorld = volTree.fPlaced[fWorld->id()];
+  VECGEOM_LOG(info) << "VolumeTree size is " << std::setprecision(5) << float(volTree.GetSize()) / (1024 * 1024)
+                    << " MBytes";
+}
+
+bool GeoManager::CheckIndexHierarchy() const
+{
+  auto &volTree = VolumeTree::Instance();
+  typedef std::function<bool(VPlacedVolume const *, PlacedId const &, NavStatePath *)> funcCheck_t;
+  funcCheck_t visitAndCheck = [&](VPlacedVolume const *pvol, PlacedId const &plvol, NavStatePath *state) {
+    // reset vol_visited before calling first time
+    state->Push(pvol);
+    auto lvol = pvol->GetLogicalVolume();
+    int ivol  = lvol->id();
+    assert(lvol == GetLogicalVolume(ivol));
+    int nchildren = lvol->GetDaughters().size();
+    int iplaced   = pvol->id();
+    assert(pvol == GetPlacedVolume(iplaced));
+    int ichild = pvol->GetChildId();
+    int icopy  = pvol->GetCopyNo();
+    // check the corresponding index elements
+    auto const &placed_id = volTree.fPlaced[iplaced];
+    bool success          = placed_id == plvol;
+    success &= placed_id.fId == iplaced;
+    success &= placed_id.fCopyNo == icopy;
+    success &= placed_id.fChildId == ichild;
+    auto const &logical_id = placed_id.fVolume;
+    success &= (logical_id.fId == ivol);
+    success &= logical_id.fNplaced == nchildren;
+    if (!success) {
+      VECGEOM_LOG(error) << "error for state: ";
+      state->Print();
+      success = placed_id == plvol;
+      success &= placed_id.fId == iplaced;
+      success &= placed_id.fCopyNo == icopy;
+      success &= placed_id.fChildId == ichild;
+      success &= (logical_id.fId == ivol);
+      success &= logical_id.fNplaced == nchildren;
+      return false;
+    }
+
+    for (int i = 0; i < nchildren; ++i) {
+      success = visitAndCheck(pvol->GetDaughters().operator[](i), placed_id.fVolume.fChildren[i], state);
+      if (!success) return false;
+    }
+    state->Pop();
+    return true;
+  };
+
+  NavStatePath *state = NavStatePath::MakeInstance(fMaxDepth);
+  auto success        = visitAndCheck(GeoManager::Instance().GetWorld(), volTree.fWorld, state);
+  if (!success) VECGEOM_LOG(critical) << "GeoMAnager::CheckIndexHierarchy failed";
+  return success;
 }
 
 void GeoManager::LoadGeometryFromSharedLib(std::string libname, bool close)

@@ -65,6 +65,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::cone; }
+
+  VECCORE_ATT_HOST_DEVICE
   ConeStruct<Precision> const &GetStruct() const { return fCone; }
 
   VECCORE_ATT_HOST_DEVICE

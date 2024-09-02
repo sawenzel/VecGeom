@@ -59,6 +59,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedParaboloid(const Precision rlo, const Precision rhi, const Precision dz);
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::paraboloid; }
+
   /// Getter for the structure storing the paraboloid data
   VECCORE_ATT_HOST_DEVICE
   ParaboloidStruct<Precision> const &GetStruct() const { return fParaboloid; }

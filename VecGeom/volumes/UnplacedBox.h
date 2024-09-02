@@ -40,6 +40,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::box; }
+
+  VECCORE_ATT_HOST_DEVICE
   BoxStruct<Precision> const &GetStruct() const { return fBox; }
 
   VECCORE_ATT_HOST_DEVICE

@@ -54,6 +54,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   virtual bool IsBoolean() const { return false; }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const { return ESolidType::nosolid; }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void SetBBox(Vector3D<Precision> const &amin, Vector3D<Precision> const &amax)

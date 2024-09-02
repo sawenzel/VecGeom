@@ -88,7 +88,7 @@ NavigationState Locate(Precision x, Precision y, Precision z)
 {
   Vector3D<Precision> pos(x, y, z);
   NavigationState state;
-  vgbrep::protonav::LocatePointIn<Precision, Precision>(GeoManager::Instance().GetWorld(), pos, state, true);
+  vgbrep::protonav::LocatePointIn<Precision, Precision>(NavigationState::WorldId(), pos, state, true);
   return state;
 }
 

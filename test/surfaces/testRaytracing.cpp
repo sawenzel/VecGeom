@@ -54,7 +54,7 @@ int LoadGDML(const char *gdml_name, bool ongpu, int min_per_scene, double mmunit
 }
 
 //==================================================================================
-int LoadOnGPU()
+int LoadOnGPU(bool only_surf)
 {
 #ifdef VECGEOM_CUDA_INTERFACE
   std::cout << "synchronizing VecGeom geometry to GPU ...\n";
@@ -65,9 +65,13 @@ int LoadOnGPU()
   // set higher heap limit to allow solid model to dynamically allocate on GPU during init for large geometries
   CudaAssertError(CudaDeviceSetHeapLimit(512 * 1024 * 1024));
   auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
-  cudaManager.LoadGeometry(world);
-  if (!cudaManager.Synchronize()) return 4;
-  vecgeom::cxx::BVHManager::DeviceInit();
+  if (only_surf) {
+    cudaManager.SynchronizeNavigationTable();
+  } else {
+    cudaManager.LoadGeometry(world);
+    if (!cudaManager.Synchronize()) return 4;
+    vecgeom::cxx::BVHManager::DeviceInit();
+  }
 #endif
   return 0;
 }
@@ -92,7 +96,7 @@ void LocateSurf(int nrays, Vector3D<Precision> const *points, NavigationState *o
   for (auto i = 0; i < nrays; ++i) {
     auto const &pos = points[i];
     // Locate with surface-based model
-    vgbrep::protonav::LocatePointIn<Precision, Real_t>(GeoManager::Instance().GetWorld(), pos, out_states[i], true);
+    vgbrep::protonav::LocatePointIn<Precision, Real_t>(NavigationState::WorldId(), pos, out_states[i], true);
   }
 }
 //==================================================================================
@@ -101,29 +105,35 @@ void LocateSurfBVH(int nrays, Vector3D<Precision> const *points, NavigationState
   for (auto i = 0; i < nrays; ++i) {
     auto const &pos = points[i];
     // Locate with surface-based model
-    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(GeoManager::Instance().GetWorld()->id(), pos,
-                                                              out_states[i], true);
+    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(NavigationState::WorldId(), pos, out_states[i], true);
   }
 }
 //==================================================================================
 int ValidateLocate(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
-                   NavigationState *out_states, bool debug)
+                   NavigationState *out_states, bool validate_bvh, bool debug)
 {
   int num_errors = 0;
   for (auto i = 0; i < nrays; ++i) {
     if (out_states[i].GetNavIndex() != in_states[i].GetNavIndex()) {
       num_errors++;
-      if (debug) {
-        printf("%d: p{%16.12f, %16.12f, %16.12f} solid model state:  ", i, points[i][0], points[i][1], points[i][2]);
-        in_states[i].Print();
-        printf("   model state:  ");
-        out_states[i].Print();
-        out_states[i].Clear();
+      if (debug && num_errors == 1) {
+        printf("%d: p{%16.12f, %16.12f, %16.12f}\n", i, points[i][0], points[i][1], points[i][2]);
         // This just replays the failing locate query for debugging
-        LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_states[i], true);
-        out_states[i].Clear();
-        vgbrep::protonav::LocatePointIn<Precision, Real_t>(GeoManager::Instance().GetWorld(), points[i], out_states[i],
-                                                           true);
+        NavigationState out_state;
+        LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_state, true);
+        printf("   solid model state:        ");
+        out_state.Print();
+        out_state.Clear();
+        if (validate_bvh) {
+          vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(NavigationState::WorldId(), points[i], out_state,
+                                                                    true);
+          printf("   surface model BVH state:  ");
+          out_state.Print();
+        } else {
+          vgbrep::protonav::LocatePointIn<Precision, Real_t>(NavigationState::WorldId(), points[i], out_state, true);
+          printf("   surface model state:      ");
+          out_state.Print();
+        }
       }
     }
   }
@@ -177,7 +187,7 @@ void ComputeSafetiesSurf(int nrays, Vector3D<Precision> const *points, Navigatio
 }
 //==================================================================================
 void ComputeSafetiesSurfBVH(int nrays, Vector3D<Precision> const *points, NavigationState const *in_states,
-                         Precision *safeties, bool validate_results)
+                            Precision *safeties, bool validate_results)
 {
   if (validate_results) {
     for (auto i = 0; i < nrays; ++i) {
@@ -524,15 +534,21 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Correctness for locating points
   if (validate_results) {
-    num_errors = ValidateLocate(nrays, points, origStates, outputStates, debug);
-    if (num_errors > 0) std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
+    num_errors = ValidateLocate(nrays, points, origStates, outputStates, false, debug);
+    if (num_errors > 0) {
+      std::cout << "*** HOST: Point locate errors: " << num_errors << "\n";
+      if (debug) return num_errors;
+    }
   }
 
   if (test_bvh) {
     // Validate BVH Locate
     if (validate_results) {
-      num_errors_loc_bvh = ValidateLocate(nrays, points, origStates, outputStatesBVH, debug);
-      if (num_errors_loc_bvh > 0) std::cout << "*** HOST: BVH point locate errors: " << num_errors_loc_bvh << "\n";
+      num_errors_loc_bvh = ValidateLocate(nrays, points, origStates, outputStatesBVH, true, debug);
+      if (num_errors_loc_bvh > 0) {
+        std::cout << "*** HOST: BVH point locate errors: " << num_errors_loc_bvh << "\n";
+        if (debug) return num_errors_loc_bvh;
+      }
     }
   }
 
@@ -563,27 +579,25 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Safety for surface model with BVH
   timer.Start();
-  if (test_bvh)
-    ComputeSafetiesSurfBVH(nrays, points, origStates, bvh_safeties, validate_results);
+  if (test_bvh) ComputeSafetiesSurfBVH(nrays, points, origStates, bvh_safeties, validate_results);
   auto time_safety_surf_bvh = timer.Stop();
 
   // Correctness for safety
   if (validate_results) {
     num_errors_safe = ValidateSafety(nrays, points, origStates, safeties, ref_safeties, debug, num_better_safety,
                                      num_worse_safety, safety_tolerance);
-                                     
+
     num_errors += num_errors_safe;
-    
+
     if (num_errors_safe > 0) std::cout << "*** HOST: Safety errors: " << num_errors_safe << "\n";
     if (num_better_safety > 0) printf("HOST:    number of better safety values: %d\n", num_better_safety);
     if (num_worse_safety > 0) printf("HOST:    number of worse safety values: %d\n", num_worse_safety);
 
-    if(test_bvh)
-    {
-      num_better_safety = 0;
-      num_worse_safety = 0;
-      num_errors_safe_bvh = ValidateSafety(nrays, points, origStates, bvh_safeties, ref_safeties, debug, num_better_safety,
-                                      num_worse_safety, safety_tolerance);
+    if (test_bvh) {
+      num_better_safety   = 0;
+      num_worse_safety    = 0;
+      num_errors_safe_bvh = ValidateSafety(nrays, points, origStates, bvh_safeties, ref_safeties, debug,
+                                           num_better_safety, num_worse_safety, safety_tolerance);
       num_errors += num_errors_safe_bvh;
       if (num_errors_safe_bvh > 0) std::cout << "*** HOST: BVH safety errors: " << num_errors_safe_bvh << "\n";
       if (num_better_safety > 0) printf("HOST:    BVH number of better safety values: %d\n", num_better_safety);
@@ -595,12 +609,9 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
   if (!debug) {
     std::cout << "HOST: safety_solids: " << time_safety_solids << "  safety_solids_BVH: " << time_safety_solids_bvh
               << "  safety_surf: " << time_safety_surf;
-    if(test_bvh)
-    {
+    if (test_bvh) {
       std::cout << "  safety_surf_bvh: " << time_safety_surf_bvh << "\n";
-    }
-    else
-    {
+    } else {
       std::cout << "\n";
     }
   }
@@ -666,7 +677,7 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 // in testRaytracing.cu
 int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug,
                        bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false,
-                       bool validate_results = true);
+                       bool validate_results = true, bool only_surf = false);
 
 //==================================================================================
 int main(int argc, char *argv[])
@@ -682,6 +693,7 @@ int main(int argc, char *argv[])
   OPTION_BOOL(accept_zeros, false);
   OPTION_BOOL(test_bvh, false);
   OPTION_BOOL(validate_results, true);
+  OPTION_BOOL(only_surf, true);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -765,18 +777,22 @@ int main(int argc, char *argv[])
 
   int errHost = testRaytracingHost(nrays, points, dirs, debug, safety_ratio, detect_overlaps, accept_zeros, max_cross,
                                    test_bvh, validate_results);
+  if (debug && errHost > 0) return errHost;
   int errCUDA = 0;
 #ifdef VECGEOM_CUDA_INTERFACE
   // Copy geometry to GPU
   auto const &surfdata = BrepHelper::Instance().GetSurfData();
   if (ongpu) {
     timer.Start();
-    errCUDA            = LoadOnGPU();
+    errCUDA            = LoadOnGPU(only_surf);
     auto time_transfer = timer.Stop();
-    std::cout << "Solid model GPU transfer time: " << time_transfer << " [s]\n";
+    if (only_surf)
+      std::cout << "Navigation table transferred to GPU : " << time_transfer << " [s]\n";
+    else
+      std::cout << "Solid model transferred to GPU : " << time_transfer << " [s]\n";
     if (!errCUDA)
       errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, accept_zeros, max_cross, test_bvh,
-                                   validate_results);
+                                   validate_results, only_surf);
   }
 #endif
 

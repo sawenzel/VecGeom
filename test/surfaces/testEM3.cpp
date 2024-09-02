@@ -212,7 +212,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
     double distance = 0, safety = 0;
     bool safesafe = true;
     if (locatecheck)
-      vgbrep::protonav::LocatePointIn<Precision, Precision>(GeoManager::Instance().GetWorld(), pos, locate_state, true);
+      vgbrep::protonav::LocatePointIn<Precision, Precision>(NavigationState::WorldId(), pos, locate_state, true);
 
     if (distcheck)
       distance = vgbrep::protonav::BVHSurfNavigator<double>::ComputeStepAndHit(pos, dir, *origStates[i], out_state,
@@ -244,7 +244,7 @@ bool ValidateNavigation(int npoints, int nbLayers, int locatecheck, int distchec
       printf("model input state:  ");
       locate_state.Print();
       locate_state.Clear();
-      vgbrep::protonav::LocatePointIn<Precision, Precision>(GeoManager::Instance().GetWorld(), pos, locate_state, true);
+      vgbrep::protonav::LocatePointIn<Precision, Precision>(NavigationState::WorldId(), pos, locate_state, true);
     }
 
     if (errdist) printf("ref dist: %g   model dist: %g\n", refSteps[i], distance);

@@ -56,6 +56,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   Precision GetRadialTolerance() const { return fRTolerance; }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::orb; }
+
   /// Getter for the structure storing Orb data.
   VECCORE_ATT_HOST_DEVICE
   OrbStruct<Precision> const &GetStruct() const { return fOrb; }

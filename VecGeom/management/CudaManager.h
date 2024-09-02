@@ -6,6 +6,7 @@
 
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
+#include "VecGeom/management/DeviceGlobals.h"
 
 #include "VecGeom/base/Vector.h"
 #include "VecGeom/volumes/Box.h"
@@ -30,9 +31,9 @@ VECGEOM_DEVICE_FORWARD_DECLARE(void InitDeviceLogicalVolumesPtr(void *););
 // this is done since CUDA does not support static const members in class definitions
 namespace globaldevicegeomdata {
 inline VECCORE_ATT_DEVICE VPlacedVolume *gCompactPlacedVolBuffer = nullptr;
-inline VECCORE_ATT_DEVICE LogicalVolume *gDeviceLogicalVolumes = nullptr;
-inline VECCORE_ATT_DEVICE NavIndex_t *gNavIndex = nullptr; // address of navigation index table
-inline VECCORE_ATT_DEVICE int gMaxDepth = 0;
+inline VECCORE_ATT_DEVICE LogicalVolume *gDeviceLogicalVolumes   = nullptr;
+inline VECCORE_ATT_DEVICE NavIndex_t *gNavIndex                  = nullptr; // address of navigation index table
+inline VECCORE_ATT_DEVICE int gMaxDepth                          = 0;
 } // namespace globaldevicegeomdata
 
 #ifndef VECCORE_CUDA
@@ -126,6 +127,11 @@ public:
   DevicePtr<const vecgeom::cuda::VPlacedVolume> Synchronize();
 
   /**
+   * @brief Synchronizes the navigation table on the coprocessor
+   */
+  bool SynchronizeNavigationTable() { return AllocateNavIndexOnCoproc(); };
+
+  /**
    * Deallocates all GPU pointers stored in the memory table.
    */
   void CleanGpu();
@@ -133,7 +139,7 @@ public:
   /**
    * Forget the geometry (to prepare for a new call to LoadGeomtry)
    */
-   void Clear();
+  void Clear();
 
   /**
    * Launch a CUDA kernel that recursively outputs the geometry loaded onto the

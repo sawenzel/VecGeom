@@ -26,6 +26,10 @@ private:
 
 public:
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::sphere; }
+
+  VECCORE_ATT_HOST_DEVICE
   SphereStruct<Precision> const &GetStruct() const { return fSphere; }
 
   VECCORE_ATT_HOST_DEVICE

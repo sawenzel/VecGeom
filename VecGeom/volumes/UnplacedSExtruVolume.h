@@ -36,6 +36,10 @@ public:
   UnplacedSExtruVolume(UnplacedSExtruVolume const &other) : fPolyShell(other.fPolyShell) { ComputeBBox(); }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::sextruded; }
+
+  VECCORE_ATT_HOST_DEVICE
   PolygonalShell const &GetStruct() const { return fPolyShell; }
 
   Precision Capacity() const override { return fPolyShell.fPolygon.Area() * (fPolyShell.fUpperZ - fPolyShell.fLowerZ); }

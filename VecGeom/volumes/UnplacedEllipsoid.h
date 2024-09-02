@@ -61,6 +61,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedEllipsoid(Precision dx, Precision dy, Precision dz, Precision zBottomCut = 0., Precision zTopCut = 0.);
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::ellipsoid; }
+
   /// Getter for the structure storing ellipsoid data
   VECCORE_ATT_HOST_DEVICE
   EllipsoidStruct<Precision> const &GetStruct() const { return fEllipsoid; }

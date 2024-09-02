@@ -75,6 +75,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::torus; }
+
+  VECCORE_ATT_HOST_DEVICE
   TorusStruct2<Precision> const &GetStruct() const { return fTorus; }
 
   VECCORE_ATT_HOST_DEVICE

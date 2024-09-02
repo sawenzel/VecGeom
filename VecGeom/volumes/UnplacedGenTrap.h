@@ -60,6 +60,10 @@ public:
     return fGenTrap.Initialize(verticesx, verticesy, halfzheight);
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::gentrap; }
+
   /** @brief Getter for the generic trapezoid structure */
   VECCORE_ATT_HOST_DEVICE
   GenTrapStruct<Precision> const &GetStruct() const { return fGenTrap; }

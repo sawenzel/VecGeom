@@ -52,6 +52,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::extruded; }
+
+  VECCORE_ATT_HOST_DEVICE
   ExtrudedStruct const &GetStruct() const { return fXtru; }
 
   /** @brief Initialize */

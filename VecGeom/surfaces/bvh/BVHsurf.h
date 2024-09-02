@@ -446,8 +446,8 @@ public:
    * @returns Whether @p localpoint falls within a child element of this BVH.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE bool LevelLocate(long const exclude_item_id, Vector3D<Real_t> const &localpoint,
-                                           long &container_id, vecgeom::NavigationState &path) const
+  VECCORE_ATT_HOST_DEVICE bool LevelLocate(int const exclude_item_id, Vector3D<Real_t> const &localpoint,
+                                           int &container_id, vecgeom::NavigationState &path) const
   //  Vector3D<Real_t> &daughterlocalpoint) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];

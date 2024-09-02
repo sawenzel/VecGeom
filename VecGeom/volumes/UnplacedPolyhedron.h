@@ -142,6 +142,10 @@ public:
   virtual ~UnplacedPolyhedron() {}
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::polyhedron; }
+
+  VECCORE_ATT_HOST_DEVICE
   PolyhedronStruct<Precision> const &GetStruct() const { return fPoly; }
 
   VECCORE_ATT_HOST_DEVICE

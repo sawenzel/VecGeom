@@ -94,6 +94,12 @@ public:
    */
   bool IsClosed() const { return fIsClosed; }
 
+  /**
+   * @brief Create a Index Hierarchy object
+   */
+  void CreateIndexHierarchy() const;
+  bool CheckIndexHierarchy() const;
+
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   /// A factory template for unplaced shapes.
   template <typename UnplacedShape_t, typename... ArgTypes>
@@ -207,7 +213,7 @@ public:
    */
   VPlacedVolume *FindPlacedVolume(char const *const label);
 
-  VECGEOM_FORCE_INLINE VPlacedVolume *GetPlacedVolume(const uint id) { return &gCompactPlacedVolBuffer[id]; }
+  VECGEOM_FORCE_INLINE VPlacedVolume *GetPlacedVolume(const uint id) const { return &gCompactPlacedVolBuffer[id]; }
 
   /**
    * \return Volume with passed id, or NULL is the id wasn't found.
@@ -220,7 +226,7 @@ public:
    */
   LogicalVolume *FindLogicalVolume(char const *const label);
 
-  VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id) { return fLogicalVolumesArray[id]; }
+  VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id) const { return fLogicalVolumesArray[id]; }
 
   /**
    * \return Id of logical volume with passed label, or -1 if not found

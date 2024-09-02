@@ -11,6 +11,7 @@
 #include "VecGeom/base/Transformation3DMP.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/management/GeoManager.h"
+#include "VecGeom/volumes/VolumeTree.h"
 
 #ifdef VECGEOM_ENABLE_CUDA
 #include "VecGeom/management/CudaManager.h"
@@ -158,9 +159,27 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
+  static int WorldId() { return NavInd(3); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static vecgeom::PlacedId const &ToPlacedId(size_t iplaced)
+  {
+    return vecgeom::VolumeTree::Instance().fPlaced[iplaced];
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static vecgeom::LogicalId const &ToLogicalId(size_t iplaced)
+  {
+    return vecgeom::VolumeTree::Instance().fPlaced[iplaced].fVolume;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   static unsigned short GetNdaughtersImpl(NavIndex_t nav_ind)
   {
-    constexpr unsigned int kOffsetNd = 3 * sizeof(NavIndex_t) + 2;
+    constexpr unsigned int kOffsetNd = 5 * sizeof(NavIndex_t) + 2;
     auto content_nd                  = (unsigned short *)((unsigned char *)(NavIndAddr(nav_ind)) + kOffsetNd);
     return *content_nd;
   }
@@ -169,7 +188,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static unsigned char GetLevelImpl(NavIndex_t nav_ind)
   {
-    constexpr unsigned int kOffsetLevel = 3 * sizeof(NavIndex_t);
+    constexpr unsigned int kOffsetLevel = 5 * sizeof(NavIndex_t);
     auto content_level                  = (unsigned char *)(NavIndAddr(nav_ind)) + kOffsetLevel;
     return *content_level;
   }
@@ -212,10 +231,15 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  static unsigned int GetLogicalIdImpl(NavIndex_t nav_ind)
+  static unsigned int GetLogicalIdImpl(NavIndex_t nav_ind) { return nav_ind ? NavInd(nav_ind + 4) : 0; }
+
+  /// @brief Implementation for getting the child id for a given navigation index
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static int GetChildIdImpl(NavIndex_t const &nav_index)
   {
-    auto top = TopImpl(nav_ind);
-    return top ? top->GetLogicalVolume()->id() : 0;
+    auto content_ichild = reinterpret_cast<const int *>(NavIndAddr(nav_index + 3));
+    return *content_ichild;
   }
 
   VECGEOM_FORCE_INLINE
@@ -230,7 +254,22 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static void PushImpl(NavIndex_t &nav_ind, VPlacedVolume const *v)
   {
-    nav_ind = (nav_ind > 0) ? NavInd(nav_ind + 4 + v->GetChildId()) : 1;
+    nav_ind = (nav_ind > 0) ? NavInd(nav_ind + 6 + v->GetChildId()) : 1;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static void PushDaughterImpl(NavIndex_t &nav_ind, int idaughter)
+  {
+    nav_ind = (nav_ind > 0) ? NavInd(nav_ind + 6 + idaughter) : 1;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static void PushImpl(NavIndex_t &nav_ind, int iplaced)
+  {
+    auto const &pv_ind = ToPlacedId(iplaced);
+    PushDaughterImpl(nav_ind, pv_ind.fChildId);
   }
 
   VECGEOM_FORCE_INLINE
@@ -240,10 +279,14 @@ public:
     return (nav_ind > 0) ? ToPlacedVolume(NavInd(nav_ind + 2)) : nullptr;
   }
 
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static int TopIdImpl(NavIndex_t const &nav_ind) { return (nav_ind > 0) ? int(NavInd(nav_ind + 2)) : -1; }
+
   template <typename Real_t>
   VECCORE_ATT_HOST_DEVICE static void TopMatrixImpl(NavIndex_t nav_ind, Transformation3DMP<Real_t> &trans)
   {
-    constexpr unsigned int kOffsetHasm = 3 * sizeof(NavIndex_t) + 1;
+    constexpr unsigned int kOffsetHasm = 5 * sizeof(NavIndex_t) + 1;
 
     unsigned char hasm;
     while (true) {
@@ -263,7 +306,7 @@ public:
     auto nd        = GetNdaughtersImpl(nav_ind);
 
     // Potentially skip one NavIndex_t to ensure alignment of transformation data
-    auto transformationDataIndex     = nav_ind + 4 + nd + ((nd + 1) & 1);
+    auto transformationDataIndex     = nav_ind + 6 + nd + ((nd + 1) & 1);
     const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
     transformationDataIndex += unsigned{padTransformationData};
 
@@ -278,7 +321,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static void TopMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans)
   {
-    constexpr unsigned int kOffsetHasm = 3 * sizeof(NavIndex_t) + 1;
+    constexpr unsigned int kOffsetHasm = 5 * sizeof(NavIndex_t) + 1;
 
     unsigned char hasm;
     while (true) {
@@ -297,7 +340,7 @@ public:
     auto nd        = GetNdaughtersImpl(nav_ind);
 
     // Potentially skip one NavIndex_t to ensure alignment of transformation data
-    auto transformationDataIndex     = nav_ind + 4 + nd + ((nd + 1) & 1);
+    auto transformationDataIndex     = nav_ind + 6 + nd + ((nd + 1) & 1);
     const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
     transformationDataIndex += unsigned{padTransformationData};
 
@@ -358,6 +401,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  int GetLastIdExited() const { return TopIdImpl(fLastExited); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   void SetLastExited() { fLastExited = fNavInd; }
 
   VECGEOM_FORCE_INLINE
@@ -399,6 +446,10 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
+  int GetChildId() const { return GetChildIdImpl(fNavInd); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   bool IsScene() const { return false; }
 
   VECGEOM_FORCE_INLINE
@@ -408,6 +459,14 @@ public:
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void Push(VPlacedVolume const *v) { PushImpl(fNavInd, v); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void Push(int iplaced) { PushImpl(fNavInd, iplaced); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void PushDaughter(int idaughter) { PushDaughterImpl(fNavInd, idaughter); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -424,6 +483,10 @@ public:
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   VPlacedVolume const *Top() const { return TopImpl(fNavInd); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  int TopId() const { return TopIdImpl(fNavInd); }
 
   /**
    * returns the number of FILLED LEVELS such that

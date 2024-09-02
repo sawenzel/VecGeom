@@ -366,6 +366,10 @@ public:
   VECGEOM_FORCE_INLINE
   Precision GetAlpha2() const { return vecCore::math::ATan(fTrap.fTanAlpha2); }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::trapezoid; }
+
   // The next functions force upon the user insider knowledge about how the side planes should be used
   VECCORE_ATT_HOST_DEVICE
   TrapezoidStruct<Precision> const &GetStruct() const { return fTrap; }

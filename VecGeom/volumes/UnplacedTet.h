@@ -60,6 +60,10 @@ public:
     fGlobalConvexity = true;
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::tetrahedron; }
+
   /// Getter for the structure storing the tetrahedron data
   VECCORE_ATT_HOST_DEVICE
   TetStruct<Precision> const &GetStruct() const { return fTet; }

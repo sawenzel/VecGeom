@@ -62,6 +62,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedEllipticalCone(Precision a, Precision b, Precision h, Precision zcut);
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::ellipticalcone; }
+
   /// Getter for the structure storing elliptical cone data.
   VECCORE_ATT_HOST_DEVICE
   EllipticalConeStruct<Precision> const &GetStruct() const { return fEllipticalCone; }

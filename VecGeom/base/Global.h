@@ -67,6 +67,38 @@ using NavIndex_t = unsigned int;
 #endif
 
 namespace vecgeom {
+
+enum class ESolidType : char {
+  boolean = 0,
+  box,
+  cone,
+  coaxialcones,
+  cuttube,
+  ellipsoid,
+  ellipticalcone,
+  ellipticaltube,
+  extruded,
+  gentrap,
+  genericpolycone,
+  hyperboloid,
+  multiunion,
+  orb,
+  paraboloid,
+  parallelepiped,
+  polycone,
+  polyhedron,
+  sextruded,
+  scaled,
+  sphere,
+  tessellated,
+  tetrahedron,
+  torus,
+  trapezoid,
+  trd,
+  tube,
+  nosolid
+};
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 enum EnumInside {
   eInside  = 1, /* for USOLID compatibility */
@@ -117,18 +149,14 @@ using ScalarBackend = vecCore::backend::ScalarT<Precision>;
 namespace {
 // helper code for the MaskedAssignFunc macro
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-bool ToBool(T /* mask */)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool ToBool(T /* mask */)
 {
   return false;
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 template <>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-bool ToBool<bool>(bool mask)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool ToBool<bool>(bool mask)
 {
   return mask;
 #pragma GCC diagnostic pop
@@ -152,26 +180,20 @@ bool ToBool<bool>(bool mask)
 
 // defining an infinite length constant
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T InfinityLength() noexcept
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T InfinityLength() noexcept
 {
   return vecCore::NumericLimits<T>::Max();
 }
 
 // is this in VecCore??
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T NonZeroAbs(T const &x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T NonZeroAbs(T const &x)
 {
   return Abs(x) + T(1.0e-30);
 }
 
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-T NonZero(T const &x)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T NonZero(T const &x)
 {
   return x + CopySign(T(1.0e-30), x);
 }

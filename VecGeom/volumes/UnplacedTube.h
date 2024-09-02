@@ -35,6 +35,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::tube; }
+
+  VECCORE_ATT_HOST_DEVICE
   TubeStruct<Precision> const &GetStruct() const { return fTube; }
 
   VECCORE_ATT_HOST_DEVICE

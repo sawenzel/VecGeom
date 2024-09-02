@@ -123,7 +123,7 @@ public:
   VECGEOM_FORCE_INLINE
   unsigned int id() const { return id_; }
 
-  /// Returns copy number.
+  /// Returns id of this placed volume in the mother volume list of daughters.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int GetChildId() const { return ichild_; }

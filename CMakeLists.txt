@@ -182,7 +182,7 @@ option(VECGEOM_INPLACE_TRANSFORMATIONS "Put transformation as members rather tha
 option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigation states" OFF)
 option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
 
-option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" OFF)
+option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" ON)
 set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 option(VECGEOM_BVH_SINGLE "Enable using single precision for BVH traversal" OFF)

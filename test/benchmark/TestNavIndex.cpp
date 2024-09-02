@@ -197,13 +197,14 @@ int visitAllPlacedVolumesPassNavIndex(VPlacedVolume const *currentvolume, Visito
                                       NavIndex_t nav_ind)
 {
   const char *errcodes[] = {"incompatible daughter pointer",
-                            "navigation index mismatch",
+                            "incompatible scene index",
                             "top placed volume pointer mismatch",
+                            "top placed volume child id mismatch",
+                            "logical volume id mismatch",
                             "level mismatch",
                             "navigation index inconsistency for Push/Pop",
                             "number of daughters mismatch",
-                            "transformation matrix mismatch",
-                            "logical volume index mismatch"};
+                            "transformation matrix mismatch"};
   if (currentvolume != NULL) {
     state->Push(currentvolume);
     visitor->apply(state, nav_ind);
@@ -231,8 +232,10 @@ int visitAllPlacedVolumesPassNavTuple(VPlacedVolume const *currentvolume, Visito
                                       NavTuple_t nav_tuple)
 {
   const char *errcodes[] = {"incompatible daughter pointer",
-                            "navigation index mismatch",
+                            "incompatible scene index",
                             "top placed volume pointer mismatch",
+                            "top placed volume child id mismatch",
+                            "logical volume id mismatch",
                             "level mismatch",
                             "navigation index inconsistency for Push/Pop",
                             "number of daughters mismatch",

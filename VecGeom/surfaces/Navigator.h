@@ -5,7 +5,7 @@
 #include <VecGeom/surfaces/SurfData.h>
 #include <VecGeom/surfaces/Model.h>
 #include <VecGeom/surfaces/LogicEvaluator.h>
-// #include <VecGeom/surfaces/BVHSurfNavigator.h>
+#include <VecGeom/volumes/VolumeTree.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Algorithms.h>
 
@@ -54,8 +54,7 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<
   vecgeom::Transformation3DMP<Real_t> trans;
   in_state.TopMatrix(trans);
   trans.Transform(point, localpoint);
-  auto vol    = in_state.Top();
-  auto volId  = vol->GetLogicalVolume()->id();
+  auto volId  = in_state.GetLogicalId();
   auto inside = LogicInsideLocal(localpoint, volId, surfdata, logic_id, is_inside);
   return inside;
 }
@@ -330,8 +329,7 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LogicSafety(vecgeom::Vector3
   vecgeom::Transformation3DMP<Real_t> trans;
   in_state.TopMatrix(trans);
   trans.Transform(point, localpoint);
-  auto vol          = in_state.Top();
-  auto volId        = vol->GetLogicalVolume()->id();
+  auto volId        = in_state.GetLogicalId();
   auto const &logic = surfdata.fShells[volId].fLogic;
   Real_t safety     = EvaluateSafety(localpoint, volId, exiting, logic, surfdata, safe_max);
   return safety;
@@ -339,41 +337,39 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LogicSafety(vecgeom::Vector3
 
 /// @brief Locate a point in a volume sub-hierarchy
 /// @tparam Real_t Floating point type
-/// @param vol Volume to start checking from
+/// @param iplaced Index of the placed Volume to start checking from
 /// @param point Point in local volume coordinates
 /// @param path Path pointing to the top volume to check
 /// @param surfdata Surface data storage
 /// @param top The top volume must be checked also
-/// @param exclude Placed volume to exclude from checking
+/// @param exclude Index of the placed volume to exclude from checking
 /// @return Placed volume pointer containing the point
 template <typename Real_i, typename Real_t>
-VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPlacedVolume const *vol,
-                                                                    vecgeom::Vector3D<Real_i> const &point_i,
-                                                                    vecgeom::NavigationState &path, bool top,
-                                                                    vecgeom::VPlacedVolume const *exclude = nullptr)
+VECCORE_ATT_HOST_DEVICE int LocatePointIn(int iplaced, vecgeom::Vector3D<Real_i> const &point_i,
+                                          vecgeom::NavigationState &path, bool top, int exclude = -1)
 {
-  using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
-  auto const &surfdata     = SurfData<Real_t>::Instance();
-
+  using NavigationState = vecgeom::NavigationState;
+  auto const &surfdata  = SurfData<Real_t>::Instance();
   vecgeom::Vector3D<Real_t> point(point_i);
 
   if (top) {
-    assert(vol != nullptr);
-    auto inside = LogicInsideLocal(point, vol->GetLogicalVolume()->id(), surfdata);
-    if (!inside) return nullptr;
+    assert(iplaced >= 0);
+    auto ivol   = NavigationState::ToPlacedId(iplaced).fVolume.fId;
+    auto inside = LogicInsideLocal(point, ivol, surfdata);
+    if (!inside) return -1;
   }
 
-  VPlacedVolumePtr_t currentvolume = vol;
+  auto currentvolume = iplaced;
   path.Push(currentvolume);
 
   bool godeeper;
   do {
-    godeeper = false;
-    for (auto *daughter : currentvolume->GetDaughters()) {
-      if (daughter == exclude) {
-        continue;
-      }
-      path.Push(daughter);
+    godeeper         = false;
+    auto const &lvol = NavigationState::ToPlacedId(currentvolume).fVolume;
+    for (auto i = 0; i < lvol.fNplaced; ++i) {
+      auto daughter = lvol.fChildren[i].fId;
+      if (daughter == exclude) continue;
+      path.PushDaughter(i);
       auto inside = LogicInside(point, path, surfdata);
 
       if (inside) {
@@ -386,7 +382,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *LocatePointIn(vecgeom::VPl
     }
     // Only exclude the placed volume once since we could enter it again via a
     // different volume history.
-    exclude = nullptr;
+    exclude = -1;
   } while (godeeper);
 
   return currentvolume;
@@ -441,23 +437,26 @@ VECCORE_ATT_HOST_DEVICE bool VolumeHasCommonSurface(vecgeom::NavigationState &pa
 /// @param distance distance of the last step
 /// @return Placed volume pointer containing the point
 template <typename Real_i, typename Real_t>
-VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::NavigationState &starting_path,
-                                                                      vecgeom::Vector3D<Real_i> const &point_i,
-                                                                      vecgeom::Vector3D<Real_i> const &direction_i,
-                                                                      vecgeom::NavigationState &path,
-                                                                      FSlocator const &crossed_surf, Real_i distance_i)
+VECCORE_ATT_HOST_DEVICE int ReLocatePointIn(vecgeom::NavigationState &starting_path,
+                                            vecgeom::Vector3D<Real_i> const &point_i,
+                                            vecgeom::Vector3D<Real_i> const &direction_i,
+                                            vecgeom::NavigationState &path, FSlocator const &crossed_surf,
+                                            Real_i distance_i)
 {
-  using VPlacedVolumePtr_t = vecgeom::VPlacedVolume const *;
-  auto const &surfdata     = SurfData<Real_t>::Instance();
+  using PlacedId        = vecgeom::PlacedId;
+  using NavigationState = vecgeom::NavigationState;
+  using ESolidType      = vecgeom::ESolidType;
+  auto const &surfdata  = SurfData<Real_t>::Instance();
 
   vecgeom::Vector3D<Real_t> point(point_i);
   vecgeom::Vector3D<Real_t> direction(direction_i);
   Real_t distance = static_cast<Real_t>(distance_i);
 
   // set path to be starting path to check for daughters
-  path                             = starting_path;
-  VPlacedVolumePtr_t currentvolume = starting_path.Top();
-  VPlacedVolumePtr_t prev_volume   = path.GetLastExited();
+  path               = starting_path;
+  auto currentvolume = starting_path.TopId();
+  auto placedId      = [](int iplaced) -> PlacedId const      &{ return NavigationState::ToPlacedId(iplaced); };
+  auto prev_volume   = path.GetLastIdExited();
 
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   bool is_boolean                = false;
@@ -475,26 +474,27 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   if (crossed_surf.GetFSindex() != -1) { // if not exiting surface was found, we don't need to check for children
     do {
       godeeper = false;
-      for (auto *daughter : currentvolume->GetDaughters()) {
-        is_boolean = daughter->GetUnplacedVolume()->IsBoolean();
-        // if (daughter == prev_volume && !(daughter->GetUnplacedVolume()->IsBoolean())) {
+      for (auto i = 0; i < placedId(currentvolume).fVolume.fNplaced; ++i) {
+        auto const &daughter = placedId(currentvolume).fVolume.fChildren[i];
+        is_boolean           = daughter.fVolume.fSolidType == ESolidType::boolean;
+        // if (daughter.fId == prev_volume && !is_boolean) {
         //   // Only exclude the placed volume once since we could enter it again via a
         //   // different volume history.
-        //   prev_volume = nullptr;
+        //   prev_volume = -1;
         //   continue;
         // }
         if (is_boolean) {
           final_point = point + kPushDistance * direction;
           // logic_id_exit = surfdata.FramedSurfaceLogicId(crossed_surf);
         }
-        path.Push(daughter);
+        path.PushDaughter(i);
         bool inside = LogicInside(final_point, path, surfdata); //, logic_id_exit, false);
         final_point = is_zero_step ? point + kPushDistance * direction : point;
         //        logic_id_exit = -1;
 
         if (inside) {
           inside_daughter = true;
-          currentvolume   = daughter;
+          currentvolume   = daughter.fId;
           godeeper        = true;
           break;
         } else {
@@ -527,26 +527,25 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
   //   in_boolean    = LogicInside(pushedPoint, boolean_state, surfdata, 0, false);
   // }
 
-  currentvolume = path.Top();
-  assert(currentvolume != nullptr &&
-         " currentvolume is nullptr in overlap detection! Most likely due to incorrect path!");
-  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
+  currentvolume = path.TopId();
+  assert(currentvolume >= 0 && " currentvolume is nullptr in overlap detection! Most likely due to incorrect path!");
+  is_boolean = placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean;
 
   if (!is_boolean) {
     // exclude volume of the highest parent of the exited framed surface
     if (path.GetNavIndex() > 1) path.SetLastExited();
-    prev_volume = path.GetLastExited();
+    prev_volume = path.GetLastIdExited();
     // navigate one level higher to search for inside
     if (path.GetNavIndex() > 1) path.Pop(); // go one level higher, unless we are in the top volume
   } else {
-    prev_volume      = starting_path.Top();
+    prev_volume      = starting_path.TopId();
     is_self_entering = true;
   }
 
-  currentvolume = path.Top();
-  assert(currentvolume != nullptr && " currentvolume is nullptr in overlap detection! This might due to incorrect path "
-                                     "or due to a surface previously being falsely flagged as overlapping!");
-  is_boolean = currentvolume->GetUnplacedVolume()->IsBoolean();
+  currentvolume = path.TopId();
+  assert(currentvolume >= 0 && " currentvolume is nullptr in overlap detection! This might due to incorrect path "
+                               "or due to a surface previously being falsely flagged as overlapping!");
+  is_boolean = placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean;
 
   // check whether the point is in the parent volume, otherwise go higher until it is found
   bool gohigher = false;
@@ -560,7 +559,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
     } else {
 
       // if (vecgeom::BooleanHelper::GetBooleanStruct(currentvolume->GetUnplacedVolume())) {
-      if (currentvolume->GetUnplacedVolume()->IsBoolean()) {
+      if (placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean) {
         final_point   = point + kPushDistance * direction;
         logic_id_exit = surfdata.FramedSurfaceLogicId(crossed_surf);
       }
@@ -572,7 +571,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
       // is with and without a push inside the next boolean. however, we should not do this check when we check whether
       // we are staying within the same boolean because without the push this would always return true, although we are
       // exiting the boolean
-      if (currentvolume->GetUnplacedVolume()->IsBoolean() && !is_self_entering)
+      if (placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean && !is_self_entering)
         inside |= LogicInside(point, path, surfdata, logic_id_exit, false);
       final_point   = is_zero_step ? point + kPushDistance * direction : point;
       logic_id_exit = vecgeom::kMaximumInt;
@@ -581,9 +580,9 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
     if (inside == false) {
       prev_volume = currentvolume;
       path.Pop();
-      currentvolume = path.Top();
+      currentvolume = path.TopId();
       assert(
-          currentvolume != nullptr &&
+          currentvolume >= 0 &&
           " currentvolume is nullptr in overlap detection! That means some inside call failed or was falsely excluded");
       gohigher = true;
     }
@@ -591,15 +590,16 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
 
   do {
     godeeper = false;
-    for (auto *daughter : currentvolume->GetDaughters()) {
-      is_boolean = daughter->GetUnplacedVolume()->IsBoolean();
-      if (daughter == prev_volume && !is_boolean) {
+    for (auto i = 0; i < placedId(currentvolume).fVolume.fNplaced; ++i) {
+      auto const &daughter = placedId(currentvolume).fVolume.fChildren[i];
+      is_boolean           = daughter.fVolume.fSolidType == ESolidType::boolean;
+      if (daughter.fId == prev_volume && !is_boolean) {
         // Only exclude the placed volume once since we could enter it again via a
         // different volume history.
-        prev_volume = nullptr;
+        prev_volume = -1;
         continue;
       }
-      path.Push(daughter);
+      path.PushDaughter(i);
       auto same_cs = VolumeHasCommonSurface<Real_t>(path, crossed_surf);
       if (same_cs && !is_boolean) {
         inside = false;
@@ -607,7 +607,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
 
         if (is_boolean) {
           final_point = point + kPushDistance * direction;
-          if (daughter == prev_volume) {
+          if (daughter.fId == prev_volume) {
             logic_id_exit = surfdata.FramedSurfaceLogicId(crossed_surf);
           }
         }
@@ -617,7 +617,7 @@ VECCORE_ATT_HOST_DEVICE vecgeom::VPlacedVolume const *ReLocatePointIn(vecgeom::N
         logic_id_exit = -1;
       }
       if (inside) {
-        currentvolume = daughter;
+        currentvolume = daughter.fId;
         godeeper      = true;
         break;
       } else {
@@ -1135,7 +1135,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
       // If Boolean surface, compute only once safety for the entire volume shell
       if (framedsurf.fLogicId) {
         Real_t safetyLogic = LogicSafety(point, true, NavigationState{framedsurf.fState}, surfdata, safety);
-        last_logic_volid   = vecgeom::NavigationState::TopImpl(framedsurf.fState)->GetLogicalVolume()->id();
+        last_logic_volid   = vecgeom::NavigationState::GetLogicalIdImpl(framedsurf.fState);
         if (safety > safetyLogic) {
           safety       = safetyLogic;
           closest_surf = isurf;
@@ -1197,7 +1197,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
         // If Boolean surface, compute only once safety for the entire volume shell
         if (framedsurf.fLogicId) {
           Real_t safetyLogic = LogicSafety(point, false, NavigationState{framedsurf.fState}, surfdata, safetyFrame);
-          last_logic_volid   = vecgeom::NavigationState::TopImpl(framedsurf.fState)->GetLogicalVolume()->id();
+          last_logic_volid   = vecgeom::NavigationState::GetLogicalIdImpl(framedsurf.fState);
           if (safetyParent > safetyLogic) {
             safetyParent = safetyLogic;
             closest_surf = isurf;

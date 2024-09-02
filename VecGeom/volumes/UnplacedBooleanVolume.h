@@ -71,9 +71,11 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   virtual bool IsBoolean() const override { return true; }
 
-  virtual int MemorySize() const override { return sizeof(*this); }
+  VECCORE_ATT_HOST_DEVICE
+  virtual ESolidType GetType() const override { return ESolidType::boolean; }
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual size_t DeviceSizeOf() const override { return DevicePtr<cuda::UnplacedBooleanVolume<Op>>::SizeOf(); }

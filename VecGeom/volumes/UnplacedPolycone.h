@@ -106,6 +106,10 @@ public:
   PolyconeHistorical *GetOriginalParameters() const { return fPolycone.GetOriginalParameters(); }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::polycone; }
+
+  VECCORE_ATT_HOST_DEVICE
   PolyconeStruct<Precision> const &GetStruct() const { return fPolycone; }
   VECCORE_ATT_HOST_DEVICE
   unsigned int GetNz() const { return fPolycone.fNz; }
@@ -193,10 +197,7 @@ public:
   // these methods are required by VUnplacedVolume
   //
 public:
-  virtual int MemorySize() const override
-  {
-    return sizeof(*this);
-  }
+  virtual int MemorySize() const override { return sizeof(*this); }
 
   VECCORE_ATT_HOST_DEVICE
   virtual void Print() const final;
@@ -207,10 +208,7 @@ public:
 #endif
 
   std::ostream &StreamInfo(std::ostream &os) const;
-  std::string GetEntityType() const
-  {
-    return "Polycone";
-  }
+  std::string GetEntityType() const { return "Polycone"; }
 
 #ifdef VECGEOM_CUDA_INTERFACE
   virtual size_t DeviceSizeOf() const override

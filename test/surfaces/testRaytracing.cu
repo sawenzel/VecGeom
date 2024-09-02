@@ -39,30 +39,6 @@ __global__ void LocateSolidsBVH(int nrays, Vector3D<Precision> const *points, Na
   }
 }
 //==================================================================================
-__global__ void LocateSurf(int nrays, Vector3D<Precision> const *points, NavigationState *out_states,
-                           const VPlacedVolume *world)
-{
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    // Locate with surface-based model
-    vgbrep::protonav::LocatePointIn<Precision, Real_t>(world, points[i], out_states[i], true);
-  }
-}
-//==================================================================================
-__global__ void LocateSurfBVH(int nrays, Vector3D<Precision> const *points, NavigationState *out_states,
-                              const VPlacedVolume *world)
-{
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    // Locate with surface-based model + BVH
-    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(world->id(), points[i], out_states[i], true);
-  }
-}
-//==================================================================================
-__global__ void ResetStates(int nrays, NavigationState *out_states)
-{
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x)
-    out_states[i].Clear();
-}
-//==================================================================================
 __global__ void ValidateLocate(int nrays, NavigationState const *in_states, NavigationState const *out_states,
                                int *num_errors)
 {
@@ -168,11 +144,71 @@ __device__ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vect
   if (validate_results) length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
 }
 //==================================================================================
+template <typename Navigator>
+__global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                                   NavigationState const *in_states, Precision *length_over_crossings,
+                                   int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
+                                   bool validate_results = true)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    PropagateRaySolid<Navigator>(i, points, dirs, in_states, length_over_crossings, max_cross, /*debug=*/false,
+                                 accept_zeros, validate_results);
+  }
+}
+//==================================================================================
+__global__ void ValidateTraversal(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
+                                  NavigationState const *in_states, Precision *length_over_crossings,
+                                  Precision *refLength_over_crossings, int *num_errors, bool debug,
+                                  const VPlacedVolume *world, const SurfData *surfdata,
+                                  int max_cross = vecgeom::kMaximumInt, bool use_bvh = false, bool accept_zeros = false)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    bool error_dist =
+        Abs(length_over_crossings[i] - refLength_over_crossings[i]) >
+        vgbrep::RoundingError(static_cast<Precision>(refLength_over_crossings[i]), 1000 * kToleranceDist<Precision>);
+    if (error_dist && debug && *num_errors == 0) {
+      printf("Error on GPU with BVH: %i in ray %i: length_over_crossings[i] %f refLength_over_crossings[i] %f -point "
+             "%.10f %.10f %.10f -direction %.10f %.10f %.10f \n",
+             use_bvh, i, length_over_crossings[i], refLength_over_crossings[i], points[i][0], points[i][1],
+             points[i][2], dirs[i][0], dirs[i][1], dirs[i][2]);
+      // note that the printouts in the propagation would be a mess since there is no GPU synchronization in between.
+      // printf("Replaying solid model...\n");
+      // PropagateRaySolid<LoopNavigator>(i, points, dirs, in_states, refLength_over_crossings, debug, max_cross,
+      // accept_zeros); printf("Replaying surface model with BVH %i", use_bvh); PropagateRaySurf(i, points, dirs,
+      // in_states, length_over_crossings, world, surfdata, debug, max_cross,
+      //                  use_bvh, accept_zeros);
+    }
+    atomicAdd(num_errors, int(error_dist));
+  }
+}
+//==================================================================================
+__global__ void ResetStates(int nrays, NavigationState *out_states)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x)
+    out_states[i].Clear();
+}
+//==================================================================================
+__global__ void LocateSurf(int nrays, Vector3D<Precision> const *points, NavigationState *out_states)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    // Locate with surface-based model
+    vgbrep::protonav::LocatePointIn<Precision, Real_t>(NavigationState::WorldId(), points[i], out_states[i], true);
+  }
+}
+//==================================================================================
+__global__ void LocateSurfBVH(int nrays, Vector3D<Precision> const *points, NavigationState *out_states)
+{
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
+    // Locate with surface-based model + BVH
+    vgbrep::protonav::BVHSurfNavigator<Real_t>::LocatePointIn(NavigationState::WorldId(), points[i], out_states[i],
+                                                              true);
+  }
+}
+//==================================================================================
 __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                                  NavigationState const *in_states, Precision *length_over_crossings,
-                                 const VPlacedVolume *world, const SurfData *surfdata, bool debug = false,
-                                 int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
-                                 bool validate_results = true)
+                                 const SurfData *surfdata, bool debug = false, int max_cross = vecgeom::kMaximumInt,
+                                 bool accept_zeros = false, bool validate_results = true)
 {
   if (debug) {
     printf("PropagateRaysSurf debug ray %d:\n", i);
@@ -228,9 +264,8 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vecto
 //==================================================================================
 __device__ void PropagateRaySurfBVH(int i, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                                     NavigationState const *in_states, Precision *length_over_crossings,
-                                    const VPlacedVolume *world, const SurfData *surfdata, bool debug = false,
-                                    int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
-                                    bool validate_results = true)
+                                    const SurfData *surfdata, bool debug = false, int max_cross = vecgeom::kMaximumInt,
+                                    bool accept_zeros = false, bool validate_results = true)
 {
   if (debug) {
     printf("PropagateRaysSurf debug ray %d:\n", i);
@@ -287,72 +322,33 @@ __device__ void PropagateRaySurfBVH(int i, Vector3D<Precision> const *points, Ve
 }
 
 //==================================================================================
-template <typename Navigator>
-__global__ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                   NavigationState const *in_states, Precision *length_over_crossings,
-                                   int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
-                                   bool validate_results = true)
-{
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    PropagateRaySolid<Navigator>(i, points, dirs, in_states, length_over_crossings, max_cross, /*debug=*/false,
-                                 accept_zeros, validate_results);
-  }
-}
-//==================================================================================
 __global__ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                                   NavigationState const *in_states, Precision *length_over_crossings,
-                                  const VPlacedVolume *world, const SurfData *surfdata, bool debug = false,
-                                  int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
-                                  bool validate_results = true)
+                                  const SurfData *surfdata, bool debug = false, int max_cross = vecgeom::kMaximumInt,
+                                  bool accept_zeros = false, bool validate_results = true)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    PropagateRaySurf(i, points, dirs, in_states, length_over_crossings, world, surfdata, debug, max_cross, accept_zeros,
+    PropagateRaySurf(i, points, dirs, in_states, length_over_crossings, surfdata, debug, max_cross, accept_zeros,
                      validate_results);
   }
 }
 
+//==================================================================================
 __global__ void PropagateRaysSurfBVH(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                                      NavigationState const *in_states, Precision *length_over_crossings,
-                                     const VPlacedVolume *world, const SurfData *surfdata, bool debug = false,
-                                     int max_cross = vecgeom::kMaximumInt, bool accept_zeros = false,
-                                     bool validate_results = true)
+                                     const SurfData *surfdata, bool debug = false, int max_cross = vecgeom::kMaximumInt,
+                                     bool accept_zeros = false, bool validate_results = true)
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    PropagateRaySurfBVH(i, points, dirs, in_states, length_over_crossings, world, surfdata, debug, max_cross,
-                        accept_zeros, validate_results);
+    PropagateRaySurfBVH(i, points, dirs, in_states, length_over_crossings, surfdata, debug, max_cross, accept_zeros,
+                        validate_results);
   }
 }
 
 //==================================================================================
-__global__ void ValidateTraversal(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                                  NavigationState const *in_states, Precision *length_over_crossings,
-                                  Precision *refLength_over_crossings, int *num_errors, bool debug,
-                                  const VPlacedVolume *world, const SurfData *surfdata,
-                                  int max_cross = vecgeom::kMaximumInt, bool use_bvh = false, bool accept_zeros = false)
-{
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    bool error_dist =
-        Abs(length_over_crossings[i] - refLength_over_crossings[i]) >
-        vgbrep::RoundingError(static_cast<Precision>(refLength_over_crossings[i]), 1000 * kToleranceDist<Precision>);
-    if (error_dist && debug && *num_errors == 0) {
-      printf("Error on GPU with BVH: %i in ray %i: length_over_crossings[i] %f refLength_over_crossings[i] %f -point "
-             "%.10f %.10f %.10f -direction %.10f %.10f %.10f \n",
-             use_bvh, i, length_over_crossings[i], refLength_over_crossings[i], points[i][0], points[i][1],
-             points[i][2], dirs[i][0], dirs[i][1], dirs[i][2]);
-      // note that the printouts in the propagation would be a mess since there is no GPU synchronization in between.
-      // printf("Replaying solid model...\n");
-      // PropagateRaySolid<LoopNavigator>(i, points, dirs, in_states, refLength_over_crossings, debug, max_cross,
-      // accept_zeros); printf("Replaying surface model with BVH %i", use_bvh); PropagateRaySurf(i, points, dirs,
-      // in_states, length_over_crossings, world, surfdata, debug, max_cross,
-      //                  use_bvh, accept_zeros);
-    }
-    atomicAdd(num_errors, int(error_dist));
-  }
-}
-//==================================================================================
 int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfData &surfdata, bool debug,
                        bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false,
-                       bool validate_results = true)
+                       bool validate_results = true, bool only_surf = false)
 {
   BrepCudaManager::Instance().TransferSurfData(surfdata);
   auto surfdata_D = BrepCudaManager::Instance().GetDevicePtr();
@@ -384,6 +380,7 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   Precision *length_over_crossings{nullptr};
   Precision *length_over_crossings_bvh{nullptr};
 
+  if (only_surf) debug = false;
   if (validate_results) {
     BREP_CUDA_CHECK(cudaMalloc(&refSafeties, nrays * sizeof(Precision)));
     BREP_CUDA_CHECK(cudaMalloc(&safeties, nrays * sizeof(Precision)));
@@ -393,6 +390,13 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     BREP_CUDA_CHECK(cudaMalloc(&length_over_crossings_bvh, nrays * sizeof(Precision)));
   }
 
+  constexpr int initThreads = 32;
+  int initBlocks            = (nrays + initThreads - 1) / initThreads;
+
+  Stopwatch timer;
+  double time_locate_solids{0}, time_locate_solids_bvh{0}, time_locate_surf{0}, time_locate_surf_bvh{0},
+      time_safety_solids{0}, time_safety_solids_bvh{0}, time_safety_surf{0}, time_safety_surf_bvh{0},
+      time_traverse_solids{0}, time_traverse_solids_bvh{0}, time_traverse_surf{0}, time_traverse_surf_bvh{0};
   int num_errors          = 0;
   int num_errors_bvh_loc  = 0;
   int num_better_safety   = 0;
@@ -406,54 +410,60 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
   BREP_CUDA_CHECK(cudaMalloc(&num_errors_dist_d, sizeof(int)));
   BREP_CUDA_CHECK(cudaMalloc(&num_errors_dist_bvh_d, sizeof(int)));
 
-  constexpr int initThreads = 32;
-  int initBlocks            = (nrays + initThreads - 1) / initThreads;
-
-  Stopwatch timer;
   // Locating the global points with solid model
-  auto world_dev = vecgeom::cxx::CudaManager::Instance().world_gpu();
-  timer.Start();
-  LocateSolids<<<initBlocks, initThreads>>>(nrays, points, origStates, world_dev);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_locate_solids = timer.Stop();
+  if (!only_surf) {
+    auto world_dev = vecgeom::cxx::CudaManager::Instance().world_gpu();
+    timer.Start();
+    LocateSolids<<<initBlocks, initThreads>>>(nrays, points, origStates, world_dev);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_locate_solids = timer.Stop();
 
-  // Locating the global points with solid model + BVH
-  timer.Start();
-  LocateSolidsBVH<<<initBlocks, initThreads>>>(nrays, points, outputStates, world_dev);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_locate_solids_bvh = timer.Stop();
+    // Locating the global points with solid model + BVH
+    timer.Start();
+    LocateSolidsBVH<<<initBlocks, initThreads>>>(nrays, points, outputStates, world_dev);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_locate_solids_bvh = timer.Stop();
 
-  ResetStates<<<initBlocks, initThreads>>>(nrays, outputStates);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    ResetStates<<<initBlocks, initThreads>>>(nrays, outputStates);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  }
 
   // Locating the global points with surface model
   timer.Start();
-  LocateSurf<<<initBlocks, initThreads>>>(nrays, points, outputStates, world_dev);
+  if (only_surf)
+    LocateSurf<<<initBlocks, initThreads>>>(nrays, points, origStates);
+  else
+    LocateSurf<<<initBlocks, initThreads>>>(nrays, points, outputStates);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_locate_surf = timer.Stop();
+  time_locate_surf = timer.Stop();
 
   // Locating the global points with surface model + BVH
   timer.Start();
-  if (test_bvh) LocateSurfBVH<<<initBlocks, initThreads>>>(nrays, points, outputStatesBVH, world_dev);
+  if (test_bvh) LocateSurfBVH<<<initBlocks, initThreads>>>(nrays, points, outputStatesBVH);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_locate_surf_bvh = timer.Stop();
+  time_locate_surf_bvh = timer.Stop();
 
-  // Corectness for locating points
-  ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStates, num_errors_d);
-  BREP_CUDA_CHECK(cudaMemcpy(&num_errors, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  if (!only_surf) {
+    // Corectness for locating points
+    ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStates, num_errors_d);
+    BREP_CUDA_CHECK(cudaMemcpy(&num_errors, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
-  if (num_errors > 0) std::cout << "CUDA: Point locate errors: " << num_errors << "\n";
+    if (num_errors > 0) std::cout << "CUDA: Point locate errors: " << num_errors << "\n";
 
-  // Validate BVH Locate
-  ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStatesBVH, num_errors_d);
-  BREP_CUDA_CHECK(cudaMemcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+    // Validate BVH Locate
+    ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStatesBVH, num_errors_d);
+    BREP_CUDA_CHECK(cudaMemcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+  }
 
   if (!debug) {
-    std::cout << "CUDA: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
-              << "  locate_surf: " << time_locate_surf;
+    if (only_surf)
+      std::cout << "CUDA: locate_surf: " << time_locate_surf;
+    else
+      std::cout << "CUDA: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
+                << "  locate_surf: " << time_locate_surf;
     if (test_bvh) {
       std::cout << " locate_surf_BVH: " << time_locate_surf_bvh << "\n";
     } else {
@@ -461,133 +471,153 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     }
   }
 
-  // Safety for solids model (reference)
-  timer.Start();
-  ComputeSafetiesSolid<<<initBlocks, initThreads>>>(nrays, points, origStates, refSafeties, validate_results);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_safety_solids = timer.Stop();
+  if (!only_surf) {
+    // Safety for solids model (reference)
+    timer.Start();
+    ComputeSafetiesSolid<<<initBlocks, initThreads>>>(nrays, points, origStates, refSafeties, validate_results);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_safety_solids = timer.Stop();
 
-  // Safety for solids model with BVH
-  timer.Start();
-  ComputeSafetiesSolidBVH<<<initBlocks, initThreads>>>(nrays, points, origStates, safeties, validate_results);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_safety_solids_bvh = timer.Stop();
+    // Safety for solids model with BVH
+    timer.Start();
+    ComputeSafetiesSolidBVH<<<initBlocks, initThreads>>>(nrays, points, origStates, safeties, validate_results);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_safety_solids_bvh = timer.Stop();
+  }
 
   // Safety for surface model
   timer.Start();
   ComputeSafetiesSurf<<<initBlocks, initThreads>>>(nrays, points, origStates, safeties, validate_results);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_safety_surf = timer.Stop();
+  time_safety_surf = timer.Stop();
 
   timer.Start();
   if (test_bvh)
     ComputeSafetiesSurfBVH<<<initBlocks, initThreads>>>(nrays, points, origStates, bvhSafeties, validate_results);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_safety_surf_bvh = timer.Stop();
+  time_safety_surf_bvh = timer.Stop();
 
-  if (validate_results) {
-    ValidateSafety<<<initBlocks, initThreads>>>(nrays, safeties, refSafeties, num_better_safety_d, num_worse_safety_d);
-    BREP_CUDA_CHECK(cudaMemcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
-    BREP_CUDA_CHECK(cudaMemcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
-
-    if (num_better_safety > 0) std::cout << "CUDA:    number of better safety values: " << num_better_safety << "\n";
-    if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: " << num_worse_safety << "\n";
-
-    if (test_bvh) {
-      // Init counters
-      num_better_safety = num_worse_safety = 0;
-      BREP_CUDA_CHECK(cudaMemcpy(num_better_safety_d, &num_better_safety, sizeof(int), cudaMemcpyHostToDevice));
-      BREP_CUDA_CHECK(cudaMemcpy(num_worse_safety_d, &num_worse_safety, sizeof(int), cudaMemcpyHostToDevice));
-
-      ValidateSafety<<<initBlocks, initThreads>>>(nrays, bvhSafeties, refSafeties, num_better_safety_d,
+  if (!only_surf) {
+    if (validate_results) {
+      ValidateSafety<<<initBlocks, initThreads>>>(nrays, safeties, refSafeties, num_better_safety_d,
                                                   num_worse_safety_d);
       BREP_CUDA_CHECK(cudaMemcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
       BREP_CUDA_CHECK(cudaMemcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
       BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
-      if (num_better_safety > 0)
-        std::cout << "CUDA:    BVH number of better safety values: " << num_better_safety << "\n";
-      if (num_worse_safety > 0) std::cout << "CUDA:    BVH number of worse safety values: " << num_worse_safety << "\n";
+      if (num_better_safety > 0) std::cout << "CUDA:    number of better safety values: " << num_better_safety << "\n";
+      if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: " << num_worse_safety << "\n";
+
+      if (test_bvh) {
+        // Init counters
+        num_better_safety = num_worse_safety = 0;
+        BREP_CUDA_CHECK(cudaMemcpy(num_better_safety_d, &num_better_safety, sizeof(int), cudaMemcpyHostToDevice));
+        BREP_CUDA_CHECK(cudaMemcpy(num_worse_safety_d, &num_worse_safety, sizeof(int), cudaMemcpyHostToDevice));
+
+        ValidateSafety<<<initBlocks, initThreads>>>(nrays, bvhSafeties, refSafeties, num_better_safety_d,
+                                                    num_worse_safety_d);
+        BREP_CUDA_CHECK(cudaMemcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+        BREP_CUDA_CHECK(cudaMemcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+        BREP_CUDA_CHECK(cudaDeviceSynchronize());
+
+        if (num_better_safety > 0)
+          std::cout << "CUDA:    BVH number of better safety values: " << num_better_safety << "\n";
+        if (num_worse_safety > 0)
+          std::cout << "CUDA:    BVH number of worse safety values: " << num_worse_safety << "\n";
+      }
     }
   }
 
   if (!debug) {
-    std::cout << "CUDA: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
-              << "  safety_surf: " << time_safety_surf;
+    if (only_surf)
+      std::cout << "CUDA: safety_surf: " << time_safety_surf;
+    else
+      std::cout << "CUDA: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
+                << "  safety_surf: " << time_safety_surf;
     if (test_bvh) {
       std::cout << "  safety_surf_bvh: " << time_safety_surf_bvh << "\n";
     } else {
       std::cout << "\n";
     }
   }
-  // Traversal for solids model (reference)
-  timer.Start();
-  PropagateRaysSolid<LoopNavigator><<<initBlocks, initThreads>>>(
-      nrays, points, dirs, origStates, refLength_over_crossings, max_cross, accept_zeros, validate_results);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_traverse_solids = timer.Stop();
 
-  // Traversal for solids model with BVH
-  timer.Start();
-  PropagateRaysSolid<BVHNavigator><<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings,
-                                                                max_cross, accept_zeros, validate_results);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_traverse_solids_bvh = timer.Stop();
+  if (!only_surf) {
+    // Traversal for solids model (reference)
+    timer.Start();
+    PropagateRaysSolid<LoopNavigator><<<initBlocks, initThreads>>>(
+        nrays, points, dirs, origStates, refLength_over_crossings, max_cross, accept_zeros, validate_results);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_traverse_solids = timer.Stop();
+
+    // Traversal for solids model with BVH
+    timer.Start();
+    PropagateRaysSolid<BVHNavigator><<<initBlocks, initThreads>>>(
+        nrays, points, dirs, origStates, length_over_crossings, max_cross, accept_zeros, validate_results);
+    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    time_traverse_solids_bvh = timer.Stop();
+  }
 
   // Traversal for the surface model
   timer.Start();
-  PropagateRaysSurf<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings, world_dev,
-                                                 surfdata_D, false, max_cross, accept_zeros, validate_results);
+  PropagateRaysSurf<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings, surfdata_D,
+                                                 false, max_cross, accept_zeros, validate_results);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_traverse_surf = timer.Stop();
+  time_traverse_surf = timer.Stop();
 
   // Traversal for the surface model with BVH
   timer.Start();
   if (test_bvh)
     PropagateRaysSurfBVH<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings_bvh,
-                                                      world_dev, surfdata_D, false, max_cross, accept_zeros,
-                                                      validate_results);
+                                                      surfdata_D, false, max_cross, accept_zeros, validate_results);
   BREP_CUDA_CHECK(cudaDeviceSynchronize());
-  auto time_traverse_surf_bvh = timer.Stop();
+  time_traverse_surf_bvh = timer.Stop();
 
-  if (validate_results) {
-    ValidateTraversal<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings,
-                                                   refLength_over_crossings, num_errors_dist_d, debug, world_dev,
-                                                   surfdata_D, max_cross, /*use_bvh=*/false, accept_zeros);
-    BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  if (!only_surf) {
+    if (validate_results) {
+      auto world_dev = vecgeom::cxx::CudaManager::Instance().world_gpu();
+      ValidateTraversal<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings,
+                                                     refLength_over_crossings, num_errors_dist_d, debug, world_dev,
+                                                     surfdata_D, max_cross, /*use_bvh=*/false, accept_zeros);
+      BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
+      BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
-    if (test_bvh)
-      ValidateTraversal<<<initBlocks, initThreads>>>(nrays, points, dirs, origStates, length_over_crossings_bvh,
-                                                     refLength_over_crossings, num_errors_dist_bvh_d, debug, world_dev,
-                                                     surfdata_D, max_cross, /*use_bvh=*/true, accept_zeros);
-    BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist_bvh, num_errors_dist_bvh_d, sizeof(int), cudaMemcpyDeviceToHost));
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+      if (test_bvh)
+        ValidateTraversal<<<initBlocks, initThreads>>>(
+            nrays, points, dirs, origStates, length_over_crossings_bvh, refLength_over_crossings, num_errors_dist_bvh_d,
+            debug, world_dev, surfdata_D, max_cross, /*use_bvh=*/true, accept_zeros);
+      BREP_CUDA_CHECK(cudaMemcpy(&num_errors_dist_bvh, num_errors_dist_bvh_d, sizeof(int), cudaMemcpyDeviceToHost));
+      BREP_CUDA_CHECK(cudaDeviceSynchronize());
 
-    if (num_errors_dist > 0 || num_errors_dist_bvh > 0)
-      std::cout << "CUDA: traversal errors looper: " << num_errors_dist
-                << " traversal errors BVH: " << num_errors_dist_bvh << "\n";
+      if (num_errors_dist > 0 || num_errors_dist_bvh > 0)
+        std::cout << "CUDA: traversal errors looper: " << num_errors_dist
+                  << " traversal errors BVH: " << num_errors_dist_bvh << "\n";
+    }
   }
+
   if (!debug) {
-    std::cout << "CUDA: traverse_solids: " << time_traverse_solids
-              << " traverse_solids_bvh: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
+    if (only_surf)
+      std::cout << "CUDA: traverse_surf: " << time_traverse_surf;
+    else
+      std::cout << "CUDA: traverse_solids: " << time_traverse_solids
+                << " traverse_solids_bvh: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
     if (test_bvh)
       std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh << "\n";
     else
       std::cout << "\n";
   }
 
-  num_errors += num_errors_dist + num_errors_dist_bvh;
-  if (num_errors > 0) printf("CUDA: num_erros = %d / %d\n", num_errors, nrays);
-
   BrepCudaManager::Instance().Cleanup();
   delete[] pointsh;
   delete[] dirsh;
-  BREP_CUDA_CHECK(cudaFree(num_errors_d));
-  BREP_CUDA_CHECK(cudaFree(num_better_safety_d));
-  BREP_CUDA_CHECK(cudaFree(num_worse_safety_d));
-  BREP_CUDA_CHECK(cudaFree(num_errors_dist_d));
+  if (!only_surf) {
+    num_errors += num_errors_dist + num_errors_dist_bvh;
+    if (num_errors > 0) printf("CUDA: num_erros = %d / %d\n", num_errors, nrays);
+    BREP_CUDA_CHECK(cudaFree(num_errors_d));
+    BREP_CUDA_CHECK(cudaFree(num_better_safety_d));
+    BREP_CUDA_CHECK(cudaFree(num_worse_safety_d));
+    BREP_CUDA_CHECK(cudaFree(num_errors_dist_d));
+    BREP_CUDA_CHECK(cudaFree(num_errors_dist_bvh_d));
+  }
   BREP_CUDA_CHECK(cudaFree(points));
   BREP_CUDA_CHECK(cudaFree(dirs));
   BREP_CUDA_CHECK(cudaFree(origStates));
@@ -601,5 +631,6 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     BREP_CUDA_CHECK(cudaFree(length_over_crossings));
     BREP_CUDA_CHECK(cudaFree(length_over_crossings_bvh));
   }
+  if (only_surf) return 0;
   return num_errors;
 }

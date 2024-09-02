@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <numeric>
+#include <iomanip>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -13,7 +14,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 /// @brief Filling one touchable record (TR) to use with NavStateTuple.
 /// @details The records are delimited at unsigned int (4 bytes) size:
 ///
-///  |    parent_addr    |  placed_vol_index |  touchable_index |  logical_vol_addr |
+///  |    parent_addr    |  placed_vol_index |  index_in_parent |  touchable_index  |  logical_vol_addr |
 ///  |   scene |new_scene|lev |hasm|otr |orot|//// padding /////|
 ///                                          |            translation[0]            |
 ///  |            translation[1]             |            translation[2]            |
@@ -26,6 +27,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 ///
 /// parent_addr         = index of the parent TR in the table
 /// placed_vol_index    = index of the placed volume in the table of placed volumes
+/// index_in_parent     = placed volume index in the parent logical volume
 /// touchable index     = sequential index of the touchable in the scene. In case there
 ///                       is a single world scene, this index is unique
 /// logical_vol_addr    = index of the logical volume record in the table
@@ -48,7 +50,11 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 {
   bool cacheTrans   = true;
   NavIndex_t record = fCurrent;
-  auto lv           = state->Top()->GetLogicalVolume();
+  auto pv           = state->Top();
+  auto ichild       = pv->GetChildId();
+  if (ichild < 0 && pv != GeoManager::Instance().GetWorld())
+    VECGEOM_LOG(critical) << "Found placed volume having undefined child id";
+  auto lv           = pv->GetLogicalVolume();
   auto ivol         = lv->id();
   bool selected     = IsSelected(ivol);
   bool visited      = IsVisited(ivol);
@@ -93,7 +99,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   static_assert(sizeof(::Precision) == sizeof(NavIndex_t) || sizeof(::Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
   // Count of data fields before the transformation
-  constexpr unsigned record_count_before_trans = 6;
+  constexpr unsigned record_count_before_trans = 7;
   // Count of volume data fields (volume index, number of daughters plus index of each daughter)
   NavIndex_t index_scene                = GetSceneIndex(ivol);
   const unsigned record_count_daughters = visited ? 0 : nd + 2;
@@ -117,10 +123,12 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   // Add data for the current element.
   NavIndex_t index_mother    = fCurrent;
   NavIndex_t index_placed    = fCurrent + 1;
-  NavIndex_t index_touchable = fCurrent + 2;
-  NavIndex_t index_logical   = fCurrent + 3;
-  NavIndex_t index_scenes    = fCurrent + 4;
-  NavIndex_t index_lhtr      = fCurrent + 5;
+  NavIndex_t index_child     = fCurrent + 2;
+  NavIndex_t index_touchable = fCurrent + 3;
+  NavIndex_t index_logical   = fCurrent + 4;
+  NavIndex_t index_scenes    = fCurrent + 5;
+  NavIndex_t index_lhtr      = fCurrent + 6;
+  auto content_ichild        = reinterpret_cast<int *>(fNavInd + index_child);
   auto content_scene         = reinterpret_cast<unsigned short *>(fNavInd + index_scenes);
   auto content_newscene      = content_scene + 1;
   auto content_level         = reinterpret_cast<unsigned char *>(fNavInd + index_lhtr);
@@ -145,12 +153,15 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   // Fill the node index in the mother list of daughters
   if (mother > 0) {
-    NavIndex_t index_inmother = fNavInd[mother + 3] + 2 + dind;
+    NavIndex_t index_inmother = fNavInd[mother + 4] + 2 + dind;
     fNavInd[index_inmother]   = fCurrent;
   }
 
   // Placed volume index
   fNavInd[index_placed] = (level >= 0) ? state->ValueAt(level) : 0;
+
+  // Child index in mother
+  *content_ichild = ichild;
 
   // Touchable index
   fNavInd[index_touchable] = id++;
@@ -206,8 +217,12 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 {
   bool cacheTrans       = true;
   NavIndex_t new_mother = fCurrent;
-  auto lv               = state->Top()->GetLogicalVolume();
-  unsigned short nd     = (unsigned short)lv->GetDaughters().size();
+  auto pv               = state->Top();
+  auto ichild           = pv->GetChildId();
+  if (ichild < 0 && pv != GeoManager::Instance().GetWorld())
+    VECGEOM_LOG(critical) << "Found placed volume having undefined child id";
+  auto lv           = pv->GetLogicalVolume();
+  unsigned short nd = (unsigned short)lv->GetDaughters().size();
   if (lv->GetDaughters().size() >= std::numeric_limits<unsigned short>::max()) {
     VECGEOM_LOG(critical) << "Navigation table does not support volumes having more than "
                           << std::numeric_limits<unsigned short>::max() << " daughters";
@@ -226,7 +241,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
   static_assert(sizeof(::Precision) == sizeof(NavIndex_t) || sizeof(::Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore   = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
-  const auto daughterIndices = 4 + nd + ((nd + 1) & 1);
+  const auto daughterIndices = 6 + nd + ((nd + 1) & 1);
   const bool padTransformationData =
       ((indicesBefore + daughterIndices) * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
 
@@ -251,13 +266,20 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   fNavInd[fCurrent + 1] = id++;
 
   // Fill the node index in the mother list of daughters
-  if (mother > 0) fNavInd[mother + 4 + dind] = fCurrent;
+  if (mother > 0) fNavInd[mother + 6 + dind] = fCurrent;
 
-  // Physical volume index
+  // Placed volume index
   fNavInd[fCurrent + 2] = (level >= 0) ? state->ValueAt(level) : 0;
 
+  // Child index in mother
+  auto content_ichild = reinterpret_cast<int *>(fNavInd + fCurrent + 3);
+  *content_ichild     = ichild;
+
+  // Logical volume id
+  fNavInd[fCurrent + 4] = lv->id();
+
   // Write current level in next byte
-  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 3]);
+  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 5]);
   assert(level < std::numeric_limits<unsigned char>::max() && "fatal: geometry deph more than 255 not supported");
   *content_ddt = (unsigned char)level;
 
@@ -270,7 +292,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   *content_hasm     = 0;
 
   // Prepare the space for the daughter indices
-  auto content_dind = &fNavInd[fCurrent + 4];
+  auto content_dind = &fNavInd[fCurrent + 6];
   for (size_t i = 0; i < nd; ++i)
     content_dind[i] = 0;
 
@@ -636,10 +658,10 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
   visitAndCountReducedSize(GeoManager::Instance().GetWorld(), measured_nnodes, count_selected, depth, scene_sum);
   VECGEOM_LOG(info) << "selected_volumes = " << std::accumulate(vol_selected.begin(), vol_selected.end(), int(0))
                     << "  node_count = " << nnodes - total_score << " (" << nnodes
-                    << " initial)  max_scenes = " << estimated_depth << "\n"
-                    << "  * measured: max_scenes = " << measured_depth
-                    << "  node_count = " << measured_nnodes + count_selected
-                    << "  avg_scene_level = " << float(scene_sum) / nnodes << "\n";
+                    << " initial)  max_scenes = " << estimated_depth;
+  // << "  * measured: max_scenes = " << measured_depth
+  // << "  node_count = " << measured_nnodes + count_selected
+  // << "  avg_scene_level = " << float(scene_sum) / nnodes << "\n";
 }
 
 bool NavIndexTable::AllocateTable(size_t bytes)
@@ -670,7 +692,8 @@ bool NavIndexTable::CreateTable(VPlacedVolume const *top, int maxdepth, int dept
 #else
   visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
-  printf("Table size index: %ld\n", visitor.GetTableSize());
+  VECGEOM_LOG(info) << "navigation table size is " << std::setprecision(5)
+                    << float(visitor.GetTableSize()) / (1024 * 1024) << " MBytes";
 
   bool hasTable = AllocateTable(visitor.GetTableSize());
   if (!hasTable) return false;
@@ -683,7 +706,7 @@ bool NavIndexTable::CreateTable(VPlacedVolume const *top, int maxdepth, int dept
 #ifdef VECGEOM_USE_NAVTUPLE
   scene_id = 0;
   visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
-  printf("scene_id_last = %d\n", scene_id);
+  // printf("scene_id_last = %d\n", scene_id);
 #else
   visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
@@ -703,7 +726,7 @@ bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
   int scene_id = 0;
   int ierr     = visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
 #else
-  int ierr       = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  int ierr = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
   NavStatePath::ReleaseInstance(state);
   if (ierr > 0) return false;
@@ -741,16 +764,32 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
     if (scene && (dscene_id == scene_id)) {
       VECGEOM_LOG(critical) << "Validate: incompatible scene index " << dscene_id << " was supposed different than "
                             << scene_id << " for " << state->At(i - 1)->id() << "/" << pdaughter->id();
-      error = 1;
+      error = 2;
       return 0;
     }
   }
 
-  // Check if the physical volume is correct
+  // Check if the placed volume is correct
   if (NavState::TopImpl(nav_ind) != state->Top()) {
     VECGEOM_LOG(critical) << "Validate: Top placed volume pointer mismatch";
     state->Print();
-    error = 2;
+    error = 3;
+    return 0;
+  }
+
+  // Check if the child id is correct
+  if (NavState::GetChildIdImpl(nav_ind) != state->Top()->GetChildId()) {
+    VECGEOM_LOG(critical) << "Validate: Top placed volume child id mismatch";
+    state->Print();
+    error = 4;
+    return 0;
+  }
+
+  // Check if the logical volume id is correct
+  if (NavState::GetLogicalIdImpl(nav_ind) != state->Top()->GetLogicalVolume()->id()) {
+    VECGEOM_LOG(critical) << "Validate: Logical volume id mismatch";
+    state->Print();
+    error = 5;
     return 0;
   }
 
@@ -758,7 +797,7 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
   if (level != NavState::GetLevelImpl(nav_ind)) {
     VECGEOM_LOG(critical) << "Validate: Level mismatch";
     state->Print();
-    error = 3;
+    error = 6;
     return 0;
   }
 
@@ -770,7 +809,7 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
     if (nav_ind_m != nav_ind) {
       VECGEOM_LOG(critical) << "Validate: Navigation index inconsistency for Push/Pop";
       state->Print();
-      error = 4;
+      error = 7;
       return 0;
     }
   }
@@ -779,7 +818,7 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
   if (NavState::GetNdaughtersImpl(nav_ind) != state->Top()->GetDaughters().size()) {
     VECGEOM_LOG(critical) << "Validate: Number of daughters mismatch";
     state->Print();
-    error = 5;
+    error = 8;
     return 0;
   }
 
@@ -792,20 +831,11 @@ NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
     state->Print();
     VECGEOM_LOG(critical) << "NavStatePath  transformation: " << trans << "\n";
     VECGEOM_LOG(critical) << "NavStateIndex transformation: " << trans_nav_ind << "\n";
-    error = 6;
+    error = 9;
     return 0;
   }
 
 #ifdef VECGEOM_USE_NAVTUPLE
-  if (level > 0) {
-    auto ivol = pdaughter->GetLogicalVolume()->id();
-    if (ivol != NavStateTuple::GetLogicalIdImpl(nav_ind)) {
-      VECGEOM_LOG(critical) << "Validate: Logical volume index mismatch";
-      state->Print();
-      error = 7;
-      return 0;
-    }
-  }
   return nav_ind.Top();
 #else
   return nav_ind;

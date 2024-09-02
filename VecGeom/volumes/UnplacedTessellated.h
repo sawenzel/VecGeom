@@ -48,6 +48,10 @@ public:
     ComputeBBox();
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::tessellated; }
+
   /// Getter for the TessellatedStruct object containing the actual data (facets, vertices, clusters of facets)
   /** @return The tessellatedStruct object */
   VECCORE_ATT_HOST_DEVICE

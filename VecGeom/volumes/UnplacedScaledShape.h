@@ -25,8 +25,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef GOT_AROUND_TO_SPECIALIZE_SCALED_SHAPE
 template <typename Specialized_t>
-class SUnplacedScaledShape {
-};
+class SUnplacedScaledShape {};
 
 return ScaledShape::MakeInstance<BaseShape_t>(scale, Argtypes... args);
 
@@ -136,6 +135,10 @@ public:
 
     // delete fScaled.fPlaced;
   }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual ESolidType GetType() const override { return ESolidType::scaled; }
 
   /// Getter for the generic scaled shape structure
   VECCORE_ATT_HOST_DEVICE
