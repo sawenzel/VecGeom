@@ -697,6 +697,7 @@ int main(int argc, char *argv[])
   OPTION_BOOL(bvh_split_step, false);
   OPTION_BOOL(validate_results, true);
   OPTION_BOOL(only_surf, true);
+  OPTION_BOOL(use_TB_gun, false);
   OPTION_DOUBLE(mmunit, 1);
   OPTION_DOUBLE(safety_ratio, 0);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
@@ -757,10 +758,28 @@ int main(int argc, char *argv[])
     amax[i] = std::min(amax[i], max_world_3d[i]);
   }
 
+  if (use_TB_gun) {
+    amin.Set(0., 0., -700.);
+    amax.Set(0., 0., -700.);
+  }
+
   Vec3D origin{0, 0, 0};
   if (!use_provided_point) {
     volumeUtilities::FillRandomPoints(amin, amax, points, nrays);
-    volumeUtilities::FillRandomDirections(dirs, nrays);
+    if (!use_TB_gun) {
+      volumeUtilities::FillRandomDirections(dirs, nrays);
+    } else {
+      // roughly the angles for the testbeam setup
+      Precision aMaxPhi   = 0;
+      Precision aMinPhi   = vecgeom::kTwoPi;
+      Precision aMaxTheta = 0;
+      Precision aMinTheta = atan2(20, 3200);
+      for (int i = 0; i < nrays; i++) {
+        Precision phi   = (aMaxPhi - aMinPhi) * RNG::Instance().uniform() + aMinPhi;
+        Precision theta = acos((cos(aMaxTheta) - cos(aMinTheta)) * RNG::Instance().uniform() + cos(aMinTheta));
+        dirs[i].Set(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
+      }
+    }
   } else {
     points[0] = point_3D;
     dirs[0]   = direction_3D;
