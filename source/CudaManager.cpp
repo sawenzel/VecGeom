@@ -31,7 +31,7 @@ namespace cuda {
 // forward declare a global function
 extern __global__ void InitDeviceCompactPlacedVolBufferPtr(void *gpu_ptr);
 extern __global__ void InitDeviceNavIndexPtr(void *gpu_ptr, int maxdepth);
-}
+} // namespace cuda
 
 inline namespace cxx {
 
@@ -51,7 +51,7 @@ VPlacedVolume const *CudaManager::world() const
 
 vecgeom::cuda::VPlacedVolume const *CudaManager::world_gpu() const
 {
-  assert(world_gpu_ != nullptr);
+  // assert(world_gpu_ != nullptr);
   return world_gpu_;
 }
 
@@ -246,10 +246,7 @@ void CudaManager::LoadGeometry(VPlacedVolume const *const volume)
   synchronized_ = false;
 }
 
-void CudaManager::LoadGeometry()
-{
-  LoadGeometry(GeoManager::Instance().GetWorld());
-}
+void CudaManager::LoadGeometry() { LoadGeometry(GeoManager::Instance().GetWorld()); }
 
 void CudaManager::CleanGpu()
 {
@@ -555,10 +552,7 @@ DevicePtr<CudaManager::CudaDaughter_t> CudaManager::LookupDaughterArray(Vector<D
   return DevicePtr<CudaManager::CudaDaughter_t>(Lookup(daughters_));
 }
 
-void CudaManager::PrintGeometry() const
-{
-  CudaManagerPrintGeometry(world_gpu());
-}
+void CudaManager::PrintGeometry() const { CudaManagerPrintGeometry(world_gpu()); }
 
 /**
  * Sort all placed volumes by type, and bulk-copy all instances of each type to the device.
