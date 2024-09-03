@@ -677,7 +677,8 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 // in testRaytracing.cu
 int testRaytracingCUDA(int nrays, Vec3Dc const *points, Vec3Dc const *dirs, const SurfData &surfdata, bool debug,
                        bool accept_zeros = 0, int max_cross = vecgeom::kMaximumInt, bool test_bvh = false,
-                       bool validate_results = true, bool only_surf = false);
+                       bool validate_results = true, bool only_surf = false, bool bvh_single_step = false,
+                       bool bvh_split_step = false, int verbosity = 0);
 
 //==================================================================================
 int main(int argc, char *argv[])
@@ -692,6 +693,8 @@ int main(int argc, char *argv[])
   OPTION_BOOL(detect_overlaps, false);
   OPTION_BOOL(accept_zeros, false);
   OPTION_BOOL(test_bvh, false);
+  OPTION_BOOL(bvh_single_step, false);
+  OPTION_BOOL(bvh_split_step, false);
   OPTION_BOOL(validate_results, true);
   OPTION_BOOL(only_surf, true);
   OPTION_DOUBLE(mmunit, 1);
@@ -792,7 +795,7 @@ int main(int argc, char *argv[])
       std::cout << "Solid model transferred to GPU : " << time_transfer << " [s]\n";
     if (!errCUDA)
       errCUDA = testRaytracingCUDA(nrays, pointsc, dirsc, surfdata, debug, accept_zeros, max_cross, test_bvh,
-                                   validate_results, only_surf);
+                                   validate_results, only_surf, bvh_single_step, bvh_split_step, verbosity);
   }
 #endif
 

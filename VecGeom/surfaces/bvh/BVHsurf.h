@@ -221,7 +221,8 @@ public:
   template <typename Navigator, typename Real_i>
   VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(const Vector3D<Real_i> &localpoint,
                                                           const Vector3D<Real_i> &localdir, double &step,
-                                                          long const last_exited_id, long &hitcandidate_index) const
+                                                          // long const last_exited_id,
+                                                          long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -257,8 +258,9 @@ public:
                 fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
             dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && dist > -vecgeom::kToleranceDist<Real_i> &&
-                !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
+            if (dist < step && dist > -vecgeom::kToleranceDist<Real_i>
+                //&& !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))
+            ) {
               step               = dist;
               bstep              = static_cast<Real_t>(dist);
               hitcandidate_index = prim;
