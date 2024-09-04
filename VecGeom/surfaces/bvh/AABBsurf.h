@@ -145,7 +145,7 @@ struct AABBsurf {
     if (t0[2] > t1[2]) swap(t0[2], t1[2]);
 
     tmin = t0.Max();
-    tmax = t1.Min() * (Real_t(1.) + 2 * vecgeom::kEpsilonT<Real_t>); // The 2 epsilon prevent false misses
+    tmax = t1.Min() * (Real_t(1.) + vecgeom::kToleranceDist<Real_t>); // Adding tolerance to prevent false misses
   }
 
   /**

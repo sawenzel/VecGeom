@@ -782,6 +782,13 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   // Compute distance taking into account the surface visibility (normal orientation)
   Real_t dist = vecgeom::InfinityLength<Real_t>();
   surfhit     = framedsurf.fSurface.Intersect(local, localdir, visibility, surfdata, dist, two_solutions, safety);
+  // This is a protection against rays going parallel through a surface:
+  // if an exact corner of two boxes is hit with a parallel ray, the ray could jump infinitely between two boxes with 0
+  // steps
+  if (surfhit && Abs(dist) < vecgeom::kTolerance && Abs(localdir[2]) < vecgeom::kToleranceDist<Real_t>) {
+    surfhit = false;
+    dist    = vecgeom::InfinityLength<Real_t>();
+  }
   if (!surfhit) return dist;
   // Do the frame intersection using the propagated point on surface
   auto onsurf = local + localdir * dist;
