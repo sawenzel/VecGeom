@@ -393,9 +393,9 @@ public:
     vecgeom::Vector3D<Real_t> localdir;
 
     vecgeom::Transformation3DMP<Real_t> lv_trans;
-    in_state.TopMatrix(lv_trans);
-    localpoint = lv_trans.Transform(point);
-    localdir   = lv_trans.TransformDirection(direction);
+    in_state.TopInSceneMatrix(lv_trans);
+    localpoint = lv_trans.Transform(local_scene);
+    localdir   = lv_trans.TransformDirection(localdir_scene);
 
     // Draft: potentially one can still transform in double precision and then convert that point to single precision
     // (or even propagate the point and do the conversion later). To be tested in the future
@@ -531,9 +531,9 @@ public:
     vecgeom::Vector3D<Real_t> localdir;
 
     vecgeom::Transformation3DMP<Real_t> lv_trans;
-    in_state.TopMatrix(lv_trans);
-    localpoint = lv_trans.Transform(point);
-    localdir   = lv_trans.TransformDirection(direction);
+    in_state.TopInSceneMatrix(lv_trans);
+    localpoint = lv_trans.Transform(local_scene);
+    localdir   = lv_trans.TransformDirection(localdir_scene);
 
     // Draft: potentially one can still transform in double precision and then convert that point to single precision
     // (or even propagate the point and do the conversion later). To be tested in the future
@@ -607,9 +607,9 @@ public:
     vecgeom::Vector3D<Real_t> localdir;
 
     vecgeom::Transformation3DMP<Real_t> lv_trans;
-    in_state.TopMatrix(lv_trans);
-    localpoint = lv_trans.Transform(point);
-    localdir   = lv_trans.TransformDirection(direction);
+    in_state.TopInSceneMatrix(lv_trans);
+    localpoint = lv_trans.Transform(local_scene);
+    localdir   = lv_trans.TransformDirection(localdir_scene);
 
     // Draft: potentially one can still transform in double precision and then convert that point to single precision
     // (or even propagate the point and do the conversion later). To be tested in the future

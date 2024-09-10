@@ -681,14 +681,19 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
       if (!portal_side.HasChildren()) return true;
       // We need to do relocation on the portal, after recomputing onsurf
       vecgeom::Transformation3DMP<Real_t> scene_trans;
-      // We are in a scene volume, so use TopMatrix
-      out_frame.state.TopMatrix(scene_trans);
-      auto local_scene = scene_trans.Transform(point + hit_dist * direction);
-      auto onsurf      = portal.fTrans.Transform(local_scene);
+
       // Is this a new scene
       is_scene = out_frame.state.GetSceneId(scene_id, newscene_id);
-      iframe   = FindFrameOnEnteringSide(portal_side, out_frame.state, out_frame.state.GetNavIndex(), is_scene,
-                                         portal.IsSceneSurface(), onsurf, pushed_point, surfdata, out_frame.frame_id);
+      if (is_scene) {
+        out_frame.state.TopMatrix(scene_trans);
+      } else {
+        out_frame.state.SceneMatrix(scene_trans);
+      }
+
+      auto local_scene = scene_trans.Transform(point + hit_dist * direction);
+      auto onsurf      = portal.fTrans.Transform(local_scene);
+      iframe           = FindFrameOnEnteringSide(portal_side, out_frame.state, out_frame.state.GetNavIndex(), is_scene,
+                                                 portal.IsSceneSurface(), onsurf, pushed_point, surfdata, out_frame.frame_id);
       if (iframe == out_frame.frame_id) return true;
       // A daughter frame was found on the portal, so continue the loop
       out_frame.frame_id = iframe;
@@ -1017,11 +1022,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       // Bootstrap the temporary frame locator with the hit CS side
       tmp_hit_FS.Set(isurf, -1, left_side);
       tmp_hit_FS.state = in_state;
-      if (is_scene && !self_entering) {
-        EnterCS(tmp_hit_FS, local_scene, localdir_scene, dist, onsurf_crt, out_frame);
-      } else {
-        EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
-      }
+      EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
       return tmp_hit_FS.frame_id;
     };
     auto iframe = EnterFrameCheck(left_side, onsurf_crt, dist);
@@ -1048,7 +1049,6 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 
   // Fix the out_state if pointing to a 0 scene
   if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
-
   return distance;
 }
 

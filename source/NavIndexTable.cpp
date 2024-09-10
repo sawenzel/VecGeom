@@ -601,7 +601,10 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
     // after selecting a volume, so we would need sorting after each selection. A smarter algorithm allowing to
     // reinsert scores in the sorted array?
     for (int i = 0; i < ntot; ++i) {
-      if (vol_selected[i] || score[i] < score_max || score[i] < min_score) continue;
+      if (vol_selected[i] || score[i] < score_max || score[i] < min_score ||
+          volumes[i]->GetUnplacedVolume()->GetType() == ESolidType::boolean)
+        continue;
+
       lvl         = 0;
       found_level = 0;
       getMotherSceneLevel(i, lvl, found_level);
@@ -726,7 +729,7 @@ bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
   int scene_id = 0;
   int ierr     = visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
 #else
-  int ierr = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  int ierr       = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
   NavStatePath::ReleaseInstance(state);
   if (ierr > 0) return false;
