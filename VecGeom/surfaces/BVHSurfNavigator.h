@@ -353,49 +353,41 @@ public:
     return path.TopId();
   }
 
-  /// @brief Method computing the distance to the next surface and state after crossing it
-  /// @tparam Real_t Floating point type for the interface and data storage
-  /// @param point Global point
-  /// @param direction Global direction
+  /// @brief Method computing the distance to the next surface.
+  /// @details The method returns the same ouy_state as the in_state, but alters the boundary condition.
+  /// @tparam Real_i Input floating point type
+  /// @param point_i Global point
+  /// @param direction_i Global direction
   /// @param in_state Input navigation state before crossing
   /// @param out_state Output navigation state after crossing
-  /// @param surfdata Surface data storage
-  /// @param exit_surf data container storing the exited common surface, the side, the frame id, and whether there is an overlap
-  /// @param stepmax maximum step
+  /// @param hitsurf_index Hit surface index
+  /// @param stepmax Maximum allowed step
   /// @return Distance to next surface.
   template <typename Real_i>
-  VECCORE_ATT_HOST_DEVICE static Real_i ComputeStepAndHit(vecgeom::Vector3D<Real_i> const &point_i,
-                                                          vecgeom::Vector3D<Real_i> const &direction_i,
-                                                          vecgeom::NavigationState const &in_state,
-                                                          vecgeom::NavigationState &out_state, CrossedSurface &hit_FS,
-                                                          Real_i stepmax = vecgeom::InfinityLength<Real_i>())
+  VECCORE_ATT_HOST_DEVICE static Real_i ComputeStepAndNextSurface(vecgeom::Vector3D<Real_i> const &point_i,
+                                                                  vecgeom::Vector3D<Real_i> const &direction_i,
+                                                                  vecgeom::NavigationState const &in_state,
+                                                                  vecgeom::NavigationState &out_state,
+                                                                  long &hitsurf_index,
+                                                                  Real_i stepmax = vecgeom::InfinityLength<Real_i>())
   {
     out_state      = in_state;
     auto in_navind = in_state.GetNavIndex();
+    // For the moment we only support a starting state within the setup
     if (in_navind == 0) return vecgeom::InfinityLength<Real_i>();
-
-    vecgeom::Transformation3DMP<Real_t> scene_trans;
-    in_state.SceneMatrix(scene_trans);
-
-    // casting point into Real_t (float in mixed precision) and using Real_t transformation for local points.
-    // Since this is for a frame check, float is sufficient.
-    vecgeom::Vector3D<Real_t> point(point_i);
-    vecgeom::Vector3D<Real_t> direction(direction_i);
-    Vector3D<Real_t> local_scene    = scene_trans.Transform(point);
-    Vector3D<Real_t> localdir_scene = scene_trans.TransformDirection(direction);
-
     auto const &surfdata = SurfData<Real_t>::Instance();
 
     auto ivol = in_state.GetLogicalId();
     auto &bvh = surfdata.fBVH[surfdata.fShells[ivol].fBVH];
 
-    vecgeom::Vector3D<Real_t> localpoint;
-    vecgeom::Vector3D<Real_t> localdir;
-
+    // casting point into Real_t (float in mixed precision) and using Real_t transformation for local points.
+    // Since this is for a frame check, float is sufficient.
+    vecgeom::Vector3D<Real_t> point(point_i);
+    vecgeom::Vector3D<Real_t> direction(direction_i);
     vecgeom::Transformation3DMP<Real_t> lv_trans;
-    in_state.TopInSceneMatrix(lv_trans);
-    localpoint = lv_trans.Transform(local_scene);
-    localdir   = lv_trans.TransformDirection(localdir_scene);
+    in_state.TopMatrix(lv_trans);
+    auto localpoint = lv_trans.Transform(point);
+    auto localdir   = lv_trans.TransformDirection(direction);
 
     // Draft: potentially one can still transform in double precision and then convert that point to single precision
     // (or even propagate the point and do the conversion later). To be tested in the future
@@ -411,45 +403,71 @@ public:
     //   static_cast<Real_t>(localdir[1]), static_cast<Real_t>(localdir[2])};
     // }
 
-    auto bvhstep            = stepmax;
-    long hitcandidate_index = -1;
+    auto bvhstep = stepmax;
     // long last_exited_id     = -1;
     bvh.template CheckDaughterIntersections<BVHSurfNavigator>(localpoint, localdir, bvhstep, // last_exited_id,
-                                                              hitcandidate_index);
-    Real_t bvhstep_RT = Real_t(bvhstep); // cast only once and use in later functions
+                                                              hitsurf_index);
     // If there is no physics step limitation, a surface must be found
-    if (hitcandidate_index < 0) {
-      if (stepmax == vecgeom::InfinityLength<Real_i>())
-        hit_FS.Set(0, -1, 0); // frame_id = -1 indicates extruding overlap
-      // This can happen if the exit point is outside the mother volume (extrusion)
-      // To recover, one can return the mother state as output and a zero distance
+    if (hitsurf_index < 0) {
+      // Nothing is hit within the step limit
+      out_state.SetBoundaryState(false);
       return stepmax;
     }
 
-    // Now identify the common surface
+    // By default we hit a boundary and exit the in_state volume
+    out_state.SetBoundaryState(true);
+    out_state.SetLastExited();
+
+    // Return the step to the hit surface
+    return bvhstep;
+  }
+
+  /// @brief Method that relocates the point after CS traversal
+  /// @tparam Real_i Input floating point type
+  /// @param point_i Global point
+  /// @param direction_i Global direction
+  /// @param step Step to the next boundary
+  /// @param out_state Input state before crossing and output state after crossing
+  /// @param hit_FS Hit surface information
+  template <typename Real_i>
+  VECCORE_ATT_HOST_DEVICE static void RelocateToNextVolume(vecgeom::Vector3D<Real_i> const &point_i,
+                                                           vecgeom::Vector3D<Real_i> const &direction_i, Real_i step,
+                                                           long hitsurf_index, vecgeom::NavigationState &out_state,
+                                                           CrossedSurface &hit_FS)
+  {
+    auto const &surfdata = SurfData<Real_t>::Instance();
+    auto const in_state  = out_state;
+    // out_state            = in_state;
+    Real_t bvhstep_RT = Real_t(step); // cast only once and use in later functions
+    vecgeom::Vector3D<Real_t> point(point_i);
+    vecgeom::Vector3D<Real_t> direction(direction_i);
+    vecgeom::Transformation3DMP<Real_t> scene_trans;
+    in_state.SceneMatrix(scene_trans);
+    auto local_scene    = scene_trans.Transform(point);
+    auto localdir_scene = scene_trans.TransformDirection(direction);
+    // Identify the common surface
     auto const &currentShell = surfdata.fShells[in_state.GetLogicalId()];
-    if (hitcandidate_index < currentShell.fNExitingSurfaces) {
+    Vector3D<Real_t> CS_local, CS_localdir, onsurf_crt;
+    if (hitsurf_index < currentShell.fNExitingSurfaces) {
       // If the hit candidate is an exiting surface
-      auto exiting_index = currentShell.fExitingSurfaces[hitcandidate_index];
+      auto exiting_index = currentShell.fExitingSurfaces[hitsurf_index];
       FSlocator hit_FS_tmp;
       surfdata.SceneToTouchableLocator(in_state, exiting_index, hit_FS_tmp);
       FSlocator out_frame;
       hit_FS_tmp.state = in_state;
       // Get the onsurf point in CS coordinates
-      auto const &surf             = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
-      auto const &CS_trans         = surf.fTrans;
-      Vector3D<Real_t> CS_local    = CS_trans.Transform(local_scene);
-      Vector3D<Real_t> CS_localdir = CS_trans.TransformDirection(localdir_scene);
-
-      auto onsurf_crt = CS_local + bvhstep_RT * CS_localdir;
-      /* auto inframe    =  */ ExitCS(hit_FS_tmp, /*is_hit=*/true, point, direction, bvhstep_RT, onsurf_crt,
-                                      hit_FS.hit_surf, out_frame);
+      auto const &surf     = surfdata.fCommonSurfaces[hit_FS_tmp.GetCSindex()];
+      auto const &CS_trans = surf.fTrans;
+      CS_local             = CS_trans.Transform(local_scene);
+      CS_localdir          = CS_trans.TransformDirection(localdir_scene);
+      onsurf_crt           = CS_local + bvhstep_RT * CS_localdir;
+      ExitCS(hit_FS_tmp, /*is_hit=*/true, point, direction, bvhstep_RT, onsurf_crt, hit_FS.hit_surf, out_frame);
       hit_FS.exit_surf = hit_FS.hit_surf;
       out_state        = out_frame.state;
 
     } else {
 
-      auto entering_index        = hitcandidate_index - currentShell.fNExitingSurfaces;
+      auto entering_index        = hitsurf_index - currentShell.fNExitingSurfaces;
       auto local_surface_id      = currentShell.fEnteringSurfaces[entering_index];
       auto const &framed_surface = surfdata.fLocalSurf[local_surface_id];
       auto pvol_id               = currentShell.fEnteringSurfacesPvol[entering_index];
@@ -464,7 +482,6 @@ public:
       // Get the onsurf point in CS coordinates
       auto const &surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
       auto const &CS_trans = surf.fTrans;
-      Vector3D<Real_t> CS_local, CS_localdir;
 
       unsigned short scene_id = 0, newscene_id = 0;
       bool is_scene = in_state.GetSceneId(scene_id, newscene_id);
@@ -473,10 +490,15 @@ public:
         CS_local    = CS_trans.Transform(local_scene);
         CS_localdir = CS_trans.TransformDirection(localdir_scene);
       } else {
-        CS_local    = CS_trans.Transform(localpoint);
-        CS_localdir = CS_trans.TransformDirection(localdir);
+        vecgeom::Transformation3DMP<Real_t> lv_trans;
+        // local_scene is already transformed by SceneMatrix, therefore now TopInSceneMatrix is sufficient
+        in_state.TopInSceneMatrix(lv_trans);
+        auto localpoint = lv_trans.Transform(local_scene);
+        auto localdir   = lv_trans.TransformDirection(localdir_scene);
+        CS_local        = CS_trans.Transform(localpoint);
+        CS_localdir     = CS_trans.TransformDirection(localdir);
       }
-      auto onsurf_crt = CS_local + bvhstep_RT * CS_localdir;
+      onsurf_crt = CS_local + bvhstep_RT * CS_localdir;
 
       // Seek and cross entering frames
       FSlocator out_frame;
@@ -487,7 +509,36 @@ public:
     // Fix the out_state if pointing to a 0 scene
     if (out_state.GetSceneLevel() > 0 && out_state.GetNavIndex() == 0) out_state.PopScene();
     out_state.SetBoundaryState(true);
+  }
 
+  /// @brief Method computing the distance to the next surface and state after crossing it
+  /// @tparam Real_i Input floating point type
+  /// @param point_i Global point
+  /// @param direction_i Global direction
+  /// @param in_state Input navigation state before crossing
+  /// @param out_state Output navigation state after crossing
+  /// @param surfdata Surface data storage
+  /// @param exit_surf data container storing the exited common surface, the side, the frame id, and whether there is an overlap
+  /// @param stepmax maximum step
+  /// @return Distance to next surface.
+  template <typename Real_i>
+  VECCORE_ATT_HOST_DEVICE static Real_i ComputeStepAndHit(vecgeom::Vector3D<Real_i> const &point_i,
+                                                          vecgeom::Vector3D<Real_i> const &direction_i,
+                                                          vecgeom::NavigationState const &in_state,
+                                                          vecgeom::NavigationState &out_state, CrossedSurface &hit_FS,
+                                                          Real_i stepmax = vecgeom::InfinityLength<Real_i>())
+  {
+    long hitsurf_index = -1;
+    auto bvhstep       = ComputeStepAndNextSurface(point_i, direction_i, in_state, out_state, hitsurf_index, stepmax);
+    // If there is no physics step limitation, a surface must be found
+    if (hitsurf_index < 0) {
+      if (in_state.GetNavIndex() > 0 && stepmax == vecgeom::InfinityLength<Real_i>())
+        hit_FS.Set(0, -1, 0); // frame_id = -1 indicates extruding overlap
+      // This can happen if the exit point is outside the mother volume (extrusion)
+      // To recover, one can return the mother state as output and a zero distance
+      return stepmax;
+    }
+    RelocateToNextVolume(point_i, direction_i, bvhstep, hitsurf_index, out_state, hit_FS);
     return bvhstep;
   }
 
