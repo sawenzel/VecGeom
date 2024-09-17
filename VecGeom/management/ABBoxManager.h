@@ -339,6 +339,7 @@ public:
 
     // Get the shell of the root LV
     auto &rootShell = cpudata.fShells[lvol->id()];
+    if (rootShell.fSurfaces.size() == 0) return;
 
     ABBox_s *boxes;
     if (!crop) {
