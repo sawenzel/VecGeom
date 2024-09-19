@@ -37,7 +37,7 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
   {
     // Just need to propagate to (xOy) plane
     bool surfhit = left_side ^ (dir[2] < 0);
-    distance     = surfhit ? -point[2] / vecgeom::NonZero(dir[2]) : -1;
+    distance     = -point[2] / vecgeom::NonZero(dir[2]);
     safety       = point[2];
     return surfhit;
   }
