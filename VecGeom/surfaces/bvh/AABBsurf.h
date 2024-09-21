@@ -219,8 +219,9 @@ struct AABBsurf {
     ComputeIntersectionInvDir(point, invdir, tmin, tmax);
     bool hit = tmin <= tmax && tmax >= Real_t(0) && tmin < step;
     // note: to prevent errors in large geometries, the looser tolerance of kToleranceDist is needed
-    approach =
-        vecCore::math::Max(vecgeom::MakeMinusTolerantRel(tmin, 10 * vecgeom::kToleranceDist<Real_t>), Real_t(0.));
+    approach = (hit && tmin > vecgeom::kToleranceDist<Real_t>)
+                   ? vecgeom::MakeMinusTolerantRel(tmin, 10 * vecgeom::kToleranceDist<Real_t>)
+                   : Real_t(0);
     return hit;
   }
 

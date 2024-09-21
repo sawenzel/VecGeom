@@ -844,7 +844,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   localdir          = trans.TransformDirection(direction);
 
   // Compute distance to surface
-  Real_t dist;
+  Real_t dist = -vecgeom::InfinityLength<Real_t>();
   bool flipped  = false;
   auto unplaced = surfdata.GetUnplaced(isurf, flipped);
 
