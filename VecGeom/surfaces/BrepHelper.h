@@ -18,7 +18,7 @@
 #include <VecGeom/volumes/Tube.h>
 #include <VecGeom/volumes/BooleanVolume.h>
 #include <VecGeom/management/GeoManager.h>
-//#include <VecGeom/management/BVHManager.h>
+// #include <VecGeom/management/BVHManager.h>
 
 namespace vgbrep {
 
@@ -145,7 +145,8 @@ private:
 
   /// @brief Print verbose info for a framed surface
   /// @param surf Framed surface
-  void PrintFramedSurface(FramedSurface<Real_t> const &surf);
+  template <typename Real_i, typename Transformation_t>
+  void PrintFramedSurface(FramedSurface<Real_i, Transformation_t> const &surf);
 
   /// @brief Reserve container slots based on the number of registered volumes
   /// @param nvolumes Number of registered volumes

@@ -142,7 +142,7 @@ struct ZPhiMask {
   /// @brief Transform a ZPhi mask from a local reference defined by trans to the parent reference
   /// @param trans Transformation of the ZPhi mask with respect to the parent reference
   /// @return Transformed mask
-  ZPhiMask<Real_t> InverseTransform(TransformationMP<Real_t> const &trans) const
+  ZPhiMask<Real_t> InverseTransform(vecgeom::Transformation2DMP<Real_t> const &trans) const
   {
     ZPhiMask<Real_t> frame(*this);
     // Convert rangeZ

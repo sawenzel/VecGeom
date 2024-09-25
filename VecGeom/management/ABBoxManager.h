@@ -211,7 +211,7 @@ public:
     upper.Set(maxx, maxy, maxz);
   }
 
-  static void ComputeSurfaceABBox(vgbrep::FramedSurface<Precision> const &framedSurface,
+  static void ComputeSurfaceABBox(vgbrep::FramedSurface<Precision, Transformation3DMP<Precision>> const &framedSurface,
                                   Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
                                   vgbrep::CPUsurfData<Precision> const &cpudata, LogicalVolume const *lvol,
                                   const bool crop)

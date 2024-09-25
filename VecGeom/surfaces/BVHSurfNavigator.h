@@ -14,8 +14,8 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &local,
                                                  vecgeom::Vector3D<Real_t> const &localdir, int volId,
                                                  SurfData<Real_t> const &surfdata,
-                                                 FramedSurface<Real_t> const &framedsurf, bool exiting, bool &surfhit,
-                                                 Real_t &safety);
+                                                 FramedSurface<Real_t, TransformationMP<Real_t>> const &framedsurf,
+                                                 bool exiting, bool &surfhit, Real_t &safety);
 
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Real_t LocalLogicSafety(vecgeom::Vector3D<Real_t> const &localpoint,
@@ -56,7 +56,7 @@ public:
     // Get the shell for this volume
     auto const &shell = surfdata.fShells[lv_index];
 
-    FramedSurface<Real_t> *framed_surface;
+    FramedSurface<Real_t, TransformationMP<Real_t>> *framed_surface;
     bool exiting{false};
 
     // Retrieve the candidate local surface
@@ -114,7 +114,7 @@ public:
 
     Vector3D<Real_t> surface_point;
     Vector3D<Real_t> surface_dir;
-    FramedSurface<Real_t> *framed_surface;
+    FramedSurface<Real_t, TransformationMP<Real_t>> *framed_surface;
     bool exiting{false};
 
     // Retrieve the candidate local surface

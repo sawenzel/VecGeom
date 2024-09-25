@@ -132,12 +132,12 @@ bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int l
   auto &cpudata     = CPUsurfData<Real_t>::Instance();
   auto const &shell = cpudata.fShells[logical_id];
   for (int lsurf_id : shell.fSurfaces) {
-    FramedSurface<Real_t> &lsurf = cpudata.fLocalSurfaces[lsurf_id];
-    auto const &trans            = lsurf.fTrans;
+    FramedSurface<Precision, TransformationMP<Precision>> &lsurf = cpudata.fLocalSurfaces[lsurf_id];
+    auto const &trans                                            = lsurf.fTrans;
     // Reflect the framed surface
-    TransformationMP<Real_t> scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
-    TransformationMP<Real_t> refl_trans = trans * scalez;
-    lsurf.fTrans                        = refl_trans;
+    TransformationMP<Precision> scalez(0, 0, 0, 0, 0, 0, 1, 1, -1);
+    TransformationMP<Precision> refl_trans = trans * scalez;
+    lsurf.fTrans                           = refl_trans;
   }
   return success;
 }

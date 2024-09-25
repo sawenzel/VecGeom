@@ -4,6 +4,7 @@
 #include <cassert>
 #include <VecGeom/base/Transformation3D.h>
 #include <VecGeom/base/Transformation3DMP.h>
+#include <VecGeom/base/Transformation2DMP.h>
 #include <VecGeom/base/Vector2D.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/volumes/kernel/GenericKernels.h>

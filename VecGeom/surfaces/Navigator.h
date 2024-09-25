@@ -70,11 +70,11 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE bool LogicInside(vecgeom::Vector3D<
 /// @param surfdata Surface data storage
 /// @return Exiting the frame
 template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(Vector3D<Real_t> const &point, Vector3D<Real_t> const &direction,
-                                            Real_t distance, Vector3D<Real_t> const &onsurf,
-                                            vecgeom::NavigationState const &exited_state,
-                                            FramedSurface<Real_t> const &framedsurf, NavIndex_t &last_bool_state,
-                                            SurfData<Real_t> const &surfdata)
+VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(
+    Vector3D<Real_t> const &point, Vector3D<Real_t> const &direction, Real_t distance, Vector3D<Real_t> const &onsurf,
+    vecgeom::NavigationState const &exited_state,
+    FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> const &framedsurf, NavIndex_t &last_bool_state,
+    SurfData<Real_t> const &surfdata)
 {
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
   bool inframe                   = framedsurf.fNeverCheck ? true : framedsurf.InsideFrame(onsurf, surfdata);
@@ -145,7 +145,7 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
   }
 
   // Adjust the state to reflect the topmost exited frame
-  auto setTopExited = [&](FramedSurface<Real_t> const &framed_surf, int ind) {
+  auto setTopExited = [&](FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> const &framed_surf, int ind) {
     surf_index = framed_surf.fSurfIndex;
     parent_ind = framed_surf.fParent;
     framed_surf.GetParentState(top_exit_state);
@@ -241,7 +241,7 @@ VECCORE_ATT_HOST_DEVICE int FindFrameOnEnteringSide(Side const &side, vecgeom::N
   };
 
   // Lambda for checking if the pushed point is in the Boolean volume
-  auto insideBoolean = [&](FramedSurface<Real_t> const &surf) {
+  auto insideBoolean = [&](FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> const &surf) {
     auto checked_state = in_state;
     if (surf.fState) {
       if (is_scene_surface && checked_state.GetNavIndex() > 0)
@@ -772,8 +772,8 @@ template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const &point_volume,
                                                  vecgeom::Vector3D<Real_t> const &direction_volume, int volId,
                                                  SurfData<Real_t> const &surfdata,
-                                                 FramedSurface<Real_t> const &framedsurf, bool exiting, bool &surfhit,
-                                                 Real_t &safety)
+                                                 FramedSurface<Real_t, TransformationMP<Real_t>> const &framedsurf,
+                                                 bool exiting, bool &surfhit, Real_t &safety)
 {
   bool two_solutions             = false;
   constexpr Real_t kPushDistance = 1000 * vecgeom::kToleranceDist<Real_t>;
@@ -844,7 +844,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToUnplaced(vecgeom::Vector3D<Real_t> cons
   localdir          = trans.TransformDirection(direction);
 
   // Compute distance to surface
-  Real_t dist = -vecgeom::InfinityLength<Real_t>();
+  Real_t dist   = -vecgeom::InfinityLength<Real_t>();
   bool flipped  = false;
   auto unplaced = surfdata.GetUnplaced(isurf, flipped);
 

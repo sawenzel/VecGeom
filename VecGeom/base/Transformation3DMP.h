@@ -552,55 +552,45 @@ private:
   // Templated rotation and translation methods which inline and compile to
   // optimized versions.
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DoRotation(Vector3D<Real_i> const &master,
-                                                               Vector3D<Real_i> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DoRotation(Vector3D<Real_s> const &master,
+                                                               Vector3D<Real_s> &local) const;
 
 private:
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DoTranslation(Vector3D<Real_i> const &master,
-                                                                  Vector3D<Real_i> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DoTranslation(Vector3D<Real_s> const &master,
+                                                                  Vector3D<Real_s> &local) const;
 
-  template <bool vectortransform, typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformKernel(Vector3D<Real_i> const &local,
-                                                                           Vector3D<Real_i> &master) const;
+  template <bool vectortransform>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformKernel(Vector3D<Real_s> const &local,
+                                                                           Vector3D<Real_s> &master) const;
 
 public:
   // Transformation interface
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transform(Vector3D<Real_i> const &master,
-                                                              Vector3D<Real_i> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transform(Vector3D<Real_s> const &master,
+                                                              Vector3D<Real_s> &local) const;
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> Transform(Vector3D<Real_i> const &master) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transform(Vector3D<Real_s> const &master) const;
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void TransformDirection(Vector3D<Real_i> const &master,
-                                                                       Vector3D<Real_i> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void TransformDirection(Vector3D<Real_s> const &master,
+                                                                       Vector3D<Real_s> &local) const;
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> TransformDirection(
-      Vector3D<Real_i> const &master) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> TransformDirection(
+      Vector3D<Real_s> const &master) const;
 
   /** The inverse transformation ( aka LocalToMaster ) of an object transform like a point
    *  this does not need to currently template on placement since such a transformation is much less used
    */
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransform(Vector3D<Real_i> const &local,
-                                                                     Vector3D<Real_i> &master) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransform(Vector3D<Real_s> const &local,
+                                                                     Vector3D<Real_s> &master) const;
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> InverseTransform(Vector3D<Real_i> const &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> InverseTransform(Vector3D<Real_s> const &local) const;
 
   /** The inverse transformation of an object transforming like a vector */
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformDirection(Vector3D<Real_i> const &master,
-                                                                              Vector3D<Real_i> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformDirection(Vector3D<Real_s> const &master,
+                                                                              Vector3D<Real_s> &local) const;
 
-  template <typename Real_i>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> InverseTransformDirection(
-      Vector3D<Real_i> const &master) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> InverseTransformDirection(
+      Vector3D<Real_s> const &master) const;
 
   /** compose transformations - multiply transformations */
   VECCORE_ATT_HOST_DEVICE
@@ -744,9 +734,8 @@ VECCORE_ATT_HOST_DEVICE bool Transformation3DMP<Real_t>::operator==(Transformati
  * \param local Output vector rotated to the new frame of reference.
  */
 template <typename Real_s>
-template <typename Real_i>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::DoRotation(Vector3D<Real_i> const &master,
-                                                                                         Vector3D<Real_i> &local) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::DoRotation(Vector3D<Real_s> const &master,
+                                                                                         Vector3D<Real_s> &local) const
 {
   local[0] = master[0] * rxx_;
   local[1] = master[0] * ryx_;
@@ -760,9 +749,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Do
 }
 
 template <typename Real_s>
-template <typename Real_i>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::DoTranslation(
-    Vector3D<Real_i> const &master, Vector3D<Real_i> &local) const
+    Vector3D<Real_s> const &master, Vector3D<Real_s> &local) const
 {
 
   local[0] = master[0] - tx_;
@@ -777,11 +765,10 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Do
  *              vector!
  */
 template <typename Real_s>
-template <typename Real_i>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Transform(Vector3D<Real_i> const &master,
-                                                                                        Vector3D<Real_i> &local) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Transform(Vector3D<Real_s> const &master,
+                                                                                        Vector3D<Real_s> &local) const
 {
-  Vector3D<Real_i> tmp;
+  Vector3D<Real_s> tmp;
   DoTranslation(master, tmp);
   DoRotation(tmp, local);
 }
@@ -793,83 +780,78 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Tr
  * \return Newly constructed Vector3D with the transformed coordinates.
  */
 template <typename Real_s>
-template <typename Real_i>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> Transformation3DMP<Real_s>::Transform(
-    Vector3D<Real_i> const &master) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation3DMP<Real_s>::Transform(
+    Vector3D<Real_s> const &master) const
 {
 
-  Vector3D<Real_i> local;
+  Vector3D<Real_s> local;
   Transform(master, local);
   return local;
 }
 
 template <typename Real_s>
-template <bool transform_direction, typename Real_i>
+template <bool transform_direction>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::InverseTransformKernel(
-    Vector3D<Real_i> const &local, Vector3D<Real_i> &master) const
+    Vector3D<Real_s> const &local, Vector3D<Real_s> &master) const
 {
 
   // we are just doing the full stuff here ( LocalToMaster is less critical
   // than other way round )
 
   if (transform_direction) {
-    master[0] = local[0] * static_cast<Real_i>(rxx_);
-    master[0] += local[1] * static_cast<Real_i>(ryx_);
-    master[0] += local[2] * static_cast<Real_i>(rzx_);
-    master[1] = local[0] * static_cast<Real_i>(rxy_);
-    master[1] += local[1] * static_cast<Real_i>(ryy_);
-    master[1] += local[2] * static_cast<Real_i>(rzy_);
-    master[2] = local[0] * static_cast<Real_i>(rxz_);
-    master[2] += local[1] * static_cast<Real_i>(ryz_);
-    master[2] += local[2] * static_cast<Real_i>(rzz_);
+    master[0] = local[0] * rxx_;
+    master[0] += local[1] * ryx_;
+    master[0] += local[2] * rzx_;
+    master[1] = local[0] * rxy_;
+    master[1] += local[1] * ryy_;
+    master[1] += local[2] * rzy_;
+    master[2] = local[0] * rxz_;
+    master[2] += local[1] * ryz_;
+    master[2] += local[2] * rzz_;
   } else {
-    master[0] = static_cast<Real_i>(tx_);
-    master[0] += local[0] * static_cast<Real_i>(rxx_);
-    master[0] += local[1] * static_cast<Real_i>(ryx_);
-    master[0] += local[2] * static_cast<Real_i>(rzx_);
-    master[1] = static_cast<Real_i>(ty_);
-    master[1] += local[0] * static_cast<Real_i>(rxy_);
-    master[1] += local[1] * static_cast<Real_i>(ryy_);
-    master[1] += local[2] * static_cast<Real_i>(rzy_);
-    master[2] = static_cast<Real_i>(tz_);
-    master[2] += local[0] * static_cast<Real_i>(rxz_);
-    master[2] += local[1] * static_cast<Real_i>(ryz_);
-    master[2] += local[2] * static_cast<Real_i>(rzz_);
+    master[0] = tx_;
+    master[0] += local[0] * rxx_;
+    master[0] += local[1] * ryx_;
+    master[0] += local[2] * rzx_;
+    master[1] = ty_;
+    master[1] += local[0] * rxy_;
+    master[1] += local[1] * ryy_;
+    master[1] += local[2] * rzy_;
+    master[2] = tz_;
+    master[2] += local[0] * rxz_;
+    master[2] += local[1] * ryz_;
+    master[2] += local[2] * rzz_;
   }
 }
 
 template <typename Real_s>
-template <typename Real_i>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::InverseTransform(
-    Vector3D<Real_i> const &local, Vector3D<Real_i> &master) const
+    Vector3D<Real_s> const &local, Vector3D<Real_s> &master) const
 {
-  InverseTransformKernel<false, Real_i>(local, master);
+  InverseTransformKernel<false>(local, master);
 }
 
 template <typename Real_s>
-template <typename Real_i>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> Transformation3DMP<Real_s>::InverseTransform(
-    Vector3D<Real_i> const &local) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation3DMP<Real_s>::InverseTransform(
+    Vector3D<Real_s> const &local) const
 {
-  Vector3D<Real_i> tmp;
+  Vector3D<Real_s> tmp;
   InverseTransform(local, tmp);
   return tmp;
 }
 
 template <typename Real_s>
-template <typename Real_i>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::InverseTransformDirection(
-    Vector3D<Real_i> const &local, Vector3D<Real_i> &master) const
+    Vector3D<Real_s> const &local, Vector3D<Real_s> &master) const
 {
-  InverseTransformKernel<true, Real_i>(local, master);
+  InverseTransformKernel<true>(local, master);
 }
 
 template <typename Real_s>
-template <typename Real_i>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_i> Transformation3DMP<Real_s>::InverseTransformDirection(
-    Vector3D<Real_i> const &local) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation3DMP<Real_s>::InverseTransformDirection(
+    Vector3D<Real_s> const &local) const
 {
-  Vector3D<Real_i> tmp;
+  Vector3D<Real_s> tmp;
   InverseTransformDirection(local, tmp);
   return tmp;
 }
@@ -1159,9 +1141,8 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void Transformation3DMP<Real_s>::Mu
  * \param local Output destination of transformation.
  */
 template <typename Real_s>
-template <typename InputType>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::TransformDirection(
-    Vector3D<InputType> const &master, Vector3D<InputType> &local) const
+    Vector3D<Real_s> const &master, Vector3D<Real_s> &local) const
 {
   DoRotation(master, local);
 }
@@ -1173,12 +1154,11 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transformation3DMP<Real_s>::Tr
  * \return Newly constructed Vector3D with the transformed coordinates.
  */
 template <typename Real_s>
-template <typename InputType>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> Transformation3DMP<Real_s>::TransformDirection(
-    Vector3D<InputType> const &master) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation3DMP<Real_s>::TransformDirection(
+    Vector3D<Real_s> const &master) const
 {
 
-  Vector3D<InputType> local;
+  Vector3D<Real_s> local;
   TransformDirection(master, local);
   return local;
 }

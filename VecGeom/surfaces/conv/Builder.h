@@ -93,7 +93,7 @@ int CreateLocalSurface(UnplacedSurface<Real_t> const &unplaced, Frame const &fra
 }
 
 template <typename Real_t>
-FramedSurface<Real_t> &GetSurface(int isurf)
+FramedSurface<Real_t, TransformationMP<Real_t>> &GetSurface(int isurf)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
   assert(size_t(isurf) < cpudata.fLocalSurfaces.size());

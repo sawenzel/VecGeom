@@ -683,10 +683,10 @@ int BrepHelper<Real_t>::CreateCommonSurface(int idglob, int volId, int scene_id,
   constexpr char kRside = 0x02;
   bool flip{false}, flip_bool{false};
   auto approxEqual = [&](int idglob1, int idglob2) {
-    flip                            = false;
-    flip_bool                       = false;
-    FramedSurface<Real_t> const &s1 = fCPUdata.fFramedSurf[idglob1];
-    FramedSurface<Real_t> const &s2 = fCPUdata.fFramedSurf[idglob2];
+    flip                                                            = false;
+    flip_bool                                                       = false;
+    FramedSurface<Precision, TransformationMP<Precision>> const &s1 = fCPUdata.fFramedSurf[idglob1];
+    FramedSurface<Precision, TransformationMP<Precision>> const &s2 = fCPUdata.fFramedSurf[idglob2];
     // Surfaces may be in future "compatible" even if they are not the same, for now enforce equality
     if (s1.fSurface.type != s2.fSurface.type) return false;
 
@@ -970,7 +970,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     if (is_scene && !visited[ivol]) allocateExitingCandidates(newscene_id, 0, nsurf_local);
 
     for (int lsurf_id : shell.fSurfaces) {
-      FramedSurface<Precision> &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
+      FramedSurface<Precision, TransformationMP<Precision>> &lsurf = fCPUdata.fLocalSurfaces[lsurf_id];
 
       // Ignore 'inside' helper surfaces having no frame
       if (lsurf.fFrame.type == FrameType::kNoFrame) continue;
@@ -1629,7 +1629,8 @@ void BrepHelper<Real_t>::PrintCandidateLists()
 }
 
 template <typename Real_t>
-void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface<Real_t> const &surf)
+template <typename Real_i, typename Transformation_t>
+void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface<Real_i, Transformation_t> const &surf)
 {
   // get frame data
   std::stringstream framedata;
@@ -1798,10 +1799,10 @@ void BrepHelper<Real_t>::PrintSurfData()
   size = float(fSurfData->fNvolTrans * sizeof(Transformation)) / megabyte;
   total += size;
   msg << "    volume transformations = " << fSurfData->fNvolTrans << " [" << size << " MB]\n";
-  size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface<Real_t>)) / megabyte;
+  size = float(fSurfData->fNlocalSurf * sizeof(FramedSurface<Real_t, TransformationMP<Real_t>>)) / megabyte;
   total += size;
   msg << "    local surfaces         = " << fSurfData->fNlocalSurf << " [" << size << " MB]\n";
-  size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface<Real_t>)) / megabyte;
+  size = float(fSurfData->fNglobalSurf * sizeof(FramedSurface<Real_t, TransformationMP<Real_t>>)) / megabyte;
   total += size;
   msg << "    global surfaces        = " << fSurfData->fNglobalSurf << " [" << size << " MB]\n";
   size = float(fSurfData->fNcommonSurf * sizeof(CommonSurface<Real_t>) + fSurfData->fNsides * sizeof(int)) / megabyte;
@@ -1900,16 +1901,16 @@ void BrepHelper<Real_t>::UpdateSurfData()
   // Local surfaces (per volume)
   auto numLocalSurf      = fCPUdata.fLocalSurfaces.size();
   fSurfData->fNlocalSurf = numLocalSurf;
-  fSurfData->fLocalSurf  = new FramedSurface<Real_t>[numLocalSurf];
+  fSurfData->fLocalSurf  = new FramedSurface<Real_t, TransformationMP<Real_t>>[numLocalSurf];
   for (size_t i = 0; i < numLocalSurf; ++i)
     fSurfData->fLocalSurf[i] = fCPUdata.fLocalSurfaces[i];
 
   // Global surfaces (used on common surfaces)
   auto numGlobalSurf      = fCPUdata.fFramedSurf.size();
   fSurfData->fNglobalSurf = numGlobalSurf;
-  fSurfData->fFramedSurf  = new FramedSurface<Real_t>[numGlobalSurf];
+  fSurfData->fFramedSurf  = new FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>>[numGlobalSurf];
   for (size_t i = 0; i < numGlobalSurf; ++i)
-    fSurfData->fFramedSurf[i] = fCPUdata.fFramedSurf[i];
+    fSurfData->fFramedSurf[i] = FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>>(fCPUdata.fFramedSurf[i]);
 
   // Unplaced surface data
   fSurfData->fNellip    = fCPUdata.fEllipData.size();

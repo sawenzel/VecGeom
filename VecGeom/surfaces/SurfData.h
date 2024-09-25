@@ -70,8 +70,8 @@ struct SurfData {
   VolumeShell *fShells{nullptr}; ///< volume shells
 
   // Local and global framed surfaces
-  FramedSurface<Real_t> *fLocalSurf{nullptr};  ///< local surfaces
-  FramedSurface<Real_t> *fFramedSurf{nullptr}; ///< global surfaces
+  FramedSurface<Real_t, TransformationMP<Real_t>> *fLocalSurf{nullptr};             ///< local surfaces
+  FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> *fFramedSurf{nullptr}; ///< global surfaces
 
   EllipData_t *fEllipData{nullptr}; ///< Elliptical data
   TorusData_t *fTorusData{nullptr}; ///< Torus data
@@ -215,8 +215,9 @@ struct SurfData {
   VECGEOM_FORCE_INLINE
   UnplacedSurface<Real_t> const &GetUnplaced(int isurf, bool &flipped) const
   {
-    FramedSurface<Real_t> const &framedsurf = fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
-    flipped                                 = fCommonSurfaces[isurf].fFlipped;
+    FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> const &framedsurf =
+        fFramedSurf[fCommonSurfaces[isurf].fLeftSide.fSurfaces[0]];
+    flipped = fCommonSurfaces[isurf].fFlipped;
     return framedsurf.fSurface;
   }
 
@@ -227,7 +228,7 @@ struct SurfData {
   /// @return Frame pointed by the locator
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  FramedSurface<Real_t> const &GetFramedSurface(FSlocator const &locator) const
+  FramedSurface<Real_t, vecgeom::Transformation2DMP<Real_t>> const &GetFramedSurface(FSlocator const &locator) const
   {
     auto const &surf = fCommonSurfaces[locator.GetCSindex()];
     auto const &side = locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
