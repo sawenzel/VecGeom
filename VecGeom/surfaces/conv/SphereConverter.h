@@ -5,6 +5,7 @@
 #include <VecGeom/surfaces/Model.h>
 
 #include <VecGeom/volumes/Sphere.h>
+#include <VecGeom/volumes/UnplacedOrb.h>
 
 namespace vgbrep {
 namespace conv {
@@ -37,6 +38,18 @@ bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id, bo
 
   builder::AddLogicToShell<Real_t>(logical_id, logic);
   return true;
+}
+
+/// @brief Converter for an orb
+/// @tparam Real_t Precision type
+/// @param orb Orb to be converted by way of sphere
+/// @param logical_id Id of the logical volume
+/// @return Conversion success
+template <typename Real_t>
+bool CreateSphereSurfaces(vecgeom::UnplacedOrb const &orb, int logical_id, bool intersection = false)
+{
+  vecgeom::UnplacedSphere temp_sph(0, orb.GetRadius());
+  return CreateSphereSurfaces<Real_t>(temp_sph, logical_id, intersection);
 }
 
 } // namespace conv

@@ -92,6 +92,9 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
     auto sphere = dynamic_cast<vecgeom::UnplacedSphere const *>(solid);
     if (sphere) return conv::CreateSphereSurfaces<Real_t>(*sphere, volId, intersection);
 
+    auto orb = dynamic_cast<vecgeom::UnplacedOrb const *>(solid);
+    if (orb) return conv::CreateSphereSurfaces<Real_t>(*orb, volId, intersection);
+
     VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid;
 
     return false;
