@@ -358,13 +358,14 @@ __device__ void PropagateRaySurfBVHSingle(int i, Vector3D<Precision> *points, Ve
   // if (validate_results) length_over_crossings[i] = num_cross ? dist_tot / (num_cross + 1) : 0;
 }
 
-__device__ void PropagateRayFS(int i, Vector3D<Precision> *points, Vector3D<Precision> const *dirs,
-                               NavigationState *in_states, long *hitcandidate_index, Precision *distances,
-                               Precision *length_over_crossings, bool debug = false, bool validate_results = true)
+__device__ void ComputeStepAndNextSurface(int i, Vector3D<Precision> *points, Vector3D<Precision> const *dirs,
+                                          NavigationState *in_states, long *hitcandidate_index, Precision *distances,
+                                          Precision *length_over_crossings, bool debug = false,
+                                          bool validate_results = true)
 {
   if (in_states[i].IsOutside()) return;
   if (debug) {
-    printf("PropagateRayFS debug ray %d:\n", i);
+    printf("ComputeStepAndNextSurface debug ray %d:\n", i);
     printf("   ");
     in_states[i].Print();
   }
@@ -378,32 +379,33 @@ __device__ void PropagateRayFS(int i, Vector3D<Precision> *points, Vector3D<Prec
   auto &hit_index = hitcandidate_index[i];
   auto &distance  = distances[i];
 
-  distance = vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeFSStepAndHit(pt, dir, start_state, hit_index);
+  distance =
+      vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeStepAndNextSurface(pt, dir, start_state, out_state, hit_index);
+
   if (debug) {
     printf("     dist = %.16f\n", distance);
   }
 }
 
-__device__ void RelocateRayCS(int i, Vector3D<Precision> *points, Vector3D<Precision> const *dirs,
-                              NavigationState *in_states, long *hitcandidate_index, Precision *distances,
-                              Precision *length_over_crossings, bool debug = false, bool validate_results = true)
+__device__ void RelocateToNextVolume(int i, Vector3D<Precision> *points, Vector3D<Precision> const *dirs,
+                                     NavigationState *in_states, long *hitcandidate_index, Precision *distances,
+                                     Precision *length_over_crossings, bool debug = false, bool validate_results = true)
 {
   if (in_states[i].IsOutside()) return;
   if (debug) {
-    printf("RelocateRayCS debug ray %d:\n", i);
+    printf("RelocateToNextVolume debug ray %d:\n", i);
     printf("   ");
     in_states[i].Print();
   }
-  NavigationState start_state = in_states[i];
-  NavigationState out_state;
+  NavigationState out_state = in_states[i];
   vgbrep::CrossedSurface crossed_surf;
   auto &pt        = points[i];
   auto const &dir = dirs[i];
   auto &hit_index = hitcandidate_index[i];
   auto &distance  = distances[i];
 
-  vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeCSRelocation(pt, dir, start_state, out_state, crossed_surf,
-                                                                  hit_index, distance);
+  vgbrep::protonav::BVHSurfNavigator<Real_t>::RelocateToNextVolume(pt, dir, distance, hit_index, out_state,
+                                                                   crossed_surf);
 
   points[i] += distance * dir;
   in_states[i] = out_state;
@@ -445,27 +447,29 @@ __global__ void PropagateRaysSurfBVHSingle(int nrays, int *alive_indices, Vector
   }
 }
 
-__global__ void PropagateRaysFS(int nrays, int *alive_indices, Vector3D<Precision> *points,
-                                Vector3D<Precision> const *dirs, NavigationState *in_states, long *hitcandidate_index,
-                                Precision *distances, Precision *length_over_crossings, bool debug = false,
-                                int max_cross = vecgeom::kMaximumInt, bool validate_results = true)
+__global__ void ComputeStepAndNextSurfaces(int nrays, int *alive_indices, Vector3D<Precision> *points,
+                                           Vector3D<Precision> const *dirs, NavigationState *in_states,
+                                           long *hitcandidate_index, Precision *distances,
+                                           Precision *length_over_crossings, bool debug = false,
+                                           int max_cross = vecgeom::kMaximumInt, bool validate_results = true)
 {
 
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    PropagateRayFS(alive_indices[i], points, dirs, in_states, hitcandidate_index, distances, length_over_crossings,
-                   debug, validate_results);
+    ComputeStepAndNextSurface(alive_indices[i], points, dirs, in_states, hitcandidate_index, distances,
+                              length_over_crossings, debug, validate_results);
   }
 }
 
-__global__ void RelocateRaysCS(int nrays, int *alive_indices, Vector3D<Precision> *points,
-                               Vector3D<Precision> const *dirs, NavigationState *in_states, long *hitcandidate_index,
-                               Precision *distances, Precision *length_over_crossings, bool debug = false,
-                               int max_cross = vecgeom::kMaximumInt, bool validate_results = true)
+__global__ void RelocateToNextVolumes(int nrays, int *alive_indices, Vector3D<Precision> *points,
+                                      Vector3D<Precision> const *dirs, NavigationState *in_states,
+                                      long *hitcandidate_index, Precision *distances, Precision *length_over_crossings,
+                                      bool debug = false, int max_cross = vecgeom::kMaximumInt,
+                                      bool validate_results = true)
 {
 
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < nrays; i += blockDim.x * gridDim.x) {
-    RelocateRayCS(alive_indices[i], points, dirs, in_states, hitcandidate_index, distances, length_over_crossings,
-                  debug, validate_results);
+    RelocateToNextVolume(alive_indices[i], points, dirs, in_states, hitcandidate_index, distances,
+                         length_over_crossings, debug, validate_results);
   }
 }
 
@@ -589,11 +593,13 @@ void PropagateRaysSurfBVHSplit(int initThreads, int nrays, Vector3D<Precision> *
     Blocks = (host_alive_count + initThreads - 1) / initThreads;
     timer.Start();
 
-    PropagateRaysFS<<<Blocks, initThreads>>>(host_alive_count, indices, points, dirs, in_states, hitcandidate_index,
-                                             distances, length_over_crossings, false, max_cross, validate_results);
+    ComputeStepAndNextSurfaces<<<Blocks, initThreads>>>(host_alive_count, indices, points, dirs, in_states,
+                                                        hitcandidate_index, distances, length_over_crossings, false,
+                                                        max_cross, validate_results);
     BREP_CUDA_CHECK(cudaDeviceSynchronize());
-    RelocateRaysCS<<<Blocks, initThreads>>>(host_alive_count, indices, points, dirs, in_states, hitcandidate_index,
-                                            distances, length_over_crossings, false, max_cross, validate_results);
+    RelocateToNextVolumes<<<Blocks, initThreads>>>(host_alive_count, indices, points, dirs, in_states,
+                                                   hitcandidate_index, distances, length_over_crossings, false,
+                                                   max_cross, validate_results);
     BREP_CUDA_CHECK(cudaDeviceSynchronize());
     time_per_step = timer.Stop();
     if (verbosity > 3) {
