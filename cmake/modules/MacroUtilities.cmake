@@ -41,6 +41,31 @@ macro(set_ifnot _var _value)
   endif()
 endmacro()
 
+# .. command:: vecgeom_set_default
+#
+#   Set a value for the given variable if it is undefined. If a
+#   third argument is given and VecGeom is the top-level project, create a cache
+#   variable with the given documentation; otherwise, set the variable locally
+#   so it's scoped only to vecgeom. ::
+#
+#      vecgeom_set_default(<variable> <value>)
+#      vecgeom_set_default(<variable> <value> <doc>)
+#      vecgeom_set_default(<variable> <value> <type> <doc>)
+macro(vecgeom_set_default name value)
+  if(NOT DEFINED ${name})
+    message(VERBOSE "VecGeom: set default ${name}=${value}")
+    if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME AND "${ARGC}" GREATER 2)
+      if("${ARGC}" EQUAL 3)
+        option(${name} "${ARGV2}" "${value}")
+      else()
+        set(${name} "${value}" CACHE ${ARGN})
+      endif()
+    else()
+      set(${name} "${value}")
+    endif()
+  endif()
+endmacro()
+
 #-----------------------------------------------------------------------
 # function enum_option(<option>
 #                      VALUES <value1> ... <valueN>

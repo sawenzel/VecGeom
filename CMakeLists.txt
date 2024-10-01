@@ -30,63 +30,65 @@ project(VecGeom
 ################################################################################
 # - Core CMake settings
 # - Core/Custom modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 include(MacroUtilities)
 include(CMakeDependentOption)
 include(IntelCompileFeatures)
+include(GNUInstallDirs)
 
 # - Though we check for some absolute paths, ensure there are no others
-set(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION ON)
+vecgeom_set_default(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION ON)
 
 # - Never export to or search in user/system package registry
-set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
-set(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY ON)
-set(CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY ON)
+vecgeom_set_default(CMAKE_EXPORT_NO_PACKAGE_REGISTRY ON)
+vecgeom_set_default(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY ON)
+vecgeom_set_default(CMAKE_FIND_PACKAGE_NO_SYSTEM_PACKAGE_REGISTRY ON)
 
 # - Force project directories to appear first in any list of includes
-set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
+vecgeom_set_default(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
 
-# - Only relink shared libs when interface changes
-set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
+vecgeom_set_default(BUILD_SHARED_LIBS OFF
+  "Build shared libraries instead of static")
+vecgeom_set_default(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON
+  "Inform installed binaries of external library rpaths")
+if(BUILD_SHARED_LIBS)
+  # - Inform installed binaries of internal library rpaths
+  vecgeom_set_default(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+  # - Only relink shared libs when interface changes
+  vecgeom_set_default(CMAKE_LINK_DEPENDS_NO_SHARED ON)
+endif()
 
 # - Only report newly installed files
-set(CMAKE_INSTALL_MESSAGE LAZY)
+vecgeom_set_default(CMAKE_INSTALL_MESSAGE LAZY)
+
+# - Basic library settings
+vecgeom_set_default(CMAKE_POSITION_INDEPENDENT_CODE ON
+  "Make sure build can be used with shared libs or runtime modules")
 
 ################################################################################
 # - Core build settings
-if(NOT CMAKE_BUILD_TYPE)
-  message(STATUS "No build type selected, default to Release")
-  set(CMAKE_BUILD_TYPE "Release")
+if(DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
+  message(STATUS "Set default CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif()
 
 # - Store CompilerId as a boolean for convenience
-set("${CMAKE_CXX_COMPILER_ID}" TRUE)
-if(NOT GNU AND NOT Clang AND NOT AppleClang AND NOT Intel AND NOT IntelLLVM)
-  message(WARNING "Unsupported C++ compiler '${CMAKE_CXX_COMPILER_ID}', build will likely fail.")
+if(NOT CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|Intel)")
+  message(WARNING "Unsupported C++ compiler '${CMAKE_CXX_COMPILER_ID}', build may fail.")
 endif()
 
 # - C++ standard and extensions
+vecgeom_set_default(CMAKE_CXX_STANDARD 17 STRING "C++ standard")
+vecgeom_set_default(CMAKE_CXX_EXTENSIONS OFF "Allow C++ compiler extensions")
+
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if(CMAKE_CXX_STANDARD LESS 17)
   message(FATAL_ERROR "VecGeom requires at least C++17")
 endif()
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ ISO Standard")
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Use ccache if available ( to avoid recompilation on branch switches )
-find_program(CCACHE_PROGRAM ccache)
-mark_as_advanced(CCACHE_PROGRAM)
-if(CCACHE_PROGRAM)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif()
-
-# - Basic library settings
-# Build statics with Position Independent Code
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# NOTE: to use ccache, user should specify -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
 # Install paths
-include(GNUInstallDirs)
 # Add a path for CMake config files (immutable)
 set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake")
 set(CMAKE_INSTALL_FULL_CMAKEDIR "${CMAKE_INSTALL_FULL_LIBDIR}/cmake")
@@ -209,6 +211,7 @@ cmake_dependent_option(VECGEOM_TEST_VALIDATION "Enable validation tests from CMS
 # Static tests build/use clang-tidy, so require compile commands for VecGeom to be exported
 cmake_dependent_option(VECGEOM_TEST_STATIC_ANALYSIS "Enable static analysis tests on VecGeom" OFF "BUILD_TESTING" OFF)
 if(VECGEOM_TEST_STATIC_ANALYSIS)
+  # static analysis test uses compile commands to run clang-tidy
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
@@ -349,11 +352,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATI
 #
 if(VECGEOM_ENABLE_CUDA)
   if(NOT DEFINED CMAKE_CUDA_STANDARD)
-    set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
+    vecgeom_set_default(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
   endif()
 
   set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-  set(CMAKE_CUDA_EXTENSIONS OFF)
+  vecgeom_set_default(CMAKE_CUDA_EXTENSIONS OFF)
   set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
   if(VECGEOM_FAST_MATH)
@@ -377,7 +380,7 @@ if(VECGEOM_ENABLE_CUDA)
 
     # Duplicate as far as possible CMake >= 3.18 behaviour
     # NB: does *not* support -real or -virtual extensions
-    set(CMAKE_CUDA_ARCHITECTURES ${_DEFAULT_CUDA_ARCH} CACHE STRING "List of CUDA Architectures")
+    set(CMAKE_CUDA_ARCHITECTURES "${_DEFAULT_CUDA_ARCH}" CACHE STRING "List of CUDA Architectures")
     string(REPLACE " " ";" CMAKE_CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
     list(FILTER CMAKE_CUDA_ARCHITECTURES EXCLUDE REGEX "^ *$")
 
