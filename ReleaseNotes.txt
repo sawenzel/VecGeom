@@ -1,7 +1,47 @@
+Version 2.0.0-rc3         3rd Oct 2024
+======================================
+Shapes:
+- Polycone: added new definition of SafetyToOut() that uses the line segment
+  that forms the polycone boundary for calculation of the distance; fixes
+  fixes all known issues related to SafetToOut() function of Polycone.
+- Torus: fix for phi cut in corner cases;  rescale in calculation to torus
+  radius.
 
-Changes: 14 Nov 2023
-- Fix in VolumeUtilities.h to reduce verbosity of FillUncontainedPoints
-  using Logger in this method.
+Volumes:
+- Fix in VolumeUtilities.h to reduce verbosity of FillUncontainedPoints();
+  using logger in this method. In FlatVoxelManager, changed output to logger
+  from 'info' to 'diagnostic'.
+
+Configuration:
+- Let CMake handle CMP0135 policy warnings from the use of ExternalProject
+  for builtin VecCore (feature compatible only with CMake 3.24 and newer).
+- Updates in CI to move to cuda12 on alma9.
+- Fixes for CI settings and updated package versions.
+- Increased stack for cms gpu CI test.
+- Added intelligent cmake defaults and removed "surprising" ccache usage.
+- Fixed linking errors to Geant4 11.2 targets, for splitted G4Persistency
+  library.
+- Fixed compilation warnings on gcc-12.3 compiler.
+- Fix unused variable warning. Fix TestBVHNavigator compilation warning.
+- Make the GDML validation optional, according to command line argument.
+- Avoid CMake export of XercesC_INCLUDE_DIR and similar, to avoid errors
+  in finding XercesC by external packages.
+- Removed a c++11 hack; due to the lack of fold expressions in c++11,
+  a c++11 fallback had to be used. This is now obsolete.
+
+Miscellaneous:
+- Removed templation from rotations. Removed obsolete typedefs of
+  RotationCode and TranslationCode, only needed to set 'fHasRotation'
+  which is now done directly.
+- Added ABBoxManager_t alias for forward compatibility with a templated
+  version; in the 'surface_model' branch, the singleton class ABBoxManager
+  becomes templated on a precision type to support single precision in the
+  surface BVH independently on the compile time 'vecgeom::Precision'.
+  ABBoxManager_t is an alias of the actual ABBoxManager version, to be used
+  in dependent libraries for forward compatibility until the 'surface_model'
+  branch is merged.
+- Fixed implicit double to float casts, to get rid of warnings when
+  compiling with '-Wfloat-conversion'.
 
 Version 2.0.0-rc2         6th Jun 2023
 ======================================
@@ -9,7 +49,7 @@ Overview:
 - Fix in SimpleExtruded shape implementation of DistanceToOut().
 - Fix for Extent of Boolean solids.
 - Fix in VGDML module.
-- Added logger, contributed from Celeritas.
+- Added logger classes with related documentation, contributed from Celeritas.
 - Fixes in configuration setup.
 - Added cmake git version support.
 
