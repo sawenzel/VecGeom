@@ -78,20 +78,20 @@ private:
   /// @param side Side to which the extent is computed
   /// @param extent_full extent of the side
   /// @return Index of the helper
-  int ComputeCylinderDivision(Side &side, ZPhiMask_t extent_full);
+  int ComputeCylinderDivision(Side &side, ZPhiMask<double> extent_full);
 
   // Computes bounding extent on a side of cylindrical surface
-  ZPhiMask_t ComputeCylinderExtent(const Side &side);
+  ZPhiMask<double> ComputeCylinderExtent(const Side &side);
 
   /// @brief  Computes the division helper for a planar side.
   /// @param side Side to which the extent is computed
   /// @param extent_full extent of the side
   /// @return Index of the helper
-  int ComputePlaneDivision(Side &side, WindowMask_t extent_full);
+  int ComputePlaneDivision(Side &side, WindowMask<double> extent_full);
 
   /// @brief  Computes the bounding extent on a planar side.
   /// @param side Side to which the extent is computed
-  WindowMask_t ComputePlaneExtent(const Side &side);
+  WindowMask<double> ComputePlaneExtent(const Side &side);
 
   /// @brief Computes division helpers for all sides
   void ComputeSideDivisions();

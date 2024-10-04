@@ -173,11 +173,11 @@ void BrepHelper<Real_t>::ComputeDefaultStates(int common_id)
 }
 
 template <typename Real_t>
-WindowMask<Real_t> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
+WindowMask<double> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
 {
   // This is a helper-lambda that updates extents
   // for all sides of common plane surfaces
-  auto updatePlaneExtent = [](WindowMask_t &e, Vector3D<Real_t> const &pt) {
+  auto updatePlaneExtent = [](WindowMask<double> &e, Vector3D<double> const &pt) {
     e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
     e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
     e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
@@ -185,37 +185,37 @@ WindowMask<Real_t> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
   };
 
   // Setting initial mask for an extent.
-  WindowMask_t ext{vecgeom::kInfLength, -vecgeom::kInfLength, vecgeom::kInfLength, -vecgeom::kInfLength};
+  WindowMask<double> ext{vecgeom::kInfLength, -vecgeom::kInfLength, vecgeom::kInfLength, -vecgeom::kInfLength};
 
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
     // convert surface frame to local coordinates
-    auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     FrameType frame_type = framed_surf.fFrame.type;
-    Vector3D<Real_t> local;
+    Vector3D<double> local;
 
-    WindowMask_t extentL;
+    WindowMask<double> extentL;
     // Calculating the limits
     switch (frame_type) {
     case FrameType::kWindow: {
-      auto const &maskLocal = fSurfData->fWindowMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fWindowMasks[framed_surf.fFrame.id];
       maskLocal.GetExtent(extentL);
       break;
     }
     case FrameType::kRing: {
-      auto const &maskLocal = fSurfData->fRingMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fRingMasks[framed_surf.fFrame.id];
       maskLocal.GetExtent(extentL);
       break;
     }
     case FrameType::kQuadrilateral: {
       WindowMask_t extLocal;
-      auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
+      auto const &quad = fCPUdata.fQuadMasks[framed_surf.fFrame.id];
       quad.GetExtent(extentL);
       break;
     }
     case FrameType::kTriangle: {
       TriangleMask_t extLocal;
-      auto const &maskLocal = fSurfData->fTriangleMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fTriangleMasks[framed_surf.fFrame.id];
       maskLocal.GetExtent(extentL);
       break;
     }
@@ -224,13 +224,13 @@ WindowMask<Real_t> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
     } // case
 
     // This part updates extent
-    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[0], 0});
     updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[1], 0});
     updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[1], 0});
     updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[0], 0});
     updatePlaneExtent(ext, local);
   } // for
 
@@ -238,18 +238,18 @@ WindowMask<Real_t> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
 }
 
 template <typename Real_t>
-ZPhiMask<Real_t> BrepHelper<Real_t>::ComputeCylinderExtent(const Side &side)
+ZPhiMask<double> BrepHelper<Real_t>::ComputeCylinderExtent(const Side &side)
 {
-  ZPhiMask_t sideext = fSurfData->GetZPhiMask(fSurfData->fFramedSurf[side.fSurfaces[0]].fFrame.id);
-  auto sideext_local = sideext.InverseTransform(fSurfData->fFramedSurf[side.fSurfaces[0]].fTrans);
+  auto const &sideext = fCPUdata.GetZPhiMask(fCPUdata.fFramedSurf[side.fSurfaces[0]].fFrame.id);
+  auto sideext_local  = sideext.InverseTransform(fCPUdata.fFramedSurf[side.fSurfaces[0]].fTrans);
 
   // loop over remaining frames on the side
   for (int i = 1; i < side.fNsurf; ++i) {
     // convert extent of current frame to local coordinates
-    auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    auto &framed_surf = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     // Transform the ZPhi mask to the local system
-    ZPhiMask_t const &extLocal = fSurfData->GetZPhiMask(framed_surf.fFrame.id);
-    auto extFrame              = extLocal.InverseTransform(framed_surf.fTrans);
+    auto const &extLocal = fCPUdata.GetZPhiMask(framed_surf.fFrame.id);
+    auto extFrame        = extLocal.InverseTransform(framed_surf.fTrans);
     // Combine with current extent
     bool success = sideext_local.CombineWith(extFrame);
     if (!success) {
@@ -261,25 +261,25 @@ ZPhiMask<Real_t> BrepHelper<Real_t>::ComputeCylinderExtent(const Side &side)
 }
 
 template <typename Real_t>
-int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask_t extent_full)
+int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask<double> extent_full)
 {
-  return -1;
+  // return -1;
   SideDivisionCPU divisionZ(AxisType::kZ, extent_full.rangeZ[0], extent_full.rangeZ[1], side.fNsurf);
-  auto updateRangeZ = [](Real_t z, Real_t &zmin, Real_t &zmax) {
+  auto updateRangeZ = [](double z, double &zmin, double &zmax) {
     zmin = std::min(zmin, z);
     zmax = std::max(zmax, z);
   };
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
-    auto &framed_surf = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    auto &framed_surf = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     assert(framed_surf.fFrame.type == FrameType::kZPhi);
 
-    Vector3D<Real_t> local;
-    Real_t zmin{vecgeom::InfinityLength<Real_t>()}, zmax{-vecgeom::InfinityLength<Real_t>()};
-    auto const &maskLocal = fSurfData->fZPhiMasks[framed_surf.fFrame.id];
-    local                 = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[0]});
+    Vector3D<double> local;
+    double zmin{vecgeom::InfinityLength<Real_t>()}, zmax{-vecgeom::InfinityLength<Real_t>()};
+    auto const &maskLocal = fCPUdata.fZPhiMasks[framed_surf.fFrame.id];
+    local                 = framed_surf.fTrans.InverseTransform(Vector3D<double>{0, 0, maskLocal.rangeZ[0]});
     updateRangeZ(local[2], zmin, zmax);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{0, 0, maskLocal.rangeZ[1]});
+    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{0, 0, maskLocal.rangeZ[1]});
     updateRangeZ(local[2], zmin, zmax);
     divisionZ.AddCandidate(i, zmin, zmax);
   }
@@ -292,11 +292,11 @@ int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask_t extent_fu
 }
 
 template <typename Real_t>
-int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask_t extent_full)
+int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask<double> extent_full)
 {
   // This is a helper-lambda that updates extents
   // for all sides of common plane surfaces
-  auto updatePlaneExtent = [](WindowMask_t &e, Vector3D<Real_t> const &pt) {
+  auto updatePlaneExtent = [](WindowMask<double> &e, Vector3D<double> const &pt) {
     e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
     e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
     e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
@@ -308,12 +308,12 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask_t extent_ful
       0.5 * std::max(extent_full.rangeU[1] - extent_full.rangeU[0], extent_full.rangeV[1] - extent_full.rangeV[0]);
   double ring_min = ring_max;
   for (int i = 0; i < side.fNsurf; ++i) {
-    auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     FrameType frame_type = framed_surf.fFrame.type;
     if (frame_type == FrameType::kRing && framed_surf.fTrans.IsIdentity()) {
-      auto const &maskRing = fSurfData->fRingMasks[framed_surf.fFrame.id];
-      ring_min             = std::min(static_cast<double>(maskRing.rangeR[0]), ring_min);
-      ring_max             = std::max(static_cast<double>(maskRing.rangeR[1]), ring_max);
+      auto const &maskRing = fCPUdata.fRingMasks[framed_surf.fFrame.id];
+      ring_min             = std::min(maskRing.rangeR[0], ring_min);
+      ring_max             = std::max(maskRing.rangeR[1], ring_max);
     } else {
       all_rings_id = false;
       break;
@@ -329,34 +329,34 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask_t extent_ful
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
     // convert surface frame to local coordinates
-    auto &framed_surf    = fSurfData->fFramedSurf[side.fSurfaces[i]];
+    auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     FrameType frame_type = framed_surf.fFrame.type;
-    Vector3D<Real_t> local;
+    Vector3D<double> local;
 
-    WindowMask_t extentL;
-    RingMask_t extentRing(0, 0, true);
+    WindowMask<double> extentL;
+    RingMask<double> extentRing(0, 0, true);
     // Calculating the limits
     switch (frame_type) {
     case FrameType::kWindow: {
-      auto const &maskLocal = fSurfData->fWindowMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fWindowMasks[framed_surf.fFrame.id];
       maskLocal.GetExtent(extentL);
       break;
     }
     case FrameType::kRing: {
-      auto const &maskLocal = fSurfData->fRingMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fRingMasks[framed_surf.fFrame.id];
       extentRing            = maskLocal;
       maskLocal.GetExtent(extentL);
       break;
     }
     case FrameType::kQuadrilateral: {
       WindowMask_t extLocal;
-      auto const &quad = fSurfData->fQuadMasks[framed_surf.fFrame.id];
+      auto const &quad = fCPUdata.fQuadMasks[framed_surf.fFrame.id];
       quad.GetExtent(extentL);
       break;
     }
     case FrameType::kTriangle: {
       TriangleMask_t extLocal;
-      auto const &maskLocal = fSurfData->fTriangleMasks[framed_surf.fFrame.id];
+      auto const &maskLocal = fCPUdata.fTriangleMasks[framed_surf.fFrame.id];
       maskLocal.GetExtent(extentL);
       break;
     }
@@ -368,15 +368,15 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask_t extent_ful
       divisionR.AddCandidate(i, extentRing.rangeR[0], extentRing.rangeR[1]);
     } else {
       // This part converts the local extent to the side reference frame
-      WindowMask_t ext{vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>(),
-                       vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>()};
-      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[0], 0});
+      WindowMask<double> ext{vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>(),
+                             vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>()};
+      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[0], extentL.rangeV[1], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[1], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[1], 0});
       updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<Real_t>{extentL.rangeU[1], extentL.rangeV[0], 0});
+      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[0], 0});
       updatePlaneExtent(ext, local);
       // std::cout << i << " : ext {" << ext.rangeU[0] << ", " << ext.rangeU[1] << "} {" << ext.rangeV[0] << ", "
       //           << ext.rangeV[1] << "}\n";
@@ -425,14 +425,14 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
   };
 
   // Compute division helpers for all sides having more than one frame on all surfaces
-  for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
-    if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf > 1) {
-      computeSingleSideDivision(fSurfData->fCommonSurfaces[common_id].fType,
-                                fSurfData->fCommonSurfaces[common_id].fLeftSide);
+  for (size_t common_id = 1; common_id < fCPUdata.fCommonSurfaces.size(); ++common_id) {
+    if (fCPUdata.fCommonSurfaces[common_id].fLeftSide.fNsurf > 1) {
+      computeSingleSideDivision(fCPUdata.fCommonSurfaces[common_id].fType,
+                                fCPUdata.fCommonSurfaces[common_id].fLeftSide);
     }
-    if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf > 1) {
-      computeSingleSideDivision(fSurfData->fCommonSurfaces[common_id].fType,
-                                fSurfData->fCommonSurfaces[common_id].fRightSide);
+    if (fCPUdata.fCommonSurfaces[common_id].fRightSide.fNsurf > 1) {
+      computeSingleSideDivision(fCPUdata.fCommonSurfaces[common_id].fType,
+                                fCPUdata.fCommonSurfaces[common_id].fRightSide);
     }
   }
 
@@ -458,46 +458,6 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
     slice_candidates += fCPUdata.fSideDivisions[i].GetNcandidates();
   }
 }
-
-// template <typename Real_t>
-// bool BrepHelper<Real_t>::ComputeExtents()
-// {
-//   // Lambda for computing the extent of a single side
-//   auto computeSingleSideExtent = [&](SurfaceType type, Side &side) {
-//     bool success = true;
-//     switch (type) {
-//     case SurfaceType::kPlanar:
-//       ComputePlaneExtent(side);
-//       break;
-//     case SurfaceType::kCylindrical:
-//     case SurfaceType::kConical:
-//       success = ComputeCylinderExtent(side);
-//       break;
-//     default:
-//       VECGEOM_LOG(debug) << "Computing side extents dropped to default";
-//       break;
-//     }
-//     return success;
-//   };
-
-//   // Compute extents for all sides on all surfaces
-//   for (int common_id = 1; common_id < fSurfData->fNcommonSurf; ++common_id) {
-//     bool success = true;
-//     if (fSurfData->fCommonSurfaces[common_id].fLeftSide.fNsurf) {
-//       success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-//                                         fSurfData->fCommonSurfaces[common_id].fLeftSide);
-//     }
-//     if (fSurfData->fCommonSurfaces[common_id].fRightSide.fNsurf) {
-//       success = computeSingleSideExtent(fSurfData->fCommonSurfaces[common_id].fType,
-//                                         fSurfData->fCommonSurfaces[common_id].fRightSide);
-//     }
-//     if (!success) return false;
-//   }
-
-//   // We created new masks, update them.
-//   UpdateMaskData();
-//   return true;
-// }
 
 template <typename Real_t>
 bool BrepHelper<Real_t>::Convert()
@@ -1173,6 +1133,9 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
   state.Clear();
   validateExitingCandidates(world);
 
+  // Compute side divisions for all sides of common surfaces
+  ComputeSideDivisions();
+
   // Now update the surface data structure used for navigation
   UpdateSurfData();
 
@@ -1220,9 +1183,6 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
   }
 
   ////////////////////////////////////////////////////////////
-
-  // Compute side divisions for all sides of common surfaces
-  ComputeSideDivisions();
   if (fVerbose > 0) {
     for (size_t isurf = 1; isurf < fCPUdata.fCommonSurfaces.size(); ++isurf)
       PrintCommonSurface(isurf);
@@ -1783,6 +1743,15 @@ void BrepHelper<Real_t>::PrintSurfData()
   constexpr int megabyte = 1024 * 1024;
   float total = 0, size = 0;
   auto msg = VECGEOM_LOG(info);
+  size_t ndivX{0}, ndivY{0}, ndivZ{0}, ndivR{0}, ndivXY{0};
+  for (auto const &div : fCPUdata.fSideDivisions) {
+    ndivX += div.fAxis == AxisType::kX;
+    ndivY += div.fAxis == AxisType::kY;
+    ndivZ += div.fAxis == AxisType::kZ;
+    ndivR += div.fAxis == AxisType::kR;
+    ndivXY += div.fAxis == AxisType::kXY;
+  }
+
   msg << "___________________________________________________________________________________\n";
   msg << " Surface model info:  " << vecgeom::GeoManager::Instance().GetTotalNodeCount() + 1 << " touchables, "
       << fSurfData->fNscenes << " scenes\n";
@@ -1813,6 +1782,8 @@ void BrepHelper<Real_t>::PrintSurfData()
          megabyte;
   total += size;
   msg << "    side divisions         = " << fSurfData->fNsideDivisions << " [" << size << " MB]\n";
+  msg << "      planar { X=" << ndivX << "  Y=" << ndivY << "  kR=" << ndivR << " XY=" << ndivXY
+      << " } cylindrical { Z=" << ndivZ << " }\n";
   size = float(fSurfData->fSizeCandList * sizeof(int)) / megabyte;
   total += size;
   msg << "    candidates             = " << fSurfData->fSizeCandList << " [" << size << " MB]\n";
