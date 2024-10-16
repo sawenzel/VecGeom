@@ -797,7 +797,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   if (!surfhit) return dist;
   // Do the frame intersection using the propagated point on surface
   auto onsurf = local + localdir * dist;
-  surfhit     = framedsurf.fFrame.Inside(onsurf, surfdata);
+  if (!framedsurf.fNeverCheck) surfhit     = framedsurf.fFrame.Inside(onsurf, surfdata);
   if (!surfhit) return dist;
   // If the frame belongs to a Boolean, we need to check if the solid is really exited/entered
   if (framedsurf.fLogicId) {

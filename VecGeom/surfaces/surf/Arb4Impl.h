@@ -60,8 +60,8 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
     Real_t px = point.x() - vertexX[0];
     Real_t py = point.y() - vertexY[0];
 
-    int sign = !flip ? 1 : -1;
-    return (dx * py - dy * px) < sign * tol;
+    int sign = !flip ? -1 : 1;
+    return (dx * py - dy * px) > sign * tol;
   }
 
   VECGEOM_FORCE_INLINE
@@ -99,7 +99,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
 
     QuadraticCoef<Real_t> coef;
     coef.phalf = Real_t(1.) * b / (Real_t(2.) * vecgeom::NonZero(a));
-    coef.q     = c / a;
+    coef.q     = c / vecgeom::NonZero(a);
 
     Real_t roots[2];
     int numroots;
