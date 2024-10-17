@@ -1350,6 +1350,11 @@ bool Middleware::processLogicVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const
         if (debug) VECGEOM_LOG(debug) << "Found solid " << solidName;
         logicVolume = new vecgeom::VECGEOM_IMPL_NAMESPACE::LogicalVolume(volumeName.c_str(), foundSolid->second);
         vecgeom::GeoManager::Instance().RegisterLogicalVolume(logicVolume);
+        auto const success_insert = volumeMap.insert(std::make_pair(volumeName, logicVolume)).second;
+        if (!success_insert) {
+          std::cerr << "processLogicVolume: Could not insert logical volume: " << volumeName << std::endl;
+          return false;
+        }
         if (foundMaterial) {
           auto const success = volumeMaterialMap.insert(std::make_pair(logicVolume->id(), *foundMaterial)).second;
           if (!success) {
@@ -1426,7 +1431,7 @@ bool Middleware::processPhysicalVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode co
     auto const theChildNodeName = Helper::Transcode(it->getNodeName());
     if (theChildNodeName == "volumeref") {
       auto const logicalVolumeName = GetAttribute("ref", aDOMElement->getAttributes());
-      logicalVolume                = vecgeom::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
+      logicalVolume                = volumeMap[logicalVolumeName];
       if (!logicalVolume) {
         VECGEOM_LOG(error) << "Middleware::processPhysicalVolume: could not find volume " << logicalVolumeName;
         return false;
@@ -1548,7 +1553,7 @@ bool Middleware::processWorld(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOM
     VECGEOM_LOG(debug) << "Middleware::processWorld: processing: " << Helper::GetNodeInformation(aDOMNode);
   }
   auto const logicalVolumeName = GetAttribute("ref", aDOMNode->getAttributes());
-  auto logicalVolume           = vecgeom::GeoManager::Instance().FindLogicalVolume(logicalVolumeName.c_str());
+  auto logicalVolume           = volumeMap[logicalVolumeName];
 
   if (!logicalVolume) {
     VECGEOM_LOG(error) << "Middleware::processWorld: could not find world volume " << logicalVolumeName;

@@ -17,6 +17,7 @@
 
 #include "VecGeom/volumes/UnplacedVolume.h"
 #include "VecGeom/volumes/BooleanStruct.h"
+#include "VecGeom/volumes/LogicalVolume.h"
 
 #include "Auxiliary.h"
 #include "MaterialInfo.h"
@@ -43,6 +44,7 @@ class Middleware {
 public:
   using MaterialMap_t         = std::map<std::string, vgdml::Material>;
   using VolumeMatMap_t        = std::map<int, vgdml::Material>;
+  using VolumeMap_t           = std::map<std::string, vecgeom::LogicalVolume *>;
   using VolumeAuxiliaryInfo_t = std::map<int, std::vector<Auxiliary>>;
   using UserInfo_t            = std::vector<Auxiliary>;
 
@@ -55,6 +57,9 @@ public:
   /// Return map of VecGeom LogicalVolume Id to GDML material
   VolumeMatMap_t const &GetVolumeMatMap() const { return volumeMaterialMap; }
 
+  /// Return map of VecGeom LogicalVolume Id to GDML material
+  VolumeMap_t const &GetVolumeMap() const { return volumeMap; }
+
   /// Return map of VecGeom LogicalVolume Id to list of GDML auxiliary tags for that volume
   VolumeAuxiliaryInfo_t const &GetVolumeAuxiliaryInfo() const { return volumeAuxiliaryInfo; }
 
@@ -65,7 +70,8 @@ private:
   bool processNode(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
   bool processSolid(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
   bool processLogicVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
-  bool processPhysicalVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode, vecgeom::LogicalVolume *motherLogical);
+  bool processPhysicalVolume(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode,
+                             vecgeom::LogicalVolume *motherLogical);
   bool processWorld(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
   bool processConstant(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
   bool processPosition(XERCES_CPP_NAMESPACE_QUALIFIER DOMNode const *aDOMNode);
@@ -149,6 +155,7 @@ private:
 
   MaterialMap_t materialMap;                 ///< map of material name to a material record
   VolumeMatMap_t volumeMaterialMap;          ///< map of VecGeom logical volume id to a material record
+  VolumeMap_t volumeMap;                     ///< map of logical volume name to logical volume pointer
   VolumeAuxiliaryInfo_t volumeAuxiliaryInfo; ///< map of VecGeom logical volume id to a list of auxiliary tags
   UserInfo_t userInfo;                       ///< list of auxiliary tags in userinfo
 
