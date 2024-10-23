@@ -49,7 +49,7 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
     for (auto i = 0; i < numroots; ++i) {
       distance                = roots[i];
       Vector3D<Real_t> onsurf = point + distance * dir;
-      Vector3D<Real_t> normal(onsurf[0], onsurf[1], 0);
+      Vector3D<Real_t> normal(onsurf[0], onsurf[1], onsurf[2]);
       bool hit = flip_exiting ^ (dir.Dot(normal) < 0);
       // First solution giving a valid hit wins
       if (hit) {
