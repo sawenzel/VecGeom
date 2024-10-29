@@ -827,7 +827,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   // This is a protection against rays going parallel through a surface:
   // if an exact corner of two boxes is hit with a parallel ray, the ray could jump infinitely between two boxes with 0
   // steps
-  if (surfhit && Abs(dist) < vecgeom::kTolerance && Abs(localdir[2]) < vecgeom::kToleranceDist<Real_t>) {
+  if (surfhit && Abs(dist) < vecgeom::kTolerance && Abs(localdir[2]) < vecgeom::kToleranceDist<Real_t> && visibility) {
     surfhit = false;
     dist    = vecgeom::InfinityLength<Real_t>();
   }
