@@ -12,6 +12,7 @@
 
 #include "LoggerTypes.h"
 #include "LoggerMessage.h"
+#include "NullLoggerMessage.h"
 
 //---------------------------------------------------------------------------//
 // MACROS
@@ -49,6 +50,14 @@
  * process. Use sparingly.
  */
 #define VECGEOM_LOG_LOCAL(LEVEL) ::vecgeom::self_logger()(VECGEOM_CODE_PROVENANCE, ::vecgeom::LogLevel::LEVEL)
+
+// Allow VECGEOM_LOGto be present (but ignored) in device code
+#ifdef __CUDA_ARCH__
+#undef VECGEOM_LOG
+#define VECGEOM_LOG(LEVEL) ::vecgeom::detail::NullLoggerMessage()
+#undef VECGEOM_LOG_LOCAL
+#define VECGEOM_LOG_LOCAL(LEVEL) ::vecgeom::detail::NullLoggerMessage()
+#endif
 
 namespace vecgeom {
 
