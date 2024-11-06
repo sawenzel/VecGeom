@@ -16,17 +16,20 @@ void *AllocateDeviceBVHBuffer(size_t n)
   CudaCheckError(cudaMalloc((void **)&ptr, n * sizeof(BVH)));
   CudaCheckError(cudaMemcpyToSymbol(dBVH, &ptr, sizeof(ptr)));
   CudaCheckError(cudaDeviceSynchronize());
-  return (void*) ptr;
+  return (void *)ptr;
+}
+
+BVH *GetDeviceBVHBuffer()
+{
+  BVH *ptr = nullptr;
+
+  CudaCheckError(cudaMemcpyFromSymbol(&ptr, dBVH, sizeof(ptr)));
+  return ptr;
 }
 
 void FreeDeviceBVHBuffer()
 {
-  void *ptr = nullptr;
-
-  CudaCheckError(cudaMemcpyFromSymbol(&ptr, dBVH, sizeof(ptr)));
-
-  if (ptr)
-    CudaCheckError(cudaFree(ptr));
+  CudaCheckError(cudaFree(GetDeviceBVHBuffer()));
 }
 
 // Temporary hack (used already in LogicalVolume.cpp) implementing the Instance functionality
@@ -46,8 +49,7 @@ VSafetyEstimator *BVHSafetyEstimator::Instance()
 }
 
 template <>
-VECCORE_ATT_DEVICE
-VNavigator *BVHNavigatorV<false>::Instance()
+VECCORE_ATT_DEVICE VNavigator *BVHNavigatorV<false>::Instance()
 {
   if (gBVHNavigatorV == nullptr) gBVHNavigatorV = new BVHNavigatorV();
   return gBVHNavigatorV;

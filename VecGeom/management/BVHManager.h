@@ -20,6 +20,9 @@ inline std::vector<BVH *> hBVH;
 inline __device__ BVH *dBVH;
 #endif
 
+// Macro allowing downstream codes to use GetDeviceBVH
+#define VECGEOM_BVHMANAGER_DEVICE
+
 /**
  * @brief The @c BVHManager class is a singleton class to manage the association between
  * logical volumes and their bounding volume hierarchies, using the logical volumes' ids.
@@ -41,10 +44,11 @@ public:
    */
   static void Init();
 
-#ifdef VECGEOM_CUDA_INTERFACE
   /** Initializes bounding volume hierarchies on the GPU. */
-  static void DeviceInit();
-#endif
+  static cuda::BVH const *DeviceInit();
+
+  /** Access the device BVH pointer if CUDA is enabled. **/
+  static cuda::BVH const *GetDeviceBVH();
 
   VECCORE_ATT_HOST_DEVICE
   static BVH const *GetBVH(int id)

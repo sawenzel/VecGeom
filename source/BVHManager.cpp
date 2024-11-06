@@ -3,6 +3,7 @@
 
 #include "VecGeom/management/BVHManager.h"
 #include "VecGeom/management/GeoManager.h"
+#include "VecGeom/management/Logger.h"
 
 #include <vector>
 
@@ -12,11 +13,9 @@ inline
 #endif
     namespace cuda {
 
-void *AllocateDeviceBVHBuffer(size_t n);
+BVH *AllocateDeviceBVHBuffer(size_t n);
+BVH *GetDeviceBVHBuffer();
 void FreeDeviceBVHBuffer();
-
-VECCORE_ATT_DEVICE
-BVH *GetDeviceBVH(int id);
 
 } // namespace cuda
 
@@ -31,20 +30,33 @@ void BVHManager::Init()
     hBVH[logical_volume->id()] = logical_volume->GetDaughters().size() > 0 ? new BVH(*logical_volume) : nullptr;
 }
 
-#ifdef VECGEOM_CUDA_INTERFACE
-void BVHManager::DeviceInit()
+cuda::BVH const *BVHManager::DeviceInit()
 {
+#ifdef VECGEOM_CUDA_INTERFACE
   int n = hBVH.size();
 
-  BVH *ptr = (BVH *)vecgeom::cuda::AllocateDeviceBVHBuffer(n);
+  cuda::BVH *ptr = vecgeom::cuda::AllocateDeviceBVHBuffer(n);
 
   for (int id = 0; id < n; ++id) {
     if (!hBVH[id]) continue;
 
-    hBVH[id]->CopyToGpu(&ptr[id]);
+    hBVH[id]->CopyToGpu(&reinterpret_cast<cxx::BVH *>(ptr)[id]);
   }
-}
+  return ptr;
+#else
+  VECGEOM_LOG(error) << "Cannot initialize BVH device: CUDA is not configured";
+  return nullptr;
 #endif
+}
+
+cuda::BVH const *BVHManager::GetDeviceBVH()
+{
+#ifdef VECGEOM_CUDA_INTERFACE
+  return cuda::GetDeviceBVHBuffer();
+#else
+  return nullptr;
+#endif
+}
 
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
