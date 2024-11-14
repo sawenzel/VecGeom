@@ -7,6 +7,7 @@
 
 #include "VecGeom/volumes/EllipticUtilities.h"
 #include "VecGeom/volumes/UnplacedEllipsoid.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/management/VolumeFactory.h"
 #include "VecGeom/volumes/SpecializedEllipsoid.h"
 #include "VecGeom/base/RNG.h"
@@ -42,10 +43,8 @@ void UnplacedEllipsoid::CheckParameters()
   // Check semi-axes
   Precision tol = 2. * kTolerance;
   if (fEllipsoid.fDx < tol || fEllipsoid.fDy < tol || fEllipsoid.fDy < tol) {
-#ifndef VECCORE_CUDA
-    std::cerr << "Invalid semi-axes of Ellipsoid { " << fEllipsoid.fDx << ", " << fEllipsoid.fDy << ", "
-              << fEllipsoid.fDz << " }" << std::endl;
-#endif
+    VECGEOM_LOG(error) << "Invalid semi-axes of Ellipsoid { " << fEllipsoid.fDx << ", " << fEllipsoid.fDy << ", "
+              << fEllipsoid.fDz << " }";
     fEllipsoid.fDx = fEllipsoid.fDy = fEllipsoid.fDz = tol;
   }
   Precision A = fEllipsoid.fDx;
@@ -58,10 +57,8 @@ void UnplacedEllipsoid::CheckParameters()
     fEllipsoid.fZTopCut    = C;
   }
   if ((fEllipsoid.fZBottomCut >= C) || (fEllipsoid.fZTopCut <= -C) || (fEllipsoid.fZBottomCut >= fEllipsoid.fZTopCut)) {
-#ifndef VECCORE_CUDA
-    std::cerr << "Invalid cut planes { " << fEllipsoid.fZBottomCut << ", " << fEllipsoid.fZTopCut
-              << " } of Ellipsoid { " << A << ", " << B << ", " << C << " }" << std::endl;
-#endif
+    VECGEOM_LOG(error) << "Invalid cut planes { " << fEllipsoid.fZBottomCut << ", " << fEllipsoid.fZTopCut
+                       << " } of Ellipsoid { " << A << ", " << B << ", " << C << " }";
     fEllipsoid.fZBottomCut = -C;
     fEllipsoid.fZTopCut    = C;
   }

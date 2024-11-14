@@ -8,6 +8,7 @@
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/UnplacedBooleanVolume.h"
 #include "VecGeom/volumes/SpecializedBooleanVolume.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/management/VolumeFactory.h"
 #include "VecGeom/volumes/utilities/GenerationUtilities.h"
 #include "VecGeom/volumes/utilities/VolumeUtilities.h"
@@ -61,7 +62,7 @@ Vector3D<Precision> UnplacedBooleanVolume<kUnion>::SamplePointOnSurface() const
   do {
     counter++;
     if (counter > 1000) {
-      std::cerr << "WARNING : COULD NOT GENERATE POINT ON SURFACE FOR BOOLEAN\n";
+      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
       return p;
     }
 
@@ -109,7 +110,7 @@ Vector3D<Precision> UnplacedBooleanVolume<kIntersection>::SamplePointOnSurface()
   do {
     counter++;
     if (counter > 1000) {
-      std::cerr << "WARNING : COULD NOT GENERATE POINT ON SURFACE FOR BOOLEAN\n";
+      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
       return p;
     }
 
@@ -157,7 +158,7 @@ Vector3D<Precision> UnplacedBooleanVolume<kSubtraction>::SamplePointOnSurface() 
   do {
     counter++;
     if (counter > 1000) {
-      std::cerr << "WARNING : COULD NOT GENERATE POINT ON SURFACE FOR BOOLEAN\n";
+      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
       return p;
     }
 

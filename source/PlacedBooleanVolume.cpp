@@ -9,6 +9,7 @@
 #include "VecGeom/volumes/SpecializedBooleanVolume.h"
 #include "VecGeom/volumes/UnplacedBooleanVolume.h"
 #include "VecGeom/volumes/LogicalVolume.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/base/RNG.h"
 #include <map>
@@ -156,7 +157,7 @@ G4VSolid const *PlacedBooleanVolume<kUnion>::ConvertToGeant4() const
   VPlacedVolume const *right = GetUnplacedVolume()->GetRight();
 
   if (!left->GetTransformation()->IsIdentity()) {
-    std::cerr << "WARNING : For the moment left transformations are not implemented\n";
+    VECGEOM_LOG(warning) << "Left transformations are not implemented\n";
   }
 
   Transformation3D const *rightm = right->GetTransformation();
@@ -175,7 +176,7 @@ G4VSolid const *PlacedBooleanVolume<kIntersection>::ConvertToGeant4() const
   VPlacedVolume const *right = GetUnplacedVolume()->GetRight();
 
   if (!left->GetTransformation()->IsIdentity()) {
-    std::cerr << "WARNING : For the moment left transformations are not implemented\n";
+    VECGEOM_LOG(warning) << "Left transformations are not implemented";
   }
 
   Transformation3D const *rightm = right->GetTransformation();
@@ -194,7 +195,7 @@ G4VSolid const *PlacedBooleanVolume<kSubtraction>::ConvertToGeant4() const
   VPlacedVolume const *right = GetUnplacedVolume()->GetRight();
 
   if (!left->GetTransformation()->IsIdentity()) {
-    std::cerr << "WARNING : For the moment left transformations are not implemented\n";
+    VECGEOM_LOG(warning) << "Left transformations are not implemented";
   }
   Transformation3D const *rightm = right->GetTransformation();
   G4RotationMatrix *g4rot        = new G4RotationMatrix();

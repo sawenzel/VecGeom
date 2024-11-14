@@ -7,6 +7,7 @@
 #include "VecGeom/base/Array.h"
 #include "VecGeom/base/Stopwatch.h"
 #include "VecGeom/management/GeoManager.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/management/VolumeFactory.h"
 #include "VecGeom/management/NavIndexTable.h"
 #include "VecGeom/volumes/PlacedVolume.h"
@@ -107,7 +108,7 @@ vecgeom::DevicePtr<const vecgeom::cuda::VPlacedVolume> CudaManager::Synchronize(
 {
   Stopwatch timer, overalltimer;
   overalltimer.Start();
-  if (verbose_ > 0) std::cerr << "Starting synchronization to GPU.\n";
+  if (verbose_ > 0) VECGEOM_LOG(status) << "Starting synchronization to GPU";
 
 #ifdef VECGEOM_USE_NAVINDEX
   if (NavIndexTable::Instance()->GetTableSize() == 0)
@@ -350,7 +351,7 @@ bool CudaManager::AllocatePlacedVolumesOnCoproc()
 {
   // check if geometry is closed
   if (!GeoManager::Instance().IsClosed()) {
-    std::cerr << "Warning: Geometry on host side MUST be closed before copying to DEVICE\n";
+    VECGEOM_LOG(warning) << "Geometry on host side MUST be closed before copying to DEVICE";
   }
 
   // Allocate one past the highest maximum reachable element ID

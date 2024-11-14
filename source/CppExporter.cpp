@@ -9,6 +9,7 @@
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/base/Array.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/volumes/PlacedBooleanVolume.h"
@@ -378,8 +379,8 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
       }
 #endif
       if (shape->GetNz() != z.size()) {
-        std::cerr << "WARNING: Volume " << l->GetLabel()
-                  << " has a mismatch in the number of z-planes (possible duplication)\n";
+        VECGEOM_LOG(warning) << "Volume " << l->GetLabel()
+                  << " has a mismatch in the number of z-planes (possible duplication)";
       }
       line << z.size() << " , ";
 

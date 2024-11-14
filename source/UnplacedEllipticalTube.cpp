@@ -7,6 +7,7 @@
 
 #include "VecGeom/volumes/EllipticUtilities.h"
 #include "VecGeom/volumes/UnplacedEllipticalTube.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/management/VolumeFactory.h"
 #include "VecGeom/volumes/SpecializedEllipticalTube.h"
 #include "VecGeom/base/RNG.h"
@@ -29,10 +30,8 @@ void UnplacedEllipticalTube::CheckParameters()
 {
   Precision tol = 2. * kTolerance;
   if (fEllipticalTube.fDx < tol || fEllipticalTube.fDy < tol || fEllipticalTube.fDy < tol) {
-#ifndef VECCORE_CUDA
-    std::cerr << "Wrong parameteres EllipticalTube { " << fEllipticalTube.fDx << ", " << fEllipticalTube.fDy << ", "
-              << fEllipticalTube.fDz << " }" << std::endl;
-#endif
+    VECGEOM_LOG(error) << "Wrong parameters EllipticalTube { " << fEllipticalTube.fDx << ", " << fEllipticalTube.fDy << ", "
+              << fEllipticalTube.fDz << " }";
     fEllipticalTube.fDx = fEllipticalTube.fDy = fEllipticalTube.fDz = tol;
   }
   Precision X = fEllipticalTube.fDx;

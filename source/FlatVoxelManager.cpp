@@ -18,7 +18,7 @@
 // for timing measurement
 #include "VecGeom/base/Stopwatch.h"
 
-#define VOXEL_DEBUG 1 
+#define VOXEL_DEBUG 1
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -211,8 +211,8 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
         // delete points[t]; points[t] = nullptr;  // JA 2021.03.04 17:15 CEST ???
       } else {
         keyspertask[t] = nullptr;
-        VECGEOM_LOG(warning) << "WARNING: Found 0 uncontained points for " << vol->GetName()
-                  << " -- expect problems in estimating safety.";
+        VECGEOM_LOG(warning) << "Found 0 uncontained points for " << vol->GetName()
+                  << " -- expect problems in estimating safety";
       }
     });
     futures.push_back(std::move(fut));
@@ -390,7 +390,7 @@ FlatVoxelHashMap<int, false> *FlatVoxelManager::BuildSafetyVoxels(LogicalVolume 
 #ifdef VOXEL_DEBUG
                 VECGEOM_LOG(debug) << "Updating best cand from " << bestcandidate << " to " << volid
                                    << " safety-sq = " << thiscandidatesafetysqr << " for sp = " << sp;
-#endif                 
+#endif
                 bestcandidate  = volid;
                 finalsafetysqr = thiscandidatesafetysqr;
               }

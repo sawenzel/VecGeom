@@ -13,6 +13,7 @@
 #include "VecGeom/volumes/UnplacedScaledShape.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/management/GeoVisitor.h"
+#include "VecGeom/management/Logger.h"
 
 #include <dlfcn.h>
 #include <stdio.h>
@@ -252,7 +253,7 @@ void GeoManager::LoadGeometryFromSharedLib(std::string libname, bool close)
   void *handle;
   handle = dlopen(libname.c_str(), RTLD_NOW);
   if (!handle) {
-    std::cerr << "Error loading geometry shared lib: " << dlerror() << "\n";
+    VECGEOM_LOG(error) << "Failed to load geometry shared lib: " << dlerror() << "\n";
   }
 
   // the create detector "function type":

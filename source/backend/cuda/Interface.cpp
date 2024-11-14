@@ -11,6 +11,8 @@
 // includes CUDA Runtime
 #include <cuda_runtime.h>
 
+#include "VecGeom/management/Logger.h"
+
 // maybe you need also helpers
 //#include <helper_cuda.h>
 //#include <helper_functions.h> // helper utility functions
@@ -26,7 +28,7 @@ inline namespace cxx {
 cudaError_t CudaCheckError(const cudaError_t err)
 {
   if (err != cudaSuccess) {
-    std::cerr << "CUDA reported error with message: \"" << cudaGetErrorString(err) << "\"\n";
+    VECGEOM_LOG(error) << "CUDA call failed: " << cudaGetErrorString(err);
   }
   return err;
 }

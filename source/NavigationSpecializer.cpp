@@ -7,6 +7,7 @@
 
 #include "NavigationSpecializer.h"
 #include "VecGeom/base/Global.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/navigation/NavStatePool.h"
@@ -646,7 +647,7 @@ void NavigationSpecializer::AnalyseLogicalVolume()
   NavStatePool::ReadDepthAndCapacityFromFile(fOutStateFileName, npointsout, ndepthout);
 
   if (npointsin != npointsout || ndepthin != ndepthout || ndepthin != GeoManager::Instance().getMaxDepth()) {
-    std::cerr << "Error reading state files ... aborting\n";
+    VECGEOM_LOG(critical) << "Failed to read state files";
     std::exit(1);
   }
   NavStatePool inpool(npointsin, GeoManager::Instance().getMaxDepth());
@@ -654,7 +655,7 @@ void NavigationSpecializer::AnalyseLogicalVolume()
   auto s1 = inpool.FromFile(fInStateFileName);
   auto s2 = outpool.FromFile(fOutStateFileName);
   if (s1 != npointsin || s2 != npointsin) {
-    std::cerr << "Error reading state files ... aborting\n";
+    VECGEOM_LOG(critical) << "Failed to read state files";
     std::exit(1);
   }
   std::cerr << "Read " << npointsin << " states to analyse\n";

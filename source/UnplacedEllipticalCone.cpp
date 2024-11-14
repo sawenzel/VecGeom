@@ -7,6 +7,7 @@
 
 #include "VecGeom/volumes/EllipticUtilities.h"
 #include "VecGeom/volumes/UnplacedEllipticalCone.h"
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/management/VolumeFactory.h"
 #include "VecGeom/volumes/SpecializedEllipticalCone.h"
 #include "VecGeom/base/RNG.h"
@@ -30,10 +31,8 @@ void UnplacedEllipticalCone::CheckParameters()
   Precision tol = 2. * kTolerance;
   if (fEllipticalCone.fDx < tol || fEllipticalCone.fDy < tol || fEllipticalCone.fDz < tol ||
       fEllipticalCone.fZCut < tol) {
-#ifndef VECCORE_CUDA
-    std::cerr << "Wrong parameteres EllipticalCone { " << fEllipticalCone.fDx << ", " << fEllipticalCone.fDy << ", "
-              << fEllipticalCone.fDz << ", " << fEllipticalCone.fZCut << " }" << std::endl;
-#endif
+    VECGEOM_LOG(error) << "Wrong parameteres EllipticalCone { " << fEllipticalCone.fDx << ", " << fEllipticalCone.fDy << ", "
+              << fEllipticalCone.fDz << ", " << fEllipticalCone.fZCut << " }";
     if (fEllipticalCone.fDx < tol) fEllipticalCone.fDx = tol;
     if (fEllipticalCone.fDy < tol) fEllipticalCone.fDy = tol;
     if (fEllipticalCone.fDz < tol) fEllipticalCone.fDz = tol;
