@@ -546,7 +546,7 @@ public:
     if (ConeTypes::checkRminTreatment<coneTypeT>(cone)) {
       Real_v rmin  = cone.fInnerSlope * point.z() + cone.fInnerOffset;
 
-      completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
+      completelyoutside |= r2 < MakeMinusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
       if (ForInside) {
         completelyinside &= r2 > MakePlusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
       }

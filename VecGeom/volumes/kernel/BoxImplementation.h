@@ -45,7 +45,8 @@ struct BoxImplementation {
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &box,
                                                                     Vector3D<Real_v> const &point, Bool_v &inside)
   {
-    inside = (point.Abs() - HalfSize<Real_v>(box)).Max() < Real_v(0.0);
+    // in analogy to other shapes, surface points are considered inside
+    inside = (point.Abs() - HalfSize<Real_v>(box)).Max() <= Real_v(0.0);
   }
 
   template <typename Real_v, typename Inside_v>

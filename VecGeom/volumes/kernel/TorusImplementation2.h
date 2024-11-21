@@ -286,8 +286,8 @@ struct TorusImplementation2 {
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ContainsKernel(UnplacedStruct_t const &torus,
                                                                           Vector3D<Real_v> const &point, Bool_v &inside)
   {
-    Bool_v unused;
-    Bool_v outside;
+    Bool_v unused(false);
+    Bool_v outside(false);
     TorusImplementation2::GenericKernelForContainsAndInside<Real_v, false, notForDisk>(torus, point, unused, outside);
     inside = !outside;
   }

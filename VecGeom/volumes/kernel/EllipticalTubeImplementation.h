@@ -38,7 +38,7 @@ struct EllipticalTubeImplementation {
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &ellipticaltube,
                                                                     Vector3D<Real_v> const &point, Bool_v &inside)
   {
-    Bool_v unused, outside;
+    Bool_v unused(false), outside(false);
     GenericKernelForContainsAndInside<Real_v, Bool_v, false>(ellipticaltube, point, unused, outside);
     inside = !outside;
   }

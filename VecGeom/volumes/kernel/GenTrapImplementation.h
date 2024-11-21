@@ -273,8 +273,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Contain
     UnplacedStruct_t const &unplaced, Vector3D<Real_v> const &point, Bool_v &inside)
 {
   // Generic implementation for contains
-  Bool_v unused;
-  Bool_v outside;
+  Bool_v unused(false);
+  Bool_v outside(false);
   GenericKernelForContainsAndInside<Real_v, false>(unplaced, point, unused, outside);
   inside = !outside;
 }
