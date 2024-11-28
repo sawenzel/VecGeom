@@ -479,6 +479,7 @@ public:
       // set hit_FS.hit_surf
       surfdata.SceneToTouchableLocator(pvol_navstate, framed_surface.fSurfIndex, hit_FS.hit_surf);
       hit_FS.hit_surf.state = in_state;
+      int traversal         = surfdata.GetFramedSurface(hit_FS.hit_surf).fTraversal;
       // Get the onsurf point in CS coordinates
       auto const &surf     = surfdata.fCommonSurfaces[hit_FS.hit_surf.GetCSindex()];
       auto const &CS_trans = surf.fTrans;
@@ -502,7 +503,7 @@ public:
 
       // Seek and cross entering frames
       FSlocator out_frame;
-      EnterCS(hit_FS.hit_surf, point, direction, bvhstep_RT, onsurf_crt, out_frame);
+      EnterCS(hit_FS.hit_surf, point, direction, bvhstep_RT, onsurf_crt, out_frame, traversal);
       out_state = out_frame.state;
     }
 

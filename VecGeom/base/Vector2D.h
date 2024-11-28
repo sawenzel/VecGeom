@@ -28,6 +28,8 @@ private:
   typedef Vector2D<Type> VecType;
 
 public:
+  using value_type = Type;
+
   VECCORE_ATT_HOST_DEVICE
   Vector2D();
 

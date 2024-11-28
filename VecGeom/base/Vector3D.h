@@ -32,6 +32,8 @@ private:
   Type vec[3];
 
 public:
+  using value_type = Type;
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Vector3D(const Type a, const Type b, const Type c)

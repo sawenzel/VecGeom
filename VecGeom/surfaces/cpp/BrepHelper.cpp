@@ -3,6 +3,67 @@
 
 namespace vgbrep {
 
+template <typename Real_i>
+struct SideIteratorSlices {
+  using VecInt_t = std::vector<int>;
+  std::vector<const VecInt_t *> fSlices; ///< Division slices to be iterated
+  int fNslices{0};                       ///< Number of slices to iterate
+  int fNsurf{0};                         ///< Number of surfaces on the side
+  int fCrtSlice{0};                      ///< Current slice
+  int fCrt{0};                           ///< Current index in slice
+  bool fDone{true};                      ///< Iteration is done
+
+  SideIteratorSlices(const Side &side, Vector3D<Real_i> const &amin, Vector3D<Real_i> const &amax,
+                     CPUsurfData<vecgeom::Precision> const &cpudata)
+  {
+    if (side.fDivision < 0) {
+      // If no division on the side, initiate loop mode
+      fNsurf = side.fNsurf;
+      fDone  = false;
+      return;
+    }
+    auto const &div = cpudata.fSideDivisions[side.fDivision];
+    int u1, u2, v1, v2;
+    auto nslices = div.GetNslices(amin, amax, u1, u2, v1, v2);
+    if (nslices == 0) return;
+    fDone = false;
+    for (auto indU = u1; indU <= u2; ++indU) {
+      for (auto indV = v1; indV <= v2; ++indV) {
+        auto slice = div.GetSlice(indU, indV);
+        if (slice->size()) fSlices.push_back(slice);
+      }
+    }
+    fNslices = fSlices.size();
+    if (fNslices == 0) fDone = true;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool Done() const { return fDone; }
+
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int operator()()
+  {
+    if (fNsurf > 0) return fCrt; // loop mode
+    return (*fSlices[fCrtSlice])[fCrt];
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  SideIteratorSlices &operator++()
+  {
+    if (fNsurf > 0) {
+      // loop mode
+      if (++fCrt > (fNsurf - 1)) fDone = true;
+      return *this;
+    }
+    auto const &slice = *fSlices[fCrtSlice];
+    fCrt              = (fCrt + 1) % slice.size();
+    if (fCrt == 0) fCrtSlice++;
+    if (fCrtSlice == fNslices) fDone = true;
+    return *this;
+  }
+};
+
 template <typename Real_t>
 BrepHelper<Real_t>::BrepHelper()
     : fSurfData(&SurfData<Real_t>::Instance()), fCPUdata(CPUsurfData<vecgeom::Precision>::Instance())
@@ -64,7 +125,9 @@ void BrepHelper<Real_t>::SortSides(int common_id)
         if (vecgeom::NavigationState::IsDescendentImpl(navind, parent_navind)) {
           // Check if the frame is embedded in ANY of the parents
           if (!child_frame.fEmbedded) {
-            child_frame.fEmbedded = fCPUdata.IsEmbedding(parent_frame, child_frame);
+            auto intersect_type = fCPUdata.CheckFrames(parent_frame, child_frame);
+            child_frame.fEmbedded =
+                (intersect_type == FrameIntersect::kEmbedding) || (intersect_type == FrameIntersect::kEqual);
           }
           child_frame.fParent = parent_ind;
         }
@@ -102,7 +165,7 @@ void BrepHelper<Real_t>::SortSides(int common_id)
                 PrintFramedSurface(child_frame);
                 PrintFramedSurface(parent_frame);
                 // Debugging only:
-                fCPUdata.IsEmbedding(parent_frame, child_frame);
+                fCPUdata.CheckFrames(parent_frame, child_frame);
               }
             }
           }
@@ -173,15 +236,72 @@ void BrepHelper<Real_t>::ComputeDefaultStates(int common_id)
 }
 
 template <typename Real_t>
-WindowMask<double> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
+WindowMask<double> BrepHelper<Real_t>::GetPlanarFrameExtent(
+    FramedSurface<Real_t, TransformationMP<Real_t>> const &framed_surf, TransformationMP<Real_t> const &trans)
 {
-  // This is a helper-lambda that updates extents
-  // for all sides of common plane surfaces
-  auto updatePlaneExtent = [](WindowMask<double> &e, Vector3D<double> const &pt) {
+  // This is a helper-lambda that updates the extent based on corner coordinates
+  auto updateExtent = [](WindowMask<double> &e, Vector3D<double> const &pt) {
     e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
     e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
     e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
     e.rangeV[1] = std::max(e.rangeV[1], pt[1]);
+  };
+  // Setting initial mask for an extent.
+  WindowMask<double> ext{vecgeom::kInfLength, -vecgeom::kInfLength, vecgeom::kInfLength, -vecgeom::kInfLength};
+  FrameType frame_type = framed_surf.fFrame.type;
+  Vector3D<double> local;
+
+  WindowMask<double> extentL;
+  // Calculating the limits
+  switch (frame_type) {
+  case FrameType::kWindow: {
+    auto const &maskLocal = fCPUdata.fWindowMasks[framed_surf.fFrame.id];
+    maskLocal.GetExtent(extentL);
+    break;
+  }
+  case FrameType::kRing: {
+    auto const &maskLocal = fCPUdata.fRingMasks[framed_surf.fFrame.id];
+    maskLocal.GetExtent(extentL);
+    break;
+  }
+  case FrameType::kQuadrilateral: {
+    WindowMask_t extLocal;
+    auto const &quad = fCPUdata.fQuadMasks[framed_surf.fFrame.id];
+    quad.GetExtent(extentL);
+    break;
+  }
+  case FrameType::kTriangle: {
+    TriangleMask_t extLocal;
+    auto const &maskLocal = fCPUdata.fTriangleMasks[framed_surf.fFrame.id];
+    maskLocal.GetExtent(extentL);
+    break;
+  }
+  default:
+    assert(0 && "Not implemented");
+  }
+
+  // This part updates extent
+  local = trans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[0], 0});
+  updateExtent(ext, local);
+  local = trans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[1], 0});
+  updateExtent(ext, local);
+  local = trans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[1], 0});
+  updateExtent(ext, local);
+  local = trans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[0], 0});
+  updateExtent(ext, local);
+  return ext;
+}
+
+template <typename Real_t>
+WindowMask<double> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
+{
+  // This is a helper-lambda that updates extents
+  // for all sides of common plane surfaces
+  auto updatePlaneExtent = [](WindowMask<double> &e, WindowMask<double> const &elocal) {
+    e.rangeU[0] = std::min(e.rangeU[0], elocal.rangeU[0]);
+    e.rangeU[1] = std::max(e.rangeU[1], elocal.rangeU[1]);
+    e.rangeV[0] = std::min(e.rangeV[0], elocal.rangeV[0]);
+    e.rangeV[1] = std::max(e.rangeV[1], elocal.rangeV[1]);
   };
 
   // Setting initial mask for an extent.
@@ -189,50 +309,12 @@ WindowMask<double> BrepHelper<Real_t>::ComputePlaneExtent(const Side &side)
 
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
-    // convert surface frame to local coordinates
-    auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
-    FrameType frame_type = framed_surf.fFrame.type;
-    Vector3D<double> local;
-
-    WindowMask<double> extentL;
-    // Calculating the limits
-    switch (frame_type) {
-    case FrameType::kWindow: {
-      auto const &maskLocal = fCPUdata.fWindowMasks[framed_surf.fFrame.id];
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kRing: {
-      auto const &maskLocal = fCPUdata.fRingMasks[framed_surf.fFrame.id];
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kQuadrilateral: {
-      WindowMask_t extLocal;
-      auto const &quad = fCPUdata.fQuadMasks[framed_surf.fFrame.id];
-      quad.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kTriangle: {
-      TriangleMask_t extLocal;
-      auto const &maskLocal = fCPUdata.fTriangleMasks[framed_surf.fFrame.id];
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    default:
-      assert(0 && "Not implemented");
-    } // case
-
+    // Compute extent for the frame
+    auto &framed_surf = fCPUdata.fFramedSurf[side.fSurfaces[i]];
+    auto extentL      = GetPlanarFrameExtent(framed_surf, framed_surf.fTrans);
     // This part updates extent
-    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[0], 0});
-    updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[1], 0});
-    updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[1], 0});
-    updatePlaneExtent(ext, local);
-    local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[0], 0});
-    updatePlaneExtent(ext, local);
-  } // for
+    updatePlaneExtent(ext, extentL);
+  }
 
   return ext;
 }
@@ -292,25 +374,159 @@ int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask<double> ext
 }
 
 template <typename Real_t>
+void BrepHelper<Real_t>::CountTraversals(const CommonSurface<Real_t> &surf, int &nfound, int &ntotal) const
+{
+  auto count_per_side = [&](Side const &side) {
+    ntotal += side.fNsurf;
+    for (int i = 0; i < side.fNsurf; ++i) {
+      auto const &frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
+      if (frame.fTraversal > -2) nfound++;
+    }
+  };
+  count_per_side(surf.fLeftSide);
+  count_per_side(surf.fRightSide);
+}
+
+template <typename Real_t>
+void BrepHelper<Real_t>::ComputeTraversalForFrame(int common_id, bool left, int iframe)
+{
+  using Vector3D         = Vector3D<vecgeom::Precision>;
+  auto &surf             = fCPUdata.fCommonSurfaces[common_id];
+  Side const &side       = left ? surf.fLeftSide : surf.fRightSide;
+  auto &thisside_frame   = fCPUdata.fFramedSurf[side.fSurfaces[iframe]];
+  Side const &other_side = left ? surf.fRightSide : surf.fLeftSide;
+  auto setTraversal      = [](FramedSurface<double, TransformationMP<double>> &frame, int iframe) {
+    // if not set just set it
+    if (frame.fTraversal == -2) {
+      frame.fTraversal = iframe;
+    } else {
+      // otherwise set it to the minimum frame index (deepest history)
+      if (iframe < frame.fTraversal) frame.fTraversal = iframe;
+    }
+  };
+
+  // Compute extent of the frame in its local reference frame
+
+  // Loop frames on the other_side and find the candidates
+  bool has_div = other_side.fDivision >= 0;
+  Vector3D amin, amax;
+  if (has_div) {
+    if (surf.fType == SurfaceType::kPlanar) {
+      if (fCPUdata.fSideDivisions[other_side.fDivision].fAxis == AxisType::kR) {
+        auto const &ringMask = fCPUdata.fRingMasks[thisside_frame.fFrame.id];
+        amin[0]              = ringMask.rangeR[0];
+        amax[0]              = ringMask.rangeR[1];
+      } else {
+        // Calculate the aligned bounding box of the frame
+        auto extentL = GetPlanarFrameExtent(thisside_frame, thisside_frame.fTrans);
+        amin.Set(extentL.rangeU[0], extentL.rangeV[0], 0.);
+        amax.Set(extentL.rangeU[1], extentL.rangeV[1], 0.);
+      }
+    } else if (surf.fType == SurfaceType::kCylindrical || surf.fType == SurfaceType::kConical) {
+      Vector3D local;
+      amin.Set(0., 0., vecgeom::InfinityLength<Real_t>());
+      amax.Set(0., 0., -vecgeom::InfinityLength<Real_t>());
+      auto const &maskLocal = fCPUdata.fZPhiMasks[thisside_frame.fFrame.id];
+      local                 = thisside_frame.fTrans.InverseTransform(Vector3D{0, 0, maskLocal.rangeZ[0]});
+      amin[2]               = std::min(amin[2], local[2]);
+      amax[2]               = std::max(amax[2], local[2]);
+      local                 = thisside_frame.fTrans.InverseTransform(Vector3D{0, 0, maskLocal.rangeZ[1]});
+      amin[2]               = std::min(amin[2], local[2]);
+      amax[2]               = std::max(amax[2], local[2]);
+    }
+  }
+
+  bool disjoint = true;
+  std::set<int> candidates;
+  // check with the frames on the other side
+  for (SideIteratorSlices it(other_side, amin, amax, fCPUdata); !it.Done(); ++it) {
+    auto j = it();
+    if (!candidates.insert(j).second) continue;
+    auto &otherside_frame = fCPUdata.fFramedSurf[other_side.fSurfaces[j]];
+
+    // frame on the other side already marked "disjoint", don't check
+    if (otherside_frame.fTraversal == -1) continue;
+
+    // check intersection type
+    auto intersect_type = fCPUdata.CheckFrames(thisside_frame, otherside_frame);
+    if (intersect_type == FrameIntersect::kNoIntersect) continue;
+
+    // Other than kNoIntersect is not disjoint
+    disjoint = false;
+    if (intersect_type == FrameIntersect::kIntersect) {
+      // If frames intersect, we cannot have direct traversals on either of them
+      thisside_frame.fTraversal  = -3;
+      otherside_frame.fTraversal = -3;
+      break;
+    }
+    if (intersect_type == FrameIntersect::kEmbedding) {
+      // crossing from otherside_frame always to thisside_frame
+      if (thisside_frame.fLogicId)
+        otherside_frame.fTraversal = -3;
+      else
+        setTraversal(otherside_frame, iframe);
+      // thisside_frame is overlapping
+      thisside_frame.fTraversal = -3;
+      break;
+    }
+    if (intersect_type == FrameIntersect::kEqual) {
+      // frames transition from one to another
+      if (otherside_frame.fLogicId)
+        thisside_frame.fTraversal = -3;
+      else
+        setTraversal(thisside_frame, j);
+
+      if (thisside_frame.fLogicId)
+        otherside_frame.fTraversal = -3;
+      else
+        setTraversal(otherside_frame, iframe);
+    }
+    if (intersect_type == FrameIntersect::kEmbedded) {
+      // crossing from thisside_frame always to otherside_frame
+      if (otherside_frame.fLogicId)
+        thisside_frame.fTraversal = -3;
+      else
+        setTraversal(thisside_frame, j);
+      otherside_frame.fTraversal = -3;
+    }
+  }
+  if (disjoint) thisside_frame.fTraversal = -1;
+}
+
+template <typename Real_t>
+void BrepHelper<Real_t>::ComputeTraversalFrames(int common_id, bool left)
+{
+  auto &surf             = fCPUdata.fCommonSurfaces[common_id];
+  Side const &side       = left ? surf.fLeftSide : surf.fRightSide;
+  Side const &other_side = left ? surf.fRightSide : surf.fLeftSide;
+  if (other_side.fNsurf == 0) {
+    // nothing on the other side, mark all transitions as non-entering
+    for (int i = 0; i < side.fNsurf; ++i)
+      fCPUdata.fFramedSurf[side.fSurfaces[i]].fTraversal = -1;
+    return;
+  }
+
+  // Loop frames on the side and find the candidates on the other side
+  for (int i = 0; i < side.fNsurf; ++i) {
+    auto &thisside_frame = fCPUdata.fFramedSurf[side.fSurfaces[i]];
+    // skip logical frames, and checked frames which are already marked disjoint or overlapping
+    if (thisside_frame.fTraversal == -3 || thisside_frame.fTraversal == -1) continue;
+    // check with the frames on the other side
+    ComputeTraversalForFrame(common_id, left, i);
+  }
+}
+
+template <typename Real_t>
 int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask<double> extent_full)
 {
-  // This is a helper-lambda that updates extents
-  // for all sides of common plane surfaces
-  auto updatePlaneExtent = [](WindowMask<double> &e, Vector3D<double> const &pt) {
-    e.rangeU[0] = std::min(e.rangeU[0], pt[0]);
-    e.rangeU[1] = std::max(e.rangeU[1], pt[0]);
-    e.rangeV[0] = std::min(e.rangeV[0], pt[1]);
-    e.rangeV[1] = std::max(e.rangeV[1], pt[1]);
-  };
   // Special case if all frames are rings placed with id transformation
   bool all_rings_id = true; // all frames are rings with id transformation
-  double ring_max =
-      0.5 * std::max(extent_full.rangeU[1] - extent_full.rangeU[0], extent_full.rangeV[1] - extent_full.rangeV[0]);
-  double ring_min = ring_max;
+  double ring_max   = -vecgeom::kInfLength;
+  double ring_min   = vecgeom::kInfLength;
   for (int i = 0; i < side.fNsurf; ++i) {
     auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     FrameType frame_type = framed_surf.fFrame.type;
-    if (frame_type == FrameType::kRing && framed_surf.fTrans.IsIdentity()) {
+    if (frame_type == FrameType::kRing && !framed_surf.fTrans.HasTranslation()) {
       auto const &maskRing = fCPUdata.fRingMasks[framed_surf.fFrame.id];
       ring_min             = std::min(maskRing.rangeR[0], ring_min);
       ring_max             = std::max(maskRing.rangeR[1], ring_max);
@@ -328,78 +544,40 @@ int BrepHelper<Real_t>::ComputePlaneDivision(Side &side, WindowMask<double> exte
                              extent_full.rangeV[1], side.fNsurf);
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
-    // convert surface frame to local coordinates
-    auto &framed_surf    = fCPUdata.fFramedSurf[side.fSurfaces[i]];
-    FrameType frame_type = framed_surf.fFrame.type;
-    Vector3D<double> local;
-
-    WindowMask<double> extentL;
-    RingMask<double> extentRing(0, 0, true);
-    // Calculating the limits
-    switch (frame_type) {
-    case FrameType::kWindow: {
-      auto const &maskLocal = fCPUdata.fWindowMasks[framed_surf.fFrame.id];
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kRing: {
-      auto const &maskLocal = fCPUdata.fRingMasks[framed_surf.fFrame.id];
-      extentRing            = maskLocal;
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kQuadrilateral: {
-      WindowMask_t extLocal;
-      auto const &quad = fCPUdata.fQuadMasks[framed_surf.fFrame.id];
-      quad.GetExtent(extentL);
-      break;
-    }
-    case FrameType::kTriangle: {
-      TriangleMask_t extLocal;
-      auto const &maskLocal = fCPUdata.fTriangleMasks[framed_surf.fFrame.id];
-      maskLocal.GetExtent(extentL);
-      break;
-    }
-    default:
-      assert(0 && "Not implemented");
-    } // case
-
+    auto &framed_surf = fCPUdata.fFramedSurf[side.fSurfaces[i]];
     if (all_rings_id) {
+      auto const &extentRing = fCPUdata.fRingMasks[framed_surf.fFrame.id];
       divisionR.AddCandidate(i, extentRing.rangeR[0], extentRing.rangeR[1]);
-    } else {
-      // This part converts the local extent to the side reference frame
-      WindowMask<double> ext{vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>(),
-                             vecgeom::InfinityLength<Real_t>(), -vecgeom::InfinityLength<Real_t>()};
-      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[0], 0});
-      updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[0], extentL.rangeV[1], 0});
-      updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[1], 0});
-      updatePlaneExtent(ext, local);
-      local = framed_surf.fTrans.InverseTransform(Vector3D<double>{extentL.rangeU[1], extentL.rangeV[0], 0});
-      updatePlaneExtent(ext, local);
-      // std::cout << i << " : ext {" << ext.rangeU[0] << ", " << ext.rangeU[1] << "} {" << ext.rangeV[0] << ", "
-      //           << ext.rangeV[1] << "}\n";
-      divisionX.AddCandidate(i, ext.rangeU[0], ext.rangeU[1]);
-      divisionY.AddCandidate(i, ext.rangeV[0], ext.rangeV[1]);
-      if (side.fNsurf > 3) divisionXY.AddCandidate(i, ext.rangeU[0], ext.rangeU[1], ext.rangeV[0], ext.rangeV[1]);
     }
+    auto ext = GetPlanarFrameExtent(framed_surf, framed_surf.fTrans);
+    divisionX.AddCandidate(i, ext.rangeU[0], ext.rangeU[1]);
+    divisionY.AddCandidate(i, ext.rangeV[0], ext.rangeV[1]);
+    if (side.fNsurf > 3) divisionXY.AddCandidate(i, ext.rangeU[0], ext.rangeU[1], ext.rangeV[0], ext.rangeV[1]);
+  }
+
+  auto bestEfficiency      = divisionX.Efficiency();
+  SideDivisionCPU *bestDiv = &divisionX;
+  auto efficiency          = divisionY.Efficiency();
+  if (efficiency > bestEfficiency) {
+    bestDiv        = &divisionY;
+    bestEfficiency = efficiency;
+  }
+  efficiency = divisionXY.Efficiency();
+  if (side.fNsurf >= 4 && efficiency > bestEfficiency) {
+    bestDiv        = &divisionXY;
+    bestEfficiency = efficiency;
   }
   if (all_rings_id) {
-    if (divisionR.Efficiency() > 0.01) {
-      // divisionR.Print();
-      side.fDivision = fCPUdata.fSideDivisions.size();
-      fCPUdata.fSideDivisions.push_back(divisionR);
+    efficiency = divisionR.Efficiency();
+    if (efficiency > bestEfficiency) {
+      bestDiv        = &divisionR;
+      bestEfficiency = efficiency;
     }
-  } else {
-    SideDivisionCPU &divXorY = (divisionX.Efficiency() > divisionY.Efficiency()) ? divisionX : divisionY;
-    SideDivisionCPU &divBest =
-        (side.fNsurf < 4 || divXorY.Efficiency() > divisionXY.Efficiency()) ? divXorY : divisionXY;
-    if (divBest.Efficiency() > 0.01) {
-      // divBest.Print();
-      side.fDivision = fCPUdata.fSideDivisions.size();
-      fCPUdata.fSideDivisions.push_back(divBest);
-    }
+  }
+  if (bestEfficiency > 0.01) {
+    // bestDiv->Print();
+    side.fDivision = fCPUdata.fSideDivisions.size();
+    fCPUdata.fSideDivisions.push_back(*bestDiv);
   }
   return side.fDivision;
 }
@@ -425,16 +603,28 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
   };
 
   // Compute division helpers for all sides having more than one frame on all surfaces
+  int nfound{0}, ntotal{0};
+  int nfoundall{0}, ntotalall{0};
   for (size_t common_id = 1; common_id < fCPUdata.fCommonSurfaces.size(); ++common_id) {
-    if (fCPUdata.fCommonSurfaces[common_id].fLeftSide.fNsurf > 1) {
-      computeSingleSideDivision(fCPUdata.fCommonSurfaces[common_id].fType,
-                                fCPUdata.fCommonSurfaces[common_id].fLeftSide);
+    auto &surf = fCPUdata.fCommonSurfaces[common_id];
+    if (surf.fLeftSide.fNsurf > 1) {
+      computeSingleSideDivision(surf.fType, surf.fLeftSide);
     }
     if (fCPUdata.fCommonSurfaces[common_id].fRightSide.fNsurf > 1) {
-      computeSingleSideDivision(fCPUdata.fCommonSurfaces[common_id].fType,
-                                fCPUdata.fCommonSurfaces[common_id].fRightSide);
+      computeSingleSideDivision(surf.fType, surf.fRightSide);
+    }
+    // In case the surface is NOT a scene surface, check for unique traversal frames
+    if (surf.IsSceneSurface()) continue;
+    ComputeTraversalFrames(common_id, true);
+    ComputeTraversalFrames(common_id, false);
+    CountTraversals(surf, nfoundall, ntotalall);
+    if (surf.fLeftSide.fNsurf > 0 && surf.fRightSide.fNsurf > 0) {
+      CountTraversals(surf, nfound, ntotal);
+      //printf("surface %ld: %d/%d traversals\n", common_id, nfound, ntotal);
     }
   }
+  printf("traversals_all: %d / %d [%f %%]\n", nfoundall, ntotalall, 100. * float(nfoundall) / ntotalall);
+  printf("traversals    : %d / %d [%f %%]\n", nfound, ntotal, 100. * float(nfound) / ntotal);
 
   // Copy division helpers to surface data
   fSurfData->fNsideDivisions = fCPUdata.fSideDivisions.size();
@@ -486,29 +676,18 @@ void BrepHelper<Real_t>::ConvertTransformations(int idsurf)
 
   // Skip first surface on left side
   for (int i = 1; i < surf.fLeftSide.fNsurf; ++i) {
-    int idglob = surf.fLeftSide.fSurfaces[i];
-    auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<vecgeom::Precision> tnew(surf.fTrans);
-
-    tnew *= tsurfinv;
-    if (ApproxEqualTransformation(tnew, identity)) {
-      surf.fTrans = identity;
-    } else {
-      surf.fTrans = tnew;
-    }
+    int idglob       = surf.fLeftSide.fSurfaces[i];
+    auto &framedsurf = fCPUdata.fFramedSurf[idglob];
+    framedsurf.fTrans *= tsurfinv;
+    framedsurf.fTrans.SetProperties();
   }
 
   // Convert right-side surfaces
   for (int i = 0; i < surf.fRightSide.fNsurf; ++i) {
-    int idglob = surf.fRightSide.fSurfaces[i];
-    auto &surf = fCPUdata.fFramedSurf[idglob];
-    TransformationMP<vecgeom::Precision> tnew(surf.fTrans);
-    tnew *= tsurfinv;
-    if (ApproxEqualTransformation(tnew, identity)) {
-      surf.fTrans = identity;
-    } else {
-      surf.fTrans = tnew;
-    }
+    int idglob       = surf.fRightSide.fSurfaces[i];
+    auto &framedsurf = fCPUdata.fFramedSurf[idglob];
+    framedsurf.fTrans *= tsurfinv;
+    framedsurf.fTrans.SetProperties();
   }
 }
 
@@ -1083,9 +1262,9 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
     fCPUdata.fSidesExiting.insert(fCPUdata.fSidesExiting.end(), nt, {});
   }
 
-  // before we construct the common surfaces from the local surfaces, we can mark convex boolean surfaces such that they
-  // are treated as non-boolean surfaces. this requires the bounding boxes of the BVH. Init the information needed to
-  // contruct and use the BVH
+  // before we construct the common surfaces from the local surfaces, we can mark convex boolean surfaces such that
+  // they are treated as non-boolean surfaces. this requires the bounding boxes of the BVH. Init the information
+  // needed to contruct and use the BVH
   InitBVHData();
 
   vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(fCPUdata);
@@ -1639,8 +1818,8 @@ void BrepHelper<Real_t>::PrintFramedSurface(FramedSurface<Real_i, Transformation
     framedata << " { no such frame type }";
   };
 
-  framedata << "    fTrans{" << surf.fTrans << "} fParent{" << surf.fParent << "} fLogicId{" << surf.fLogicId
-            << "} fNeverCheck{" << surf.fNeverCheck << "} ";
+  framedata << "    fTrans{" << surf.fTrans << "} fParent{" << surf.fParent << "} fTraversal{" << surf.fTraversal
+            << "} fLogicId{" << surf.fLogicId << "} fNeverCheck{" << surf.fNeverCheck << "} ";
   if (surf.fSceneCS) framedata << "fSceneCS{" << surf.fSceneCS << "} fSceneCSind{" << surf.fSceneCSind << "} ";
   framedata << "fEmbedding{" << to_cstring(surf.fEmbedding) << "} ";
   framedata << "fEmbedded{" << to_cstring(surf.fEmbedded) << "} ";

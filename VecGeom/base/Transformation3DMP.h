@@ -375,9 +375,18 @@ public:
             (std::abs(rzz_ - Real_s(1.)) < vecgeom::kTolerance));
   }
 
-  // VECCORE_ATT_HOST_DEVICE
-  // VECGEOM_FORCE_INLINE
-  // bool IsReflected() const { return Determinant() < 0; }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsXYFlipRotation() const
+  {
+    return (fHasRotation && (std::abs(rzx_) < vecgeom::kTolerance) && (std::abs(rzy_) < vecgeom::kTolerance) &&
+            (std::abs(rxz_) < vecgeom::kTolerance) && (std::abs(ryz_) < vecgeom::kTolerance) &&
+            (std::abs(rzz_ + Real_s(1.)) < vecgeom::kTolerance));
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsReflected() const { return Determinant() < 0; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -620,29 +629,29 @@ public:
   // VECCORE_ATT_HOST_DEVICE
   // Transformation3D &RotateZ(double a);
 
-  // /**
-  //  * @brief Returns determinant for the rotation.
-  //  */
-  // VECCORE_ATT_HOST_DEVICE
-  // double Determinant() const
-  // {
-  //   // Computes determinant in double precision
-  //   double xx_ = rxx_;
-  //   double xy_ = rxy_;
-  //   double xz_ = rxz_;
-  //   double yx_ = ryx_;
-  //   double yy_ = ryy_;
-  //   double yz_ = ryz_;
-  //   double zx_ = rzx_;
-  //   double zy_ = rzy_;
-  //   double zz_ = rzz_;
+  /**
+   * @brief Returns determinant for the rotation.
+   */
+  VECCORE_ATT_HOST_DEVICE
+  double Determinant() const
+  {
+    // Computes determinant in double precision
+    double xx_ = rxx_;
+    double xy_ = rxy_;
+    double xz_ = rxz_;
+    double yx_ = ryx_;
+    double yy_ = ryy_;
+    double yz_ = ryz_;
+    double zx_ = rzx_;
+    double zy_ = rzy_;
+    double zz_ = rzz_;
 
-  //   double detxx = yy_ * zz_ - yz_ * zy_;
-  //   double detxy = yx_ * zz_ - yz_ * zx_;
-  //   double detxz = yx_ * zy_ - yy_ * zx_;
-  //   double det   = xx_ * detxx - xy_ * detxy + xz_ * detxz;
-  //   return det;
-  // }
+    double detxx = yy_ * zz_ - yz_ * zy_;
+    double detxy = yx_ * zz_ - yz_ * zx_;
+    double detxz = yx_ * zy_ - yy_ * zx_;
+    double det   = xx_ * detxx - xy_ * detxy + xz_ * detxz;
+    return det;
+  }
 
   // /**
   //  * @brief Returns rotation axis as a unit vector
@@ -1166,11 +1175,10 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation3DMP
 template <typename Real_s>
 std::ostream &operator<<(std::ostream &os, Transformation3DMP<Real_s> const &trans)
 {
-  os << "TransformationMP {" << trans.Translation() << ", "
-     << "(" << trans.Rotation(0) << ", " << trans.Rotation(1) << ", " << trans.Rotation(2) << ", " << trans.Rotation(3)
-     << ", " << trans.Rotation(4) << ", " << trans.Rotation(5) << ", " << trans.Rotation(6) << ", " << trans.Rotation(7)
-     << ", " << trans.Rotation(8) << ")}"
-     << "; identity(" << trans.IsIdentity() << "); rotation(" << trans.HasRotation() << ")";
+  os << "TransformationMP {" << trans.Translation() << ", " << "(" << trans.Rotation(0) << ", " << trans.Rotation(1)
+     << ", " << trans.Rotation(2) << ", " << trans.Rotation(3) << ", " << trans.Rotation(4) << ", " << trans.Rotation(5)
+     << ", " << trans.Rotation(6) << ", " << trans.Rotation(7) << ", " << trans.Rotation(8) << ")}" << "; identity("
+     << trans.IsIdentity() << "); rotation(" << trans.HasRotation() << ")";
   return os;
 }
 }

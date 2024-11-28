@@ -390,19 +390,22 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
       if (crossed_surf.hit_surf.GetFSindex() == -1) {
         // Most likely extruding overlap detected, relocating to correct state
 
-        VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
-                             << " at num_cross = " << num_cross << "\n   starting point " << points[i]
-                             << " and direction " << dirs[i] << "\n   state for failing step : ";
-        start_state.Print();
+        if (idebug >= 0) {
+          VECGEOM_LOG(warning) << std::setprecision(16) << "No exiting surface for ray " << i
+                               << " at num_cross = " << num_cross << "\n   starting point " << points[i]
+                               << " and direction " << dirs[i] << "\n   state for failing step : ";
+          start_state.Print();
+        }
 
         // Find true location for the crossing point
         NavigationState true_state;
         // note that here we use the previous point pt and not pt + distance * dir because the distance is inf!
         vgbrep::protonav::ReLocatePointIn<Precision, Real_t>(start_state, pt, dir, true_state, crossed_surf.exit_surf,
                                                              /* distance=*/Precision(0.));
-        std::cout << "   crossing point : " << pt << " was located in : ";
-        true_state.Print();
-
+        if (idebug >= 0) {
+          std::cout << "   crossing point : " << pt << " was located in : ";
+          true_state.Print();
+        }
         // Now replay to get correct distance
         if (!use_bvh) {
           distance =

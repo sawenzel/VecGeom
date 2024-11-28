@@ -96,6 +96,23 @@ private:
   /// @brief Computes division helpers for all sides
   void ComputeSideDivisions();
 
+  /// @brief Computes the indexes of the frames traversed into from one side to another
+  /// @param surf Common surface being checked
+  /// @param left Is left side
+  void ComputeTraversalFrames(int common_id, bool left);
+
+  /// @brief Computes the indexes of the frames traversed from a frame to the other side
+  /// @param common_id Common surface
+  /// @param left Side
+  /// @param iframe Frame id
+  void ComputeTraversalForFrame(int common_id, bool left, int iframe);
+
+  /// @brief Count the number of direct traversals found per CS
+  /// @param surf Common surface
+  /// @param nfound Number of traversals found
+  /// @param ntotal Total number of frames on both sides
+  void CountTraversals(const CommonSurface<Real_t> &surf, int &nfound, int &ntotal) const;
+
   // /// @brief Computes extents for the sides of all common surfaces
   // /// @return Operation success
   // bool ComputeExtents();
@@ -133,6 +150,13 @@ private:
 
   /// @brief Iterates over all logical volumes and identifies convex surfaces in booleans, which can be treated as normal surfaces
   void FindConvexBooleanSurfaces();
+
+  /// @brief Get the 2D extent of a planar frame, positioned with the transformation trans
+  /// @param framed_surf Framed surface
+  /// @param trans Transformation applied to the framed surface
+  /// @return 2D window extent in the parent reference
+  WindowMask<double> GetPlanarFrameExtent(FramedSurface<Real_t, TransformationMP<Real_t>> const &framed_surf,
+                                          TransformationMP<Real_t> const &trans);
 
   /// @brief Print the list of common surface candidates for a given state
   /// @param state Full state (not just local scene state)

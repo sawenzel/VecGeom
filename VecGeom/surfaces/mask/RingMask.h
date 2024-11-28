@@ -9,6 +9,7 @@ namespace vgbrep {
 /// @tparam Real_t Precision used
 template <typename Real_t>
 struct RingMask {
+  using value_type = Real_t;
   Range<Real_t> rangeR;        ///< Radius limits in the form of [Rmin, Rmax].
   bool isFullCirc;             ///< Does the phi cut exist here?
   AngleVector<Real_t> vecSPhi; ///< Cartesian coordinates of vectors that represents the start of the phi-cut.
@@ -174,7 +175,7 @@ struct RingMask {
 #endif
   }
 
-  /// @brief Safe distance from a point assumed inside the window
+  /// @brief Safe distance from a point assumed inside the ring
   /// @details Used on host only for frame checks
   /// @param local Projected point in local coordinates
   /// @return Safe distance
@@ -191,6 +192,26 @@ struct RingMask {
                                                           : vecgeom::InfinityLength<Real_t>();
     Real_t safPhi = vecCore::math::Min(saf1, saf2);
     return vecCore::math::Min(safR, safPhi);
+  }
+
+  /// @brief Safe distance from a point assumed outside the ring
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyOutside(Vector3D<Real_t> const &local) const
+  {
+    Real_t rho  = local.Perp();
+    Real_t safR = HasRmin() ? vecCore::math::Max(rho - rangeR[1], rangeR[0] - rho) : rho - rangeR[1];
+    safR        = vecCore::math::Max(safR, Real_t(0));
+    if (isFullCirc) return safR;
+    AngleVector<Real_t> localAngle{local[0], local[1]};
+    auto saf1     = (vecSPhi.Dot(localAngle) > Real_t(0)) ? vecCore::math::Max(localAngle.CrossZ(vecSPhi), Real_t(0))
+                                                          : vecgeom::InfinityLength<Real_t>();
+    auto saf2     = (vecEPhi.Dot(localAngle) > Real_t(0)) ? vecCore::math::Max(vecEPhi.CrossZ(localAngle), Real_t(0))
+                                                          : vecgeom::InfinityLength<Real_t>();
+    Real_t safPhi = vecCore::math::Min(saf1, saf2);
+    if (safPhi == vecgeom::InfinityLength<Real_t>()) safPhi = Real_t(0);
+    return vecCore::math::Max(safR, safPhi);
   }
 };
 

@@ -74,6 +74,7 @@ enum class FrameType : char { kNoFrame, kRangeZ, kRing, kZPhi, kRangeSph, kWindo
 
 ///< Segment-segment intersection types
 enum class SegmentIntersect : char { kNoIntersect, kEmbedding, kEmbedded, kOverlap, kIntersect, kEqual };
+using FrameIntersect = SegmentIntersect;
 
 /// @brief A list of candidate surfaces
 struct Candidates {
@@ -92,16 +93,17 @@ struct Candidates {
 };
 
 /// @brief Framed surface locator
-struct FSlocator {
-  int common_id{0};               ///< Common surface id (positive = left side, negative = right side)
-  int frame_id{-1};               ///< frame index on the side
-  vecgeom::NavigationState state; ///< full state associated to the frame
+struct FSlocatorB {
+  int common_id{0}; ///< Common surface id (positive = left side, negative = right side)
+  int frame_id{-1}; ///< frame index on the side
 
-  FSlocator() = default;
+  FSlocatorB() = default;
+
+  FSlocatorB(int csind, int iframe) : common_id(csind), frame_id(iframe) {}
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  FSlocator(int csind, int iframe, bool left) { Set(csind, iframe, left); }
+  FSlocatorB(int csind, int iframe, bool left) { Set(csind, iframe, left); }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -122,6 +124,23 @@ struct FSlocator {
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int GetFSindex() const { return frame_id; }
+};
+
+/// @brief Framed surface locator
+struct FSlocator : FSlocatorB {
+  vecgeom::NavigationState state; ///< full state associated to the frame
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  FSlocator() : FSlocatorB() {}
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  FSlocator(int csind, int iframe) : FSlocatorB(csind, iframe) {}
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  FSlocator(int csind, int iframe, bool left) : FSlocatorB(csind, iframe, left) {}
 };
 
 /// @brief Exit surf data, contains all relevant surface information
@@ -173,6 +192,85 @@ enum AxisType : char {
   kNoAxis ///< No axis
 };
 
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE bool ApproxEqual(Real_t t1, Real_t t2)
+{
+  return std::abs(t1 - t2) <= vecgeom::kToleranceDist<Real_t>;
+}
+
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
+{
+  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
+}
+
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
+{
+  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]);
+}
+
+template <typename Real_t>
+bool ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_t> &t1,
+                               const vecgeom::Transformation3DMP<Real_t> &t2)
+{
+  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
+  for (int i = 0; i < 9; ++i)
+    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
+  return true;
+}
+
+/// @brief Truncate a value to as many significant digits as a given tolerance.
+///  For example, if the tolerance is 1e-9, truncate the vlaue to 9 significant digits
+/// @tparam Real_t Precision type
+/// @param x Value to truncate
+/// @param tolerance Tolerance with as many significant digits as the truncation result
+/// @return Truncated value
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
+{
+  auto div = std::abs(x);
+  while (int(div) > 0) {
+    div /= 10;
+    tolerance *= 10;
+  }
+  return tolerance * std::lround(x / tolerance);
+}
+
+/// @brief Return the rounding error of a value, assuming as many significant digits as a provided tolerance
+/// @tparam Real_t Precision type
+/// @param x Value subject to rounding
+/// @param tolerance Tolerance with as many significant digits as the truncation result
+/// @return Truncation error
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
+{
+  auto div = std::abs(x);
+  while (int(div) > 0) {
+    div /= 10;
+    tolerance *= 10;
+  }
+  return tolerance;
+}
+
+/// @brief Computes squared distance from a point to a segment
+/// @tparam Real_t Precision type
+/// @param point Point from which the distance is computed
+/// @param p1 Segment start
+/// @param p2 Segment end
+/// @return Distance to the segment
+template <typename Point>
+VECCORE_ATT_HOST_DEVICE auto DistanceToSegmentSquared(Point const &p, Point const &p1, Point const &p2)
+{
+  auto line = p2 - p1;
+  auto pvec = p - p1;
+  auto dot0 = line.Dot(pvec);
+  if (dot0 <= 0) return pvec.Mag2();
+  auto dot1 = line.Mag2();
+  if (dot1 <= dot0) return (p - p2).Mag2();
+  return ((dot0 / dot1) * line - pvec).Mag2();
+}
+
 /// @brief Helper for dividing a side in equal slices along one axis, keeping frame candidates in each slice
 /// @details The range given by the side extent is divided in equal slices along an axis. Each
 ///          slice intersects a number of frames. The slice is found besed on the crossing point, then the full
@@ -192,12 +290,21 @@ struct SideDivision {
   // Methods
   SideDivision() = default;
 
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE SliceCand const &GetSlice(int indU, int indV)
+  {
+    return (fAxis == AxisType::kXY) ? fSlices[fNslicesV * indU + indV] : fSlices[indU];
+  }
+
+  /// @brief Compute the slice index for a point on surface
+  /// @tparam Real_i Precision of input point
+  /// @param onsurf Point on surface
+  /// @return Index of the slice containing the point, -1 if none
   template <typename Real_i>
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE int GetSliceIndex(Vector3D<Real_i> const &onsurf) const
   {
     int ind = -1;
     switch (fAxis) {
-    case kXY: {
+    case AxisType::kXY: {
       int indU = (onsurf[0] - fStartU) / fStepU;
       int indV = (onsurf[1] - fStartV) / fStepV;
       ind      = (indU >= 0 && indV >= 0 && indU < fNslicesU && indV < fNslicesV) ? fNslicesV * indU + indV : -1;
@@ -216,6 +323,72 @@ struct SideDivision {
       return (ind >= 0 && ind < fNslices) ? ind : -1;
     }
   }
+
+  /// @brief Get number of touched slices by a bounding box aligned with the surface reference frame
+  /// @tparam Real_i Precision of input box corners
+  /// @param corner1 Lower box corner
+  /// @param corner2 Upper box corner
+  /// @param u1 Lower first axis touched slice
+  /// @param u2 Upper first axis touched slice
+  /// @param v1 Lower second axis touched slice
+  /// @param v2 Upper second axis touched slice
+  /// @return Number of touched slices
+  template <typename Real_i>
+  VECGEOM_FORCE_INLINE int GetNslices(Vector3D<Real_i> const &corner1, Vector3D<Real_i> const &corner2, int &u1,
+                                      int &u2, int &v1, int &v2) const
+  {
+    u1 = -1;
+    u2 = -1;
+    v1 = -1;
+    v2 = -1;
+    switch (fAxis) {
+    case kXY: {
+      int ind1     = (corner1[0] - fStartU) / fStepU;
+      int ind2     = (corner2[0] - fStartU) / fStepU;
+      int indmin   = std::min(ind1, ind2);
+      int indmax   = std::max(ind1, ind2);
+      u1           = std::max(indmin, 0);
+      u2           = std::min(indmax, fNslicesU - 1);
+      int nslicesx = u2 - u1 + 1;
+      nslicesx     = std::max(nslicesx, 0);
+      ind1         = (corner1[1] - fStartV) / fStepV;
+      ind2         = (corner2[1] - fStartV) / fStepV;
+      indmin       = std::min(ind1, ind2);
+      indmax       = std::max(ind1, ind2);
+      v1           = std::max(indmin, 0);
+      v2           = std::min(indmax, fNslicesV - 1);
+      int nslicesy = v2 - v1 + 1;
+      nslicesy     = std::max(nslicesy, 0);
+      return (nslicesx * nslicesy);
+    }
+    case AxisType::kR: {
+      auto rmax  = std::max(corner1.Perp(), corner2.Perp());
+      u1         = 0;
+      int indmax = (rmax - fStartU) / fStepU;
+      u2         = std::min(indmax, fNslices - 1);
+      return (u2 + 1);
+    }
+    case AxisType::kPhi: {
+      int ind1    = (corner1.Phi() - fStartU) / fStepU;
+      int ind2    = (corner2.Phi() - fStartU) / fStepU;
+      int indmin  = std::min(ind1, ind2);
+      int indmax  = std::max(ind1, ind2);
+      u1          = std::max(indmin, 0);
+      u2          = std::min(indmax, fNslices - 1);
+      int nslices = u2 - u1 + 1;
+      return std::max(nslices, 0);
+    }
+    default:
+      int ind1    = (corner1[fAxis] - fStartU) / fStepU;
+      int ind2    = (corner2[fAxis] - fStartU) / fStepU;
+      int indmin  = std::min(ind1, ind2);
+      int indmax  = std::max(ind1, ind2);
+      u1          = std::max(indmin, 0);
+      u2          = std::min(indmax, fNslices - 1);
+      int nslices = u2 - u1 + 1;
+      return std::max(nslices, 0);
+    }
+  }
 };
 
 // Aliases for different usages of Vec2D.
@@ -227,6 +400,66 @@ using AngleVector = Vector2D<Real_t>;
 
 template <typename Real_t>
 using Point2D = Vector2D<Real_t>;
+
+template <typename Real_t>
+struct AngleInterval {
+  Range<Real_t> range;
+
+  AngleInterval(Real_t start, Real_t end, bool normalize = true)
+  {
+    range[0] = start;
+    range[1] = end;
+    if (normalize) Normalize();
+  }
+
+  bool operator<(AngleInterval const &other) { return (range[1] - other.range[0]) < vecgeom::kToleranceStrict<Real_t>; }
+  bool operator>(AngleInterval const &other) { return (other.range[1] - range[0]) < vecgeom::kToleranceStrict<Real_t>; }
+  bool operator==(AngleInterval const &other)
+  {
+    // Move the other interval left until not larger than this one
+    AngleInterval other_moved = other;
+    while (other_moved > *this)
+      other_moved = other_moved.Previous();
+    // Move the interval right until not smaller than this one
+    while (other_moved < *this)
+      other_moved = other_moved.Next();
+    bool equal = vecCore::math::Abs(range[0] - other_moved.range[0]) < vecgeom::kToleranceStrict<Real_t> &&
+                 vecCore::math::Abs(range[1] - other_moved.range[1]) < vecgeom::kToleranceStrict<Real_t>;
+    return equal;
+  }
+  bool operator!=(AngleInterval const &other) { return !operator==(other); }
+
+  void Clear() { range[0] = range[1] = Real_t(0); }
+  bool IsNull() const { return (range[1] - range[0]) < vecgeom::kToleranceStrict<Real_t>; }
+  // Normalize the angle such that start is in [0, 2*pi) and end >= start
+  void Normalize()
+  {
+    range[0] = std::fmod(range[0], vecgeom::kTwoPi) + vecgeom::kTwoPi * (range[0] < Real_t(0));
+    range[1] = std::fmod(range[1], vecgeom::kTwoPi) + vecgeom::kTwoPi * (range[1] < Real_t(0));
+    range[1] += vecgeom::kTwoPi * (range[1] - range[0] < vecgeom::kToleranceStrict<Real_t>);
+  }
+
+  AngleInterval Next() const { return AngleInterval(range[0] + vecgeom::kTwoPi, range[1] + vecgeom::kTwoPi, false); }
+  AngleInterval Previous() const
+  {
+    return AngleInterval(range[0] - vecgeom::kTwoPi, range[1] - vecgeom::kTwoPi, false);
+  }
+
+  AngleInterval Intersect(AngleInterval const &other)
+  {
+    // Move the other interval left until not larger than this one
+    AngleInterval other_moved = other;
+    while (other_moved > *this)
+      other_moved = other_moved.Previous();
+    // Move the interval right until not smaller than this one
+    while (other_moved < *this)
+      other_moved = other_moved.Next();
+    // No either the moved interval is larger or it overlaps
+    if (other_moved > *this) return AngleInterval(Real_t(0), Real_t(0), false);
+    return AngleInterval(vecCore::math::Max(range[0], other_moved.range[0]),
+                         vecCore::math::Min(range[1], other_moved.range[1]));
+  }
+};
 
 template <typename Real_t>
 struct Circle2D {
@@ -253,7 +486,7 @@ struct Segment2D {
   /// @brief Segment intersection with a circle.
   /// @param circle Circle to check against
   /// @return Intersection result. Can be kEmbedded, kIntersect or kNoIntersect
-  SegmentIntersect Intersect(Circle2D<Real_t> const &circle)
+  SegmentIntersect Intersect(Circle2D<Real_t> const &circle) const
   {
     Vector2D<Real_t> v1 = circle.fC - fP1;
     Vector2D<Real_t> v2 = circle.fC - fP2;
@@ -279,7 +512,7 @@ struct Segment2D {
     return SegmentIntersect::kIntersect;
   }
 
-  bool BoundingBoxOverlap(Segment2D<Real_t> const &other)
+  bool BoundingBoxOverlap(Segment2D<Real_t> const &other) const
   {
     Real_t min_x1 = std::min(fP1.x(), fP2.x());
     Real_t max_x1 = std::max(fP1.x(), fP2.x());
@@ -291,41 +524,38 @@ struct Segment2D {
     Real_t min_y2 = std::min(other.fP1.y(), other.fP2.y());
     Real_t max_y2 = std::max(other.fP1.y(), other.fP2.y());
 
-    return !(max_x1 < min_x2 || max_x2 < min_x1 || max_y1 < min_y2 || max_y2 < min_y1);
+    return !(max_x1 - min_x2 < vecgeom::kToleranceDist<Real_t> || max_x2 - min_x1 < vecgeom::kToleranceDist<Real_t> ||
+             max_y1 - min_y2 < vecgeom::kToleranceDist<Real_t> || max_y2 - min_y1 < vecgeom::kToleranceDist<Real_t>);
   }
 
   /// @brief Intersection with another segment
   /// @param other Other segment
   /// @return Intersection type
-  SegmentIntersect Intersect(Segment2D<Real_t> const &other)
+  SegmentIntersect Intersect(Segment2D<Real_t> const &other) const
   {
     // Return kNoIntersect if one of the segments is degenerated
     if (fDegen || other.fDegen) return SegmentIntersect::kNoIntersect;
-
-    // Perform bounding box overlap check
-    if (!BoundingBoxOverlap(other)) return SegmentIntersect::kNoIntersect;
-
-    auto v12  = other.fP2 - fP1;
+    auto v12  = other.fP1 - fP1;
     auto s    = v12.CrossZ(other.fV);
     auto t    = v12.CrossZ(fV);
     auto norm = fV.CrossZ(other.fV);
-    if (std::abs(norm) < vecgeom::kToleranceDist<Real_t>) {
-      // the segments are parallel
-      if (std::abs(s) < vecgeom::kToleranceDist<Real_t>) {
-        // the segments are colinear
-        auto inv_vsq = Real_t(1) / fV.Dot(fV);
-        auto t1      = inv_vsq * fV.Dot(other.fP1 - fP1);
-        auto t2      = inv_vsq * fV.Dot(other.fP2 - fP1);
+    auto l1   = fV.Length();
+    auto l2   = other.fV.Length();
+    if (std::abs(norm) < 2. * vecCore::math::Max(l1, l2) * vecgeom::kToleranceDist<Real_t>) {
+      // the segments are parallel, but how far
+      if (std::abs(s / other.fV.Length()) < vecgeom::kToleranceDist<Real_t>) {
+        // the segments are colinear -> compute intersection distances with other segment ends
+        auto inv_vsq = l1 / fV.Dot(fV);
+        auto t1      = inv_vsq * fV.Dot(v12);
+        auto t2      = inv_vsq * fV.Dot(v12 + other.fV);
         if (t1 > t2) std::swap(t1, t2);
-        if (t1 > vecgeom::MakeMinusTolerant<true, Real_t>(1) || t2 < vecgeom::MakePlusTolerant<true, Real_t>(0))
-          return SegmentIntersect::kNoIntersect;
-        if (std::abs(t1) < vecgeom::kToleranceDist<Real_t> &&
-            std::abs(t2 - Real_t(1)) < vecgeom::kToleranceDist<Real_t>)
-          return SegmentIntersect::kEqual;
-        if (t1 > vecgeom::MakeMinusTolerant<true, Real_t>(0) && t2 < vecgeom::MakePlusTolerant<true, Real_t>(1))
-          return SegmentIntersect::kEmbedding;
-        if (t1 < vecgeom::MakePlusTolerant<true, Real_t>(0) && t2 > vecgeom::MakeMinusTolerant<true, Real_t>(1))
-          return SegmentIntersect::kEmbedded;
+        // Compute intersection between [0, l1] and [t1, t2]
+        if (ApproxEqual(t1, Real_t(0)) && ApproxEqual(t2, l1)) return SegmentIntersect::kEqual;
+        auto start = std::max(0., t1);
+        auto end   = std::min(l1, t2);
+        if (end - start < vecgeom::kToleranceDist<Real_t>) return SegmentIntersect::kNoIntersect;
+        if (ApproxEqual(start, t1) && ApproxEqual(end, t2)) return SegmentIntersect::kEmbedding;
+        if (ApproxEqual(start, Real_t(0)) && ApproxEqual(end, l1)) return SegmentIntersect::kEmbedded;
         return SegmentIntersect::kOverlap;
       } else
         // The segments are parallel
@@ -333,33 +563,87 @@ struct Segment2D {
     }
 
     // Calculate the intersection points using both segments
-    auto intersectionPoint1 = fP1 + s * fV;
-    auto intersectionPoint2 = other.fP1 + t * other.fV;
+    auto invnorm = 1. / norm;
+    s *= l1 * invnorm;
+    t *= l2 * invnorm;
+    bool outBounds = s < vecgeom::kToleranceDist<Real_t> || (s - l1) > -vecgeom::kToleranceDist<Real_t> ||
+                     t < vecgeom::kToleranceDist<Real_t> || (t - l2) > -vecgeom::kToleranceDist<Real_t>;
 
-    auto PointInSegmentBounds = [](const Vector2D<Real_t> &point, const Segment2D<Real_t> &seg) {
-      return (point.x() >= vecgeom::MakeMinusTolerant<true, Real_t>(std::min(seg.fP1.x(), seg.fP2.x())) &&
-              point.x() <= vecgeom::MakePlusTolerant<true, Real_t>(std::max(seg.fP1.x(), seg.fP2.x())) &&
-              point.y() >= vecgeom::MakeMinusTolerant<true, Real_t>(std::min(seg.fP1.y(), seg.fP2.y())) &&
-              point.y() <= vecgeom::MakePlusTolerant<true, Real_t>(std::max(seg.fP1.y(), seg.fP2.y())));
-    };
+    if (outBounds) return SegmentIntersect::kNoIntersect;
+    return SegmentIntersect::kIntersect;
+  }
+};
 
-    // Check if both intersection points are within the bounds of the respective segments
-    bool isWithinBounds1 =
-        PointInSegmentBounds(intersectionPoint1, *this) && PointInSegmentBounds(intersectionPoint1, other);
-    bool isWithinBounds2 =
-        PointInSegmentBounds(intersectionPoint2, *this) && PointInSegmentBounds(intersectionPoint2, other);
+template <typename Real_t, char N>
+struct Polygon {
+  Point2D<Real_t> fVert[N]; ///< vector of vertices
+  Polygon(Point2D<Real_t> const vertices[N])
+  {
+    for (auto i = 0; i < int(N); ++i)
+      fVert[i] = vertices[i];
+  }
 
-    if ((isWithinBounds1 != isWithinBounds2)) {
-      VECGEOM_LOG(warning) << " Check for intersection points using segment 1 and segment 2 differ. This should really "
-                              "not be happening! Check for numerical problems.";
+  Polygon(Vector3D<Real_t> const vertices[N])
+  {
+    for (auto i = 0; i < int(N); ++i) {
+      fVert[i][0] = vertices[i][0];
+      fVert[i][1] = vertices[i][1];
     }
+  }
 
-    // If both points are within bounds, consider it an intersection
-    if (isWithinBounds1 && isWithinBounds2) {
-      return SegmentIntersect::kIntersect;
+  Point2D<Real_t> GetCenter() const
+  {
+    Point2D<Real_t> center;
+    for (auto i = 0; i < int(N); ++i)
+      center += fVert[i];
+    center *= Real_t(1.) / N;
+    return center;
+  }
+
+  /// @brief Detect disjointness with another polygon
+  /// @tparam M Number of vertices of the other polygon
+  /// @param other Other polygon
+  /// @return Intersection type: kIntersect or kNoIntersect
+  template <char M>
+  FrameIntersect Intersect(Polygon<Real_t, M> const &other) const
+  {
+    // Loop over segments of this polygon
+    int noverlaps = 0;
+    for (auto i = 0; i < int(N); ++i) {
+      Segment2D<Real_t> crt{fVert[i], fVert[(i + 1) % N]};
+      // Intersect with all segments of the other polygon
+
+      for (auto j = 0; j < int(M); ++j) {
+        Segment2D<Real_t> ocrt{other.fVert[j], other.fVert[(j + 1) % M]};
+        auto intersect = crt.Intersect(ocrt);
+        // segment intersections means polygon intersection
+        if (intersect == SegmentIntersect::kIntersect) return FrameIntersect::kIntersect;
+        // anything else but kNoIntersect means segment overlapping
+        noverlaps += intersect != FrameIntersect::kNoIntersect;
+        // more than two segment overlaps means polygon intersection
+        if (noverlaps > 1) return FrameIntersect::kIntersect;
+      }
     }
+    // The polygones survived the intersection check, but the user needs to check embedding
+    return FrameIntersect::kNoIntersect;
+  }
 
-    // No intersection in range
+  /// @brief Polygon intersection with a circle
+  /// @param circle Circle to check for intersection
+  /// @return Intersection type
+  FrameIntersect Intersect(Circle2D<Real_t> const &circle) const
+  {
+    bool intersect = false;
+    bool embedded  = false;
+    for (auto i = 0; i < int(N); ++i) {
+      Segment2D<Real_t> crt{fVert[i], fVert[(i + 1) % N]};
+      // Intersect with the circle
+      auto intersect_type = crt.Intersect(circle);
+      embedded &= intersect_type == SegmentIntersect::kEmbedded;
+      intersect |= intersect_type == SegmentIntersect::kIntersect;
+    }
+    if (intersect) return SegmentIntersect::kIntersect;
+    if (embedded) return SegmentIntersect::kEmbedded;
     return SegmentIntersect::kNoIntersect;
   }
 };
@@ -545,66 +829,6 @@ struct Arb4Data {
   }
 };
 
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE bool ApproxEqual(Real_t t1, Real_t t2)
-{
-  return std::abs(t1 - t2) <= vecgeom::kToleranceDist<Real_t>;
-}
-
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector(Vector3D<Real_t> const &v1, Vector3D<Real_t> const &v2)
-{
-  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]) && ApproxEqual(v1[2], v2[2]);
-}
-
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE bool ApproxEqualVector2(Vector2D<Real_t> const &v1, Vector2D<Real_t> const &v2)
-{
-  return ApproxEqual(v1[0], v2[0]) && ApproxEqual(v1[1], v2[1]);
-}
-
-template <typename Real_t>
-bool ApproxEqualTransformation(const vecgeom::Transformation3DMP<Real_t> &t1,
-                               const vecgeom::Transformation3DMP<Real_t> &t2)
-{
-  if (!ApproxEqualVector(t1.Translation(), t2.Translation())) return false;
-  for (int i = 0; i < 9; ++i)
-    if (!ApproxEqual(t1.Rotation(i), t2.Rotation(i))) return false;
-  return true;
-}
-
-/// @brief Truncate a value to as many significant digits as a given tolerance.
-///  For example, if the tolerance is 1e-9, truncate the vlaue to 9 significant digits
-/// @tparam Real_t Precision type
-/// @param x Value to truncate
-/// @param tolerance Tolerance with as many significant digits as the truncation result
-/// @return Truncated value
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t TruncateValue(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
-{
-  auto div = std::abs(x);
-  while (int(div) > 0) {
-    div /= 10;
-    tolerance *= 10;
-  }
-  return tolerance * std::lround(x / tolerance);
-}
-
-/// @brief Return the rounding error of a value, assuming as many significant digits as a provided tolerance
-/// @tparam Real_t Precision type
-/// @param x Value subject to rounding
-/// @param tolerance Tolerance with as many significant digits as the truncation result
-/// @return Truncation error
-template <typename Real_t>
-VECCORE_ATT_HOST_DEVICE Real_t RoundingError(Real_t x, Real_t tolerance = vecgeom::kToleranceDist<Real_t>())
-{
-  auto div = std::abs(x);
-  while (int(div) > 0) {
-    div /= 10;
-    tolerance *= 10;
-  }
-  return tolerance;
-}
 /// @brief Data for torus surfaces
 /// @tparam Real_t Storage type
 /// @tparam Real_s Interface type

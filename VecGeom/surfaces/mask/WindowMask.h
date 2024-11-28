@@ -13,6 +13,7 @@ namespace vgbrep {
 /// @tparam Real_t Precision type
 template <typename Real_t>
 struct WindowMask {
+  using value_type = Real_t;
   Range<Real_t> rangeU; ///< Rectangle limits on x axis.
   Range<Real_t> rangeV; ///< Rectangle limits on y axis.
 
@@ -33,6 +34,20 @@ struct WindowMask {
       : rangeU(static_cast<Real_t>(other.rangeU[0]), static_cast<Real_t>(other.rangeU[1])),
         rangeV(static_cast<Real_t>(other.rangeV[0]), static_cast<Real_t>(other.rangeV[1]))
   {
+  }
+
+  /// @brief Get the half-size of the window as Vector2D
+  /// @return Half-size
+  Vector2D<Real_t> GetHalfSize() const
+  {
+    return Vector2D<Real_t>(0.5 * (rangeU[1] - rangeU[0]), 0.5 * (rangeV[1] - rangeV[0]));
+  }
+
+  /// @brief Get the center of the box as Vector2D
+  /// @return Center vector
+  Vector2D<Real_t> GetCenter() const
+  {
+    return Vector2D<Real_t>(0.5 * (rangeU[1] + rangeU[0]), 0.5 * (rangeV[1] + rangeV[0]));
   }
 
   /// @brief Fills the 3D extent of the window
@@ -93,9 +108,22 @@ struct WindowMask {
   /// @return Safe distance
   Real_t SafetyInside(Vector3D<Real_t> const &local) const
   {
-    Real_t sx = vecCore::math::Min(local[0] - rangeU[0], rangeU[1] - local[0]);
-    Real_t sy = vecCore::math::Max(local[1] - rangeV[0], rangeV[1] - local[1]);
-    return vecCore::math::Min(sx, sy);
+    Vector2D<Real_t> point(local[0], local[1]);
+    point -= GetCenter();
+    Real_t safety = (GetHalfSize() - point.Abs()).Min();
+    return safety;
+  }
+
+  /// @brief Safe distance from a point assumed outside the window
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyOutside(Vector3D<Real_t> const &local) const
+  {
+    Vector2D<Real_t> point(local[0], local[1]);
+    point -= GetCenter();
+    Real_t safety = (point.Abs() - GetHalfSize()).Max();
+    return safety;
   }
 };
 

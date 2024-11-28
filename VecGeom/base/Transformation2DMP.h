@@ -231,6 +231,13 @@ public:
     fHasRotation    = false;
     fHasTranslation = false;
   }
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Real_s Determinant() const { return (rxx_ * ryy_ - rxy_ * ryx_); }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool IsReflected() const { return (Determinant() < Real_s(0)); }
 
   int MemorySize() const { return sizeof(*this); }
 
@@ -657,10 +664,9 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_s> Transformation2DMP
 template <typename Real_s>
 std::ostream &operator<<(std::ostream &os, Transformation2DMP<Real_s> const &trans)
 {
-  os << "TransformationMP {" << trans.Translation() << ", "
-     << "(" << trans.Rotation(0) << ", " << trans.Rotation(1) << ", " << trans.Rotation(2) << ", " << trans.Rotation(3)
-     << ")}"
-     << "; identity(" << trans.IsIdentity() << "); rotation(" << trans.HasRotation() << ")";
+  os << "TransformationMP {" << trans.Translation() << ", " << "(" << trans.Rotation(0) << ", " << trans.Rotation(1)
+     << ", " << trans.Rotation(2) << ", " << trans.Rotation(3) << ")}" << "; identity(" << trans.IsIdentity()
+     << "); rotation(" << trans.HasRotation() << ")";
   return os;
 }
 }

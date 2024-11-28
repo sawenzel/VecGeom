@@ -3,6 +3,7 @@
 
 #include <VecGeom/surfaces/base/CommonTypes.h>
 #include <VecGeom/surfaces/Model.h>
+#include <set>
 
 namespace vgbrep {
 
@@ -77,7 +78,7 @@ struct SideDivisionCPU {
   double fStepV{0.};                 ///< Division step on secondary axis (if any)
   unsigned short fNslices{0};        ///< Total number of slices
   unsigned short fNslicesU{0};       ///< Number of slices on primary division axis
-  unsigned short fNslicesV{0};       ///< Number of slices on secondary division axis
+  unsigned short fNslicesV{1};       ///< Number of slices on secondary division axis (if no axis this must be 1)
   AxisType fAxis{AxisType::kNoAxis}; ///< Division axis
   std::vector<VecInt_t> fSlices;     ///< Array of slices
 
@@ -112,6 +113,52 @@ struct SideDivisionCPU {
     }
   }
 
+  /// @brief Get the indices of the slices intersected by a bounding box
+  /// @param amin lower bbox corner
+  /// @param amax upper bbox corner
+  /// @param umin lower first index
+  /// @param umax upper first index
+  /// @param vmin lower second index
+  /// @param vmax upper second index
+  /// @return number of crossed slices
+  int GetNslices(Vector3D<double> const &amin, Vector3D<double> const &amax, int &umin, int &umax, int &vmin,
+                 int &vmax) const
+  {
+    umin = umax = vmin = vmax = 0;
+    switch (fAxis) {
+    case AxisType::kXY: {
+      umin = std::max(0, int((amin[0] - fStartU) / fStepU));
+      if (umin >= fNslicesU) return 0;
+      umax = std::min(fNslicesU - 1, int((amax[0] - fStartU) / fStepU));
+      if (umax < 0) return 0;
+      vmin = std::max(0, int((amin[1] - fStartV) / fStepV));
+      if (vmin >= fNslicesV) return 0;
+      vmax = std::min(fNslicesV - 1, int((amax[1] - fStartV) / fStepV));
+      if (vmax < 0) return 0;
+      return (umax - umin + 1) * (vmax - vmin + 1);
+    }
+    case AxisType::kR: {
+      auto rmin = amin[0];
+      auto rmax = amax[0];
+      umin      = std::max(0, int((rmin - fStartU) / fStepU));
+      if (umin >= fNslices) return 0;
+      umax = std::min(fNslices - 1, int((rmax - fStartU) / fStepU));
+      if (umax < 0) return 0;
+      return (umax - umin + 1);
+    }
+    case AxisType::kPhi: {
+      VECGEOM_LOG(error) << "GetNdlices not supported for phi division";
+      return 0;
+    }
+    default:
+      umin = std::max(0, int((amin[fAxis] - fStartU) / fStepU));
+      if (umin >= fNslices) return 0;
+      umax = std::min(fNslices - 1, int((amax[fAxis] - fStartU) / fStepU));
+      if (umax < 0) return 0;
+      return (umax - umin + 1);
+    }
+  }
+
   void AddCandidate(int icand, double umin, double umax, double vmin, double vmax)
   {
     int istartU = (umin - fStartU - vecgeom::kToleranceDist<double>) / fStepU;
@@ -126,8 +173,10 @@ struct SideDivisionCPU {
     }
   }
 
+  const VecInt_t *GetSlice(int u, int v) const { return &fSlices[u * fNslicesV + v]; }
+
   template <typename Real_t>
-  void CopyTo(SideDivision<Real_t> &div, SliceCand *slices, int *candidates)
+  void CopyTo(SideDivision<Real_t> &div, SliceCand *slices, int *candidates) const
   {
     div.fStartU   = fStartU;
     div.fStepU    = fStepU;
@@ -328,20 +377,22 @@ public:
   TorusData_t const &GetTorusData(int id) const { return fTorusData[id]; }
   Arb4Data_t const &GetArb4Data(int id) const { return fArb4Data[id]; }
 
-  /// @brief Trampoline function to to the frame embedding checker
+  /// @brief Trampoline function to to the frame checker
   /// @param f1 Parent framed surface
   /// @param f2 Child framed surface
-  /// @return Child is embedded in parent
-  bool IsEmbedding(FramedSurface<Real_t, TransformationMP<Real_t>> const &f1,
-                   FramedSurface<Real_t, TransformationMP<Real_t>> const &f2)
+  /// @return Parent frame classification with respect to child
+  FrameIntersect CheckFrames(FramedSurface<Real_t, TransformationMP<Real_t>> const &f1,
+                             FramedSurface<Real_t, TransformationMP<Real_t>> const &f2,
+                             TransformationMP<Real_t> *tscene = nullptr)
   {
     auto log_not_supported = [&]() {
       VECGEOM_LOG(error) << "Embedding check " << to_cstring(f1.fFrame.type) << " - " << to_cstring(f2.fFrame.type)
                          << " not supported";
     };
-    TransformationMP<Real_t> const &t1 = f1.fTrans;
-    TransformationMP<Real_t> const &t2 = f2.fTrans;
-    TransformationMP<Real_t> trans     = t2 * t1.Inverse();
+    TransformationMP<Real_t> t1 = f1.fTrans;
+    TransformationMP<Real_t> t2 = f2.fTrans;
+    if (tscene) t2 *= (*tscene);
+    TransformationMP<Real_t> trans = t2 * t1.Inverse();
     trans.SetProperties();
 
     switch (f1.fFrame.type) {
@@ -350,19 +401,19 @@ public:
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
         RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
-        return FrameChecker<Real_t, RingMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, RingMask_t, RingMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
         WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
-        return FrameChecker<Real_t, RingMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, RingMask_t, WindowMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
         TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
-        return FrameChecker<Real_t, RingMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, RingMask_t, TriangleMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
         QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
-        return FrameChecker<Real_t, RingMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, RingMask_t, QuadMask_t>::CheckFrames(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -374,7 +425,7 @@ public:
       switch (f2.fFrame.type) {
       case FrameType::kZPhi: {
         ZPhiMask_t const mask2 = GetZPhiMask(f2.fFrame.id);
-        return FrameChecker<Real_t, ZPhiMask_t, ZPhiMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, ZPhiMask_t, ZPhiMask_t>::CheckFrames(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -386,19 +437,19 @@ public:
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
         RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
-        return FrameChecker<Real_t, WindowMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, WindowMask_t, RingMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
         WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
-        return FrameChecker<Real_t, WindowMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, WindowMask_t, WindowMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
         TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
-        return FrameChecker<Real_t, WindowMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, WindowMask_t, TriangleMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
         QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
-        return FrameChecker<Real_t, WindowMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, WindowMask_t, QuadMask_t>::CheckFrames(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -410,19 +461,19 @@ public:
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
         RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
-        return FrameChecker<Real_t, TriangleMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, TriangleMask_t, RingMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
         WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
-        return FrameChecker<Real_t, TriangleMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, TriangleMask_t, WindowMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
         TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
-        return FrameChecker<Real_t, TriangleMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, TriangleMask_t, TriangleMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
         QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
-        return FrameChecker<Real_t, TriangleMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, TriangleMask_t, QuadMask_t>::CheckFrames(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -434,19 +485,19 @@ public:
       switch (f2.fFrame.type) {
       case FrameType::kRing: {
         RingMask_t const mask2 = GetRingMask(f2.fFrame.id);
-        return FrameChecker<Real_t, QuadMask_t, RingMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, QuadMask_t, RingMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kWindow: {
         WindowMask_t const mask2 = GetWindowMask(f2.fFrame.id);
-        return FrameChecker<Real_t, QuadMask_t, WindowMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, QuadMask_t, WindowMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kTriangle: {
         TriangleMask_t const mask2 = GetTriangleMask(f2.fFrame.id);
-        return FrameChecker<Real_t, QuadMask_t, TriangleMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, QuadMask_t, TriangleMask_t>::CheckFrames(mask1, mask2, trans);
       }
       case FrameType::kQuadrilateral: {
         QuadMask_t const mask2 = GetQuadMask(f2.fFrame.id);
-        return FrameChecker<Real_t, QuadMask_t, QuadMask_t>::IsEmbedding(mask1, mask2, trans);
+        return FrameChecker<Real_t, QuadMask_t, QuadMask_t>::CheckFrames(mask1, mask2, trans);
       }
       default:
         log_not_supported();
@@ -456,7 +507,7 @@ public:
     default:
       log_not_supported();
     };
-    return false;
+    return FrameIntersect::kNoIntersect;
   }
 };
 

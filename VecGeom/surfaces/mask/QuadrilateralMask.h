@@ -13,6 +13,7 @@ namespace vgbrep {
 /// @tparam Real_t Precision type
 template <typename Real_t>
 struct QuadrilateralMask {
+  using value_type = Real_t;
   Point2D<Real_t> p_[4] = {Real_t(0)}; ///< 2D coordinates of the vertices.
   Point2D<Real_t> n_[4] = {Real_t(0)}; ///< 2D coordinates of the outwards normals to segments
 
@@ -123,19 +124,6 @@ struct QuadrilateralMask {
     valid = true;
     Vector2D<Real_t> const local2D(local.x(), local.y());
     Real_t safety = safetySurf;
-
-    // lambda to compute distance to segment i
-    auto distanceToSegmentSquared = [&](int i) {
-      int j     = (i + 1) % 4;
-      auto line = p_[j] - p_[i];
-      auto pvec = local2D - p_[i];
-      auto dot0 = line.Dot(pvec);
-      if (dot0 <= 0) return pvec.Mag2();
-      auto dot1 = line.Mag2();
-      if (dot1 <= dot0) return (local2D - p_[j]).Mag2();
-      return ((dot0 / dot1) * line - pvec).Mag2();
-    };
-
     bool withinBound[4];
     for (int i = 0; i < 4; ++i) {
       withinBound[i] = n_[i].Dot(local2D - p_[i]) <= 0;
@@ -144,40 +132,40 @@ struct QuadrilateralMask {
 
     Real_t dseg_squared = vecgeom::InfinityLength<Real_t>();
     for (int i = 0; i < 4; ++i) {
-      if (!withinBound[i]) {
-        dseg_squared = vecCore::math::Min(dseg_squared, distanceToSegmentSquared(i));
-      }
+      if (!withinBound[i])
+        dseg_squared = vecCore::math::Min(dseg_squared, DistanceToSegmentSquared(local2D, p_[i], p_[(i + 1) % 4]));
     }
     safety = vecCore::math::Sqrt(dseg_squared + safetySurf * safetySurf);
 
     return safety;
   }
 
-  /// @brief Safe distance from a point assumed inside the window
+  /// @brief Safe distance from a point assumed inside the quadrilateral
   /// @details Used on host only for frame checks
   /// @param local Projected point in local coordinates
   /// @return Safe distance
   Real_t SafetyInside(Vector3D<Real_t> const &local) const
   {
-    if (Inside(local) == false) return -vecgeom::InfinityLength<Real_t>();
-
+    if (Inside(local) == false) return Real_t(0);
     Vector2D<Real_t> const local2D(local.x(), local.y());
-
-    // lambda to compute distance to segment i (similar for triangles and quads, to be joined?)
-    auto distanceToSegmentSquared = [&](int i) {
-      int j     = (i + 1) % 4;
-      auto line = p_[j] - p_[i];
-      auto pvec = local2D - p_[i];
-      auto dot0 = line.Dot(pvec);
-      if (dot0 <= 0) return pvec.Mag2();
-      auto dot1 = line.Mag2();
-      if (dot1 <= dot0) return (local2D - p_[j]).Mag2();
-      return ((dot0 / dot1) * line - pvec).Mag2();
-    };
-
     Real_t safety_squared = vecgeom::InfinityLength<Real_t>();
     for (int i = 0; i < 4; ++i) {
-      safety_squared = vecCore::math::Min(safety_squared, distanceToSegmentSquared(i));
+      safety_squared = vecCore::math::Min(safety_squared, DistanceToSegmentSquared(local2D, p_[i], p_[(i + 1) % 4]));
+    }
+    return vecCore::math::Sqrt(safety_squared);
+  }
+
+  /// @brief Safe distance from a point assumed outside the quadrilateral
+  /// @details Used on host only for frame checks
+  /// @param local Projected point in local coordinates
+  /// @return Safe distance
+  Real_t SafetyOutside(Vector3D<Real_t> const &local) const
+  {
+    if (Inside(local) == true) return Real_t(0);
+    Vector2D<Real_t> const local2D(local.x(), local.y());
+    Real_t safety_squared = vecgeom::InfinityLength<Real_t>();
+    for (int i = 0; i < 3; ++i) {
+      safety_squared = vecCore::math::Min(safety_squared, DistanceToSegmentSquared(local2D, p_[i], p_[(i + 1) % 4]));
     }
     return vecCore::math::Sqrt(safety_squared);
   }

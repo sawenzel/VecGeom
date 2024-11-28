@@ -94,7 +94,7 @@ VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(
 
 /// @brief Find the topmost exited frame on the common surface pointed by crossed_surf
 /// @param crossed_surf Locator of the first frame to be checked
-/// @param inframe The first checked frame is known to be hit
+/// @param frame_hit The first checked frame is known to be hit
 /// @param point Global point
 /// @param direction Global direction
 /// @param distance Distance from global point to the surface
@@ -104,15 +104,17 @@ VECCORE_ATT_HOST_DEVICE bool IsExitingFrame(
 /// @param exiting_scene Output: The exited frame has a TOP_SCENE state
 /// @param surf_index Output: Surface index of the topmost exited frame
 /// @param crossed_surf Output: Locator of the crossed framed surface, including the state after exiting
+/// @param traversal Output: traversal frame index on the other side of the crossed surface
 /// @return A frame was exited
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool frame_hit, Vector3D<Real_t> const &point,
                                                 Vector3D<Real_t> const &direction, Real_t distance,
                                                 Vector3D<Real_t> const &onsurf, SurfData<Real_t> const &surfdata,
-                                                bool &exiting_scene, int &surf_index)
+                                                bool &exiting_scene, int &surf_index, int &traversal)
 {
   constexpr NavIndex_t kInvalidState = NavIndex_t(-1);
 
+  traversal                 = -3; // not known
   int isurf                 = crossed_surf.GetCSindex();
   auto const &surf          = surfdata.fCommonSurfaces[isurf];
   bool left_side            = crossed_surf.IsLeftSide();
@@ -128,9 +130,14 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
   int frameind_start = crossed_surf.frame_id;
   // If the current touchable is exited on this surface, it MUST be through the inside of the
   // corresponding frames. Loop all frames coming from the same touchable
-  bool inframe   = frame_hit;
-  int parent_ind = -1;
-  bool embedded  = true;
+  bool inframe       = frame_hit;
+  int parent_ind     = -1;
+  bool embedded      = true;
+  bool traversal_set = false;
+  if (frame_hit) {
+    traversal     = exit_side.GetSurface(frameind_start, surfdata).fTraversal;
+    traversal_set = true;
+  }
 
   NavIndex_t last_bool_state = kInvalidState; // last checked Boolean state exited
   auto exited_state          = state;
@@ -152,6 +159,10 @@ VECCORE_ATT_HOST_DEVICE bool CheckFramesExiting(FSlocator &crossed_surf, bool fr
     exiting_scene = is_scene_surface && (framed_surf.fState == 0);
     embedded      = framed_surf.fEmbedded;
     crossed_surf.Set(isurf, ind, left_side);
+    if (!traversal_set) {
+      traversal     = framed_surf.fTraversal;
+      traversal_set = true;
+    }
   };
 
   for (SideIterator it(exit_side, onsurf_crt, surfdata, 1, frameind_start); !it.Done(); ++it) {
@@ -640,7 +651,7 @@ VECCORE_ATT_HOST_DEVICE int ReLocatePointIn(vecgeom::NavigationState &starting_p
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> const &point,
                                      Vector3D<Real_t> const &direction, Real_t hit_dist,
-                                     Vector3D<Real_t> const &onsurf_local, FSlocator &out_frame)
+                                     Vector3D<Real_t> const &onsurf_local, FSlocator &out_frame, int traversal)
 {
   constexpr Real_t kPushDistance = 1000 * vecgeom::kTolerance;
   auto const &surfdata           = SurfData<Real_t>::Instance();
@@ -653,10 +664,35 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
                                  : point + (hit_dist + vecgeom::kRelTolerance<Real_t>(hit_dist + point.Mag())) * direction;
   auto const &surf_crossed = surfdata.GetCommonSurface(hit_frame);
   auto const &enter_side   = surfdata.GetSide(hit_frame);
-  int iframe = FindFrameOnEnteringSide(enter_side, in_state, in_navind, is_scene, surf_crossed.IsSceneSurface(),
-                                       onsurf_local, pushed_point, surfdata, hit_frame.frame_id);
+  // The task now is either to find the deepest frame knowing the hit frame, or to fully relocate on the entering side
+  bool relocate = hit_frame.GetFSindex() < 0;
+  int iframe    = -1;
+// #define SURF_DEBUG_TRAVERSALS
+#ifndef SURF_DEBUG_TRAVERSALS
+  if (relocate && traversal > -2) {
+    iframe = traversal;
+  } else
+#endif
+    iframe = FindFrameOnEnteringSide(enter_side, in_state, in_navind, is_scene, surf_crossed.IsSceneSurface(),
+                                     onsurf_local, pushed_point, surfdata, hit_frame.frame_id);
   out_frame.Set(hit_frame.GetCSindex(), iframe, hit_frame.IsLeftSide());
   out_frame.state = in_state;
+#ifdef SURF_DEBUG_TRAVERSALS
+  if (relocate) {
+    if (iframe < 0) {
+      if (traversal > -1)
+        printf("Error on CS=%d leftside=%d frame=%d transition=%d   -> no hit\n", hit_frame.GetCSindex(),
+               hit_frame.IsLeftSide(), hit_frame.GetFSindex(), traversal);
+      assert(traversal <= -1);
+    }
+    if ((traversal == -1 && iframe > -1) || (traversal > -1 && iframe != traversal)) {
+      printf("Error on CS=%d leftside=%d frame=%d transition=%d   ->   CS=%d leftside=%d found frame %d\n",
+             hit_frame.GetCSindex(), !hit_frame.IsLeftSide(), hit_frame.GetFSindex(), traversal, out_frame.GetCSindex(),
+             out_frame.IsLeftSide(), iframe);
+      assert((traversal == -1 && iframe == -1) || (traversal > -1 && iframe == traversal));
+    }
+  }
+#endif
   if (iframe < 0) return false;
   while (iframe >= 0) {
     auto const &framedsurf = surfdata.GetFramedSurface(out_frame);
@@ -717,9 +753,10 @@ VECCORE_ATT_HOST_DEVICE bool ExitCS(FSlocator &hit_frame, bool is_hit, Vector3D<
 {
   auto const &surfdata = SurfData<Real_t>::Instance();
   int surf_index       = 0;
+  int traversal        = -2;
   auto exiting_scene   = false;
   auto inframe         = CheckFramesExiting(hit_frame, is_hit, point, direction, hit_dist, onsurf_local, surfdata,
-                                            exiting_scene, surf_index);
+                                            exiting_scene, surf_index, traversal);
   if (!inframe) return false;
   // the current state is correctly exited, so there is a transition on this surface
   auto &out_state          = out_frame.state;
@@ -740,7 +777,7 @@ VECCORE_ATT_HOST_DEVICE bool ExitCS(FSlocator &hit_frame, bool is_hit, Vector3D<
     hit_FS.state          = out_state;
     auto local_propagated = scene_trans.Transform(point + hit_dist * direction);
     inframe               = CheckFramesExiting(hit_FS, /*frame_hit=*/true, point, direction, hit_dist, onsurf, surfdata,
-                                               exiting_scene, surf_index);
+                                               exiting_scene, surf_index, traversal);
     isurfcross            = hit_FS.GetCSindex();
     relocated_left_side   = !hit_FS.IsLeftSide();
     out_state             = hit_FS.state;
@@ -754,7 +791,7 @@ VECCORE_ATT_HOST_DEVICE bool ExitCS(FSlocator &hit_frame, bool is_hit, Vector3D<
   if (surfdata.GetSide(hit_frame).fNsurf == 0) return true;
   hit_frame.state = out_state;
   // Seek and cross entering frames
-  EnterCS(hit_frame, point, direction, hit_dist, onsurf, out_frame);
+  EnterCS(hit_frame, point, direction, hit_dist, onsurf, out_frame, traversal);
   return true;
 }
 
@@ -797,7 +834,7 @@ VECCORE_ATT_HOST_DEVICE Real_t DistanceToLocalFS(vecgeom::Vector3D<Real_t> const
   if (!surfhit) return dist;
   // Do the frame intersection using the propagated point on surface
   auto onsurf = local + localdir * dist;
-  if (!framedsurf.fNeverCheck) surfhit     = framedsurf.fFrame.Inside(onsurf, surfdata);
+  if (!framedsurf.fNeverCheck) surfhit = framedsurf.fFrame.Inside(onsurf, surfdata);
   if (!surfhit) return dist;
   // If the frame belongs to a Boolean, we need to check if the solid is really exited/entered
   if (framedsurf.fLogicId) {
@@ -1022,7 +1059,7 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
       // Bootstrap the temporary frame locator with the hit CS side
       tmp_hit_FS.Set(isurf, -1, left_side);
       tmp_hit_FS.state = in_state;
-      EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame);
+      EnterCS(tmp_hit_FS, point, direction, dist, onsurf_crt, out_frame, -2);
       return tmp_hit_FS.frame_id;
     };
     auto iframe = EnterFrameCheck(left_side, onsurf_crt, dist);

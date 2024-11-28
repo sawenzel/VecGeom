@@ -15,6 +15,7 @@ struct ZPhiMask {
   //// isFullCirc         -> Does the phi cut exist here?
   //// vecSPhi, vecEPhi   -> Cartesian coordinates of vectors that delimit phi-cut
 
+  using value_type = Real_t;
   Range<Real_t> rangeZ;        ///< Limits on the z-axis.
   Real_t r0;                   ///< Radius at z = 0
   Real_t invcalf;              ///< Inverse of the cosine of the surface angle with respect to z axis

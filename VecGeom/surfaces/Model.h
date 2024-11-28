@@ -300,6 +300,10 @@ struct FramedSurface {
   Frame fFrame;                     ///< Frame
   Transformation_t fTrans;  ///< 3D Transformation of the surface in the compacted sub-hierarchy top volume frame or 2D
                             ///< transformation of the frame with respect to its common surface
+  int fTraversal{-2};       ///< Pre-computed traversal surface on the other side
+                            ///<   -2       = unknown
+                            ///<   -1       = no frame on the other side
+                            ///<    i       = frame index on the other side
   int fParent{-1};          ///< Index of the first parent frame on the common surface
   int fLogicId{0};          ///< Logic flag for surface:
                             ///<   0        = non-Bool
@@ -326,8 +330,8 @@ struct FramedSurface {
 
   template <typename Real_i>
   FramedSurface(const FramedSurface<Real_i, TransformationMP<Real_i>> &other)
-      : fSurface(other.fSurface), fFrame(other.fFrame), fTrans(other.fTrans), fParent(other.fParent),
-        fLogicId(other.fLogicId), fSceneCS(other.fSceneCS), fSceneCSind(other.fSceneCSind),
+      : fSurface(other.fSurface), fFrame(other.fFrame), fTrans(other.fTrans), fTraversal(other.fTraversal),
+        fParent(other.fParent), fLogicId(other.fLogicId), fSceneCS(other.fSceneCS), fSceneCSind(other.fSceneCSind),
         fSurfIndex(other.fSurfIndex), fState(other.fState), fNeverCheck(other.fNeverCheck), fEmbedded(other.fEmbedded),
         fEmbedding(other.fEmbedding), fOverlapping(other.fOverlapping), fVirtualParent(other.fVirtualParent),
         fSkipConvexity(other.fSkipConvexity)
@@ -499,9 +503,9 @@ struct Side {
 
 template <typename Real_t, typename Real_i>
 struct SideIterator {
-  SliceCand *fSlice{nullptr}; ///< Division slice to be iterated
-  int fNsurf{0};              ///< number of surfaces to iterate
-  int fCrt{0};                ///< Current index
+  SliceCand const *fSlice{nullptr}; ///< Division slice to be iterated
+  int fNsurf{0};                    ///< number of surfaces to iterate
+  int fCrt{0};                      ///< Current index
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
