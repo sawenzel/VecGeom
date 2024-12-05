@@ -50,7 +50,7 @@ public:
     assert(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
 #endif
     Precision output = kInfLength;
-    Implementation::template DistanceToOut(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max,
+    Implementation::template DistanceToOut<>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max,
                                            output);
 
 // detect -inf responses which are often an indication for a real bug
