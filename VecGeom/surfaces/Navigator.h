@@ -1100,15 +1100,19 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeStepAndHit(vecgeom::Vector3D<Real_t> const
 /// @return Distance to next surface
 template <typename Real_i, typename Real_t>
 VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &point_i,
-                                             vecgeom::NavigationState const &in_state, int &closest_surf)
+                                             vecgeom::NavigationState const &in_state, int &closest_surf,
+                                             Real_i limit = vecgeom::InfinityLength<Real_i>())
 {
   constexpr char kLside = 0x01;
   constexpr char kRside = 0x02;
   using vecgeom::NavigationState;
+  Real_t safety_far = vecgeom::InfinityLength<Real_t>(); // safety to a bbox found farther than the search limit
+  bool found{false}, found_far{false};
+
   auto const &surfdata = SurfData<Real_t>::Instance();
   vecgeom::Vector3D<Real_t> point(point_i);
   closest_surf         = 0;
-  int last_logic_volid = 0;
+  int last_logic_volid = -1;
   Real_t safety        = vecgeom::InfinityLength<Real_t>();
   if (in_state.GetNavIndex() == 0) return safety;
   Vector3D<Real_t> onsurf;
@@ -1127,18 +1131,15 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
     bool validSafety = true;
     int isurf        = cand[icand];
     if (isurf == 0) continue;
-    auto const &surf     = surfdata.fCommonSurfaces[isurf];
-    auto const &topframe = surfdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]];
-    // Skip already checked logic surfaces. (TO REVIEW AFTER THE CHANGE to SIDES)
-    if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
+    auto const &surf = surfdata.fCommonSurfaces[isurf];
 
     // Convert point to surface frame
     auto const &trans      = surf.fTrans;
     Vector3D<Real_t> local = trans.Transform(local_scene);
     Vector3D<Real_t> onsurf_crt;
-    Real_t safety_surf;
-    bool flipped  = false;
-    auto unplaced = surfdata.GetUnplaced(isurf, flipped);
+    Real_t safety_surf = vecgeom::InfinityLength<Real_t>();
+    bool flipped       = false;
+    auto unplaced      = surfdata.GetUnplaced(isurf, flipped);
 
     // left_side is the side which defines the exit normal
     char sides            = cand.fSides[icand];
@@ -1158,10 +1159,16 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
       // Note: only one side can have a valid safety
       left_side   = false;
       visibility  = flipped;
-      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
+      safety_surf = -safety_surf;
+      can_compute = true;
     }
 
     if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t> || safety_surf >= safety) continue;
+    if (safety_surf > limit) {
+      found_far  = true;
+      safety_far = vecCore::math::Min(safety_surf, safety_far);
+      continue;
+    }
 
     // This is an exiting surface for in_state
     // Only check the frame of the current state on this surface
@@ -1171,42 +1178,34 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
     auto const &exit_side  = left_side ? surf.fLeftSide : surf.fRightSide;
     int frameind           = cand.fFrameInd[icand]; // index of framed surface on the side
     auto const &framedsurf = exit_side.GetSurface(frameind, surfdata);
+    // Skip already checked logic surfaces.
+    // if (framedsurf.fLogicId && last_logic_volid == framedsurf.VolumeId()) continue;
     // Check if the exited frame safety is needed at all
     auto safetyFrame = safety_surf;
     // We need to compute also the safety of the projection of the point on surface to the frame
-    safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
-    if (validSafety && safety > safetyFrame) {
-      // If Boolean surface, compute only once safety for the entire volume shell
-      if (framedsurf.fLogicId) {
-        Real_t safetyLogic = LogicSafety(point, true, NavigationState{framedsurf.fState}, surfdata, safety);
-        last_logic_volid   = vecgeom::NavigationState::GetLogicalIdImpl(framedsurf.fState);
-        if (safety > safetyLogic) {
-          safety       = safetyLogic;
-          closest_surf = isurf;
-        }
-      } else {
-        safety       = safetyFrame;
+    if (!framedsurf.fNeverCheck) safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
+    if (validSafety) {
+      // The distance to the unplaced is valid, so mark as found
+      found = true;
+      if (safetyFrame < safety) {
         closest_surf = isurf;
+        safety       = safetyFrame;
       }
     }
   }
 
   // Now check the entering candidates
   for (auto icand = cand.fNExiting; icand < cand.fNcand; ++icand) {
-    bool validSafety     = true;
-    int isurf            = vecCore::math::Abs(cand[icand]);
-    auto const &surf     = surfdata.fCommonSurfaces[isurf];
-    auto const &topframe = surfdata.fFramedSurf[surf.fLeftSide.fSurfaces[0]];
-    // Skip already checked logic surfaces.  (TO REVIEW AFTER THE CHANGE to SIDES)
-    if (topframe.fLogicId && last_logic_volid == topframe.VolumeId()) continue;
+    int isurf        = vecCore::math::Abs(cand[icand]);
+    auto const &surf = surfdata.fCommonSurfaces[isurf];
 
     // Convert point to surface frame
     auto const &trans      = surf.fTrans;
     Vector3D<Real_t> local = trans.Transform(local_scene);
     Vector3D<Real_t> onsurf_crt;
-    Real_t safety_surf;
-    bool flipped  = false;
-    auto unplaced = surfdata.GetUnplaced(isurf, flipped);
+    Real_t safety_surf = vecgeom::InfinityLength<Real_t>();
+    bool flipped       = false;
+    auto unplaced      = surfdata.GetUnplaced(isurf, flipped);
 
     // left_side is the side which defines the exit normal
     // left_side is the side which defines the exit normal
@@ -1222,42 +1221,42 @@ VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(vecgeom::Vector3D<Real_i> const &po
       // Note: only one side can have a valid safety
       left_side   = false;
       visibility  = !flipped;
-      can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
+      safety_surf = -safety_surf;
+      can_compute = true;
+      // can_compute = unplaced.Safety(local, visibility, surfdata, safety_surf, onsurf_crt);
     }
     if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t> || safety_surf >= safety) continue;
+    if (safety_surf > limit) {
+      found_far  = true;
+      safety_far = vecCore::math::Min(safety_surf, safety_far);
+      continue;
+    }
 
     // Entering side. We only check the parent frames on the side
     auto const &entry_side = left_side ? surf.fLeftSide : surf.fRightSide;
     const int num_parents  = entry_side.fNumParents;
     int iparent            = 0;
-    Real_t safetyParent    = safety;
     // Parent frames are last in the list
     for (auto ind = entry_side.fNsurf - 1; ind >= 0; --ind) {
+      bool validSafety       = true;
       auto const &framedsurf = entry_side.GetSurface(ind, surfdata);
       if (framedsurf.fParent >= 0) continue; // skip children
+      // Skip already checked logic surfaces.
+      if (framedsurf.fLogicId && last_logic_volid == framedsurf.VolumeId()) continue;
       iparent++;
-      auto safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
-      if (validSafety && safetyFrame < safetyParent) {
-        // If Boolean surface, compute only once safety for the entire volume shell
-        if (framedsurf.fLogicId) {
-          Real_t safetyLogic = LogicSafety(point, false, NavigationState{framedsurf.fState}, surfdata, safetyFrame);
-          last_logic_volid   = vecgeom::NavigationState::GetLogicalIdImpl(framedsurf.fState);
-          if (safetyParent > safetyLogic) {
-            safetyParent = safetyLogic;
-            closest_surf = isurf;
-          }
-        } else {
-          safetyParent = safetyFrame;
-          closest_surf = isurf;
-        }
+      auto safetyFrame = safety_surf;
+      if (!framedsurf.fNeverCheck) safetyFrame = framedsurf.SafetyFrame(onsurf_crt, safety_surf, surfdata, validSafety);
+      if (validSafety && safetyFrame < safety) {
+        // The distance to the unplaced is valid, so mark as found
+        safety       = safetyFrame;
+        found        = true;
+        closest_surf = isurf;
       }
       if (iparent == num_parents) break;
     }
-    if (safety > safetyParent) {
-      safety       = safetyParent;
-      closest_surf = isurf;
-    }
   }
+  if (!found && found_far) return safety_far;
+  safety *= found;
   return safety;
 }
 

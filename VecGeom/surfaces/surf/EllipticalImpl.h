@@ -106,7 +106,7 @@ struct SurfaceHelper<SurfaceType::kElliptical, Real_t> {
     Real_t rho = vecCore::math::Sqrt(x * x + y * y);
     distance   = left_side ? fEllipData->R - rho : rho - fEllipData->R;
     onsurf     = point; // we only need the z of the projected point
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

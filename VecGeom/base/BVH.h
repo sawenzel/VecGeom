@@ -213,6 +213,7 @@ public:
    * Compute safety against children of the root element associated with the BVH.
    * @param[in] localpoint Point in the local coordinates of the root element.
    * @param[in] safety Maximum safety. Elements further than this are not checked.
+   * @param[in] limit Do not call the primitive safety if farther than this value
    * @returns Minimum between safety to the closest child of root element and input @p safety.
    */
   /*
@@ -220,7 +221,8 @@ public:
    * it computes only the safety instead of the intersection using a ray, so the logic is a bit simpler.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE Precision ComputeSafety(Vector3D<Precision> localpoint, Precision safety) const
+  VECCORE_ATT_HOST_DEVICE Precision ComputeSafety(Vector3D<Precision> localpoint, Precision safety,
+                                                  Precision limit = InfinityLength<Precision>()) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -232,9 +234,14 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Safety(localpoint) < safety) {
-
-            // printf("// BVH Call, AABB safety: %lf\n", fAABBs[prim].Safety(localpoint));
-
+            auto safety_node = fAABBs[prim].Safety(localpoint);
+            // If the distance to the current node is larger than the safety we can ignore it
+            if (safety_node >= safety) continue;
+            // Don't check daughters if the safety is larger than the accuracy limit
+            if (safety_node > limit) {
+              safety = safety_node;
+              continue;
+            }
             const Precision dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
             if (dist < safety) safety = dist;
           }

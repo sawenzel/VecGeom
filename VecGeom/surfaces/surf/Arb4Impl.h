@@ -233,7 +233,7 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
                                (dxs * dxs + dys * dys + Real_t(4.) * fArb4Data->halfH * fArb4Data->halfH);
     distance = Max(distance, Sqrt(safety));
 
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

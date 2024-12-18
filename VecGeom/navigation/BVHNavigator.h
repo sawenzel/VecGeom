@@ -339,9 +339,10 @@ private:
   }
 
 public:
-  // Computes the isotropic safety from the globalpoint.
+  // Computes the isotropic safety from the globalpoint. The safety must be accurate only below the provided limit.
   VECCORE_ATT_HOST_DEVICE
-  static Precision ComputeSafety(Vector3D<Precision> const &globalpoint, vecgeom::NavigationState const &state)
+  static Precision ComputeSafety(Vector3D<Precision> const &globalpoint, vecgeom::NavigationState const &state,
+                                 Precision limit = InfinityLength<Precision>())
   {
     Daughter pvol = state.Top();
     if (pvol == nullptr) return kInfLength;
@@ -354,7 +355,7 @@ public:
 
     if (safety > 0 && pvol->GetDaughters().size() > 0) {
       auto bvh = vecgeom::BVHManager::GetBVH(pvol->GetLogicalVolume()->id());
-      safety   = bvh->ComputeSafety<BVHNavigator>(localpoint, safety);
+      safety   = bvh->ComputeSafety<BVHNavigator>(localpoint, safety, limit);
     }
 
     return safety;

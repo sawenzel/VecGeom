@@ -214,9 +214,8 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
     double phi = rng.uniform(0, kTwoPi);
     double the = std::acos(2 * rng.uniform() - 1);
     Vector3D<Precision> ranpoint(std::sin(the) * std::cos(phi), std::sin(the) * std::sin(phi), std::cos(the));
-    safepoint += safety * ranpoint;
-    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), point, new_state, true);
-
+    safepoint += safety * ranpoint; // safety is rounded from float
+    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), safepoint, new_state, true);
     is_safe = new_state.GetNavIndex() == navind;
     if (!is_safe) break;
   }
@@ -241,19 +240,19 @@ int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavigationState
     }
     if (debug && num_warnings < 10 && safeties[i] < refSafeties[i] - kToleranceBVH) {
       num_warnings++;
-      printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g ratio surf/solid = %g\n", i, points[i][0],
-             points[i][1], points[i][2], refSafeties[i], safeties[i], (safeties[i] / refSafeties[i]));
+      printf("point %d: (%.10g, %.10g, %.10g) safety Solid = %g  safety surf = %g ratio surf/solid = %g\n", i,
+             points[i][0], points[i][1], points[i][2], refSafeties[i], safeties[i], (safeties[i] / refSafeties[i]));
       if (num_warnings == 10) printf("=== only first 10 warnings are shown\n");
       // Replay before exiting for debugging
       int exit_surf = 0;
       vgbrep::protonav::ComputeSafety<Precision, Real_t>(points[i], in_states[i], exit_surf);
     }
     if (debug && safeties[i] > refSafeties[i] + kToleranceBVH) {
-      bool safesafe = CheckSafety(points[i], in_states[i], safeties[i], 1000);
+      bool safesafe = CheckSafety(points[i], in_states[i], refSafeties[i], 1000);
       if (!safesafe && num_errors < 10) {
         num_errors++;
-        printf("point %d: (%g, %g, %g) safety Solid = %g  safety surf = %g NOT SAFE\n", i, points[i][0], points[i][1],
-               points[i][2], refSafeties[i], safeties[i]);
+        printf("point %d: (%.10g, %.10g, %.10g) safety Solid = %g  safety surf = %g NOT SAFE\n", i, points[i][0],
+               points[i][1], points[i][2], refSafeties[i], safeties[i]);
         if (num_errors == 10) printf("=== only first 10 errors are shown\n");
         // Replay before exiting for debugging
         int exit_surf = 0;
@@ -706,7 +705,7 @@ int main(int argc, char *argv[])
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(point, default_point);
-  std::vector<double> default_direction = {0., 0., 0.};
+  std::vector<double> default_direction = {0., 0., 1.};
   OPTION_VECTOR(direction, default_direction);
   OPTION_VECTOR(max_world, default_point);
   std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
@@ -722,7 +721,7 @@ int main(int argc, char *argv[])
   Vec3D max_world_3d = {max_world[0], max_world[1], max_world[2]};
   if (direction_3D.Mag2() > 0) direction_3D.Normalize();
 
-  bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
+  bool use_provided_point = point_3D.Mag2() < vecgeom::InfinityLength<Precision>();
   if (use_provided_point) {
     // check if direction is normalized
     assert(direction_3D.IsNormalized());

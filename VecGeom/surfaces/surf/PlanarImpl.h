@@ -55,7 +55,7 @@ struct SurfaceHelper<SurfaceType::kPlanar, Real_t> {
     distance = left_side ? -point[2] : point[2];
     // Computing onsurf is cheap
     onsurf.Set(point[0], point[1], 0);
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

@@ -78,7 +78,7 @@ struct SurfaceHelper<SurfaceType::kSpherical, Real_t> {
     distance   = left_side ? Abs(radius) - rho : rho - Abs(radius);
     // the onsurf computation code is missing below
 
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

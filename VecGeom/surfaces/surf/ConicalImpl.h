@@ -88,8 +88,8 @@ struct SurfaceHelper<SurfaceType::kConical, Real_t> {
     distance          = distanceR * calf;
     // We only use for the ZPhi frame safety the z of the point propagated on the cone surface
     onsurf = point;
-    onsurf[2] += distanceR * slope / (static_cast<Real_t>(1) + slope * slope);
-    return true;
+    onsurf[2] += distance * slope * calf;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

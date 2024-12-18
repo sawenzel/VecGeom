@@ -92,104 +92,124 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
                                               LogicExpression const &logic, SurfData<Real_t> const &surfdata,
                                               Real_t safe_max = vecgeom::InfinityLength<Real_t>())
 {
+  struct Safetyval {
+    vecgeom::Vector3D<Real_t> onsurf; ///< point on surface
+    Real_t safety{0.};                ///< computed safety value
+    short int isurf{-1};              ///< surface to which it applies (-1 = un-initialized)
+    char op{0};                       ///< operator applying to it: 0 = uninitialized, 1 = '&', -1 = '|'
+
+    VECCORE_ATT_HOST_DEVICE
+    VECGEOM_FORCE_INLINE
+    void Reset()
+    {
+      safety = 0.;
+      isurf  = -1;
+      op     = 0;
+    }
+
+    ///< @brief Perform the reduction with another safety value
+    VECCORE_ATT_HOST_DEVICE
+    VECGEOM_FORCE_INLINE
+    void SwapReduction(const Safetyval &other)
+    {
+      // make sure the operator is reset at exit
+      auto crt_op = op;
+      op          = 0;
+      // In case one of the surfaces is not defined, act as identity
+      if (other.isurf < 0) return;
+      if (isurf < 0) {
+        operator=(other);
+        return;
+      }
+      assert(crt_op != 0);
+
+      if ((crt_op > 0) ^ (safety > other.safety)) {
+        // swap current safety with other one
+        safety = other.safety;
+        onsurf = other.onsurf;
+        isurf  = other.isurf;
+      }
+    }
+  };
+
   ///< Lambda to get the safety for individual framed surfaces of the same logical volume
-  Vector3D<Real_t> onsurf_crt;
-  auto safetySurf = [&](int isurf, Real_t &safety_surf) {
+  auto safetySurf = [&](Safetyval &safety_surf) {
     // Convert point from volume to local surface coordinates
-    auto trans             = surfdata.fLocalSurf[isurf].fTrans;
+    auto trans             = surfdata.fLocalSurf[safety_surf.isurf].fTrans;
     Vector3D<Real_t> local = trans.Transform(plocalVol);
-    auto const &framedsurf = surfdata.fLocalSurf[isurf];
+    auto const &framedsurf = surfdata.fLocalSurf[safety_surf.isurf];
     bool flipped           = framedsurf.fLogicId < 0;
     auto const &unplaced   = framedsurf.fSurface;
-
-    bool can_compute = unplaced.Safety(local, exiting ^ flipped, surfdata, safety_surf, onsurf_crt);
-    return can_compute;
+    unplaced.Safety(local, /*exiting ^*/ flipped, surfdata, safety_surf.safety, safety_surf.onsurf);
   };
 
-  auto safetyFrame = [&](int isurf, Real_t &safety) {
+  auto safetyFrame = [&](Safetyval &safety_surf) {
     // Compute safety from point projected on surface to the surface frame
-    auto const &framedsurf = surfdata.fLocalSurf[isurf];
+    auto const &framedsurf = surfdata.fLocalSurf[safety_surf.isurf];
     bool valid             = false;
-    safety                 = framedsurf.fFrame.Safety(onsurf_crt, safety, surfdata, valid);
-    return valid;
-  };
-
-  auto safety_reduction = [](Real_t saf1, Real_t saf2, bool and_exiting_xor) {
-    return and_exiting_xor ? vecCore::math::Max(saf1, saf2) : vecCore::math::Min(saf1, saf2);
+    auto safety            = framedsurf.fFrame.Safety(safety_surf.onsurf, safety_surf.safety, surfdata, valid);
+    if (valid) safety_surf.safety = safety;
   };
 
   // Implementation of the following infix Boolean expression evaluation:
-  // - logic expression contains operands (surface ids), operators `&` or `|` and indents `(` or `)`
-  // - operands may be negated `!` meaning that the corresponding half-space is flipped compared to the standard normal
-  // convention.
-  // - the logic expression is evaluated left to right taking the following actions depending on the current item:
-  // * operands trigger signed safety evaluation for the surface, considering negation if present. In case the surface
-  // is not visible for entering/exiting, the negative safety is considered infinite and affects accordingly the Boolean
-  // operation(s) at the current expression indentation (depth).
-  // * operators are cached for the current depth. Upon reading an operand and having a cached operator, min/max is
-  // called according to the operation, the result replacing the currently cached value.
-  // * indent increase `(` pushes to the stack the current computed safety AND operator as sign of the safety: `+` for &
-  // and `-` for |
-  // * indent decrease `)` pops the cached safety and operation and performs the safety reduction with the current
-  // cached value.
+  // * The logic expression contains operands (surface ids), operators `&` or `|` and depths changed by `(` or `)`
+  // * Operands may be negated `!` meaning that the corresponding half-space is flipped compared to the standard normal
+  // convention. Negation is ignored because it is taken into account in the surface flipping, which negates the safety.
+  //   * The logic expression is evaluated left to right taking the following actions depending on the current item:
+  //     * Operands trigger signed safety evaluation for the half-space surface, using the convention: outside =
+  //     positive.
+  //     * Operators are cached for the current depth. Upon reading an operand and having a cached operator, min/max is
+  //       called according to the operation, the result replacing the currently cached value. The safety reduction
+  //       between two values is dependent on the operator:
+  //       * safety(a & b) = max(safety_a, safety_b)
+  //       * safety(a | b) = min(safety_a, safety_b)
+  //       * if current operand does not have an operator (e.g. first in an expression in a new level), the reduction
+  //       is done with a unit operand not changing the current one
+  //     * Depth increase `(` pushes to the stack the current computed safety AND operator as sign of the safety: `+`
+  //     for &
+  //       and `-` for |
+  //     * Depth decrease `)` pops the cached safety and operation and performs the safety reduction with the current
+  //       cached value.
+  // * At the end of the expression evaluation, the sign of the safety is negated if exiting is true, and the safety to
+  // the actual closest frame is computed
 
-  // TO DO: assert that the maximum indenting level is not hit after logic expression simplification
-  constexpr int kStackSize = 8; // maximum indenting level (nested Boolean operations) for the input logic expression.
-  Real_t cached_safety[kStackSize];
-  char cached_op[kStackSize];
-  char crt_op    = 0; // No-operator
-  bool crt_valid = false;
-  // bool negate       = false;
-  Real_t crt_safety = vecgeom::InfinityLength<Real_t>();
+  // TO DO: assert that the maximum depth is not hit after logic expression simplification
+  constexpr int kStackSize = 8; // maximum depth (nested Boolean operations) for the input logic expression.
+  Safetyval cached_safety[kStackSize];
+  Safetyval crt_safety;
 
   int depth = 0;
   unsigned i;
   for (i = 0; i < logic.size(); ++i) {
     auto item = logic[i];
     if (item == lplus) {
-      cached_op[depth]       = crt_op;
-      cached_safety[depth++] = (crt_valid) ? crt_safety : Real_t(-1);
-      crt_op                 = 0;
-      crt_valid              = false;
+      // increase depth: cache current safety and reset it
+      cached_safety[depth++] = crt_safety;
+      crt_safety.Reset();
     } else if (item == lminus) {
-      // Check if cached safety is valid
+      // decrease depth: check if cached safety is valid
       depth--;
-      if (cached_safety[depth] > Real_t(0)) {
-        if (crt_valid)
-          crt_safety = safety_reduction(crt_safety, cached_safety[depth], (cached_op[depth] > 0) ^ exiting);
-        else
-          crt_safety = cached_safety[depth];
-        crt_valid = true;
-      }
       assert(depth >= 0);
+      crt_safety.op = cached_safety[depth].op;
+      crt_safety.SwapReduction(cached_safety[depth]);
     } else if (item == lnot) {
       // negate = true;
     } else if (LogicExpression::is_operator_token(item)) {
-      crt_op = (item == land) ? 1 : -1;
+      crt_safety.op = (item == land) ? 1 : -1;
       i++;
     } else {
       // This is a surface index
-      Real_t safety;
-      // Compute safety to the unplaced surface
-      bool can_compute = safetySurf(int(item), safety);
-      bool valid       = can_compute && safety > -vecgeom::kToleranceDist<Real_t> && safety <= safe_max;
-      safety           = vecCore::math::Max(safety, Real_t(0));
-      // If needed, compute safety to the frame
-      if (valid) valid = safetyFrame(int(item), safety);
-      if (valid) {
-        if (crt_valid && crt_op)
-          crt_safety = safety_reduction(crt_safety, safety, (crt_op > 0) ^ exiting);
-        else
-          crt_safety = safety;
-        crt_valid = true;
-      }
-      // Negation info already considered during safety calculation, so redundant here
-      // if (negate) last_value = !last_value;
-      // negate = false;
+      Safetyval new_safety;
+      new_safety.isurf = short(item);
+      safetySurf(new_safety);
+      crt_safety.SwapReduction(new_safety);
     }
   }
   assert(depth == 0);
-  return (crt_valid) ? crt_safety : vecgeom::InfinityLength<Real_t>();
+  if (exiting) crt_safety.safety = -crt_safety.safety;
+  // If needed, compute safety to the frame
+  if (crt_safety.safety > 0. && crt_safety.safety <= safe_max) safetyFrame(crt_safety);
+  return crt_safety.safety;
 }
 
 } // namespace vgbrep

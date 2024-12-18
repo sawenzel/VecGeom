@@ -737,10 +737,12 @@ int testRaytracingCUDA(int nrays, Vec3Dc const *pointsc, Vec3Dc const *dirsc, co
     if (num_errors > 0) std::cout << "CUDA: Point locate errors: " << num_errors << "\n";
 
     // Validate BVH Locate
-    ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStatesBVH, num_errors_d);
-    BREP_CUDA_CHECK(cudaMemcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
-    if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+    if (test_bvh) {
+      ValidateLocate<<<initBlocks, initThreads>>>(nrays, origStates, outputStatesBVH, num_errors_d);
+      BREP_CUDA_CHECK(cudaMemcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+      BREP_CUDA_CHECK(cudaDeviceSynchronize());
+      if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+    }
   }
 
   if (!debug) {

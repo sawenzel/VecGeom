@@ -63,18 +63,18 @@ public:
     // Different treatment for entering and exiting surfaces
     if (index >= shell.fNExitingSurfaces) // Entering surfaces
     {
-      int exiting_index = index - shell.fNExitingSurfaces;
-      framed_surface    = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[exiting_index]]);
+      int entering_index = index - shell.fNExitingSurfaces;
+      framed_surface     = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[entering_index]]);
 
       // Get the transformation
-      auto const &pvol_trans = surfdata.fPVolTrans[shell.fEnteringSurfacesPvolTrans[exiting_index]];
+      auto const &pvol_trans = surfdata.fPVolTrans[shell.fEnteringSurfacesPvolTrans[entering_index]];
 
       // Transform the points to the pvol frame
       localpoint = pvol_trans.Transform(localpoint);
       localdir   = pvol_trans.TransformDirection(localdir);
 
       // Update the LV index to that of the daughter
-      lv_index = shell.fEnteringSurfacesLvolIds[exiting_index];
+      lv_index = shell.fEnteringSurfacesLvolIds[entering_index];
 
     } else { // Exiting surfaces
       exiting            = true;
@@ -95,18 +95,45 @@ public:
       return intersect_distance;
     } else {
       return vecgeom::InfinityLength<Real_t>();
-      ;
     }
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  static int GetLogicalId(int lv_index, int surfindex, bool &isBoolean)
+  {
+    auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
+    auto const &shell    = surfdata.fShells[lv_index];
+    if (surfindex >= shell.fNExitingSurfaces) {
+      auto entering_index = surfindex - shell.fNExitingSurfaces;
+      lv_index            = shell.fEnteringSurfacesLvolIds[entering_index];
+      isBoolean           = surfdata.fLocalSurf[shell.fEnteringSurfaces[entering_index]].fLogicId > 0;
+      return lv_index;
+    }
+    isBoolean = surfdata.fLocalSurf[shell.fSurfaces[shell.fExitingSurfaces[surfindex]]].fLogicId > 0;
+    return lv_index;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsNegated(int lv_index, int surfindex)
+  {
+    auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
+    auto const &shell    = surfdata.fShells[lv_index];
+    if (surfindex >= shell.fNExitingSurfaces)
+      return (surfdata.fLocalSurf[shell.fEnteringSurfaces[surfindex - shell.fNExitingSurfaces]].fLogicId < 0);
+    else
+      return (surfdata.fLocalSurf[shell.fSurfaces[shell.fExitingSurfaces[surfindex]]].fLogicId < 0);
   }
 
   /*
    * @param[in] lv_index Global index of a LogicalVolume
    * @param[in] index Index within the list of visible entering surfaces of the specified LogicalVolume
    * @param[in] localpoint Point in the local coordinates of the LV specified by @lv_index
+   * @param[in] limit Upper limit for the search in the minimization process (e.g. previous computed safety candidate)
    * @returns The safety to in to the Framed surface defined by @p lv_index and @p index for the point @p localpoint
    */
   VECCORE_ATT_HOST_DEVICE
-  static Real_t CandidateSafetyToIn(int lv_index, int index, Vector3D<Real_t> localpoint)
+  static Real_t CandidateSafetyToIn(int lv_index, int index, Vector3D<Real_t> localpoint,
+                                    Real_t limit = vecgeom::InfinityLength<Real_t>())
   {
     auto const &surfdata = vgbrep::SurfData<Real_t>::Instance();
     // Get the shell for this volume
@@ -123,6 +150,8 @@ public:
     {
       int entering_index = index - shell.fNExitingSurfaces;
       framed_surface     = &(surfdata.fLocalSurf[shell.fEnteringSurfaces[entering_index]]);
+      // Update the LV index to that of the daughter
+      lv_index = shell.fEnteringSurfacesLvolIds[entering_index];
 
       // Get the transformation
       auto const &pvol_trans = surfdata.fPVolTrans[shell.fEnteringSurfacesPvolTrans[entering_index]];
@@ -151,38 +180,24 @@ public:
     // Compute the safety
     // First check coming from left side
     Vector3D<Real_t> onsurf_crt;
-    Real_t safety{0}, safety_surf{0}, safety_frame{0};
-    bool valid_safety{false};
+    Real_t safety_surf{0}, safety_frame{0};
+    bool valid_safety{true};
     bool can_compute{false};
 
-    if (exiting) {
-      can_compute = unplaced_surface.Safety(surface_point, 1, surfdata, safety_surf, onsurf_crt);
-    } else {
-      can_compute = unplaced_surface.Safety(surface_point, 0, surfdata, safety_surf, onsurf_crt);
-    }
+    bool flipped = framed_surface->fLogicId < 0;
+    can_compute  = unplaced_surface.Safety(surface_point, exiting ^ flipped, surfdata, safety_surf, onsurf_crt);
 
-    if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t>) {
-      return vecgeom::InfinityLength<Real_t>();
-    }
+    if (!can_compute || safety_surf >= limit) return safety_surf;
 
     // Now compute the safety from the projection of the point on the surface to the frame
     safety_frame = safety_surf;
     // This function returns either the maximum of safety_surf and safety_frame, or the accurate safety
     // computed using both
-    safety_frame = framed_surface->LocalSafetyFrame(onsurf_crt, safety_surf, surfdata, valid_safety);
+    if (!framed_surface->fNeverCheck)
+      safety_frame = framed_surface->LocalSafetyFrame(onsurf_crt, safety_surf, surfdata, valid_safety);
 
-    if (valid_safety) {
-      // If Boolean surface, compute only once safety for the entire volume shell
-      if (framed_surface->fLogicId) {
-        Real_t safety_logic =
-            LocalLogicSafety(localpoint, exiting, lv_index, surfdata, vecgeom::InfinityLength<Real_t>());
-        safety = safety_logic;
-      } else {
-        safety = safety_frame;
-      }
-    }
-
-    return safety;
+    if (valid_safety) return safety_frame;
+    return limit;
   }
 
   /*
@@ -218,7 +233,8 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  static Precision ComputeSafety(Vector3D<Precision> const &point_i, vecgeom::NavigationState const &in_state)
+  static Precision ComputeSafety(Vector3D<Precision> const &point_i, vecgeom::NavigationState const &in_state,
+                                 Precision limit = vecgeom::InfinityLength<Precision>())
   {
     auto in_navind = in_state.GetNavIndex();
     if (in_navind == 0) return vecgeom::InfinityLength<Precision>();
@@ -238,8 +254,10 @@ public:
     in_state.TopMatrix(lv_trans);
     auto localpoint = lv_trans.Transform(point);
 
-    double safety{vecgeom::InfinityLength<Precision>()};
-    return bvh.template ComputeSafety<BVHSurfNavigator<Real_t>>(localpoint, safety);
+    auto safety = bvh.template ComputeSafety<BVHSurfNavigator<Real_t>>(localpoint, limit);
+    // Safety is rounded from float, so round down with float relative tolerance
+    safety = vecgeom::MakeMinusTolerantRel<float>(safety);
+    return static_cast<Real_t>(safety);
   }
 
   /*

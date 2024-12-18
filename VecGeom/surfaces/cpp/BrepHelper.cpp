@@ -1268,7 +1268,8 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
   InitBVHData();
 
   vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(fCPUdata);
-  FindConvexBooleanSurfaces();
+  // Commented out Boolean convexity checking
+  // FindConvexBooleanSurfaces();
   vecgeom::ABBoxManager<Real_b>::Instance().InitABBoxesForSurfaces(fCPUdata, /*crop=*/true);
 
   std::fill(visited.begin(), visited.end(), false);

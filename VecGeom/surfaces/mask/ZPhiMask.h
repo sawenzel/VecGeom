@@ -264,16 +264,10 @@ struct ZPhiMask {
       // If the point is not in the phi range, there are other surfaces closer than this one
       // so this frame should not be part of the minimization process.
       valid = false;
-      return vecgeom::InfinityLength<Real_t>();
+      return 0.;
     }
-    Real_t safetyZ = vecCore::math::Max(local[2] - rangeZ[1], rangeZ[0] - local[2]);
-    if (safetyZ < 0) return safetySurf;
-      // Correct safetyZ by the cosine of the angle between the surface generators and the Z axis
-#ifdef SURF_ACCURATE_SAFETY
-    return vecCore::math::Sqrt(safetySurf * safetySurf + safetyZ * safetyZ * invcalf * invcalf);
-#else
-    return vecCore::math::Max(safetySurf, safetyZ * calf);
-#endif
+    auto safetyZ = vecCore::math::Max(local[2] - rangeZ[1], rangeZ[0] - local[2]);
+    return vecCore::math::Max(safetySurf, safetyZ);
   }
 };
 

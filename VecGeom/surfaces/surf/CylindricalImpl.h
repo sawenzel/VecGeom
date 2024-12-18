@@ -80,7 +80,7 @@ struct SurfaceHelper<SurfaceType::kCylindrical, Real_t> {
     bool flip_exiting = left_side ^ (radius < 0);
     distance          = flip_exiting ? Abs(radius) - rho : rho - Abs(radius);
     onsurf            = point; // we only need the z of the projected point
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 

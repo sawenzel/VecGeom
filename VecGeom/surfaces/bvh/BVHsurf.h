@@ -395,24 +395,45 @@ public:
    * it computes only the safety instead of the intersection using a ray, so the logic is a bit simpler.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(Vector3D<Real_t> localpoint, Real_t safety) const
+  VECCORE_ATT_HOST_DEVICE Real_t ComputeSafety(Vector3D<Real_t> localpoint,
+                                               Real_t limit = vecgeom::InfinityLength<Real_t>()) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
+    // int lastBoolVol = -1; // cached last checked Boolean volume. Cannot cache them all unfortunately.
+    Real_t safety     = vecgeom::InfinityLength<Real_t>(); // reduced safety for normal surfaces
+    Real_t safety_far = vecgeom::InfinityLength<Real_t>(); // safety to a bbox found farther than the search limit
+    bool found{false};
 
     do {
       const unsigned int id = *--ptr;
 
       // If the current distance is shorter than the distance to the node we can safely ignore it
-      if (fNodes[id].Safety(localpoint) > safety) {
+      auto safety_node = fNodes[id].Safety(localpoint);
+      if (safety_node > safety) continue;
+      if (safety_node > limit) {
+        found      = true;
+        safety_far = vecCore::math::Min(safety_node, safety_far);
         continue;
       }
 
       if (fNChild[id] >= 0) {
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
-          if (fAABBs[prim].Safety(localpoint) < safety) {
-            const Real_t dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
+          // There should be a way to cache the fact that the surface is a negated boolean
+          // compute safety to the aligned bounding box of the child
+          safety_node = fAABBs[prim].Safety(localpoint);
+          if (safety_node >= safety) continue;
+          if (safety_node > limit) {
+            safety_far = vecCore::math::Min(safety_node, safety_far);
+            found      = true;
+            continue;
+          }
+          // Looks like we need it accurate
+          const Real_t dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint, safety);
+          if (dist > Real_t(0.)) {
+            // The distance to the unplaced is valid, so mark as found
+            found = true;
             if (dist < safety) safety = dist;
           }
         }
@@ -436,6 +457,7 @@ public:
       }
     } while (ptr > stack);
 
+    safety = found * vecCore::math::Min(safety, safety_far);
     return safety;
   }
 

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+  <define>
+    <position name="BOX_pos" x="0" y="0" z="0" unit="cm"/>
+  </define>
+  <materials>
+    <material name="Al" Z="13">
+      <D unit="g/cm3" value="2.7"/>
+      <atom unit="g/mole" value="26.98"/>
+    </material>
+  </materials>
+  <solids>
+    <box name="sTOP" x="200" y="200" z="200" lunit="cm"/>
+    <box name="sBOX" x="40" y="60" z="80" lunit="cm"/>
+  </solids>
+  <structure>
+    <volume name="BOX">
+      <materialref ref="Al"/>
+      <solidref ref="sBOX"/>
+    </volume>
+    <volume name="TOP">
+      <materialref ref="Al"/>
+      <solidref ref="sTOP"/>
+      <physvol name="BOX_1" copynumber="1">
+        <volumeref ref="BOX"/>
+        <positionref ref="BOX_pos"/>
+      </physvol>
+    </volume>
+  </structure>
+  <setup name="default" version="1.0">
+    <world ref="TOP"/>
+  </setup>
+</gdml>

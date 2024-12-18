@@ -257,14 +257,14 @@ struct SurfaceHelper<SurfaceType::kTorus, Real_t> {
       distance = vecgeom::InfinityLength<Real_t>();
       return true;
     }
-    Real_t rho   = Sqrt(point.x() * point.x() + point.y() * point.y());
-    Real_t rTor  = fTorusData->Radius();
-    Real_t rTube = fTorusData->RadiusTube();
+    Real_t rho        = point.Perp();
+    Real_t rTor       = fTorusData->Radius();
+    Real_t rTube      = fTorusData->RadiusTube();
+    auto safety       = Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube;
+    bool flip_exiting = left_side ^ fTorusData->IsFlipped();
+    distance          = flip_exiting ? -safety : safety;
 
-    distance = left_side ? rTube - Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor))
-                         : Sqrt(point.z() * point.z() + (rho - rTor) * (rho - rTor)) - rTube;
-
-    return true;
+    return distance > -vecgeom::kToleranceDist<Real_t>;
   }
 };
 
