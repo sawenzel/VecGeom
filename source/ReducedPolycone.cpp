@@ -98,13 +98,14 @@ bool ReducedPolycone::GetLineIntersection(Precision p0_x, Precision p0_y, Precis
 
   if (s1_y == 0. && s2_y == 0.) return false;
 
-  Precision s, t;
   Precision deno = (-s2_x * s1_y + s1_x * s2_y);
   if (deno == 0.) return false;
+
+  Precision s, t;
   s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / deno;
   t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
 
-  if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+  if (s >= -vecgeom::kTolerance && s <= 1 && t >= -vecgeom::kTolerance && t <= 1) {
     // Collision detected
     if (i_x != NULL) *i_x = p0_x + (t * s1_x);
     if (i_y != NULL) *i_y = p0_y + (t * s1_y);
@@ -119,9 +120,8 @@ bool ReducedPolycone::GetLineIntersection(Precision p0_x, Precision p0_y, Precis
   return false; // No collision
 }
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::GetLineIntersection(Line2D l1, Line2D l2)
+bool ReducedPolycone::GetLineIntersection(Line2D l1, Line2D l2, Vector2D<Precision> &poi)
 {
-  Vector2D<Precision> poi(0., 0.);
   return GetLineIntersection(l1.p1.x(), l1.p1.y(), l1.p2.x(), l1.p2.y(), l2.p1.x(), l2.p1.y(), l2.p2.x(), l2.p2.y(),
                              &poi.x(), &poi.y());
 }
@@ -141,64 +141,53 @@ Vector<Line2D> ReducedPolycone::GetLineVector()
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poiVect, Vector<Precision> z)
 {
-
-  for (unsigned int i = 0; i < fRZVect.size(); i++) {
-    for (unsigned int j = 0; j < z.size(); j++) {
-      Vector2D<Precision> poi;
-      bool valid = false;
-      if (i == (fRZVect.size() - 1)) {
-        valid = GetLineIntersection(Line2D(fRZVect[i], fRZVect[0]),
-                                    Line2D(Vector2D<Precision>(0., z[j]), Vector2D<Precision>(fRMax, z[j])), poi);
-      } else {
-        valid = GetLineIntersection(Line2D(fRZVect[i], fRZVect[i + 1]),
-                                    Line2D(Vector2D<Precision>(0., z[j]), Vector2D<Precision>(fRMax, z[j])), poi);
-      }
-      if (valid) {
-        poiVect.push_back(poi);
-      }
+  Vector2D<Precision> poi;
+  for (unsigned int irz = 0; irz < fRZVect.size(); ++irz) {
+    unsigned int jrz = (irz < fRZVect.size()-1 ? irz+1 : 0);
+    for (unsigned int kz = 0; kz < z.size(); ++kz) {
+      bool valid = GetLineIntersection(Line2D(fRZVect[irz], fRZVect[jrz]), z[kz], poi);
+      if (valid) poiVect.push_back(poi);
     }
   }
 }
+
 VECCORE_ATT_HOST_DEVICE
 bool ReducedPolycone::Contour(Vector<Precision> z)
 {
-  bool contour = ContourCheck(z);
-  if (!contour) {
+  bool ok = ContourCheck(z);
+  if (!ok) {
 #ifndef VECCORE_CUDA
     std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
               << "@@@@ Polycone CAN'T handle contours of specified type @@@@ \n"
               << "@@@@        Kindly use GenericPolycone                @@@@\n"
               << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
 #endif
-    return contour;
+    return ok;
   }
 
   // Getting vector of all the line
   Vector<Line2D> lineVect = GetLineVector();
-
+  Vector2D<Precision> poi;
   for (int unsigned i = 2; i < lineVect.size(); i++) {
     for (unsigned int j = 0; j <= (i - 2); j++) {
       if (i == (lineVect.size() - 1)) {
         if (j == 0) {
-          Vector2D<Precision> poi;
-          contour &= GetLineIntersection(lineVect[i], lineVect[j], poi);
-          contour &= (poi.x() == lineVect[0].p1.x()) && (poi.y() == lineVect[0].p1.y());
+          ok &= GetLineIntersection(lineVect[i], lineVect[j], poi);
+          ok &= (poi.x() == lineVect[0].p1.x()) && (poi.y() == lineVect[0].p1.y());
         } else {
-          bool test = GetLineIntersection(lineVect[i], lineVect[j]);
-          contour &= !test;
+          ok &= !GetLineIntersection(lineVect[i], lineVect[j], poi);
         }
       } else
-        contour &= !GetLineIntersection(lineVect[i], lineVect[j]);
+        ok &= !GetLineIntersection(lineVect[i], lineVect[j], poi);
     }
   }
-  return contour;
+  return ok;
 }
 
 VECCORE_ATT_HOST_DEVICE
 bool ReducedPolycone::ContourCheck(Vector<Precision> z)
 {
-
-  // Getting vector of all the line
+  // Getting vector of edges
   Vector<Line2D> lineVect = GetLineVector();
 
   // Creating vector of checkerLines
@@ -253,29 +242,24 @@ void ReducedPolycone::CreateNewContour()
   }
   ConvertToUniqueVector(z);
   int numOfIterationsForContourModification = z.size();
+  Vector2D<Precision> poi;
+  Vector<Vector2D<Precision>> modifiedRZ;
   for (int i = 0; i < numOfIterationsForContourModification; i++) {
+    // rebuild lineVect as fRZVect may have changed at the end of this block
     Vector<Line2D> lineVect = GetLineVector();
-    Vector<Vector2D<Precision>> modifiedRZ;
-    Vector<Vector2D<Precision>> poiVect;
     for (unsigned int j = 0; j < lineVect.size(); j++) {
       Vector2D<Precision> poi;
-      bool valid = GetLineIntersection(lineVect[j], Line2D(fRMax, z[i]), poi);
-      if (valid) {
-        if (!PointExist(poi)) {
+      bool valid = GetLineIntersection(lineVect[j], z[i], poi);
+      if (valid and !PointExist(poi)) {
           /* Modify Contour and add the PoI in the proper sequence.
            * Algo : Scan the lineVect and find the index of line that corresponds to
-           *        line which gives new PoI, and then insert PoI and lineVect[j].p2
+           *        line which gives new PoI, and then insert PoI.
            */
           modifiedRZ.push_back(poi);
-          modifiedRZ.push_back(lineVect[j].p2);
-        } else {
-          modifiedRZ.push_back(lineVect[j].p2);
-        }
-      } else {
-        modifiedRZ.push_back(lineVect[j].p2);
       }
+      modifiedRZ.push_back(lineVect[j].p2);
     }
-    // Change the contour
+    // Keep modified contour for next iteration
     fRZVect.clear();
     fRZVect = modifiedRZ;
     modifiedRZ.clear();
@@ -436,19 +420,20 @@ bool ReducedPolycone::ContourGeneric(Vector<Precision> z)
   }
 #endif
 
+  Vector2D<Precision> poi;
   for (int unsigned i = 2; i < lineVect.size(); i++) {
     for (unsigned int j = 0; j <= (i - 2); j++) {
       if (i == (lineVect.size() - 1)) {
         if (j == 0) {
-          Vector2D<Precision> poi;
           contour &= GetLineIntersection(lineVect[i], lineVect[j], poi);
           contour &= (poi.x() == lineVect[0].p1.x()) && (poi.y() == lineVect[0].p1.y());
         } else {
-          bool test = GetLineIntersection(lineVect[i], lineVect[j]);
+          bool test = GetLineIntersection(lineVect[i], lineVect[j], poi);
           contour &= !test;
         }
-      } else
-        contour &= !GetLineIntersection(lineVect[i], lineVect[j]);
+      } else {
+        contour &= !GetLineIntersection(lineVect[i], lineVect[j], poi);
+      }
     }
   }
   return contour;
@@ -501,8 +486,12 @@ Vector<Line2D> ReducedPolycone::FindLinesInASection(unsigned int secIndex)
   // for(unsigned int i = 0 ; i <= secIndex) ; i++){
   for (unsigned int j = 0; j < lineVect.size(); j++) {
     Line2D line = lineVect[j];
-    if ((line.p1.y() == zVect[secIndex] && line.p2.y() == zVect[secIndex + 1]) ||
-        (line.p2.y() == zVect[secIndex] && line.p1.y() == zVect[secIndex + 1])) {
+    // account for some tolerance in floating point comparisons
+    bool p1z0 = fabs(line.p1.y() - zVect[secIndex]) < vecgeom::kTolerance;
+    bool p1z1 = fabs(line.p1.y() - zVect[secIndex+1]) < vecgeom::kTolerance;
+    bool p2z0 = fabs(line.p2.y() - zVect[secIndex]) < vecgeom::kTolerance;
+    bool p2z1 = fabs(line.p2.y() - zVect[secIndex+1]) < vecgeom::kTolerance;
+    if ((p1z0 && p2z1) || (p1z1 && p2z0)) {
       secLineVect.push_back(line);
     }
   }

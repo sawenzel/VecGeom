@@ -224,7 +224,7 @@ cmake_dependent_option(VECGEOM_TEST_COVERAGE "Enable coverage testing flags" OFF
 
 ################################################################################
 # Minimum version of VecCore we need.
-set(VecCore_VERSION "0.8.0")
+set(VecCore_VERSION "0.8.2")
 
 # Enable/Disable build/use of builtin veccore
 if(VECGEOM_BUILTIN_VECCORE)

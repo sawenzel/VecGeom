@@ -43,7 +43,7 @@ endfunction()
 
 set(VecCore_PROJECT "VecCore-${VecCore_VERSION}")
 set(VecCore_SRC_URI "http://lcgpackages.web.cern.ch/lcgpackages/tarFiles/sources")
-set(VecCore_SRC_MD5 "3e5b84d1b502ab7c7047c4b494ce640a")
+set(VecCore_SRC_MD5 "1d0a4f4f64989b2277905c00ce88f120")  # for VecCore@0.8.2
 set(VecCore_DESTDIR "${PROJECT_BINARY_DIR}/installExternals/${VecCore_PROJECT}")
 set(VecCore_ROOTDIR "${VecCore_DESTDIR}/${CMAKE_INSTALL_PREFIX}")
 set(VecCore_SRC_TAG "v${VecCore_VERSION}")

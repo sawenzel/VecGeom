@@ -20,7 +20,7 @@ char const *to_cstring(LogLevel lev)
   static const char *const data[] = {
       "debug", "diagnostic", "status", "info", "warning", "error", "critical",
   };
-  assert(size_t(lev) * sizeof(const char *) < sizeof(data));
+  assert((unsigned long)lev * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(lev)];
 }
 

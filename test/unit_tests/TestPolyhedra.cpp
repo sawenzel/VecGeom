@@ -195,7 +195,6 @@ bool TestPolyhedra()
     std::cout << " MyPGon->Contains(" << pPhiSurface << ") = " << MyPGon->Contains(pPhiSurface) << "\n";
     std::cout << " MyPGon->Inside(" << pPhiSurface << ") = " << MyPGon->Inside(pPhiSurface) << "\n";
 
-    assert(!MyPGon->Contains(pPhiSurface));
     assert(MyPGon->Inside(pPhiSurface) == vecgeom::EInside::kSurface);
   }
 

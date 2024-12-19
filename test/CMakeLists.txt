@@ -10,7 +10,7 @@ macro(build_executables EXECUTABLES)
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} PUBLIC
-      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,vecgeom>
+      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,>
       VecGeomTest)
   endforeach()
 endmacro()
@@ -214,6 +214,7 @@ set(TEST_EXECUTABLES_SHAPES
   unit_tests/TestEllipsoid.cpp
   unit_tests/TestCoaxialCones.cpp
   unit_tests/TestGenericPolycone.cpp
+  unit_tests/TestLegendPolycone.cpp
   unit_tests/TestHype.cpp
   unit_tests/TestTrd.cpp
   unit_tests/TestTrap.cpp
@@ -242,6 +243,7 @@ add_test(NAME TestBox COMMAND TestBox)
 add_test(NAME TestCone COMMAND TestCons)
 add_test(NAME TestGenTrap COMMAND TestGenTrap)
 add_test(NAME TestHype COMMAND TestHype)
+add_test(NAME TestLegendPolycone COMMAND TestLegendPolycone)
 add_test(NAME TestOrb COMMAND TestOrb)
 add_test(NAME TestPolycone COMMAND TestPolycone)
 add_test(NAME TestPolyhedra COMMAND TestPolyhedra)

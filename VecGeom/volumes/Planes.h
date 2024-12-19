@@ -150,11 +150,11 @@ Precision Planes::GetDistance(int i) const
 namespace {
 
 template <typename Real_v, bool = true>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains(int & /*i*/, const int /*n*/,
-                                                                      SOA3D<Precision> const & /*normals*/,
-                                                                      Array<Precision> const & /*distances*/,
-                                                                      Vector3D<Real_v> const & /*point*/,
-                                                                      vecCore::Mask_v<Real_v> & /*result*/)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains(int & i, const int,
+                                                                      SOA3D<Precision> const &,
+                                                                      Array<Precision> const &,
+                                                                      Vector3D<Real_v> const &,
+                                                                      vecCore::Mask_v<Real_v> &)
 {
   return;
 }
@@ -211,12 +211,12 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecCore::Mask_v<Real_v> Planes::Con
   if (fConvex) {
     AcceleratedContains<Real_v, true>(i, n, fNormals, fDistances, point, result);
     for (; i < n; ++i) {
-      result &= point.Dot(fNormals[i]) + fDistances[i] < 0;
+      result &= point.Dot(fNormals[i]) + fDistances[i] <= 0;
     }
   } else {
     AcceleratedContains<Real_v, false>(i, n, fNormals, fDistances, point, result);
     for (; i < n; ++i) {
-      result |= point.Dot(fNormals[i]) + fDistances[i] < 0;
+      result |= point.Dot(fNormals[i]) + fDistances[i] <= 0;
     }
   }
 
