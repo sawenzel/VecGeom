@@ -20,7 +20,7 @@
 
 namespace vecgeom {
 
-namespace VECGEOM_IMPL_NAMESPACE {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 class UnplacedScaledShape;
 class Scale3D;
 } // namespace VECGEOM_IMPL_NAMESPACE

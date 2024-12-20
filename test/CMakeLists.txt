@@ -10,7 +10,7 @@ macro(build_executables EXECUTABLES)
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
     target_link_libraries(${TARGET_NAME} PUBLIC
-      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,vecgeom>
+      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,>
       VecGeomTest)
   endforeach()
 endmacro()

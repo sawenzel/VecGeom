@@ -447,7 +447,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void MaskedAssign(vecgeom::Vector3D
 /// @param v1 first vector
 /// @param v2 second vector
 /// @return Vector having the minimum of the two vector components
-namespace math {
+inline namespace math {
 template <typename T>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecgeom::Vector3D<T> Min(vecgeom::Vector3D<T> const &v1,
                                                                       vecgeom::Vector3D<T> const &v2)
