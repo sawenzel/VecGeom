@@ -434,10 +434,10 @@ bool TestSphere()
   Sphere_t s32("Band (theta segment2)", 45, 50, 0, 2 * PI, 0, PI / 4);
   Sphere_t s33("Band (theta segment1)", 45, 50, 0, 2 * PI, PI * 3 / 4, PI / 4);
   Sphere_t s34("Band (theta segment)", 4, 50, 0, 2 * PI, PI / 4, 0.5 * PI);
-  Sphere_t s4("Band (phi segment)", 45, 50, -PI / 4, 0.5 * PI, 0, 2 * PI);
+  Sphere_t s4("Band (phi segment)", 45, 50, -PI / 4, 0.5 * PI, 0, PI);
   //    std::cout<<"s4.fSPhi = "<<s4.GetSPhi()<<std::endl;
-  Sphere_t s41("Band (phi segment)", 5, 50, -PI, 3. * PI / 2., 0, 2 * PI);
-  Sphere_t s42("Band (phi segment)", 5, 50, -PI / 2, 3. * PI / 2., 0, 2 * PI);
+  Sphere_t s41("Band (phi segment)", 5, 50, -PI, 3. * PI / 2., 0, PI);
+  Sphere_t s42("Band (phi segment)", 5, 50, -PI / 2, 3. * PI / 2., 0, PI);
   Sphere_t s5("Patch (phi/theta seg)", 45, 50, -PI / 4, 0.5 * PI, PI / 4, 0.5 * PI);
 
   Sphere_t s6("John example", 300, 500, 0, 5.76, 0, PI);

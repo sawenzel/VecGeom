@@ -187,6 +187,7 @@ option(VECGEOM_USE_NAVINDEX "Use navigation index table and states" OFF)
 if((NOT VECGEOM_USE_NAVINDEX) AND VECGEOM_ENABLE_CUDA)
   message(STATUS "Forcing VECGEOM_USE_NAVINDEX to ON (required by VECGEOM_ENABLE_CUDA=ON)")
   set(VECGEOM_USE_NAVINDEX ON CACHE BOOL "Use navigation index table and states" FORCE)
+  set(VECGEOM_USE_INDEXEDNAVSTATES ON CACHE BOOL "Use indices rather than volume pointers in NavigationState objects" FORCE)
 endif()
 
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)

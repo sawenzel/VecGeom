@@ -238,22 +238,7 @@ public:
       Vector3D<Real_v> const & /*point*/) const
   {
   }
-  /*
-    template <typename Real_v, typename Inside_t>
-    VECCORE_ATT_HOST_DEVICE
-    Inside_t Inside(Vector3D<Real_v> const &point) const
-    {
 
-      using Bool_v       = vecCore::Mask_v<Real_v>;
-      using InsideBool_v = vecCore::Mask_v<Inside_t>;
-      Bool_v completelyinside, completelyoutside;
-      GenericKernelForContainsAndInside<Real_v, true>(point, completelyinside, completelyoutside);
-      Inside_t inside(EInside::kSurface);
-      vecCore::MaskedAssign(inside, (InsideBool_v)completelyoutside, Inside_t(EInside::kOutside));
-      vecCore::MaskedAssign(inside, (InsideBool_v)completelyinside, Inside_t(EInside::kInside));
-      return inside;
-    }
-  */
   template <typename Real_v, typename Inside_t>
   VECCORE_ATT_HOST_DEVICE Inside_t Inside(Vector3D<Real_v> const &point) const
   {

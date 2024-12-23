@@ -150,12 +150,13 @@ struct SphereImplementation {
     Real_v innerDist(kInfLength);
 
     if (sphere.fFullSphere) {
-      vecCore::MaskedAssign(outerDist, !done && (sd1 >= Real_v(0.)), sd1);
+      vecCore::MaskedAssign(outerDist, !done && (sd1 >= Real_v(-kTolerance)), sd1);
     } else {
       tmpPt = point + sd1 * direction;
       vecCore::MaskedAssign(outerDist,
-                            !done && sphere.fPhiWedge.Contains<Real_v>(tmpPt) &&
-                                sphere.fThetaCone.Contains<Real_v>(tmpPt) && (sd1 >= Real_v(0.)),
+                            !done && (sd1 >= Real_v(-kTolerance) && sd1 < Real_v(kInfLength))
+                                  && sphere.fPhiWedge.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside
+                                  && sphere.fThetaCone.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside,
                             sd1);
     }
 
@@ -166,13 +167,14 @@ struct SphereImplementation {
       vecCore__MaskedAssignFunc(sd2, d2 >= Real_v(0.), (-pDotV3d + Sqrt(Abs(d2))));
 
       if (sphere.fFullSphere) {
-        vecCore::MaskedAssign(innerDist, !done && (sd2 >= Real_v(0.)), sd2);
+        vecCore::MaskedAssign(innerDist, !done && (sd2 >= Real_v(-kTolerance)), sd2);
       } else {
         //   std::cerr<<" ---- Called by InnerRad ---- " << std::endl;
         tmpPt = point + sd2 * direction;
         vecCore::MaskedAssign(innerDist,
-                              !done && (sd2 >= Real_v(0.)) && sphere.fPhiWedge.Contains<Real_v>(tmpPt) &&
-                                  sphere.fThetaCone.Contains<Real_v>(tmpPt),
+                              !done && (sd2 >= Real_v(-kTolerance) && sd2 < Real_v(kInfLength))
+                                    && sphere.fPhiWedge.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside
+                                    && sphere.fThetaCone.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside,
                               sd2);
       }
     }
