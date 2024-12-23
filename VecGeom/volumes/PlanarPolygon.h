@@ -192,8 +192,7 @@ public:
 
   // checks if 2D coordinates (x,y) are on the line segment given by index i
   template <typename Real_v, typename InternalReal_v, typename Bool_v>
-  VECCORE_ATT_HOST_DEVICE
-  Bool_v OnSegment(size_t i, Real_v const &px, Real_v const &py) const
+  VECCORE_ATT_HOST_DEVICE Bool_v OnSegment(size_t i, Real_v const &px, Real_v const &py) const
   {
     using vecCore::FromPtr;
 
@@ -238,8 +237,7 @@ public:
   }
 
   template <typename Real_v, typename Bool_v = vecCore::Mask_v<Real_v>>
-  VECCORE_ATT_HOST_DEVICE
-  inline Bool_v ContainsConvex(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE inline Bool_v ContainsConvex(Vector3D<Real_v> const &point) const
   {
     const size_t S = fVertices.size();
     Bool_v result(false);
@@ -248,13 +246,12 @@ public:
       Real_v dseg = -(fA[i] * point.x() + fB[i] * point.y() + fD[i]);
       vecCore__MaskedAssignFunc(distance, dseg > distance, dseg);
     }
-    result = distance < Real_v(0.);
+    result = distance < Real_v(kTolerance);
     return result;
   }
 
   template <typename Real_v, typename Bool_v = vecCore::Mask_v<Real_v>>
-  VECCORE_ATT_HOST_DEVICE
-  inline Bool_v Contains(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE inline Bool_v Contains(Vector3D<Real_v> const &point) const
   {
     const size_t S = fVertices.size();
     Bool_v result(false);
@@ -281,8 +278,7 @@ public:
   }
 
   template <typename Real_v, typename Inside_v = int /*vecCore::Index_v<Real_v>*/>
-  VECCORE_ATT_HOST_DEVICE
-  inline Inside_v InsideConvex(Vector3D<Real_v> const &point) const
+  VECCORE_ATT_HOST_DEVICE inline Inside_v InsideConvex(Vector3D<Real_v> const &point) const
   {
     assert(fIsConvex);
     const size_t S  = fVertices.size();
@@ -299,8 +295,7 @@ public:
 
   // calculate an underestimate of safety for the convex case
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v SafetyConvex(Vector3D<Real_v> const &point, bool inside) const
+  VECCORE_ATT_HOST_DEVICE Real_v SafetyConvex(Vector3D<Real_v> const &point, bool inside) const
   {
     assert(fIsConvex);
     const size_t S  = fVertices.size();
@@ -315,8 +310,7 @@ public:
 
   // calculate precise safety sqr to the polygon; return the closest "line" id
   template <typename Real_v>
-  VECCORE_ATT_HOST_DEVICE
-  Real_v SafetySqr(Vector3D<Real_v> const &point, int &closestid) const
+  VECCORE_ATT_HOST_DEVICE Real_v SafetySqr(Vector3D<Real_v> const &point, int &closestid) const
   {
     // implementation based on TGeoPolygone@ROOT
     Real_v safe(1E30);
@@ -442,8 +436,7 @@ private:
 #ifdef SPECIALIZE
 
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline bool PlanarPolygon::ContainsConvex(Vector3D<Precision> const &point) const
+VECCORE_ATT_HOST_DEVICE inline bool PlanarPolygon::ContainsConvex(Vector3D<Precision> const &point) const
 {
   const size_t S     = fVertices.size();
   Precision distance = -InfinityLength<Precision>();
@@ -455,8 +448,7 @@ inline bool PlanarPolygon::ContainsConvex(Vector3D<Precision> const &point) cons
 }
 
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline bool PlanarPolygon::Contains(Vector3D<Precision> const &point) const
+VECCORE_ATT_HOST_DEVICE inline bool PlanarPolygon::Contains(Vector3D<Precision> const &point) const
 {
 
   using Real_v = vecgeom::VectorBackend::Real_v;
@@ -509,8 +501,7 @@ inline bool PlanarPolygon::Contains(Vector3D<Precision> const &point) const
 }
 
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline Inside_t PlanarPolygon::InsideConvex(Vector3D<Precision> const &point) const
+VECCORE_ATT_HOST_DEVICE inline Inside_t PlanarPolygon::InsideConvex(Vector3D<Precision> const &point) const
 {
   const size_t S = fVertices.size();
   assert(fIsConvex);
@@ -526,8 +517,8 @@ inline Inside_t PlanarPolygon::InsideConvex(Vector3D<Precision> const &point) co
 
 // template specialization for convex safety
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline Precision PlanarPolygon::SafetyConvex(Vector3D<Precision> const &point, bool inside) const
+VECCORE_ATT_HOST_DEVICE inline Precision PlanarPolygon::SafetyConvex(Vector3D<Precision> const &point,
+                                                                     bool inside) const
 {
   const size_t S = fVertices.size();
   assert(fIsConvex);
@@ -542,8 +533,8 @@ inline Precision PlanarPolygon::SafetyConvex(Vector3D<Precision> const &point, b
 
 // template specialization for scalar safety
 template <>
-VECCORE_ATT_HOST_DEVICE
-inline Precision PlanarPolygon::SafetySqr(Vector3D<Precision> const &point, int &closestid) const
+VECCORE_ATT_HOST_DEVICE inline Precision PlanarPolygon::SafetySqr(Vector3D<Precision> const &point,
+                                                                  int &closestid) const
 {
   using Real_v = vecgeom::VectorBackend::Real_v;
   using vecCore::FromPtr;

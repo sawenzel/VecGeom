@@ -294,6 +294,9 @@ public:
   static void RelocateToNextVolume(Vector3D<Precision> const &globalpoint, Vector3D<Precision> const &globaldir,
                                    vecgeom::NavigationState &state)
   {
+    // if already outside, don't do anything
+    if (state.IsOutside()) return;
+
     // Push the point inside the next volume.
     Vector3D<Precision> pushed = globalpoint + kBoundaryPush * globaldir;
 
