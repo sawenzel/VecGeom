@@ -181,9 +181,9 @@ public:
     Precision z2 = l1.p2.y();
 
     if (z1 == z2) {
-        // vertical line or degenerate point - no solution
-        poi.x() = poi.y() = 0.;
-        return false;
+      // vertical line or degenerate point - no solution
+      poi.x() = poi.y() = 0.;
+      return false;
     }
 
     // solution: poi(r, zVal)
@@ -191,8 +191,8 @@ public:
     poi.x() = r1 + (r2 - r1) * (zVal - z1) / (z2 - z1);
 
     // Validation: is poi contained between (r1,z1)<->(r2,z2)?
-    bool ok = (poi.x() >= std::min(r1, r2)) && (poi.x() <= std::max(r1, r2))
-           && (poi.y() >= std::min(z1, z2)) && (poi.y() <= std::max(z1, z2));
+    bool ok = (poi.x() >= vecCore::math::Min(r1, r2)) && (poi.x() <= vecCore::math::Max(r1, r2)) &&
+              (poi.y() >= vecCore::math::Min(z1, z2)) && (poi.y() <= vecCore::math::Max(z1, z2));
 
     return ok;
   }
