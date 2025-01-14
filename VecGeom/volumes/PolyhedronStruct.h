@@ -242,7 +242,15 @@ struct PolyhedronStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  ~PolyhedronStruct() { delete fAreaStruct; }
+  ~PolyhedronStruct()
+  {
+    fZSegments.Deallocate();
+    fZPlanes.Deallocate();
+    fRMin.Deallocate();
+    fRMax.Deallocate();
+    fSameZ.Deallocate();
+    delete fAreaStruct;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   bool CheckContinuityInSlope(const Precision rOuter[], const Precision zPlane[], const unsigned int nz)
