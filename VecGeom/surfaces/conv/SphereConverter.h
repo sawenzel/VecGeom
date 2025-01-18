@@ -28,7 +28,7 @@ bool CreateSphereSurfaces(vecgeom::UnplacedSphere const &sph, int logical_id, bo
   vecgeom::Precision surfdata[1];
   surfdata[0] = rmax;
   isurf       = builder::CreateLocalSurface<Real_t>(
-      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kSpherical, surfdata, /*flipped=*/true),
+      builder::CreateUnplacedSurface<Real_t>(SurfaceType::kSpherical, surfdata, /*flipped=*/false),
       builder::CreateFrame<Real_t>(FrameType::kZPhi,
                                    ZPhiMask<Real_t>{-rmax, rmax, true, 0., rmax, 0., vecgeom::kTwoPi}),
       /*identity transformation*/ identity);
