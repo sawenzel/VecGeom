@@ -57,12 +57,24 @@ public:
   void resetErrors() {}
 };
 
+class XercesInitializer {
+public:
+  static void Initialize() { static XercesInitializer instance; }
+
+private:
+  XercesInitializer() { xercesc::XMLPlatformUtils::Initialize(); }
+  ~XercesInitializer() { xercesc::XMLPlatformUtils::Terminate(); }
+
+  // Prevent copying and assignment
+  XercesInitializer(const XercesInitializer &)            = delete;
+  XercesInitializer &operator=(const XercesInitializer &) = delete;
+};
+
 Backend::Backend(bool validate)
 {
-  // TODO catch errors, do once per program
-  xercesc::XMLPlatformUtils::Initialize();
+  XercesInitializer::Initialize();
 
-  fDOMParser           = new xercesc::XercesDOMParser;
+  fDOMParser           = std::make_unique<xercesc::XercesDOMParser>();
   auto const schemaDir = std::getenv("GDMLDIR"); // get the alternative schema location for offline use
   if (schemaDir) {
     auto const schemaFile = (schemaDir + std::string("gdml.xsd"));
@@ -83,8 +95,21 @@ Backend::Backend(bool validate)
   fDOMParser->setCreateSchemaInfo(true);
   fDOMParser->setIncludeIgnorableWhitespace(false);
 
-  xercesc::ErrorHandler *handler = new ErrorHandler(false); // Geant4 suppression errors when not validating (!validate);
+  xercesc::ErrorHandler *handler =
+      new ErrorHandler(false); // Geant4 suppression errors when not validating (!validate);
   fDOMParser->setErrorHandler(handler);
+}
+
+Backend::~Backend()
+{
+  // Ensure Xerces-C++ parser is deleted before terminating the platform
+  if (fDOMParser) {
+    delete fDOMParser->getErrorHandler();
+    fDOMParser.reset();
+  }
+
+  // Terminate Xerces last
+  xercesc::XMLPlatformUtils::Terminate();
 }
 
 XERCES_CPP_NAMESPACE_QUALIFIER DOMDocument *Backend::Load(std::string const &aFilename)
