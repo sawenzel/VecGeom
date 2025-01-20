@@ -48,8 +48,8 @@ public:
         if (daughter == exclude) {
           continue;
         }
-        Vector3D<Precision> transformedpoint;
-        if (daughter->Contains(currentpoint, transformedpoint)) {
+        auto transformedpoint = daughter->GetTransformation()->Transform<Precision>(currentpoint);
+        if (daughter->GetUnplacedVolume()->Inside(transformedpoint) != EnumInside::kOutside) {
           path.Push(daughter);
           currentpoint  = transformedpoint;
           currentvolume = daughter;

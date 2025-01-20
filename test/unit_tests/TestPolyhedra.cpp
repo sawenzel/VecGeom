@@ -20,7 +20,6 @@ template <class Polyhedra_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision>
 bool TestPolyhedra()
 {
   Precision tolerance = vecgeom::kTolerance;
-
   Precision RMINVec[8];
   RMINVec[0] = 30;
   RMINVec[1] = 30;
@@ -93,7 +92,7 @@ bool TestPolyhedra()
 
   Polyhedra_t *MyPGon1 = new Polyhedra_t("MyPGon1", sphi1, dphi1, 4, 3, Z_Values1, RMINVec1, RMAXVec1);
 
-  const int Nrz = 4, Nside = 6;
+  constexpr int Nrz = 4, Nside = 6;
   Precision zz[Nrz] = {10, -10, -10, 10};
   Precision rr[Nrz] = {15, 15, 0, 0};
 
@@ -102,6 +101,32 @@ bool TestPolyhedra()
 
   // std::cout << "=== Polyhedron: \n";
   // std::cout << *MyPGon2 << std::endl;
+
+  Precision RMINVec3[4]  = {1., 0.5, 0., 0.};
+  Precision RMAXVec3[4]  = {2., 1., 2., 2.};
+  Precision Z_Values3[4] = {-1., 0., 0., 1.};
+
+  Precision sphi3 = -kPi / 4;
+  Precision dphi3 = 2 * kPi;
+
+  Polyhedra_t *MyPGon3 = new Polyhedra_t("MyPGon3", sphi3, dphi3, 4, 4, Z_Values3, RMINVec3, RMAXVec3);
+  std::cout << "=== Polyhedron3: \n";
+  std::cout << *MyPGon3 << std::endl;
+  assert(MyPGon3->GetUnplacedVolume()->GetStruct().fSameZ[1]);
+
+  Precision RMINVec4[12]  = {0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0.};
+  Precision RMAXVec4[12]  = {5., 5., 2., 4., 4., 2., 2., 2., 5., 5., 2., 0.};
+  Precision Z_Values4[12] = {-10., -9., -9., -8., -7., -7., 0., 1., 1., 2., 2., 10.};
+
+  Precision sphi4 = -kPi / 4;
+  Precision dphi4 = 2 * kPi;
+
+  Polyhedra_t *MyPGon4 = new Polyhedra_t("MyPGon4", sphi4, dphi4, 4, 12, Z_Values4, RMINVec4, RMAXVec4);
+
+  std::cout << "=== Polyhedron4: \n";
+  std::cout << *MyPGon4 << std::endl;
+  auto const &pgon_struct = MyPGon4->GetUnplacedVolume()->GetStruct();
+  assert(pgon_struct.fSameZ[1] && pgon_struct.fSameZ[4] && pgon_struct.fSameZ[7] && pgon_struct.fSameZ[9]);
 
   // Check Cubic volume
   // Precision vol;
@@ -132,15 +157,21 @@ bool TestPolyhedra()
   std::cout << "Less Simple Polyhedron(2 cutted piramides) SurfaceArea =" << MyPGon1->SurfaceArea()
             << " has to be 65.941..." << std::endl;
   // Asserts
-  Vec_t p1, p2, p3, p4, p5, p6, p7, p8, dirx, diry, dirz;
-  p1 = Vec_t(0, 0, -5);
-  p2 = Vec_t(50, 0, 40);
-  p3 = Vec_t(5, 1, 20);
-  p4 = Vec_t(45, 5, 30);
-  p5 = Vec_t(0, 0, 30);
-  p6 = Vec_t(41, 0, 10);
-  p7 = Vec_t(0, 0, 0);
-  p8 = Vec_t(15, 0, 0);
+  Vec_t p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, dirx, diry, dirz;
+  p1  = Vec_t(0, 0, -5);
+  p2  = Vec_t(50, 0, 40);
+  p3  = Vec_t(5, 1, 20);
+  p4  = Vec_t(45, 5, 30);
+  p5  = Vec_t(0, 0, 30);
+  p6  = Vec_t(41, 0, 10);
+  p7  = Vec_t(0, 0, 0);
+  p8  = Vec_t(15, 0, 0);
+  p9  = Vec_t(0, 0.1, 1);
+  p10 = Vec_t(0, 0.1, -0.9 * vecgeom::kTolerance);
+  p11 = Vec_t(0, 1.1, -1 - 0.9 * vecgeom::kTolerance);
+  p12 = Vec_t(0, 0.6, 0);
+  p13 = Vec_t(0, 0.6, 1 + 1.1 * vecgeom::kTolerance);
+  p14 = Vec_t(0, 0.1, 1 - 0.5 * vecgeom::kTolerance);
 
   dirx = Vec_t(1, 0, 0);
   diry = Vec_t(0, 1, 0);
@@ -159,16 +190,23 @@ bool TestPolyhedra()
   assert(ApproxEqual(maxExtent, maxBBox));
 
   // Check Inside
+  const char *sInside[4] = {"none", "inside", "surface", "outside"};
   std::cout << " EInside values:  kInside=" << vecgeom::EInside::kInside << ", kSurface=" << vecgeom::EInside::kSurface
             << ", kOutside=" << vecgeom::EInside::kOutside << "\n";
-  std::cout << " MyPGon->Inside(" << p1 << ") = " << MyPGon->Inside(p1) << "\n";
-  std::cout << " MyPGon->Inside(" << p2 << ") = " << MyPGon->Inside(p2) << "\n";
-  std::cout << " MyPGon->Inside(" << p3 << ") = " << MyPGon->Inside(p3) << "\n";
-  std::cout << " MyPGon->Inside(" << p4 << ") = " << MyPGon->Inside(p4) << "\n";
-  std::cout << " MyPGon->Inside(" << p5 << ") = " << MyPGon->Inside(p5) << "\n";
-  std::cout << " MyPGon->Inside(" << p6 << ") = " << MyPGon->Inside(p6) << "\n";
-  std::cout << " MyPGon2->Inside(" << p7 << ") = " << MyPGon2->Inside(p7) << "\n";
-  std::cout << " MyPGon2->Inside(" << p8 << ") = " << MyPGon2->Inside(p8) << "\n";
+  std::cout << " MyPGon->Inside(" << p1 << ") = " << sInside[MyPGon->Inside(p1)] << "\n";
+  std::cout << " MyPGon->Inside(" << p2 << ") = " << sInside[MyPGon->Inside(p2)] << "\n";
+  std::cout << " MyPGon->Inside(" << p3 << ") = " << sInside[MyPGon->Inside(p3)] << "\n";
+  std::cout << " MyPGon->Inside(" << p4 << ") = " << sInside[MyPGon->Inside(p4)] << "\n";
+  std::cout << " MyPGon->Inside(" << p5 << ") = " << sInside[MyPGon->Inside(p5)] << "\n";
+  std::cout << " MyPGon->Inside(" << p6 << ") = " << sInside[MyPGon->Inside(p6)] << "\n";
+  std::cout << " MyPGon2->Inside(" << p7 << ") = " << sInside[MyPGon2->Inside(p7)] << "\n";
+  std::cout << " MyPGon2->Inside(" << p8 << ") = " << sInside[MyPGon2->Inside(p8)] << "\n";
+  std::cout << " MyPGon3->Inside(" << p9 << ") = " << sInside[MyPGon3->Inside(p9)] << "\n";
+  std::cout << " MyPGon3->Inside(" << p10 << ") = " << sInside[MyPGon3->Inside(p10)] << "\n";
+  std::cout << " MyPGon3->Inside(" << p11 << ") = " << sInside[MyPGon3->Inside(p11)] << "\n";
+  std::cout << " MyPGon3->Inside(" << p12 << ") = " << sInside[MyPGon3->Inside(p12)] << "\n";
+  std::cout << " MyPGon3->Inside(" << p13 << ") = " << sInside[MyPGon3->Inside(p13)] << "\n";
+  std::cout << " MyPGon3->Contains(" << p14 << ") = " << MyPGon3->Contains(p14) << "\n";
 
   assert(MyPGon->Inside(p1) == vecgeom::EInside::kSurface);
   assert(MyPGon->Inside(p2) == vecgeom::EInside::kSurface);
@@ -178,6 +216,12 @@ bool TestPolyhedra()
   assert(MyPGon->Inside(p6) == vecgeom::EInside::kOutside);
   assert(MyPGon2->Inside(p7) == vecgeom::EInside::kInside);
   assert(MyPGon2->Inside(p8) == vecgeom::EInside::kSurface);
+  assert(MyPGon3->Inside(p9) == vecgeom::EInside::kSurface);
+  assert(MyPGon3->Inside(p10) == vecgeom::EInside::kSurface);
+  assert(MyPGon3->Inside(p11) == vecgeom::EInside::kSurface);
+  assert(MyPGon3->Inside(p12) == vecgeom::EInside::kInside);
+  assert(MyPGon3->Inside(p13) == vecgeom::EInside::kOutside);
+  assert(MyPGon3->Contains(p14));
 
   // Check that Inside and Contains agree for points around phi tolerance.
   {
@@ -423,6 +467,12 @@ bool TestPolyhedra()
     }
   }
 #endif
+
+  delete MyPGon;
+  delete MyPGon0;
+  delete MyPGon1;
+  delete MyPGon2;
+  delete MyPGon3;
 
   return true;
 }

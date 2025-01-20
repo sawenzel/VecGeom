@@ -119,7 +119,7 @@ struct PolyhedronStruct {
       : fSideCount(sideCount), fHasInnerRadii(false), fHasPhiCutout(phiDelta < kTwoPi),
         fHasLargePhiCutout(phiDelta < kPi), fPhiStart(NormalizeAngle<kScalar>(phiStart)),
         fPhiDelta((phiDelta > kTwoPi) ? kTwoPi : phiDelta), fPhiWedge(fPhiDelta, fPhiStart),
-        fZSegments(zPlaneCount - 1), fZPlanes(zPlaneCount), fRMin(zPlaneCount), fRMax(zPlaneCount),
+        fZSegments(zPlaneCount - 1), fZPlanes(zPlaneCount), fRMin(zPlaneCount), fRMax(zPlaneCount), fSameZ(zPlaneCount),
         fPhiSections(sideCount + 1), fBoundingTube(0, 1, 1, fPhiStart, fPhiDelta), fContinuousInSlope(true),
         fConvexityPossible(true), fEqualRmax(true)
   {
@@ -132,7 +132,7 @@ struct PolyhedronStruct {
       : fSideCount(sideCount), fHasInnerRadii(false), fHasPhiCutout(phiDelta < kTwoPi),
         fHasLargePhiCutout(phiDelta < kPi), fPhiStart(NormalizeAngle<kScalar>(phiStart)),
         fPhiDelta((phiDelta > kTwoPi) ? kTwoPi : phiDelta), fPhiWedge(fPhiDelta, fPhiStart), fZSegments(), fZPlanes(),
-        fRMin(), fRMax(), fPhiSections(sideCount + 1), fBoundingTube(0, 1, 1, fPhiStart, fPhiDelta),
+        fRMin(), fRMax(), fSameZ(), fPhiSections(sideCount + 1), fBoundingTube(0, 1, 1, fPhiStart, fPhiDelta),
         fContinuousInSlope(true), fConvexityPossible(true), fEqualRmax(true)
   {
     if (verticesCount < 3) throw std::runtime_error("A Polyhedron needs at least 3 (rz) vertices");
@@ -230,6 +230,7 @@ struct PolyhedronStruct {
     fZPlanes.Allocate(Nz);
     fRMin.Allocate(Nz);
     fRMax.Allocate(Nz);
+    fSameZ.Allocate(Nz);
 
     // Delegate to full constructor
     Initialize(phiStart, phiDelta, sideCount, Nz, zArg, rMin, rMax);
@@ -246,11 +247,12 @@ struct PolyhedronStruct {
   VECCORE_ATT_HOST_DEVICE
   bool CheckContinuityInSlope(const Precision rOuter[], const Precision zPlane[], const unsigned int nz)
   {
+    auto ApproxEqual = [](const Precision &x, const Precision &y) { return vecCore::math::Abs(x - y) < kTolerance; };
 
     Precision prevSlope = kInfLength;
     for (unsigned int j = 0; j < nz - 1; ++j) {
-      if (zPlane[j + 1] == zPlane[j]) {
-        if (rOuter[j + 1] != rOuter[j]) return false;
+      if (ApproxEqual(zPlane[j + 1], zPlane[j])) {
+        if (!ApproxEqual(rOuter[j + 1], rOuter[j])) return false;
       } else {
         Precision currentSlope = (rOuter[j + 1] - rOuter[j]) / (zPlane[j + 1] - zPlane[j]);
         if (currentSlope > prevSlope) return false;
@@ -267,22 +269,29 @@ struct PolyhedronStruct {
                   Precision const zPlanes[], Precision const rMin[], Precision const rMax[])
   {
     typedef Vector3D<Precision> Vec_t;
+    auto ApproxEqual = [](const Precision x, const Precision y) { return vecCore::math::Abs(x - y) < kTolerance; };
 
     // Sanity check of input parameters
     assert(zPlaneCount > 1);
     assert(fSideCount > 0);
 
+    for (auto i = 0; i < zPlaneCount; ++i) {
+      fZPlanes[i] = 0.;
+      fRMin[i]    = 0.;
+      fRMax[i]    = 0.;
+      fSameZ[i]   = false;
+    }
     copy(zPlanes, zPlanes + zPlaneCount, &fZPlanes[0]);
     copy(rMin, rMin + zPlaneCount, &fRMin[0]);
     copy(rMax, rMax + zPlaneCount, &fRMax[0]);
-    fSameZ.Allocate(zPlaneCount);
 
     Precision startRmax = rMax[0];
     for (int i = 0; i < zPlaneCount; i++) {
-      fConvexityPossible &= (rMin[i] == 0.);
-      fEqualRmax &= (startRmax == rMax[i]);
-      fSameZ[i] = false;
-      if (i > 0 && i < zPlaneCount - 1 && fZPlanes[i] == fZPlanes[i + 1]) fSameZ[i] = true;
+      fConvexityPossible &= (rMin[i] < kTolerance);
+      fEqualRmax &= (ApproxEqual(startRmax, rMax[i]));
+      if (i > 0 && i < zPlaneCount - 2) {
+        if (ApproxEqual(fZPlanes[i], fZPlanes[i + 1])) fSameZ[i] = true;
+      }
     }
     fContinuousInSlope = CheckContinuityInSlope(rMax, zPlanes, zPlaneCount);
 
@@ -293,9 +302,9 @@ struct PolyhedronStruct {
       // Z-planes must be monotonically increasing
       assert(zPlanes[i] <= zPlanes[i + 1]);
 
-      bool hasInnerRadius = rMin[i] > 0 || rMin[i + 1] > 0;
+      bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
 
-      int multiplier = (zPlanes[i] == zPlanes[i + 1] && rMax[i] == rMax[i + 1]) ? 0 : 1;
+      int multiplier = (ApproxEqual(zPlanes[i], zPlanes[i + 1]) && ApproxEqual(rMax[i], rMax[i + 1])) ? 0 : 1;
 
       // create quadrilaterals in a predefined place with placement new
       new (&fZSegments[i].outer) Quadrilaterals(sideCount * multiplier);

@@ -16,9 +16,9 @@ template <typename Type>
 class Array : public AlignedBase {
 
 private:
-  Type *fData = nullptr;
+  Type *fData        = nullptr;
   unsigned int fSize = 0;
-  bool fAllocated = false;
+  bool fAllocated    = false;
 
 public:
   Array() = default;
@@ -83,8 +83,7 @@ public:
 };
 
 template <typename Type>
-VECCORE_ATT_HOST_DEVICE
-Array<Type>::Array(const unsigned int initSize)
+VECCORE_ATT_HOST_DEVICE Array<Type>::Array(const unsigned int initSize)
 {
   Allocate(initSize);
 }
@@ -97,15 +96,13 @@ Array<Type>::Array(Array<Type> const &other)
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Array<Type>::Array(Type *data, unsigned int initSize) : fData(data), fSize(initSize), fAllocated(false)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Array<Type>::Array(Type *data, unsigned int initSize)
+    : fData(data), fSize(initSize), fAllocated(false)
 {
 }
 
 template <typename Type>
-VECCORE_ATT_HOST_DEVICE
-Array<Type>::~Array()
+VECCORE_ATT_HOST_DEVICE Array<Type>::~Array()
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (fAllocated) vecCore::AlignedFree(fData);
@@ -113,8 +110,7 @@ Array<Type>::~Array()
 }
 
 template <typename Type>
-VECCORE_ATT_HOST_DEVICE
-void Array<Type>::Allocate(const unsigned int initSize)
+VECCORE_ATT_HOST_DEVICE void Array<Type>::Allocate(const unsigned int initSize)
 {
   Deallocate();
   fSize = initSize;
@@ -129,8 +125,7 @@ void Array<Type>::Allocate(const unsigned int initSize)
 }
 
 template <typename Type>
-VECCORE_ATT_HOST_DEVICE
-void Array<Type>::Deallocate()
+VECCORE_ATT_HOST_DEVICE void Array<Type>::Deallocate()
 {
   if (fAllocated) {
 #ifndef VECCORE_CUDA
@@ -145,9 +140,7 @@ void Array<Type>::Deallocate()
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Array<Type> &Array<Type>::operator=(Array<Type> const &other)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Array<Type> &Array<Type>::operator=(Array<Type> const &other)
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   Deallocate();
@@ -160,7 +153,7 @@ Array<Type> &Array<Type>::operator=(Array<Type> const &other)
 #endif
   return *this;
 }
-}
-} // End global namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif // VECGEOM_BASE_ARRAY_H_

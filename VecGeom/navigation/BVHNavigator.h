@@ -114,7 +114,9 @@ public:
   static bool CandidateContains(int aLVIndex, int index, Vector3D<Precision> const &localpoint,
                                 Vector3D<Precision> &daughterlocalpoint)
   {
-    return GetPlacedVolume(aLVIndex, index)->Contains(localpoint, daughterlocalpoint);
+    auto daughter      = GetPlacedVolume(aLVIndex, index);
+    daughterlocalpoint = daughter->GetTransformation()->Transform<Precision>(localpoint);
+    return daughter->GetUnplacedVolume()->Inside(daughterlocalpoint) != EnumInside::kOutside;
   };
 
   /*

@@ -483,8 +483,10 @@ void UnplacedPolyhedron::PrintSegments() const
 
 void UnplacedPolyhedron::Print(std::ostream &os) const
 {
-  int oldprc = os.precision(16);
-  int Nz     = fPoly.fZPlanes.size();
+  int oldprc           = os.precision(16);
+  int Nz               = fPoly.fZPlanes.size();
+  const char *sbool[2] = {"false", "true"};
+
   os << "-----------------------------------------------------------\n"
      << "     *** Dump for solid - polyhedron ***\n"
      << "     ===================================================\n"
@@ -492,13 +494,12 @@ void UnplacedPolyhedron::Print(std::ostream &os) const
      << " Phi start= " << fPoly.fPhiStart * vecgeom::kRadToDeg
      << " deg, Phi delta= " << fPoly.fPhiDelta * vecgeom::kRadToDeg << " deg\n"
      << "     Number of segments along phi: " << fPoly.fSideCount << "\n"
-     << "     N = number of Z-sections: " << Nz << "\n"
-     << "     N+1 z-coordinates (in cm):\n";
+     << "     N = number of Z-planes: " << Nz << "\n"
+     << "     z-coordinates (in cm):\n";
 
   for (int i = 0; i < Nz; ++i) {
-    os << "       at Z=" << fPoly.fZPlanes[i] << "cm:"
-       << " Rmin=" << fPoly.fRMin[i] << "cm,"
-       << " Rmax=" << fPoly.fRMax[i] << "cm\n";
+    os << "       at Z=" << fPoly.fZPlanes[i] << "cm:" << " Rmin=" << fPoly.fRMin[i] << "cm,"
+       << " Rmax=" << fPoly.fRMax[i] << "cm" << " sameZ=" << sbool[int(fPoly.fSameZ[i])] << std::endl;
   }
   os << "-----------------------------------------------------------\n";
   os.precision(oldprc);

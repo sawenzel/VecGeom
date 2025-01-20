@@ -262,25 +262,21 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool LargePhiCutout<Polyhedron::EPh
 namespace {
 
 template <typename Real_v>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int FindZSegmentKernel(Precision const *begin, Precision const *end,
-                                                                    Real_v const &pointZ);
-
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int FindZSegmentKernel(Real_v const &pointZ, Precision const *begin,
+                                                                    size_t size);
 template <>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int FindZSegmentKernel<Precision>(Precision const *begin,
-                                                                               Precision const *end,
-                                                                               Precision const &pointZ)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int FindZSegmentKernel<Precision>(Precision const &pointZ,
+                                                                               Precision const *begin, size_t size)
 {
-  // TODO: vectorize this and move the brute-force algorithm to the CUDA
-  //       implementation. Inspiration can be found at:
-  //       http://schani.wordpress.com/2010/04/30/linear-vs-binary-search/
-  int index = -1;
+  int index            = size - 1;
+  Precision const *end = begin + index;
   // Modified algorithm to select the first section the position is close to
   // within boundary tolerance. This is important for degenerated Z polyhedra
-  while (begin < end - 1 && pointZ - kTolerance > *begin) {
-    ++index;
-    ++begin;
+  while (begin <= end && pointZ < *end + kTolerance) {
+    --index;
+    --end;
   }
-  if (pointZ + kTolerance > *begin) return (index + 1);
+  if ((index + 2 < size) && (pointZ > *(end + 1) - kTolerance)) return (index + 1);
   return index;
 }
 } // End anonymous namespace
@@ -290,7 +286,7 @@ template <typename Real_v>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int PolyhedronImplementation<innerRadiiT, phiCutoutT>::FindZSegment(
     UnplacedStruct_t const &unplaced, Real_v const &pointZ)
 {
-  return FindZSegmentKernel<Real_v>(&unplaced.fZPlanes[0], &unplaced.fZPlanes[0] + unplaced.fZPlanes.size(), pointZ);
+  return FindZSegmentKernel<Real_v>(pointZ, &unplaced.fZPlanes[0], unplaced.fZPlanes.size());
 }
 
 template <Polyhedron::EInnerRadii innerRadiiT, Polyhedron::EPhiCutout phiCutoutT>
@@ -850,7 +846,7 @@ VECCORE_ATT_HOST_DEVICE Precision PolyhedronImplementation<innerRadiiT, phiCutou
       // If the point is outside the bounding tube, check if the ray misses
       // the bounds
       HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template DistanceToIn<>(unplaced.fBoundingTube, boundsPoint,
-                                                                           direction, stepMax, tubeDistance);
+                                                                             direction, stepMax, tubeDistance);
       if (tubeDistance == InfinityLength<Precision>()) {
         return InfinityLength<Precision>();
       }
