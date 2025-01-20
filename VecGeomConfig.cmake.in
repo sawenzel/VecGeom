@@ -60,6 +60,12 @@
 
 @PACKAGE_INIT@
 
+# Set up CMAKE paths so that RDC file can be included by downstream libraries
+get_filename_component(VECGEOM_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" DIRECTORY)
+list(APPEND CMAKE_MODULE_PATH
+  "${VECGEOM_CMAKE_DIR}"
+)
+
 # Basic variables
 set_and_check(VECGEOM_INCLUDE_DIR "@PACKAGE_CONF_INCLUDE_DIR@")
 set(VECGEOM_INCLUDE_DIRS ${VECGEOM_INCLUDE_DIR})
@@ -80,7 +86,7 @@ set(VecGeom_GDML_FOUND ${VecGeom_GDML})
 set(VecGeom_single_precision_FOUND ${VecGeom_SINGLE_PRECISION})
 
 set(VecGeom_shared_FOUND @BUILD_SHARED_LIBS@)
-if(VecGeom_static_FOUND)
+if(VecGeom_shared_FOUND)
   set(VecGeom_static_FOUND FALSE)
 else()
   set(VecGeom_static_FOUND TRUE)

@@ -657,6 +657,7 @@ endif()
 
 # build the CUDA version of the library
 if(VECGEOM_ENABLE_CUDA)
+  set(__vg_cuda_liblist "vecgeomcuda_obj;vecgeomcuda_static;vecgeomcuda")
   # 1. OBJECT library to perform the actual (separable) compilation once
   #    PIC so it can go into a shared lib
   add_library(vecgeomcuda_obj OBJECT ${VECGEOM_CUDA_SRCS})
@@ -669,6 +670,10 @@ if(VECGEOM_ENABLE_CUDA)
   #    This is the library that consumers should link to unless they
   #    have to use shared libs and know what they are doing
   add_library(vecgeomcuda_static STATIC $<TARGET_OBJECTS:vecgeomcuda_obj>)
+  set_target_properties(vecgeomcuda_static
+    PROPERTIES
+      CUDA_RDC_LIBRARY_TYPE Static
+  )
 
   # 3. SHARED library composed of the object library objects
   #    This is the same library as produced by the old, hacked, FindCUDA module
@@ -688,23 +693,71 @@ if(VECGEOM_ENABLE_CUDA)
   #
   #      It is the consumer's responsibility to hide or forward any device linking
   #      requirements. This is the case if `MyLib` exposes device code.
-  add_library(vecgeomcuda SHARED $<TARGET_OBJECTS:vecgeomcuda_obj>)
-  set_target_properties(vecgeomcuda
-    PROPERTIES
-      CUDA_RESOLVE_DEVICE_SYMBOLS ON
-      CUDA_RUNTIME_LIBRARY Shared)
+
+  # The CUDA_RDC properties are defines and used in the CudaRdcUtils cmake script.
+  # See https://github.com/pcanal/CudaRDCExercise for a reference implementation.
+  set(__vg_cuda_rdc_props
+    CUDA_RDC_FINAL_LIBRARY vecgeomcuda
+    CUDA_RDC_MIDDLE_LIBRARY vecgeomcuda_objects (or static)
+    CUDA_RDC_STATIC_LIBRARY vecgeomcuda ${_staticsuf}
+    CUDA_RDC_OBJECT_LIBRARY vecgeom_obj
+  )
+
+  add_library(vecgeomcuda $<TARGET_OBJECTS:vecgeomcuda_obj>)
+  if (BUILD_SHARED_LIBS)
+    set_target_properties(vecgeomcuda
+      PROPERTIES
+        CUDA_RDC_LIBRARY_TYPE Final
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+        CUDA_RUNTIME_LIBRARY Shared)
+    # Library without the nvlink steps, this should be used for linking
+    # whenever additional cuda might be added.
+    list(APPEND __vg_cuda_liblist vecgeomcuda_objects)
+    add_library(vecgeomcuda_objects $<TARGET_OBJECTS:vecgeomcuda_obj>)
+    set_target_properties(vecgeomcuda_objects
+      PROPERTIES
+        CUDA_RDC_LIBRARY_TYPE Shared
+        CUDA_RESOLVE_DEVICE_SYMBOLS OFF
+        CUDA_RUNTIME_LIBRARY Shared)
+    # Those are currently only used for exporting for use from
+    # dependent products.
+    set(__vg_cuda_rdc_props
+      CUDA_RDC_FINAL_LIBRARY VecGeom::vecgeomcuda
+      CUDA_RDC_MIDDLE_LIBRARY VecGeom::vecgeomcuda_objects
+      CUDA_RDC_STATIC_LIBRARY VecGeom::vecgeomcuda_static
+      CUDA_RDC_OBJECT_LIBRARY vecgeom_obj
+    )
+  else()
+    set_target_properties(vecgeomcuda
+      PROPERTIES
+        CUDA_RDC_LIBRARY_TYPE Final
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+        CUDA_RUNTIME_LIBRARY Static)
+    set(__vg_cuda_rdc_props
+      CUDA_RDC_FINAL_LIBRARY VecGeom::vecgeomcuda
+      CUDA_RDC_MIDDLE_LIBRARY VecGeom::vecgeomcuda_static
+      CUDA_RDC_STATIC_LIBRARY VecGeom::vecgeomcuda_static
+      CUDA_RDC_OBJECT_LIBRARY vecgeom_obj
+    )
+  endif()
 
   # Apply usage requirements to OBJECT, STATIC, SHARED targets
   # Required so that OBJECT library compiles correctly and that STATIC/SHARED
   # forward Usage Requirements to their consumers. Can be simplified from CMake 3.21
   # with support for linking OBJECT libraries.
-  foreach(__vg_cuda_target vecgeomcuda_obj vecgeomcuda_static vecgeomcuda)
+  set_target_properties(vecgeom PROPERTIES ${__vg_cuda_rdc_props}
+    EXPORT_PROPERTIES "CUDA_RDC_LIBRARY_TYPE;CUDA_RDC_FINAL_LIBRARY;CUDA_RDC_MIDDLE_LIBRARY;CUDA_RDC_STATIC_LIBRARY"
+  )
+  foreach(__vg_cuda_target ${__vg_cuda_liblist})
     target_include_directories(${__vg_cuda_target}
       PUBLIC
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
     target_link_libraries(${__vg_cuda_target} PUBLIC VecCore::VecCore vecgeom)
+    set_target_properties(${__vg_cuda_target} PROPERTIES ${__vg_cuda_rdc_props}
+      EXPORT_PROPERTIES "CUDA_RDC_LIBRARY_TYPE;CUDA_RDC_FINAL_LIBRARY;CUDA_RDC_MIDDLE_LIBRARY;CUDA_RDC_STATIC_LIBRARY"
+    )
 
     # - Suppress stack size warnings from a couple of functions
     # NB: currently identified as needed at device link step, but this only works on
@@ -743,6 +796,9 @@ install(TARGETS vecgeom EXPORT VecGeomTargets DESTINATION "${CMAKE_INSTALL_LIBDI
 
 if(VECGEOM_ENABLE_CUDA)
   install(TARGETS vecgeomcuda vecgeomcuda_static EXPORT VecGeomTargets DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+  if(BUILD_SHARED_LIBS)
+    install(TARGETS vecgeomcuda_objects EXPORT VecGeomTargets DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+  endif()
 endif()
 
 # CMake support files
@@ -818,9 +874,13 @@ configure_package_config_file(VecGeomConfig.cmake.in
   INSTALL_DESTINATION "${CMAKE_INSTALL_CMAKEDIR}/VecGeom")
 
 # Install the VecGeom{Config,Version,Targets}.cmake
-install(FILES "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
-  "${PROJECT_BINARY_DIR}/VecGeomConfigVersion.cmake"
-  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}/VecGeom" COMPONENT dev)
+install(
+  FILES
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/VecGeomConfig.cmake"
+    "${PROJECT_BINARY_DIR}/VecGeomConfigVersion.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/modules/CudaRdcUtils.cmake"
+  DESTINATION "${CMAKE_INSTALL_CMAKEDIR}/VecGeom"
+)
 
 install(EXPORT VecGeomTargets
   NAMESPACE VecGeom::
