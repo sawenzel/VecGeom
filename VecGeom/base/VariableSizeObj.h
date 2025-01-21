@@ -178,8 +178,9 @@ public:
   static void ReleaseInstance(Cont *obj)
   {
     // Releases the space allocated for the object
+    bool selfalloc = obj->GetVariableData().fSelfAlloc;
     obj->~Cont();
-    if (obj->GetVariableData().fSelfAlloc) delete[](char *) obj;
+    if (selfalloc) delete[] (char *)obj;
   }
 
   // Equivalent of sizeof function (not taking into account padding for alignment)
