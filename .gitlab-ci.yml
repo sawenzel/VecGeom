@@ -1,4 +1,4 @@
-image: ubuntu:jammy
+image: registry.cern.ch/docker.io/ubuntu:jammy
 
 stages:
   - build
