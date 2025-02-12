@@ -1,6 +1,6 @@
-#----------------------------------*-CMake-*----------------------------------#
-# Copyright 2020-2024 UT-Battelle, LLC, and other Celeritas developers.
-# See the top-level COPYRIGHT file for details.
+#------------------------------- -*- cmake -*- -------------------------------#
+# Copyright Celeritas contributors, for more details see:
+#   https://github.com/celeritas-project/celeritas/blob/develop/COPYRIGHT
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 #[=======================================================================[.rst:
 
@@ -124,6 +124,10 @@ relocatable device code and most importantly linking against those libraries.
 
 include_guard(GLOBAL)
 
+cmake_policy(VERSION 3.24...3.31)
+# 3.19 is needed for set properties in INTERFACE libraries.
+# 3.24 is needed to be able to mark the final library as always `-Wl,-no-as-needed`
+
 #-----------------------------------------------------------------------------#
 
 define_property(TARGET PROPERTY CUDA_RDC_LIBRARY_TYPE
@@ -146,6 +150,35 @@ define_property(TARGET PROPERTY CUDA_RDC_OBJECT_LIBRARY
   BRIEF_DOCS "Name of the object (without nvlink step) library corresponding to this cuda library"
   FULL_DOCS "Name of the object (without nvlink step) library corresponding to this cuda library"
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # This is necessary on platform that default to calling ld with --as-needed
+  # (we are looking at you Ubuntu) but also in case user as explicitly using it.
+
+  # This is used for the final libraries because of the following:
+  #   * userlib_with_rdc.so has undefined symbols found in userlib_with_rdc_final (the result of nvlink)
+  #   * userlib_with_rdc_final.so requires the userlib_with_rdc’s object files as input to nvlink
+  #   * userlib_with_rdc_final.so also requires userlib_with_rdc.so for user's code.
+  #   * user executable requires userlib_with_rdc.so due to direct dependencies.
+  # So the link line order to produce the user executable as to be:
+  #   .... userlib_with_rdc_final.so userlib_with_rdc.so
+  # But userlib_with_rdc_final.so does not contains any symbol that is explicit used in the
+  # user executable.  Consequently, if the linker is in the `--as-needed` mode it will drop
+  # userlib_with_rdc_final.so.  However, it will then not be able to be used to resolve
+  # the missing symbol needed by userlib_with_rdc.so
+
+  # This implementation requires CMake version 3.24 or higher.  For more details see:
+  #   https://cmake.org/cmake/help/latest/variable/CMAKE_LINK_LIBRARY_USING_FEATURE.html
+  set(CMAKE_CXX_LINK_LIBRARY_USING_rdc_no_as_needed_SUPPORTED TRUE CACHE INTERNAL "")
+  set(CMAKE_CXX_LINK_LIBRARY_USING_rdc_no_as_needed
+    "LINKER:--push-state,--no-as-needed"
+    "<LINK_ITEM>"
+    "LINKER:--pop-state"
+    CACHE INTERNAL ""
+  )
+else()
+  set(CMAKE_CXX_LINK_LIBRARY_USING_no_as_needed_SUPPORTED FALSE)
+endif()
 
 ##############################################################################
 # Separate the OPTIONS out from the sources
@@ -808,7 +841,7 @@ function(cuda_rdc_target_link_libraries target)
         #     if(ARGV1 MATCHES "^(PRIVATE|PUBLIC|INTERFACE)$")
         # or simply keep the following:
         get_target_property(_current_link_libraries ${target} LINK_LIBRARIES)
-        set_property(TARGET ${target} PROPERTY LINK_LIBRARIES ${_current_link_libraries} ${_finallibs} )
+        set_property(TARGET ${target} PROPERTY LINK_LIBRARIES ${_current_link_libraries} "$<LINK_LIBRARY:rdc_no_as_needed,${_finallibs}>" )
       endif()
     elseif(${_final_count} GREATER 1)
       # turn into CUDA executable.
