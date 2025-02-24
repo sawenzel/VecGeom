@@ -95,7 +95,12 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
     auto orb = dynamic_cast<vecgeom::UnplacedOrb const *>(solid);
     if (orb) return conv::CreateSphereSurfaces<Real_t>(*orb, volId, intersection);
 
-    VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid;
+    // Create a placeholder solid to allow execution to continue
+    double capacity = solid->Capacity();
+    VECGEOM_LOG(error) << "CreateSolidSurfaces: solid type not supported " << *solid << " replacing with sphere with equal capacity " << capacity;
+    double radius = std::cbrt(capacity / (4.0 / 3.0 * 3.14159265358979323846));
+    vecgeom::    UnplacedOrb temp_orb(radius);
+    conv::CreateSphereSurfaces<Real_t>(temp_orb, volId, intersection);
 
     return false;
   };

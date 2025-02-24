@@ -1,5 +1,6 @@
 #include <VecGeom/surfaces/BrepHelper.h>
 #include <VecGeom/surfaces/base/CpuTypes.h>
+#include <VecGeom/management/Logger.h>
 
 namespace vgbrep {
 
@@ -623,8 +624,8 @@ void BrepHelper<Real_t>::ComputeSideDivisions()
       //printf("surface %ld: %d/%d traversals\n", common_id, nfound, ntotal);
     }
   }
-  printf("traversals_all: %d / %d [%f %%]\n", nfoundall, ntotalall, 100. * float(nfoundall) / ntotalall);
-  printf("traversals    : %d / %d [%f %%]\n", nfound, ntotal, 100. * float(nfound) / ntotal);
+  VECGEOM_LOG(debug) << "traversals_all: " << nfoundall << " / " << ntotalall << " ["
+                     << 100. * static_cast<double>(nfoundall) / ntotalall << " %]";
 
   // Copy division helpers to surface data
   fSurfData->fNsideDivisions = fCPUdata.fSideDivisions.size();
@@ -717,13 +718,14 @@ void BrepHelper<Real_t>::CreateCandidateLists()
       // Exiting frames may exist on both sides
       sidesExiting[surf_ind] |= iside;
       if (fVerbose > 0) {
-        printf("  added to exiting of state on scene %d: ", scene_id);
+        auto msg = VECGEOM_LOG(debug);
+        msg << "  added to exiting of state on scene " << scene_id << ":";
         state.PrintTop();
         int j = 0;
-        printf("candExiting:   ");
-        for (auto candidate : candidatesExiting)
-          printf("  %d: %d ", j++, candidate);
-        printf("\n");
+        msg << "candExiting:   ";
+        for (auto candidate : candidatesExiting) {
+          msg << "  " << j++ << ": " << candidate;
+        }
       }
     }
   };
@@ -769,8 +771,8 @@ void BrepHelper<Real_t>::CreateCandidateLists()
       }
 
       if (fVerbose > 0) {
-        printf("  added %d to entering of non-embedding parent state on scene %d: ", candidatesEntering.back(),
-               surf.GetSceneId());
+        VECGEOM_LOG(debug) << "  added " << candidatesEntering.back()
+                           << " to entering of non-embedding parent state on scene " << surf.GetSceneId() << ":";
         vecgeom::NavigationState::PrintTopImpl(parent_state);
       }
     }
@@ -1394,8 +1396,7 @@ bool BrepHelper<Real_t>::CreateLocalSurfaces()
     vecgeom::VUnplacedVolume const *solid = volume->GetUnplacedVolume();
     bool result                           = conv::CreateSolidSurfaces<vecgeom::Precision>(solid, volume->id());
     if (!result) {
-      VECGEOM_LOG(critical) << "Could not convert volume " << volume->id() << ": " << volume->GetName();
-      return false;
+      VECGEOM_LOG(error) << "Could not convert volume " << volume->id() << ": " << volume->GetName();
     }
     // Finalize logic expression
     if (!fCPUdata.fShells[volume->id()].fSimplified) {
