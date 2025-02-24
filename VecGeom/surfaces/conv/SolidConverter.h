@@ -83,7 +83,7 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
     auto polyhedron = dynamic_cast<vecgeom::UnplacedPolyhedron const *>(solid);
     if (polyhedron) return conv::CreatePolyhedronSurfaces<Real_t>(*polyhedron, volId, intersection);
 
-    auto scaled = dynamic_cast<vecgeom::cxx::UnplacedScaledShape const *>(solid);
+    auto scaled = dynamic_cast<vecgeom::UnplacedScaledShape const *>(solid);
     if (scaled) return conv::CreateScaledSurfaces<Real_t>(*scaled, volId, intersection);
 
     auto bstruct = vecgeom::BooleanHelper::GetBooleanStruct(solid);
@@ -123,7 +123,7 @@ bool CreateSolidSurfaces(vecgeom::VUnplacedVolume const *solid, int volId,
 /// @param logical_id Id of the logical volume
 /// @return Conversion success
 template <typename Real_t>
-bool CreateScaledSurfaces(vecgeom::cxx::UnplacedScaledShape const &scaled, int logical_id, bool intersection)
+bool CreateScaledSurfaces(vecgeom::UnplacedScaledShape const &scaled, int logical_id, bool intersection)
 {
   auto const &vec_scale = scaled.GetScale().Scale();
   if (!ApproxEqualVector(vec_scale, vecgeom::Vector3D<vecgeom::Precision>{1, 1, -1})) {
