@@ -16,7 +16,6 @@ include(cmake/modules/RecordCmdLine.cmake)
 include(ExternalProject)
 
 # Set VecGeom_VERSION using git tags or release metadata
-set(CGV_TAG_REGEX "v([0-9.]+)(-dev|-rc)(.?)([0-9]+)?")
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/CgvFindVersion.cmake")
 cgv_find_version(VecGeom)
 message(STATUS "VecGeom version string: ${VecGeom_VERSION_STRING}")
