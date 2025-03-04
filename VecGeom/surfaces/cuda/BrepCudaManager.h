@@ -1,24 +1,22 @@
 #ifndef VECGEOM_SURFACE_BREPCUDAMANAGER_H_
 #define VECGEOM_SURFACE_BREPCUDAMANAGER_H_
 
-// This header file can only be used from CUDA sources because it needs to call
-// functions from the CUDA Runtime API and invoke a kernel.
-#ifdef __CUDACC__
-
 #include <VecGeom/surfaces/SurfData.h>
 #include "VecGeom/surfaces/bvh/AABBsurf.h"
 #include "VecGeom/surfaces/bvh/BVHsurf.h"
 #include "VecGeom/volumes/VolumeTree.h"
+#include "VecGeom/management/Logger.h"
+#include <cuda_runtime_api.h>
 
 namespace vgbrep {
 
-#define BREP_CUDA_CHECK(cmd)                                                       \
-  do {                                                                             \
-    cudaError_t err = cmd;                                                         \
-    if (err != cudaSuccess) {                                                      \
-      fprintf(stderr, "%s:%d: %s\n", __FILE__, __LINE__, cudaGetErrorString(err)); \
-      exit(1);                                                                     \
-    }                                                                              \
+#define BREP_CUDA_CHECK(cmd)                            \
+  do {                                                  \
+    cudaError_t err = cmd;                              \
+    if (err != cudaSuccess) {                           \
+      VECGEOM_LOG(critical) << cudaGetErrorString(err); \
+      throw std::runtime_error("Failed " #cmd);         \
+    }                                                   \
   } while (0)
 
 template <typename Real_t>
@@ -513,7 +511,5 @@ public:
 };
 
 } // namespace vgbrep
-
-#endif
 
 #endif
