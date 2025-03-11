@@ -49,6 +49,13 @@ public:
   VECCORE_ATT_HOST_DEVICE
   SOA3D(size_t size);
 
+  /// @brief Construct aligned data using specialized allocator.
+  /// @details To allocate the full object, call this constructor with placement new.
+  /// @param size Size of the internal arrays
+  /// @param a Aligned allocator, pre-initialized to fit the content
+  VECCORE_ATT_HOST_DEVICE
+  SOA3D(size_t size, AlignedAllocator &a);
+
   SOA3D(SOA3D<T> const &other);
 
   SOA3D() = default;
@@ -58,6 +65,13 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   ~SOA3D();
+
+  /// @brief Compute size of a buffer to hold the aligned arrays fX, fY and fZ
+  /// @param initSize Number of elements
+  /// @return Size to allocate
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(size_t initSize);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -174,22 +188,35 @@ private:
 #endif
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
+VECCORE_ATT_HOST_DEVICE SOA3D<T>::SOA3D(T *xval, T *yval, T *zval, size_t sz)
     : fAllocated(false), fSize(sz), fCapacity(fSize), fX(xval), fY(yval), fZ(zval)
 {
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-SOA3D<T>::SOA3D(size_t sz) : fSize(sz), fCapacity(sz)
+VECCORE_ATT_HOST_DEVICE SOA3D<T>::SOA3D(size_t initSize, AlignedAllocator &a)
+    : fAllocated(false), fSize(initSize), fCapacity(initSize)
+{
+  fX = a.aligned_alloc<T>(initSize, kAlignmentBoundary);
+  fY = a.aligned_alloc<T>(initSize, kAlignmentBoundary);
+  fZ = a.aligned_alloc<T>(initSize, kAlignmentBoundary);
+}
+
+template <typename T>
+VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE size_t SOA3D<T>::aligned_sizeof_data(size_t initSize)
+{
+  // Size for separate aligned arrays fX, fY and fZ
+  return 3 * AlignedAllocator::aligned_sizeof<T>(initSize, kAlignmentBoundary);
+}
+
+template <typename T>
+VECCORE_ATT_HOST_DEVICE SOA3D<T>::SOA3D(size_t sz) : fSize(sz), fCapacity(sz)
 {
   Allocate();
 }
 
 template <typename T>
-SOA3D<T>::SOA3D(SOA3D<T> const &rhs)
-    : fAllocated(false), fSize(rhs.fSize), fCapacity(rhs.fCapacity)
+SOA3D<T>::SOA3D(SOA3D<T> const &rhs) : fAllocated(false), fSize(rhs.fSize), fCapacity(rhs.fCapacity)
 {
   if (rhs.fAllocated) {
     Allocate();
@@ -204,8 +231,7 @@ SOA3D<T>::SOA3D(SOA3D<T> const &rhs)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-SOA3D<T> &SOA3D<T>::operator=(SOA3D<T> const &rhs)
+VECCORE_ATT_HOST_DEVICE SOA3D<T> &SOA3D<T>::operator=(SOA3D<T> const &rhs)
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   fSize     = rhs.fSize;
@@ -233,8 +259,7 @@ SOA3D<T> &SOA3D<T>::operator=(SOA3D<T> const &rhs)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-SOA3D<T>::~SOA3D()
+VECCORE_ATT_HOST_DEVICE SOA3D<T>::~SOA3D()
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   Deallocate();
@@ -242,30 +267,26 @@ SOA3D<T>::~SOA3D()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-size_t SOA3D<T>::size() const
+VECCORE_ATT_HOST_DEVICE size_t SOA3D<T>::size() const
 {
   return fSize;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-size_t SOA3D<T>::capacity() const
+VECCORE_ATT_HOST_DEVICE size_t SOA3D<T>::capacity() const
 {
   return fCapacity;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::resize(size_t newSize)
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::resize(size_t newSize)
 {
   assert(newSize <= fCapacity);
   fSize = newSize;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::reserve(size_t newCapacity)
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::reserve(size_t newCapacity)
 {
   fCapacity = newCapacity;
   T *xNew, *yNew, *zNew;
@@ -294,8 +315,7 @@ void SOA3D<T>::clear()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::Allocate()
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::Allocate()
 {
   if (fCapacity == 0) return;
 
@@ -306,8 +326,7 @@ void SOA3D<T>::Allocate()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::Deallocate()
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::Deallocate()
 {
   if (fAllocated) {
     AlignedFree(fX);
@@ -318,100 +337,85 @@ void SOA3D<T>::Deallocate()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-Vector3D<T> SOA3D<T>::operator[](size_t index) const
+VECCORE_ATT_HOST_DEVICE Vector3D<T> SOA3D<T>::operator[](size_t index) const
 {
   return Vector3D<T>(fX[index], fY[index], fZ[index]);
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T SOA3D<T>::x(size_t index) const
+VECCORE_ATT_HOST_DEVICE T SOA3D<T>::x(size_t index) const
 {
   return fX[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &SOA3D<T>::x(size_t index)
+VECCORE_ATT_HOST_DEVICE T &SOA3D<T>::x(size_t index)
 {
   return fX[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T *SOA3D<T>::x()
+VECCORE_ATT_HOST_DEVICE T *SOA3D<T>::x()
 {
   return fX;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T const *SOA3D<T>::x() const
+VECCORE_ATT_HOST_DEVICE T const *SOA3D<T>::x() const
 {
   return fX;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T SOA3D<T>::y(size_t index) const
+VECCORE_ATT_HOST_DEVICE T SOA3D<T>::y(size_t index) const
 {
   return fY[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &SOA3D<T>::y(size_t index)
+VECCORE_ATT_HOST_DEVICE T &SOA3D<T>::y(size_t index)
 {
   return fY[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T *SOA3D<T>::y()
+VECCORE_ATT_HOST_DEVICE T *SOA3D<T>::y()
 {
   return fY;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T const *SOA3D<T>::y() const
+VECCORE_ATT_HOST_DEVICE T const *SOA3D<T>::y() const
 {
   return fY;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T SOA3D<T>::z(size_t index) const
+VECCORE_ATT_HOST_DEVICE T SOA3D<T>::z(size_t index) const
 {
   return fZ[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &SOA3D<T>::z(size_t index)
+VECCORE_ATT_HOST_DEVICE T &SOA3D<T>::z(size_t index)
 {
   return fZ[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T *SOA3D<T>::z()
+VECCORE_ATT_HOST_DEVICE T *SOA3D<T>::z()
 {
   return fZ;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T const *SOA3D<T>::z() const
+VECCORE_ATT_HOST_DEVICE T const *SOA3D<T>::z() const
 {
   return fZ;
 }
 
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::set(size_t index, T xval, T yval, T zval)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SOA3D<T>::set(size_t index, T xval, T yval, T zval)
 {
 // not asserting in case of NVCC -- still getting annoying
 // errors on CUDA < 8.0
@@ -424,9 +428,7 @@ void SOA3D<T>::set(size_t index, T xval, T yval, T zval)
 }
 
 template <typename T>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::set(size_t index, Vector3D<T> const &vec)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SOA3D<T>::set(size_t index, Vector3D<T> const &vec)
 {
 // not asserting in case of NVCC -- still getting annoying
 // errors on CUDA < 8.0
@@ -439,8 +441,7 @@ void SOA3D<T>::set(size_t index, Vector3D<T> const &vec)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::push_back(T xval, T yval, T zval)
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::push_back(T xval, T yval, T zval)
 {
   fX[fSize] = xval;
   fY[fSize] = yval;
@@ -449,8 +450,7 @@ void SOA3D<T>::push_back(T xval, T yval, T zval)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void SOA3D<T>::push_back(Vector3D<T> const &vec)
+VECCORE_ATT_HOST_DEVICE void SOA3D<T>::push_back(Vector3D<T> const &vec)
 {
   push_back(vec[0], vec[1], vec[2]);
 }
@@ -522,7 +522,7 @@ DevicePtr<cuda::SOA3D<T>> SOA3D<T>::CopyToGpu(DevicePtr<T> xGpu, DevicePtr<T> yG
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
-}
-} // End global namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif // VECGEOM_BASE_SOA3D_H_

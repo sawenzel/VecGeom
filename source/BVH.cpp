@@ -1,10 +1,13 @@
 /// \file BVH.cpp
 /// \author Guilherme Amadio
 
+#include "VecGeom/management/Logger.h"
 #include "VecGeom/base/BVH.h"
 
 #include "VecGeom/management/ABBoxManager.h"
+#ifdef VECGEOM_USE_SURF
 #include "VecGeom/surfaces/Model.h"
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -55,7 +58,11 @@ BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Prec
 
   /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
   if (surfacesBVH) {
+#ifdef VECGEOM_USE_SURF
     ptr = ABBoxManager<Precision>::Instance().GetSurfaceABBoxes(volume.id(), n, *cpudata);
+#else
+    VECGEOM_LOG(critical) << "Surface BVH requested but  VECGEOM_USE_SURF not enabled";
+#endif
   } else {
     ptr = ABBoxManager<Precision>::Instance().GetABBoxes(&volume, n);
   }
@@ -159,8 +166,7 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
       CudaManager::Instance().LookupLogical(GeoManager::Instance().FindLogicalVolume(fRootId)).GetPtr();
 
   if (!dvolume) {
-    std::cerr << "Failed for lv " << /*fLV.GetLabel()*/ " "
-              << " (id = " << fRootId << ")" << std::endl;
+    std::cerr << "Failed for lv " << /*fLV.GetLabel()*/ " " << " (id = " << fRootId << ")" << std::endl;
     throw std::logic_error("Cannot copy BVH because logical volume does not exist on the device.");
   }
 

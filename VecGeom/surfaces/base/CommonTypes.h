@@ -126,6 +126,7 @@ struct FSlocatorB {
   int GetFSindex() const { return frame_id; }
 };
 
+#ifdef VECGEOM_USE_SURF
 /// @brief Framed surface locator
 struct FSlocator : FSlocatorB {
   vecgeom::NavigationState state; ///< full state associated to the frame
@@ -191,6 +192,7 @@ enum AxisType : char {
   kXY,    ///< XY grid
   kNoAxis ///< No axis
 };
+#endif
 
 template <typename Real_t>
 VECCORE_ATT_HOST_DEVICE bool ApproxEqual(Real_t t1, Real_t t2)

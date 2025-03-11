@@ -62,10 +62,9 @@ namespace ConeUtilities {
 
 #if (1)
 template <typename Real_v, typename ShapeType, bool onSurfaceT, bool includeSurface = true>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static void PointInCyclicalSector(UnplacedStruct_t const &volume, Real_v const &x, Real_v const &y,
-                                  typename vecCore::Mask_v<Real_v> &ret)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(UnplacedStruct_t const &volume,
+                                                                               Real_v const &x, Real_v const &y,
+                                                                               typename vecCore::Mask_v<Real_v> &ret)
 {
 
   using namespace ::vecgeom::ConeTypes;
@@ -114,9 +113,8 @@ static void PointInCyclicalSector(UnplacedStruct_t const &volume, Real_v const &
 
 #if (1)
 template <typename Real_v, bool ForInnerRadius>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static Real_v GetRadiusOfConeAtPoint(UnplacedStruct_t const &cone, Real_v const pointZ)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v GetRadiusOfConeAtPoint(UnplacedStruct_t const &cone,
+                                                                                  Real_v const pointZ)
 {
 
   if (ForInnerRadius) {
@@ -153,12 +151,9 @@ static Real_v GetRadiusOfConeAtPoint(UnplacedStruct_t const &cone, Real_v const 
  */
 
 template <typename Real_v, typename ConeType, bool PositiveDirectionOfPhiVector, bool insectorCheck>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static void PhiPlaneTrajectoryIntersection(Precision alongX, Precision alongY, Precision normalX, Precision normalY,
-                                           UnplacedStruct_t const &cone, Vector3D<Real_v> const &pos,
-                                           Vector3D<Real_v> const &dir, Real_v &dist,
-                                           typename vecCore::Mask_v<Real_v> &ok)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryIntersection(
+    Precision alongX, Precision alongY, Precision normalX, Precision normalY, UnplacedStruct_t const &cone,
+    Vector3D<Real_v> const &pos, Vector3D<Real_v> const &dir, Real_v &dist, typename vecCore::Mask_v<Real_v> &ok)
 {
   const Real_v zero(0.0);
   dist = kInfLength;
@@ -204,8 +199,7 @@ static void PhiPlaneTrajectoryIntersection(Precision alongX, Precision alongY, P
 }
 
 template <typename Real_v, bool ForInnerSurface>
-VECCORE_ATT_HOST_DEVICE
-static Vector3D<Real_v> GetNormal(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> GetNormal(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
 {
 
   // typedef Real_v Real_v;
@@ -238,9 +232,8 @@ static Vector3D<Real_v> GetNormal(UnplacedStruct_t const &cone, Vector3D<Real_v>
 }
 
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsOnConicalSurface(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnConicalSurface(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
 {
 
   using namespace ConeUtilities;
@@ -255,49 +248,39 @@ static typename vecCore::Mask_v<Real_v> IsOnConicalSurface(UnplacedStruct_t cons
 
 // precondition: point is on cone surface - as returned from IsOnConicalSurface()
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsMovingOutsideConicalSurface(UnplacedStruct_t const &cone,
-                                                                      Vector3D<Real_v> const &point,
-                                                                      Vector3D<Real_v> const &direction)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsMovingOutsideConicalSurface(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) >= Real_v(0.);
 }
 
 // precondition: point is on cone surface - as returned from IsOnConicalSurface()
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsMovingInsideConicalSurface(UnplacedStruct_t const &cone,
-                                                                     Vector3D<Real_v> const &point,
-                                                                     Vector3D<Real_v> const &direction)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsMovingInsideConicalSurface(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) <= Real_v(0.);
 }
 
 template <typename Real_v>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsOnStartPhi(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnStartPhi(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
 {
   //  class evolution::Wedge;
   return cone.fPhiWedge.IsOnSurfaceGeneric(cone.fPhiWedge.GetAlong1(), cone.fPhiWedge.GetNormal1(), point);
 }
 
 template <typename Real_v>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsOnEndPhi(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnEndPhi(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
 {
 
   return cone.fPhiWedge.IsOnSurfaceGeneric(cone.fPhiWedge.GetAlong2(), cone.fPhiWedge.GetNormal2(), point);
 }
 
 template <typename Real_v, bool ForTopPlane>
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingInside(UnplacedStruct_t const &cone,
-                                                                  Vector3D<Real_v> const &point,
-                                                                  Vector3D<Real_v> const &direction)
+VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingInside(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
 
   Real_v rho    = point.Perp2();
@@ -305,8 +288,7 @@ static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingInside(UnplacedStruct
 
   if (ForTopPlane) {
     return (rho > (cone.fSqRmin2 - kConeTolerance)) && (rho < (cone.fSqRmax2 + kConeTolerance)) &&
-           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) &&
-           (direction.z() < Real_v(0.));
+           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) && (direction.z() < Real_v(0.));
   } else {
     return (rho > (cone.fSqRmin1 - kConeTolerance)) && (rho < (cone.fSqRmax1 + kConeTolerance)) &&
            (point.z() < (-fDz + kConeTolerance)) && (point.z() > (-fDz - kConeTolerance)) &&
@@ -315,10 +297,8 @@ static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingInside(UnplacedStruct
 }
 
 template <typename Real_v, bool ForTopPlane>
-VECCORE_ATT_HOST_DEVICE
-static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingOutside(UnplacedStruct_t const &cone,
-                                                                   Vector3D<Real_v> const &point,
-                                                                   Vector3D<Real_v> const &direction)
+VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingOutside(
+    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
 
   Real_v rho    = point.Perp2();
@@ -326,8 +306,7 @@ static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingOutside(UnplacedStruc
 
   if (ForTopPlane) {
     return (rho > (cone.fSqRmin2 - kConeTolerance)) && (rho < (cone.fSqRmax2 + kConeTolerance)) &&
-           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) &&
-           (direction.z() > Real_v(0.));
+           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) && (direction.z() > Real_v(0.));
   } else {
     return (rho > (cone.fSqRmin1 - kConeTolerance)) && (rho < (cone.fSqRmax1 + kConeTolerance)) &&
            (point.z() < (-fDz + kConeTolerance)) && (point.z() > (-fDz - kConeTolerance)) &&
@@ -347,9 +326,9 @@ public:
   ConeHelpers() {}
   ~ConeHelpers() {}
   template <bool ForDistToIn, bool ForInnerSurface>
-  VECCORE_ATT_HOST_DEVICE
-  static typename vecCore::Mask_v<Real_v> DetectIntersectionAndCalculateDistanceToConicalSurface(
-      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction, Real_v &distance)
+  VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v>
+  DetectIntersectionAndCalculateDistanceToConicalSurface(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point,
+                                                         Vector3D<Real_v> const &direction, Real_v &distance)
   {
 
     using namespace ConeUtilities;
@@ -368,8 +347,8 @@ public:
     const Bool_t precond = !done && onConicalSurface;
     if (!vecCore::MaskEmpty(precond)) {
       if (ForDistToIn) {
-        Bool_t isOnSurfaceAndMovingInside = precond
-          & ConeUtilities::IsMovingInsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
+        Bool_t isOnSurfaceAndMovingInside =
+            precond & ConeUtilities::IsMovingInsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
           vecCore__MaskedAssignFunc(distance, isOnSurfaceAndMovingInside, zero);
@@ -384,8 +363,8 @@ public:
         }
 
       } else {
-	Bool_t isOnSurfaceAndMovingOutside = precond
-          & ConeUtilities::IsMovingOutsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
+        Bool_t isOnSurfaceAndMovingOutside =
+            precond & ConeUtilities::IsMovingOutsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
           vecCore__MaskedAssignFunc(distance, isOnSurfaceAndMovingOutside, zero);
@@ -506,20 +485,18 @@ public:
   }
 
   template <bool ForInside>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static void GenericKernelForContainsAndInside(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point,
-                                                typename vecCore::Mask_v<Real_v> &completelyinside,
-                                                typename vecCore::Mask_v<Real_v> &completelyoutside)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &completelyinside,
+      typename vecCore::Mask_v<Real_v> &completelyoutside)
   {
 
     typedef typename vecCore::Mask_v<Real_v> Bool_t;
 
     // very fast check on z-height
     Real_v absz       = Abs(point[2]);
-    completelyoutside = absz > MakePlusTolerant<ForInside>(cone.fDz, kConeTolerance);
+    completelyoutside = absz > MakePlusTolerant<true>(cone.fDz, kConeTolerance);
     if (ForInside) {
-      completelyinside = absz < MakeMinusTolerant<ForInside>(cone.fDz, kConeTolerance);
+      completelyinside = absz < MakeMinusTolerant<true>(cone.fDz, kConeTolerance);
     }
     if (vecCore::MaskFull(completelyoutside)) {
       return;
@@ -534,9 +511,9 @@ public:
     else
       rmax = cone.fOuterSlope * point.z() + cone.fOuterOffset;
 
-    completelyoutside |= r2 > MakePlusTolerantSquare<ForInside>(rmax, cone.fOuterTolerance);
+    completelyoutside |= r2 > MakePlusTolerantSquare<true>(rmax, cone.fOuterTolerance);
     if (ForInside) {
-      completelyinside &= r2 < MakeMinusTolerantSquare<ForInside>(rmax, cone.fOuterTolerance);
+      completelyinside &= r2 < MakeMinusTolerantSquare<true>(rmax, cone.fOuterTolerance);
     }
     if (vecCore::MaskFull(completelyoutside)) {
       return;
@@ -544,11 +521,11 @@ public:
 
     // check on RMIN
     if (ConeTypes::checkRminTreatment<coneTypeT>(cone)) {
-      Real_v rmin  = cone.fInnerSlope * point.z() + cone.fInnerOffset;
+      Real_v rmin = cone.fInnerSlope * point.z() + cone.fInnerOffset;
 
-      completelyoutside |= r2 < MakeMinusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
+      completelyoutside |= r2 < MakeMinusTolerantSquare<true>(rmin, cone.fInnerTolerance);
       if (ForInside) {
-        completelyinside &= r2 > MakePlusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
+        completelyinside &= r2 > MakePlusTolerantSquare<true>(rmin, cone.fInnerTolerance);
       }
       if (vecCore::MaskFull(completelyoutside)) {
         return;
@@ -558,17 +535,15 @@ public:
     if (ConeTypes::checkPhiTreatment<coneTypeT>(cone)) {
       Bool_t completelyoutsidephi;
       Bool_t completelyinsidephi;
-      cone.fPhiWedge.GenericKernelForContainsAndInside<Real_v, ForInside>(point, completelyinsidephi,
-                                                                          completelyoutsidephi);
+      cone.fPhiWedge.GenericKernelForContainsAndInside<Real_v, true>(point, completelyinsidephi, completelyoutsidephi);
       completelyoutside |= completelyoutsidephi;
       if (ForInside) completelyinside &= completelyinsidephi;
     }
   }
 
   template <typename Inside_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static void Inside(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Inside_v &inside)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &cone,
+                                                                  Vector3D<Real_v> const &point, Inside_v &inside)
   {
 
     using Bool_v       = vecCore::Mask_v<Real_v>;
@@ -589,59 +564,57 @@ public:
   ~ConeHelpers() {}
 
   template <bool ForDistToIn, bool ForInnerSurface>
-  VECCORE_ATT_HOST_DEVICE
-  static bool DetectIntersectionAndCalculateDistanceToConicalSurface(UnplacedStruct_t const &cone,
-                                                                     Vector3D<Precision> const &point,
-                                                                     Vector3D<Precision> const &direction,
-                                                                     Precision &distance)
+  VECCORE_ATT_HOST_DEVICE static bool DetectIntersectionAndCalculateDistanceToConicalSurface(
+      UnplacedStruct_t const &cone, Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
+      Precision &distance)
   {
 
     using namespace ConeUtilities;
     using namespace ConeTypes;
-    distance              = kInfLength;
-    bool onConicalSurface = IsOnConicalSurface<Precision, ForInnerSurface>(cone, point);
+    distance                   = kInfLength;
+    bool onConicalSurface      = IsOnConicalSurface<Precision, ForInnerSurface>(cone, point);
     Vector3D<Precision> normal = ConeUtilities::GetNormal<Precision, ForInnerSurface>(cone, point);
-    bool tangentToSurface = vecCore::math::Abs(direction.Dot(normal)) == 0.;
+    bool tangentToSurface      = vecCore::math::Abs(direction.Dot(normal)) == 0.;
     if (onConicalSurface && tangentToSurface) {
       return false;
     }
 
     if (onConicalSurface) {
       if (ForDistToIn) {
-	bool isMovingInside = IsMovingInsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
+        bool isMovingInside = IsMovingInsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
 
-	if (!checkPhiTreatment<coneTypeT>(cone)) {
-	  if (isMovingInside) { // && onConicalSurface
-	    distance = 0.;
-	    return true;
-	  }
-	} else {
-	  bool insector(false);
-	  ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
-	  if (insector && isMovingInside) { // && onConicalSurface
-	    distance = 0.;
-	    return true;
-	  }
-	}
+        if (!checkPhiTreatment<coneTypeT>(cone)) {
+          if (isMovingInside) { // && onConicalSurface
+            distance = 0.;
+            return true;
+          }
+        } else {
+          bool insector(false);
+          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
+          if (insector && isMovingInside) { // && onConicalSurface
+            distance = 0.;
+            return true;
+          }
+        }
       }
 
-      else {  // !ForDistToIn
-	bool isMovingOutside = IsMovingOutsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
+      else { // !ForDistToIn
+        bool isMovingOutside = IsMovingOutsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
 
-	if (!checkPhiTreatment<coneTypeT>(cone)) {
-	  if (isMovingOutside) { // && onConicalSurface
-	    distance = 0.;
-	    return true;
-	  }
-	} else {
-	  bool insector(false);
-	  ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
+        if (!checkPhiTreatment<coneTypeT>(cone)) {
+          if (isMovingOutside) { // && onConicalSurface
+            distance = 0.;
+            return true;
+          }
+        } else {
+          bool insector(false);
+          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
 
-	  if (insector && isMovingOutside) {  // && onConicalSurface
-	    distance = 0.;
-	    return true;
-	  }
-	}
+          if (insector && isMovingOutside) { // && onConicalSurface
+            distance = 0.;
+            return true;
+          }
+        }
       }
     }
 
@@ -762,10 +735,8 @@ public:
   }
 
   template <bool ForInside>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static void GenericKernelForContainsAndInside(UnplacedStruct_t const &cone, Vector3D<Precision> const &point,
-                                                bool &completelyinside, bool &completelyoutside)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
+      UnplacedStruct_t const &cone, Vector3D<Precision> const &point, bool &completelyinside, bool &completelyoutside)
   {
 
     // very fast check on z-height
@@ -793,7 +764,7 @@ public:
 
     // check on RMIN
     if (ConeTypes::checkRminTreatment<coneTypeT>(cone)) {
-      Precision rmin  = cone.fInnerSlope * point.z() + cone.fInnerOffset;
+      Precision rmin = cone.fInnerSlope * point.z() + cone.fInnerOffset;
 
       completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
       if (ForInside) {
@@ -813,9 +784,8 @@ public:
   }
 
   template <typename Inside_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  static void Inside(UnplacedStruct_t const &cone, Vector3D<Precision> const &point, Inside_v &inside)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &cone,
+                                                                  Vector3D<Precision> const &point, Inside_v &inside)
   {
     bool completelyinside(false), completelyoutside(false);
     GenericKernelForContainsAndInside<true>(cone, point, completelyinside, completelyoutside);

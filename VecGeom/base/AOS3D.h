@@ -24,9 +24,10 @@ template <typename T>
 class AOS3D : Container3D<AOS3D<T>> {
 
 private:
-  bool fAllocated = false;
-  size_t fSize = 0, fCapacity = 0;
-  Vector3D<T> *fContent = nullptr;
+  bool fAllocated{false};
+  size_t fSize{0};
+  size_t fCapacity{0};
+  Vector3D<T> *fContent{nullptr};
 
   typedef Vector3D<T> Vec_t;
 
@@ -38,6 +39,13 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   AOS3D(size_t size);
+
+  /// @brief Construct aligned data using specialized allocator.
+  /// @details To allocate the full object, call this constructor with placement new.
+  /// @param size Size of the internal arrays
+  /// @param a Aligned allocator, pre-initialized to fit the content
+  VECCORE_ATT_HOST_DEVICE
+  AOS3D(size_t size, AlignedAllocator &a);
 
   AOS3D() = default;
 
@@ -52,6 +60,13 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   size_t size() const;
+
+  /// @brief Compute size of a buffer to hold the aligned vector content
+  /// @param initSize Number of elements
+  /// @return Size to allocate
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(size_t initSize);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -135,29 +150,31 @@ private:
 };
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-AOS3D<T>::AOS3D(Vector3D<T> *in_content, size_t in_size)
+VECCORE_ATT_HOST_DEVICE AOS3D<T>::AOS3D(Vector3D<T> *in_content, size_t in_size)
     : fSize(in_size), fCapacity(fSize), fContent(in_content)
 {
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-AOS3D<T>::AOS3D(size_t sz) : fSize(sz), fCapacity(sz)
+VECCORE_ATT_HOST_DEVICE AOS3D<T>::AOS3D(size_t sz, AlignedAllocator &a) : fSize(sz), fCapacity(sz)
+{
+  fContent = a.aligned_alloc<Vector3D<T>>(sz, kAlignmentBoundary);
+}
+
+template <typename T>
+VECCORE_ATT_HOST_DEVICE AOS3D<T>::AOS3D(size_t sz) : fSize(sz), fCapacity(sz)
 {
   if (fCapacity > 0) reserve(fCapacity);
 }
 
 template <typename T>
-AOS3D<T>::AOS3D(AOS3D<T> const &rhs)
-    : fSize(rhs.fSize), fCapacity(rhs.fCapacity)
+AOS3D<T>::AOS3D(AOS3D<T> const &rhs) : fSize(rhs.fSize), fCapacity(rhs.fCapacity)
 {
   *this = rhs;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-AOS3D<T> &AOS3D<T>::operator=(AOS3D<T> const &rhs)
+VECCORE_ATT_HOST_DEVICE AOS3D<T> &AOS3D<T>::operator=(AOS3D<T> const &rhs)
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   clear();
@@ -180,22 +197,25 @@ AOS3D<T> &AOS3D<T>::operator=(AOS3D<T> const &rhs)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-AOS3D<T>::~AOS3D()
+VECCORE_ATT_HOST_DEVICE AOS3D<T>::~AOS3D()
 {
   Deallocate();
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-size_t AOS3D<T>::size() const
+VECCORE_ATT_HOST_DEVICE size_t AOS3D<T>::size() const
 {
   return fSize;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-size_t AOS3D<T>::capacity() const
+VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE size_t AOS3D<T>::aligned_sizeof_data(size_t initSize)
+{
+  return initSize * sizeof(Vector3D<T>) + kAlignmentBoundary;
+}
+
+template <typename T>
+VECCORE_ATT_HOST_DEVICE size_t AOS3D<T>::capacity() const
 {
   return fCapacity;
 }
@@ -208,12 +228,11 @@ void AOS3D<T>::resize(size_t newSize)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::reserve(size_t newCapacity)
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::reserve(size_t newCapacity)
 {
-  fCapacity = newCapacity;
+  fCapacity         = newCapacity;
   Vec_t *contentNew = fCapacity > 0 ? AlignedAllocate<Vec_t>(fCapacity) : nullptr;
-  fSize = (fSize > fCapacity) ? fCapacity : fSize;
+  fSize             = (fSize > fCapacity) ? fCapacity : fSize;
   if (fContent && fSize > 0) {
     copy(fContent, fContent + fSize, contentNew);
   }
@@ -233,8 +252,7 @@ void AOS3D<T>::clear()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::Deallocate()
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::Deallocate()
 {
   if (fAllocated) {
     AlignedFree(fContent);
@@ -242,78 +260,67 @@ void AOS3D<T>::Deallocate()
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-Vector3D<T> AOS3D<T>::operator[](size_t index) const
+VECCORE_ATT_HOST_DEVICE Vector3D<T> AOS3D<T>::operator[](size_t index) const
 {
   return fContent[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-Vector3D<T> &AOS3D<T>::operator[](size_t index)
+VECCORE_ATT_HOST_DEVICE Vector3D<T> &AOS3D<T>::operator[](size_t index)
 {
   return fContent[index];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-Vector3D<T> *AOS3D<T>::content()
+VECCORE_ATT_HOST_DEVICE Vector3D<T> *AOS3D<T>::content()
 {
   return fContent;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-Vector3D<T> const *AOS3D<T>::content() const
+VECCORE_ATT_HOST_DEVICE Vector3D<T> const *AOS3D<T>::content() const
 {
   return fContent;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T AOS3D<T>::x(size_t index) const
+VECCORE_ATT_HOST_DEVICE T AOS3D<T>::x(size_t index) const
 {
   return (fContent[index])[0];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &AOS3D<T>::x(size_t index)
+VECCORE_ATT_HOST_DEVICE T &AOS3D<T>::x(size_t index)
 {
   return (fContent[index])[0];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T AOS3D<T>::y(size_t index) const
+VECCORE_ATT_HOST_DEVICE T AOS3D<T>::y(size_t index) const
 {
   return (fContent[index])[1];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &AOS3D<T>::y(size_t index)
+VECCORE_ATT_HOST_DEVICE T &AOS3D<T>::y(size_t index)
 {
   return (fContent[index])[1];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T AOS3D<T>::z(size_t index) const
+VECCORE_ATT_HOST_DEVICE T AOS3D<T>::z(size_t index) const
 {
   return (fContent[index])[2];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-T &AOS3D<T>::z(size_t index)
+VECCORE_ATT_HOST_DEVICE T &AOS3D<T>::z(size_t index)
 {
   return (fContent[index])[2];
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::set(size_t index, T in_x, T in_y, T in_z)
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::set(size_t index, T in_x, T in_y, T in_z)
 {
   (fContent[index])[0] = in_x;
   (fContent[index])[1] = in_y;
@@ -321,15 +328,13 @@ void AOS3D<T>::set(size_t index, T in_x, T in_y, T in_z)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::set(size_t index, Vector3D<T> const &vec)
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::set(size_t index, Vector3D<T> const &vec)
 {
   fContent[index] = vec;
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::push_back(T in_x, T in_y, T in_z)
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::push_back(T in_x, T in_y, T in_z)
 {
   (fContent[fSize])[0] = in_x;
   (fContent[fSize])[1] = in_y;
@@ -338,8 +343,7 @@ void AOS3D<T>::push_back(T in_x, T in_y, T in_z)
 }
 
 template <typename T>
-VECCORE_ATT_HOST_DEVICE
-void AOS3D<T>::push_back(Vector3D<T> const &vec)
+VECCORE_ATT_HOST_DEVICE void AOS3D<T>::push_back(Vector3D<T> const &vec)
 {
   fContent[fSize] = vec;
   ++fSize;
@@ -358,7 +362,7 @@ DevicePtr<cuda::AOS3D<T>> AOS3D<T>::CopyToGpu(DevicePtr<cuda::Vector3D<T>> conte
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
-}
+} // namespace VECGEOM_IMPL_NAMESPACE
 } // End namespace vecgeom
 
 #endif // VECGEOM_BASE_AOS3D_H_

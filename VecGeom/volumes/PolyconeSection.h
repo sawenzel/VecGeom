@@ -19,12 +19,12 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 struct PolyconeSection {
   VECCORE_ATT_HOST_DEVICE
-  PolyconeSection() : fSolid(0), fShift(0.0), fTubular(0), fConvex(0) {}
+  PolyconeSection() : fShift(0.0), fTubular(0), fConvex(0) {}
 
   VECCORE_ATT_HOST_DEVICE
   ~PolyconeSection() {}
 
-  ConeStruct<Precision> *fSolid;
+  ConeStruct<Precision> fSolid;
   Precision fShift;
   bool fTubular;
   bool fConvex; // TRUE if all points in section are concave in regards to whole polycone, will be determined

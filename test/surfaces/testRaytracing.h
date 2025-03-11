@@ -109,8 +109,8 @@ struct CrossingSeq {
         }
         // check states again, if they still differ, this is an error
         if (fStates[istep_next].GetState() != other.fStates[istep_next_other].GetState()) {
-          istep_err       = istep;
-          istep_err_other = istep_other;
+          istep_err       = istep - 1;
+          istep_err_other = istep_other - 1;
           return false;
         } else {
           istep       = istep_next;

@@ -702,8 +702,9 @@ VECCORE_ATT_HOST_DEVICE Inside_t PolyhedronImplementation<innerRadiiT, phiCutout
   // to such section, the returned index has to be the first of the 2, so that
   // all navigation functions start by checking the degenerated segment.
   int zIndex = FindZSegment<Precision>(unplaced, point[2]);
-  if (zIndex > (unplaced.fZSegments.size() - 1)) zIndex = unplaced.fZSegments.size() - 1;
-  if (zIndex < 0) zIndex = 0;
+  // Since the bounding tube is slightly larger in Z, it can happen that the point is outside even if inside the
+  // bounding tube
+  if (zIndex < 0 || zIndex > (unplaced.fZSegments.size() - 1)) return EInside::kOutside;
 
   ZSegment const &segment = unplaced.fZSegments[zIndex];
 

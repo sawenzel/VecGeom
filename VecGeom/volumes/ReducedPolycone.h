@@ -27,8 +27,10 @@ VECGEOM_DEVICE_DECLARE_CONV(struct, IndexStruct);
 inline namespace VECGEOM_IMPL_NAMESPACE {
 // A Container to store index and distance
 struct IndexStruct {
-  unsigned int index;
-  double distance;
+  unsigned int index{0};
+  double distance{0.};
+
+  IndexStruct() = default;
   VECCORE_ATT_HOST_DEVICE
   IndexStruct(unsigned int ind, double dist) : index(ind), distance(dist) {}
 };

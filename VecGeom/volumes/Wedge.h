@@ -41,8 +41,8 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 class Wedge {
 
 private:
-  Precision fSPhi;                   // starting angle
-  Precision fDPhi;                   // delta angle representing/defining the wedge
+  Precision fSPhi{0.};               // starting angle
+  Precision fDPhi{0.};               // delta angle representing/defining the wedge
   Vector3D<Precision> fAlongVector1; // vector along the first plane
   Vector3D<Precision> fAlongVector2; // vector aling the second plane
 
@@ -53,6 +53,8 @@ private:
                                       // convention is that it points inwards
 
 public:
+  Wedge() = default;
+
   VECCORE_ATT_HOST_DEVICE
   Wedge(Precision angle, Precision zeroangle = 0);
 
@@ -95,35 +97,30 @@ public:
    * functions, but this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function
    */
   template <bool ForStartPhi>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<Precision> GetNormal() const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Precision> GetNormal() const;
 
   // very important:
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v Contains(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Contains(Vector3D<typename Backend::precision_v> const &point) const;
 
   // GL note: for tubes, use of TubeImpl::PointInCyclicalSector outperformed next two methods in vector mode
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v ContainsWithBoundary(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v ContainsWithBoundary(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v ContainsWithoutBoundary(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::bool_v ContainsWithoutBoundary(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::inside_v Inside(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::inside_v Inside(Vector3D<typename Backend::precision_v> const &point) const;
 
   // static function determining if input points are on a plane surface which is part of a wedge
   // ( given by along and normal )
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  static typename Backend::bool_v IsOnSurfaceGeneric(Vector3D<Precision> const &alongVector,
-                                                     Vector3D<Precision> const &normalVector,
-                                                     Vector3D<typename Backend::precision_v> const &point);
+  VECCORE_ATT_HOST_DEVICE static typename Backend::bool_v IsOnSurfaceGeneric(
+      Vector3D<Precision> const &alongVector, Vector3D<Precision> const &normalVector,
+      Vector3D<typename Backend::precision_v> const &point);
 
   /* Function Name :  IsOnSurfaceGeneric<Backend, ForStartPhi>()
    *
@@ -134,9 +131,8 @@ public:
    * this implementation will be used by "IsPointOnSurfaceAndMovingOut()" function.
    */
   template <typename Backend, bool ForStartPhi>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsOnSurfaceGeneric(Vector3D<typename Backend::precision_v> const &point) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsOnSurfaceGeneric(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   /* Function Name : IsPointOnSurfaceAndMovingOut<Backend, ForStartPhi, MovingOut>
    *
@@ -157,10 +153,8 @@ public:
    * Very useful for DistanceToIn and DistanceToOut.
    */
   template <typename Backend, bool ForStartPhi, bool MovingOut>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::bool_v IsPointOnSurfaceAndMovingOut(Vector3D<typename Backend::precision_v> const &point,
-                                                        Vector3D<typename Backend::precision_v> const &dir) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::bool_v IsPointOnSurfaceAndMovingOut(
+      Vector3D<typename Backend::precision_v> const &point, Vector3D<typename Backend::precision_v> const &dir) const;
 
   VECCORE_ATT_HOST_DEVICE
   bool IsOnSurface1(Vector3D<Precision> const &point) const
@@ -179,47 +173,44 @@ public:
    * the point is located outside the Wedge
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::precision_v SafetyToIn(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::precision_v SafetyToIn(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   /**
    * estimate of the smallest distance to the Wedge boundary when
    * the point is located inside the Wedge ( within the defining phi angle )
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  typename Backend::precision_v SafetyToOut(Vector3D<typename Backend::precision_v> const &point) const;
+  VECCORE_ATT_HOST_DEVICE typename Backend::precision_v SafetyToOut(
+      Vector3D<typename Backend::precision_v> const &point) const;
 
   /**
    * estimate of the distance to the Wedge boundary with given direction
    */
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
-                    Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distWedge1,
-                    typename Backend::precision_v &distWedge2) const;
+  VECCORE_ATT_HOST_DEVICE void DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
+                                            Vector3D<typename Backend::precision_v> const &dir,
+                                            typename Backend::precision_v &distWedge1,
+                                            typename Backend::precision_v &distWedge2) const;
 
   template <typename Backend>
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
-                     Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distWedge1,
-                     typename Backend::precision_v &distWedge2) const;
+  VECCORE_ATT_HOST_DEVICE void DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
+                                             Vector3D<typename Backend::precision_v> const &dir,
+                                             typename Backend::precision_v &distWedge1,
+                                             typename Backend::precision_v &distWedge2) const;
 
   // this could be useful to be public such that other shapes can directly
   // use completelyinside + completelyoutside
 
   template <typename Backend, bool ForInside>
-  VECCORE_ATT_HOST_DEVICE
-  void GenericKernelForContainsAndInside(Vector3D<typename Backend::precision_v> const &localPoint,
-                                         typename Backend::bool_v &completelyinside,
-                                         typename Backend::bool_v &completelyoutside) const;
+  VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(
+      Vector3D<typename Backend::precision_v> const &localPoint, typename Backend::bool_v &completelyinside,
+      typename Backend::bool_v &completelyoutside) const;
 
 }; // end of class Wedge
 
 template <bool ForStartPhi>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-Vector3D<Precision> Wedge::GetNormal() const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Precision> Wedge::GetNormal() const
 {
   if (ForStartPhi)
     return fNormalVector1;
@@ -228,10 +219,8 @@ Vector3D<Precision> Wedge::GetNormal() const
 }
 
 template <typename Backend, bool ForStartPhi, bool MovingOut>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::IsPointOnSurfaceAndMovingOut(Vector3D<typename Backend::precision_v> const &point,
-                                                             Vector3D<typename Backend::precision_v> const &dir) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::IsPointOnSurfaceAndMovingOut(
+    Vector3D<typename Backend::precision_v> const &point, Vector3D<typename Backend::precision_v> const &dir) const
 {
 
   if (MovingOut)
@@ -243,9 +232,8 @@ typename Backend::bool_v Wedge::IsPointOnSurfaceAndMovingOut(Vector3D<typename B
 }
 
 template <typename Backend, bool ForStartPhi>
-VECGEOM_FORCE_INLINE
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::IsOnSurfaceGeneric(Vector3D<typename Backend::precision_v> const &point) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::IsOnSurfaceGeneric(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
 
   if (ForStartPhi)
@@ -255,8 +243,8 @@ typename Backend::bool_v Wedge::IsOnSurfaceGeneric(Vector3D<typename Backend::pr
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::inside_v Wedge::Inside(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::inside_v Wedge::Inside(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
 
   typedef typename Backend::bool_v Bool_t;
@@ -269,8 +257,8 @@ typename Backend::inside_v Wedge::Inside(Vector3D<typename Backend::precision_v>
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::ContainsWithBoundary(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::ContainsWithBoundary(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
   typedef typename Backend::bool_v Bool_t;
   Bool_t completelyinside, completelyoutside;
@@ -279,8 +267,8 @@ typename Backend::bool_v Wedge::ContainsWithBoundary(Vector3D<typename Backend::
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::ContainsWithoutBoundary(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::ContainsWithoutBoundary(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
   typedef typename Backend::bool_v Bool_t;
   Bool_t completelyinside, completelyoutside;
@@ -289,8 +277,8 @@ typename Backend::bool_v Wedge::ContainsWithoutBoundary(Vector3D<typename Backen
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::Contains(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::Contains(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
   typedef typename Backend::bool_v Bool_t;
   Bool_t unused;
@@ -301,10 +289,9 @@ typename Backend::bool_v Wedge::Contains(Vector3D<typename Backend::precision_v>
 
 // Implementation follows
 template <typename Backend, bool ForInside>
-VECCORE_ATT_HOST_DEVICE
-void Wedge::GenericKernelForContainsAndInside(Vector3D<typename Backend::precision_v> const &localPoint,
-                                              typename Backend::bool_v &completelyinside,
-                                              typename Backend::bool_v &completelyoutside) const
+VECCORE_ATT_HOST_DEVICE void Wedge::GenericKernelForContainsAndInside(
+    Vector3D<typename Backend::precision_v> const &localPoint, typename Backend::bool_v &completelyinside,
+    typename Backend::bool_v &completelyoutside) const
 {
   typedef typename Backend::precision_v Real_v;
 
@@ -337,10 +324,9 @@ void Wedge::GenericKernelForContainsAndInside(Vector3D<typename Backend::precisi
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::bool_v Wedge::IsOnSurfaceGeneric(Vector3D<Precision> const &alongVector,
-                                                   Vector3D<Precision> const &normalVector,
-                                                   Vector3D<typename Backend::precision_v> const &point)
+VECCORE_ATT_HOST_DEVICE typename Backend::bool_v Wedge::IsOnSurfaceGeneric(
+    Vector3D<Precision> const &alongVector, Vector3D<Precision> const &normalVector,
+    Vector3D<typename Backend::precision_v> const &point)
 {
   // on right side of half plane ??
   typedef typename Backend::bool_v Bool_v;
@@ -352,8 +338,8 @@ typename Backend::bool_v Wedge::IsOnSurfaceGeneric(Vector3D<Precision> const &al
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::precision_v Wedge::SafetyToOut(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::precision_v Wedge::SafetyToOut(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
   typedef typename Backend::precision_v Float_t;
   // algorithm: calculate projections to both planes
@@ -376,8 +362,8 @@ typename Backend::precision_v Wedge::SafetyToOut(Vector3D<typename Backend::prec
 }
 
 template <typename Backend>
-VECCORE_ATT_HOST_DEVICE
-typename Backend::precision_v Wedge::SafetyToIn(Vector3D<typename Backend::precision_v> const &point) const
+VECCORE_ATT_HOST_DEVICE typename Backend::precision_v Wedge::SafetyToIn(
+    Vector3D<typename Backend::precision_v> const &point) const
 {
   typedef typename Backend::precision_v Float_t;
   // algorithm: calculate projections to both planes
@@ -402,10 +388,10 @@ typename Backend::precision_v Wedge::SafetyToIn(Vector3D<typename Backend::preci
 }
 
 template <class Backend>
-VECCORE_ATT_HOST_DEVICE
-void Wedge::DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
-                         Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distWedge1,
-                         typename Backend::precision_v &distWedge2) const
+VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
+                                                 Vector3D<typename Backend::precision_v> const &dir,
+                                                 typename Backend::precision_v &distWedge1,
+                                                 typename Backend::precision_v &distWedge2) const
 {
   typedef typename Backend::precision_v Float_t;
   typedef typename Backend::bool_v Bool_t;
@@ -435,10 +421,10 @@ void Wedge::DistanceToIn(Vector3D<typename Backend::precision_v> const &point,
 }
 
 template <class Backend>
-VECCORE_ATT_HOST_DEVICE
-void Wedge::DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
-                          Vector3D<typename Backend::precision_v> const &dir, typename Backend::precision_v &distWedge1,
-                          typename Backend::precision_v &distWedge2) const
+VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
+                                                  Vector3D<typename Backend::precision_v> const &dir,
+                                                  typename Backend::precision_v &distWedge1,
+                                                  typename Backend::precision_v &distWedge2) const
 {
 
   typedef typename Backend::precision_v Float_t;
@@ -471,7 +457,7 @@ void Wedge::DistanceToOut(Vector3D<typename Backend::precision_v> const &point,
   // std::cerr << "c1 " << comp1 <<" d1="<<distWedge1<<" "<<point<< "\n";
   // std::cerr << "c2 " << comp2 <<" d2=" <<distWedge2<<" "<<point<<"\n";
 }
-}
-} // end of namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif /* VECGEOM_VOLUMES_WEDGE_H_ */

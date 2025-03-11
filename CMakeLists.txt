@@ -154,6 +154,10 @@ set(__BUILTIN_VECCORE_LAST ${VECGEOM_BUILTIN_VECCORE} CACHE INTERNAL "Builtin Ve
 # - Precision
 option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
 
+# - Sanitizer
+option(VECGEOM_SANITIZER "Enable memory sanitizer." OFF)
+
+# - CUDA
 option(VECGEOM_ENABLE_CUDA "Enable compilation for CUDA." OFF)
 cmake_dependent_option(VECGEOM_CUDA_VOLUME_SPECIALIZATION "Use specialized volumes for CUDA." OFF "VECGEOM_ENABLE_CUDA" OFF)
 
@@ -168,11 +172,14 @@ if(VECGEOM_ENABLE_CUDA)
     message(WARNING "Unsupported CUDA compiler '${CMAKE_CUDA_COMPILER_VERSION}', build will likely fail")
   endif()
   set(VecCore_COMPONENTS ${VecCore_COMPONENTS} "CUDA")
+  message(STATUS "CUDA support ${ColorBold}enabled${ColorReset}")
+else()
+  message(STATUS "CUDA support ${ColorBold}disabled${ColorReset}")
 endif()
 
 option(VECGEOM_NO_SPECIALIZATION "Disable specialization of volumes." ON)
 if((NOT VECGEOM_NO_SPECIALIZATION) AND VECGEOM_ENABLE_CUDA)
-  message(STATUS "Forcing VECGEOM_NO_SPECIALIZATION to ON (required by VECGEOM_ENABLE_CUDA=ON)")
+  message(STATUS "${BoldRed}Forcing VECGEOM_NO_SPECIALIZATION to ON (required by VECGEOM_ENABLE_CUDA=ON${ColorReset})")
   set(VECGEOM_NO_SPECIALIZATION ON CACHE BOOL "Disable specialization of volumes." FORCE)
 endif()
 option(VECGEOM_PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
@@ -182,41 +189,53 @@ option(VECGEOM_INPLACE_TRANSFORMATIONS "Put transformation as members rather tha
 option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigation states" OFF)
 option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
 
-option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" ON)
-set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
+# Surface model options
 option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
-option(VECGEOM_BVH_SINGLE "Enable using single precision for BVH traversal" OFF)
-option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" OFF)
+if(VECGEOM_USE_SURF)
+  message(STATUS "Surface model ${ColorBold}enabled${ColorReset}")
+else()
+  message(STATUS "Surface model ${ColorBold}disabled${ColorReset}")
+endif()
+## BVH navigation in single precision (can be disabled)
+option(VECGEOM_BVH_SINGLE "Enable using single precision for BVH traversal (applies to surface model only)" ON)
+if(VECGEOM_USE_SURF)
+  if(VECGEOM_BVH_SINGLE)
+    message(STATUS "BVH surface navigation using ${ColorBold}single precision${ColorReset}")
+  else()
+    message(STATUS "BVH surface navigation using ${ColorBold}double precision${ColorReset}")
+  endif()
+endif()
+option(VECGEOM_USE_NAVINDEX "Use flat navigation table with indexed states" OFF)
+option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" ON)
+set(VECGEOM_NAVTUPLE_MAXDEPTH "1" CACHE STRING "Maximum depth of navigation tuple states")
+if (VECGEOM_NAVTUPLE_MAXDEPTH LESS 1)
+  set(VECGEOM_NAVTUPLE_MAXDEPTH 1 CACHE STRING "Maximum navigation tuple depth" FORCE)
+  message(WARNING "VECGEOM_NAVTUPLE_MAXDEPTH requested value ${VECGEOM_NAVTUPLE_MAXDEPTH} while minimum allowed is 1")
+endif()
+## Either index or tuple navigation are required for CUDA or SURFACE models
+if (VECGEOM_USE_SURF OR VECGEOM_ENABLE_CUDA)
+  if (NOT VECGEOM_USE_NAVINDEX AND NOT VECGEOM_USE_NAVTUPLE)
+    set(VECGEOM_USE_NAVTUPLE ON CACHE STRING "Use navigation index table with tuple states" FORCE)
+  endif()
+endif()
+## Tuple navigation is prioritized
+if(VECGEOM_USE_NAVTUPLE)
+  set(VECGEOM_USE_NAVINDEX OFF CACHE BOOL "Use navigation index table and states" FORCE)
+  message(STATUS "${Green}Enabled scene indexing navigation with ${BoldGreen}max depth ${VECGEOM_NAVTUPLE_MAXDEPTH}${ColorReset}")
+else()
+  if (VECGEOM_USE_NAVINDEX)
+    message(STATUS "${Magenta}Enabled touchable indexing navigation - memory intensive${ColorReset}")
+  else()
+    message(STATUS "${Cyan}Enabled CPU-only touchable path navigation${ColorReset}")
+  endif()
+endif()
+
+option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" ON)
 option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
 
 option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
 
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
-
-# Navigation index is REQUIRED for CUDA or SURFACE models
-cmake_dependent_option(VECGEOM_USE_NAVINDEX
-  "Use navigation index table and states"
-  OFF
-  "NOT VECGEOM_ENABLE_CUDA;NOT VECGEOM_USE_SURF;NOT VECGEOM_USE_NAVTUPLE"
-  ON
-)
-
-if(VECGEOM_USE_NAVTUPLE)
-  message(STATUS "Enabled navigation state tuple navigation with maximum depth ${VECGEOM_NAVTUPLE_MAXDEPTH}")
-  if (VECGEOM_USE_NAVINDEX)
-    set(VECGEOM_USE_NAVINDEX OFF CACHE BOOL "Use navigation index table and states" FORCE)
-  endif()
-else()
-  if (VECGEOM_USE_NAVINDEX)
-    message(STATUS "Enabled navigation state index navigation")
-  endif()
-endif()
-
-if(VECGEOM_BVH_SINGLE)
-  message(STATUS "BVH navigation using single precision")
-else()
-  message(STATUS "BVH navigation using double precision")
-endif()
 
 ################################################################################
 # - Testing, unit, coverage, benchmarking, validation etc
@@ -367,7 +386,10 @@ message(STATUS "Compiling for ${_arch_up} SIMD architecture")
 # Combine/finalize flags.
 # TODO: Rationalize this or use add_compile_options as appropriate
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
-
+if(VECGEOM_SANITIZER)
+  string(APPEND CMAKE_CXX_FLAGS " -fsanitize=address -fno-omit-frame-pointer -g")
+  string(APPEND CMAKE_EXE_LINKER_FLAGS " -fsanitize=address")
+endif()
 
 ################################################################################
 # - CUDA Compiler Flags/Settings for each build type
@@ -390,7 +412,7 @@ if(VECGEOM_ENABLE_CUDA)
   endif()
 
   string(APPEND CMAKE_CUDA_FLAGS_DEBUG " -G")
-  string(APPEND CMAKE_CUDA_FLAGS_RELWITHDEBINFO " -line-info")
+  string(APPEND CMAKE_CUDA_FLAGS_RELWITHDEBINFO " -lineinfo")
 
   # Pre CMake 3.18, we have to manually manage architecture flags, and can only
   # really support Nvidia compiler. Don't handle any other case
@@ -527,7 +549,6 @@ set(VECGEOM_COMMON_SRCS
   source/UnplacedBooleanVolume.cpp
   source/PlacedBooleanVolume.cpp
   source/Wedge.cpp
-  source/Wedge_Evolution.cpp
   source/ABBoxManager.cpp
   source/HybridManager2.cpp
   source/FlatVoxelManager.cpp
@@ -552,9 +573,14 @@ set(VECGEOM_CPPONLY_SRCS
   source/Logger.cpp
   source/LoggerMessage.cpp
   source/LoggerTypes.cpp
-  VecGeom/surfaces/cpp/LogicHelper.cpp
-  VecGeom/surfaces/cpp/BrepHelper.cpp
 )
+
+if(VECGEOM_USE_SURF)
+  list(APPEND VECGEOM_CPPONLY_SRCS
+    VecGeom/surfaces/cpp/LogicHelper.cpp
+    VecGeom/surfaces/cpp/BrepHelper.cpp
+  )
+endif()
 
 if(VECGEOM_EMBREE)
   list(APPEND VECGEOM_COMMON_SRCS source/EmbreeManager.cpp)

@@ -39,8 +39,18 @@ public:
   typedef Planes Sides_t[4];
   typedef AOS3D<Precision> Corners_t[4];
 
+  Quadrilaterals() = default;
+
   VECCORE_ATT_HOST_DEVICE
   Quadrilaterals(int size, bool convex = true);
+
+  /// @brief Construct aligned data using specialized allocator.
+  /// @details To allocate the full object, call this constructor with placement new.
+  /// @param size Size of the internal arrays
+  /// @param a Aligned allocator, pre-initialized to fit the content
+  /// @param convex Convexity of the quadrilaterals
+  VECCORE_ATT_HOST_DEVICE
+  Quadrilaterals(int size, AlignedAllocator &a, bool convex = true);
 
   VECCORE_ATT_HOST_DEVICE
   ~Quadrilaterals();
@@ -55,6 +65,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int size() const;
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(const size_t initSize);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -160,53 +174,34 @@ public:
 
 VECCORE_ATT_HOST_DEVICE
 VECGEOM_FORCE_INLINE
-int Quadrilaterals::size() const
-{
-  return fPlanes.size();
-}
+int Quadrilaterals::size() const { return fPlanes.size(); }
 
 VECCORE_ATT_HOST_DEVICE
 VECGEOM_FORCE_INLINE
-Planes const &Quadrilaterals::GetPlanes() const
+size_t Quadrilaterals::aligned_sizeof_data(const size_t initSize)
 {
-  return fPlanes;
+  return (5 * Planes::aligned_sizeof_data(initSize) + 4 * AOS3D<Precision>::aligned_sizeof_data(initSize));
 }
 
-VECCORE_ATT_HOST_DEVICE
-SOA3D<Precision> const &Quadrilaterals::GetNormals() const
-{
-  return fPlanes.GetNormals();
-}
+VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Planes const &Quadrilaterals::GetPlanes() const { return fPlanes; }
 
 VECCORE_ATT_HOST_DEVICE
-Vector3D<Precision> Quadrilaterals::GetNormal(int i) const
-{
-  return fPlanes.GetNormal(i);
-}
+SOA3D<Precision> const &Quadrilaterals::GetNormals() const { return fPlanes.GetNormals(); }
 
 VECCORE_ATT_HOST_DEVICE
-Array<Precision> const &Quadrilaterals::GetDistances() const
-{
-  return fPlanes.GetDistances();
-}
+Vector3D<Precision> Quadrilaterals::GetNormal(int i) const { return fPlanes.GetNormal(i); }
 
 VECCORE_ATT_HOST_DEVICE
-Precision Quadrilaterals::GetDistance(int i) const
-{
-  return fPlanes.GetDistance(i);
-}
+Array<Precision> const &Quadrilaterals::GetDistances() const { return fPlanes.GetDistances(); }
 
 VECCORE_ATT_HOST_DEVICE
-Quadrilaterals::Sides_t const &Quadrilaterals::GetSideVectors() const
-{
-  return fSideVectors;
-}
+Precision Quadrilaterals::GetDistance(int i) const { return fPlanes.GetDistance(i); }
 
 VECCORE_ATT_HOST_DEVICE
-Quadrilaterals::Corners_t const &Quadrilaterals::GetCorners() const
-{
-  return fCorners;
-}
+Quadrilaterals::Sides_t const &Quadrilaterals::GetSideVectors() const { return fSideVectors; }
+
+VECCORE_ATT_HOST_DEVICE
+Quadrilaterals::Corners_t const &Quadrilaterals::GetCorners() const { return fCorners; }
 
 VECCORE_ATT_HOST_DEVICE
 Precision Quadrilaterals::GetTriangleArea(int index, int iCorner1, int iCorner2) const
@@ -289,7 +284,7 @@ template <class Real_v>
 struct AcceleratedDistanceToIn {
   template <bool behindPlanesT>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void VectorLoop(
-      int & /*i*/, const int /*n*/, Planes const & /*planes*/, Planes const (&/*sideVectors*/)[4],
+      int & /*i*/, const int /*n*/, Planes const & /*planes*/, Planes const (& /*sideVectors*/)[4],
       Vector3D<Real_v> const & /*point*/, Vector3D<Real_v> const & /*direction*/, Real_v & /*distance*/)
   {
     // Do nothing if not scalar backend
@@ -408,7 +403,7 @@ namespace {
 
 template <typename Real_v>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut(
-    int & /*i*/, const int /*n*/, Planes const & /*planes*/, Planes const (&/*sideVectors*/)[4],
+    int & /*i*/, const int /*n*/, Planes const & /*planes*/, Planes const (& /*sideVectors*/)[4],
     const Precision /*zMin*/, const Precision /*zMax*/, Vector3D<Real_v> const & /*point*/,
     Vector3D<Real_v> const & /*direction*/, Real_v & /*distance*/)
 {

@@ -1,5 +1,5 @@
 /*
- * ConeStruct.h
+ * PolyconeStruct.h
  *
  *  Created on: May 11, 2017
  *      Author: Raman Sehgal
@@ -23,23 +23,107 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 template <typename T = double>
 struct PolyconeStruct {
 
-  bool fEqualRmax;
-  bool fContinuityOverAll;
-  bool fConvexityPossible;
+  bool fEqualRmax{false};
+  bool fContinuityOverAll{false};
+  bool fConvexityPossible{false};
 
   evolution::Wedge fPhiWedge;
-  Precision fStartPhi;
-  Precision fDeltaPhi;
-  unsigned int fNz;
+  Precision fStartPhi{0.};
+  Precision fDeltaPhi{0.};
+  unsigned int fNz{0};
 
   Vector<PolyconeSection> fSections;
   Vector<Precision> fZs;
-  PolyconeHistorical *fOriginal_parameters;
+  PolyconeHistorical *fOriginal_parameters{nullptr};
 
   // Data member to hold the line segment that form Polycone boundary
   Vector<Vector3D<Precision>> fRMinTwoDVec;
   Vector<Vector3D<Precision>> fRMaxTwoDVec;
   Vector<Vector3D<Precision>> fTwoDVec;
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static bool ApproxEqual(const Precision &x, const Precision &y) { return vecCore::math::Abs(x - y) < kTolerance; }
+
+  PolyconeStruct() = default;
+
+  VECCORE_ATT_HOST_DEVICE
+  PolyconeStruct(bool equalRmax, bool continuityOverAll, bool convexityPossible, Precision phiStart, Precision phiTotal,
+                 unsigned int numSections, unsigned int numZPlanes, const Precision zPlaneR[],
+                 const Precision rInnerR[], const Precision rOuterR[], AlignedAllocator &a)
+      : fEqualRmax(equalRmax), fContinuityOverAll(continuityOverAll), fConvexityPossible(convexityPossible),
+        fNz(numZPlanes), fSections(numSections, a), fZs(numSections + 1, a), fRMinTwoDVec(2 * numSections, a),
+        fRMaxTwoDVec(2 * numSections, a), fTwoDVec(4 * numSections, a)
+  {
+    // These will set fStartPhi, fDeltaPhi and fPhiWedge
+    SetAndCheckStartAndDeltaPhi(phiStart, phiTotal);
+
+    // Create the sections
+
+    // Calculate RMax of Polycone in order to determine convexity of sections
+    Precision RMaxextent = rOuterR[0];
+    for (unsigned int j = 1; j < numZPlanes; j++)
+      if (rOuterR[j] > RMaxextent) RMaxextent = rOuterR[j];
+
+    Precision prevZ = zPlaneR[0], prevRmax = 0., prevRmin = 0.;
+    int dirZ = 1.;
+    if (zPlaneR[1] < zPlaneR[0]) dirZ = -1.;
+
+    size_t isection = 0, iz = 0;
+    for (unsigned int i = 0; i < numZPlanes; ++i) {
+      Precision rMin = rInnerR[i];
+      Precision rMax = rOuterR[i];
+      Precision z    = zPlaneR[i];
+
+      // i has to be at least one to complete a section
+      if (i > 0) {
+        if (((z > prevZ + kTolerance) && (dirZ > 0)) || ((z < prevZ - kTolerance) && (dirZ < 0))) {
+          Precision dz    = 0.5 * (z - prevZ);
+          fZs[iz++]       = z;
+          Precision shift = prevZ + dz;
+
+          PolyconeSection &section = fSections[isection];
+          section.fShift           = shift;
+          section.fSolid.Init(prevRmin, prevRmax, rMin, rMax, dz, fStartPhi, fDeltaPhi);
+
+          section.fConvex = !((rMax < prevRmax) || (rMax < RMaxextent) || (prevRmax < RMaxextent));
+
+          fRMinTwoDVec[2 * isection + 0].Set(prevRmin, prevZ, 0.);
+          fRMinTwoDVec[2 * isection + 1].Set(rMin, z, 0);
+          fRMaxTwoDVec[2 * isection + 0].Set(prevRmax, prevZ, 0);
+          fRMaxTwoDVec[2 * isection + 1].Set(rMax, z, 0.);
+          isection++;
+        }
+      } else {
+        fZs[iz++] = z;
+      }
+      prevZ    = z;
+      prevRmin = rMin;
+      prevRmax = rMax;
+    }
+    size_t counter = 0;
+    for (auto val : fRMaxTwoDVec)
+      fTwoDVec[counter++] = val;
+
+    for (int k = fRMinTwoDVec.size() - 1; k >= 0; k--) {
+      fTwoDVec[counter++] = fRMinTwoDVec[k];
+    }
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(size_t numSections)
+  {
+    // Sections data
+    size_t aligned_size = AlignedAllocator::aligned_sizeof<PolyconeSection>(numSections, 0);
+    // fZs
+    aligned_size += AlignedAllocator::aligned_sizeof<Precision>(numSections + 1, 0);
+    // fRMinTwoDVec, fRMaxTwoDVec
+    aligned_size += 2 * AlignedAllocator::aligned_sizeof<Vector3D<Precision>>(2 * numSections, 0);
+    // fTwoDVec
+    aligned_size += AlignedAllocator::aligned_sizeof<Vector3D<Precision>>(4 * numSections, 0);
+    return aligned_size;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   bool CheckContinuity(const Precision rOuter[], const Precision rInner[], const Precision zPlane[],
@@ -146,6 +230,70 @@ struct PolyconeStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
+  void Dump()
+  {
+    printf("== PolyconeStruct at: %p", (void *)this);
+    printf("   numZplanes: %u numSections: %lu, phiStart: %g phiDelta: %g\n", fNz, fSections.size(), fStartPhi,
+           fDeltaPhi);
+    printf("   fEqualRmax: %d fContinuityOverAll: %d fConvexityPossible: %d\n", fEqualRmax, fContinuityOverAll,
+           fConvexityPossible);
+    printf("   fZs: {");
+    for (auto z : fZs)
+      printf("  %g", z);
+    printf("  }\n");
+    auto dump_section = [](int isection, PolyconeSection const &section) {
+      printf("   section %d  fShift: %g  fTubular: %d  fConvex: %d\n", isection, section.fShift, section.fTubular,
+             section.fConvex);
+      printf("      ");
+      section.fSolid.Print();
+      printf("\n");
+    };
+    int isection = 0;
+    for (auto const &section : fSections)
+      dump_section(isection++, section);
+  }
+
+  // a method to reconstruct "plane" section arrays for z, rmin and rmax
+  template <typename PushableContainer>
+  void ReconstructSectionArrays(PushableContainer &z_values, PushableContainer &rmin_values,
+                                PushableContainer &rmax_values) const
+  {
+    // loop sections
+    Precision prevZ = 0., prevRmax = 0., prevRmin = 0.;
+    int iplane = 0;
+    for (auto const &section : fSections) {
+      Precision zmin = section.fShift - section.fSolid.fDz;
+      Precision zmax = section.fShift + section.fSolid.fDz;
+      Precision rmin = section.fSolid.fRmin1;
+      Precision rmax = section.fSolid.fRmax1;
+      if (iplane == 0) {
+        prevZ    = zmin;
+        prevRmin = rmin;
+        prevRmax = rmax;
+        z_values.push_back(zmin);
+        rmin_values.push_back(rmin);
+        rmax_values.push_back(rmax);
+        iplane++;
+      }
+      // Add bottom Z plane if there is a radial discontinuity
+      if (!ApproxEqual(rmin, prevRmin) || !ApproxEqual(rmax, prevRmax)) {
+        z_values.push_back(zmin);
+        rmin_values.push_back(rmin);
+        rmax_values.push_back(rmax);
+        iplane++;
+      }
+      // Add top Z plane
+      prevZ    = zmax;
+      prevRmin = section.fSolid.fRmin2;
+      prevRmax = section.fSolid.fRmax2;
+      z_values.push_back(prevZ);
+      rmin_values.push_back(prevRmin);
+      rmax_values.push_back(prevRmax);
+      iplane++;
+    }
+  }
+
+  VECCORE_ATT_HOST_DEVICE
   void Init(Precision phiStart,       // initial phi starting angle
             Precision phiTotal,       // total phi angle
             unsigned int numZPlanes,  // number of z planes
@@ -154,8 +302,7 @@ struct PolyconeStruct {
             const Precision rOuter[])
   {
 
-    SetAndCheckDPhiAngle(phiTotal);
-    SetAndCheckSPhiAngle(phiStart);
+    SetAndCheckStartAndDeltaPhi(phiStart, phiTotal);
     fNz                = numZPlanes;
     Precision *zPlaneR = new Precision[numZPlanes];
     Precision *rInnerR = new Precision[numZPlanes];
@@ -172,20 +319,6 @@ struct PolyconeStruct {
         rInnerR[i] = rInner[numZPlanes - 1 - i];
         rOuterR[i] = rOuter[numZPlanes - 1 - i];
       }
-    }
-
-    // Conversion for angles
-    if (phiTotal <= 0. || phiTotal > kTwoPi - kTolerance) {
-      // phiIsOpen=false;
-      fStartPhi = 0;
-      fDeltaPhi = kTwoPi;
-    } else {
-      //
-      // Convert phi into our convention
-      //
-      fStartPhi = phiStart;
-      while (fStartPhi < 0)
-        fStartPhi += kTwoPi;
     }
 
     // Calculate RMax of Polycone in order to determine convexity of sections
@@ -254,19 +387,14 @@ struct PolyconeStruct {
 #endif
           }
 
-          ConeStruct<Precision> *solid;
-
           Precision dz = (z - prevZ) / 2;
-
-          solid = new ConeStruct<Precision>(prevRmin, prevRmax, rMin, rMax, dz, phiStart, phiTotal);
-
           fZs.push_back(z);
           int zi          = fZs.size() - 1;
           Precision shift = fZs[zi - 1] + 0.5 * (fZs[zi] - fZs[zi - 1]);
 
           PolyconeSection section;
           section.fShift = shift;
-          section.fSolid = solid;
+          section.fSolid.Init(prevRmin, prevRmax, rMin, rMax, dz, fStartPhi, fDeltaPhi);
 
           section.fConvex = !((rMax < prevRmax) || (rMax < RMaxextent) || (prevRmax < RMaxextent));
 
@@ -306,21 +434,12 @@ struct PolyconeStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeHistorical *GetOriginalParameters() const
-  {
-    return fOriginal_parameters;
-  }
+  PolyconeHistorical *GetOriginalParameters() const { return fOriginal_parameters; }
 
-  VECCORE_ATT_HOST_DEVICE unsigned int GetNz() const
-  {
-    return fNz;
-  }
+  VECCORE_ATT_HOST_DEVICE unsigned int GetNz() const { return fNz; }
 
   VECCORE_ATT_HOST_DEVICE
-  int GetNSections() const
-  {
-    return fSections.size();
-  }
+  int GetNSections() const { return fSections.size(); }
 
   VECCORE_ATT_HOST_DEVICE
   int GetSectionIndex(Precision zposition) const
@@ -344,10 +463,7 @@ struct PolyconeStruct {
 
   VECCORE_ATT_HOST_DEVICE
   // GetSection if index is known
-  PolyconeSection const &GetSection(int index) const
-  {
-    return fSections[index];
-  }
+  PolyconeSection const &GetSection(int index) const { return fSections[index]; }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRminAtPlane(int index) const
@@ -355,9 +471,9 @@ struct PolyconeStruct {
     int nsect = fSections.size();
     assert(index >= 0 && index <= nsect);
     if (index == nsect)
-      return fSections[index - 1].fSolid->fRmin2; // GetRmin2();
+      return fSections[index - 1].fSolid.fRmin2; // GetRmin2();
     else
-      return fSections[index].fSolid->fRmin1; // GetRmin1();
+      return fSections[index].fSolid.fRmin1; // GetRmin1();
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -366,9 +482,9 @@ struct PolyconeStruct {
     int nsect = fSections.size();
     assert(index >= 0 || index <= nsect);
     if (index == nsect)
-      return fSections[index - 1].fSolid->fRmax2; // GetRmax2();
+      return fSections[index - 1].fSolid.fRmax2; // GetRmax2();
     else
-      return fSections[index].fSolid->fRmax1; // GetRmax1();
+      return fSections[index].fSolid.fRmax1; // GetRmax1();
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -382,43 +498,37 @@ struct PolyconeStruct {
   Precision GetRmin1AtSection(size_t index) const
   {
     assert(index < fSections.size());
-    return fSections[index].fSolid->fRmin1;
+    return fSections[index].fSolid.fRmin1;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmin2AtSection(size_t index) const
   {
     assert(index < fSections.size());
-    return fSections[index].fSolid->fRmin2;
+    return fSections[index].fSolid.fRmin2;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmax1AtSection(size_t index) const
   {
     assert(index < fSections.size());
-    return fSections[index].fSolid->fRmax1;
+    return fSections[index].fSolid.fRmax1;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmax2AtSection(size_t index) const
   {
     assert(index < fSections.size());
-    return fSections[index].fSolid->fRmax2;
+    return fSections[index].fSolid.fRmax2;
   }
 
   VECCORE_ATT_HOST_DEVICE
   void SetAndCheckSPhiAngle(Precision sPhi)
   {
-    // Ensure fSphi in 0-2PI or -2PI-0 range if shape crosses 0
-    if (sPhi < 0) {
-      fStartPhi = kTwoPi - std::fmod(std::fabs(sPhi), kTwoPi);
-    } else {
-      fStartPhi = std::fmod(sPhi, kTwoPi);
-    }
-    if (fStartPhi + fDeltaPhi > kTwoPi) {
-      fStartPhi -= kTwoPi;
-    }
-
+    // Ensure fSphi in [0, 2PI)
+    while (sPhi < 0.)
+      sPhi += kTwoPi;
+    fStartPhi = std::fmod(sPhi, kTwoPi);
     // Update Wedge
     fPhiWedge.SetStartPhi(fStartPhi);
     fPhiWedge.UpdateNormals();
@@ -427,26 +537,36 @@ struct PolyconeStruct {
   VECCORE_ATT_HOST_DEVICE
   void SetAndCheckDPhiAngle(Precision dPhi)
   {
-    if (dPhi >= kTwoPi - 0.5 * kAngTolerance) {
-      fDeltaPhi = kTwoPi;
+    if (dPhi <= 0. || dPhi > kTwoPi - kTolerance) {
       fStartPhi = 0;
+      fDeltaPhi = kTwoPi;
     } else {
-      if (dPhi > 0) {
-        fDeltaPhi = dPhi;
-      } else {
-        //        std::ostringstream message;
-        //        message << "Invalid dphi.\n"
-        //                << "Negative or zero delta-Phi (" << dPhi << ")\n";
-        //        std::cerr<<"UnplacedTube::CheckDPhiAngle(): Fatal error: "<< message.str().c_str() <<"\n";
-      }
+      fDeltaPhi = dPhi;
     }
+    while (fStartPhi < 0)
+      fStartPhi += kTwoPi;
     // Update Wedge
     fPhiWedge.SetDeltaPhi(fDeltaPhi);
     fPhiWedge.UpdateNormals();
   }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeStruct() {}
+  void SetAndCheckStartAndDeltaPhi(Precision sPhi, Precision dPhi)
+  {
+    fStartPhi = sPhi;
+    while (fStartPhi < 0)
+      fStartPhi += kTwoPi;
+    fStartPhi = std::fmod(sPhi, kTwoPi);
+
+    fDeltaPhi = dPhi;
+    if (dPhi <= 0. || dPhi > kTwoPi - kTolerance) {
+      fStartPhi = 0;
+      fDeltaPhi = kTwoPi;
+    }
+    // Update Wedge
+    fPhiWedge.Set(fDeltaPhi, fStartPhi);
+    fPhiWedge.UpdateNormals();
+  }
 };
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

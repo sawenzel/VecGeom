@@ -45,33 +45,49 @@ struct ZSegment {
 
   VECCORE_ATT_HOST_DEVICE
   bool hasInnerRadius() const { return inner.size() > 0; }
+
+  VECCORE_ATT_HOST_DEVICE
+  size_t aligned_sizeof_data(size_t nOuter, size_t nInner, size_t nPhi)
+  {
+    return Quadrilaterals::aligned_sizeof_data(nOuter) + Quadrilaterals::aligned_sizeof_data(nInner) +
+           Quadrilaterals::aligned_sizeof_data(nPhi);
+  }
+
+  ZSegment() = default;
+
+  VECCORE_ATT_HOST_DEVICE
+  ZSegment(size_t nOuter, size_t nInner, size_t nPhi, AlignedAllocator &a, bool convex = true)
+      : outer(nOuter, a), phi(nPhi, a, convex), inner(nInner, a)
+  {
+  }
 };
 
 // a plain and lightweight struct to encapsulate data members of a polyhedron
 template <typename T = double>
 struct PolyhedronStruct {
-  int fSideCount;              ///< Number of segments along phi.
-  bool fHasInnerRadii;         ///< Has any Z-segments with an inner radius != 0.
-  bool fHasPhiCutout;          ///< Has a cutout angle along phi.
-  bool fHasLargePhiCutout;     ///< Phi cutout is larger than pi.
-  T fPhiStart;                 ///< Phi start in radians (input to constructor)
-  T fPhiDelta;                 ///< Phi delta in radians (input to constructor)
-  evolution::Wedge fPhiWedge;  ///< Phi wedge
-  Array<ZSegment> fZSegments;  ///< AOS'esque collections of quadrilaterals
-  Array<T> fZPlanes;           ///< Z-coordinate of each plane separating segments
-  Array<T> fRMin;              ///< Inner radii as specified in constructor.
-  Array<T> fRMax;              ///< Outer radii as specified in constructor.
-  Array<bool> fSameZ;          ///< Array of flags marking that the following plane is at same Z
-  SOA3D<T> fPhiSections;       ///< Unit vectors marking the bounds between
-                               ///  phi segments, represented by planes
-                               ///  through the origin with the normal
-                               ///  point along the positive phi direction.
-  TubeStruct<T> fBoundingTube; ///< Tube enclosing the outer bounds of the
-                               ///  polyhedron. Used in Contains, Inside and
-                               ///  DistanceToIn.
-  T fBoundingTubeOffset;       ///< Offset in Z of the center of the bounding
-                               ///  tube. Used as a quick substitution for
-                               ///  running a full transformation.
+  size_t fSize{0};                ///< Size of the buffer to hold the object, including alignment
+  int fSideCount{0};              ///< Number of segments along phi.
+  bool fHasInnerRadii{false};     ///< Has any Z-segments with an inner radius != 0.
+  bool fHasPhiCutout{false};      ///< Has a cutout angle along phi.
+  bool fHasLargePhiCutout{false}; ///< Phi cutout is larger than pi.
+  T fPhiStart{0.};                ///< Phi start in radians (input to constructor)
+  T fPhiDelta{0.};                ///< Phi delta in radians (input to constructor)
+  evolution::Wedge fPhiWedge;     ///< Phi wedge
+  Array<ZSegment> fZSegments;     ///< AOS'esque collections of quadrilaterals
+  Array<T> fZPlanes;              ///< Z-coordinate of each plane separating segments
+  Array<T> fRMin;                 ///< Inner radii as specified in constructor.
+  Array<T> fRMax;                 ///< Outer radii as specified in constructor.
+  Array<bool> fSameZ;             ///< Array of flags marking that the following plane is at same Z
+  SOA3D<T> fPhiSections;          ///< Unit vectors marking the bounds between
+                                  ///  phi segments, represented by planes
+                                  ///  through the origin with the normal
+                                  ///  point along the positive phi direction.
+  TubeStruct<T> fBoundingTube;    ///< Tube enclosing the outer bounds of the
+                                  ///  polyhedron. Used in Contains, Inside and
+                                  ///  DistanceToIn.
+  T fBoundingTubeOffset{0.};      ///< Offset in Z of the center of the bounding
+                                  ///  tube. Used as a quick substitution for
+                                  ///  running a full transformation.
 
   /// Internal structure to cache component surface areas per Z segment
   struct AreaStruct {
@@ -106,12 +122,11 @@ struct PolyhedronStruct {
   bool fConvexityPossible;
   bool fEqualRmax;
 
+  VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  PolyhedronStruct()
-      : fSideCount(0), fHasInnerRadii(false), fHasPhiCutout(false), fHasLargePhiCutout(false), fPhiStart(0),
-        fPhiDelta(0), fPhiWedge(0., 0.), fBoundingTube(0, 0, 0, 0, 0), fBoundingTubeOffset(0)
-  {
-  }
+  static bool ApproxEqual(const Precision &x, const Precision &y) { return vecCore::math::Abs(x - y) < kTolerance; }
+
+  PolyhedronStruct() = default;
 
   VECCORE_ATT_HOST_DEVICE
   PolyhedronStruct(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
@@ -125,6 +140,20 @@ struct PolyhedronStruct {
   {
     // initialize polyhedron internals
     Initialize(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax);
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  PolyhedronStruct(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
+                   Precision const zPlanes[], Precision const rMin[], Precision const rMax[], AlignedAllocator &a)
+      : fSideCount(sideCount), fHasInnerRadii(false), fHasPhiCutout(phiDelta < kTwoPi),
+        fHasLargePhiCutout(phiDelta < kPi), fPhiStart(NormalizeAngle<kScalar>(phiStart)),
+        fPhiDelta((phiDelta > kTwoPi) ? kTwoPi : phiDelta), fPhiWedge(fPhiDelta, fPhiStart),
+        fZSegments(zPlaneCount - 1, a), fZPlanes(zPlaneCount, a), fRMin(zPlaneCount, a), fRMax(zPlaneCount, a),
+        fSameZ(zPlaneCount, a), fPhiSections(sideCount + 1), fBoundingTube(0, 1, 1, fPhiStart, fPhiDelta),
+        fContinuousInSlope(true), fConvexityPossible(true), fEqualRmax(true)
+  {
+    // initialize polyhedron internals
+    Initialize(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax, a);
   }
 
   PolyhedronStruct(Precision phiStart, Precision phiDelta, const int sideCount, const int verticesCount,
@@ -245,10 +274,44 @@ struct PolyhedronStruct {
   ~PolyhedronStruct() { delete fAreaStruct; }
 
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(Precision /*phiStart*/, Precision phiDelta, const int sideCount,
+                                    const int zPlaneCount, Precision const zPlanes[], Precision const rMin[],
+                                    Precision const rMax[])
+  {
+    const bool hasPhiCutout = phiDelta < 2 * kPi;
+    size_t aligned_size     = (zPlaneCount - 1) * sizeof(ZSegment);
+    // Alignment of all Array data members, which are AlignedBase types
+    aligned_size += 5 * kAlignmentBoundary;
+    // fZsegments content
+    for (int i = 0; i < zPlaneCount - 1; ++i) {
+      // Z-planes must be monotonically increasing
+      assert(zPlanes[i] <= zPlanes[i + 1]);
+      bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
+      int multiplier      = (ApproxEqual(zPlanes[i], zPlanes[i + 1]) && ApproxEqual(rMax[i], rMax[i + 1])) ? 0 : 1;
+      aligned_size += Quadrilaterals::aligned_sizeof_data(sideCount * multiplier);
+      // no phi segment here if degenerate z;
+      if (hasPhiCutout) {
+        multiplier = (zPlanes[i] == zPlanes[i + 1]) ? 0 : 1;
+        aligned_size += Quadrilaterals::aligned_sizeof_data(2 * multiplier);
+      }
+      multiplier = (zPlanes[i] == zPlanes[i + 1] && rMin[i] == rMin[i + 1]) ? 0 : 1;
+      if (hasInnerRadius && multiplier > 0) {
+        aligned_size += Quadrilaterals::aligned_sizeof_data(sideCount * multiplier);
+      }
+    }
+    // fZplanes, fRmin, fRmax
+    aligned_size += 3 * Array<T>::aligned_sizeof_data(zPlaneCount);
+    // fSameZ
+    aligned_size += Array<bool>::aligned_sizeof_data(zPlaneCount);
+    // fPhiSections
+    aligned_size += SOA3D<T>::aligned_sizeof_data(sideCount + 1);
+    return aligned_size;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
   bool CheckContinuityInSlope(const Precision rOuter[], const Precision zPlane[], const unsigned int nz)
   {
-    auto ApproxEqual = [](const Precision &x, const Precision &y) { return vecCore::math::Abs(x - y) < kTolerance; };
-
     Precision prevSlope = kInfLength;
     for (unsigned int j = 0; j < nz - 1; ++j) {
       if (ApproxEqual(zPlane[j + 1], zPlane[j])) {
@@ -262,6 +325,85 @@ struct PolyhedronStruct {
     return true;
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  void Dump()
+  {
+    auto dump_planes = [](Planes const &planes) {
+      auto const &normals   = planes.GetNormals();
+      auto const &distances = planes.GetDistances();
+      printf("[%d]: convex=%d normals[%p] distances[%p]", planes.size(), planes.IsConvex(), (void *)&normals,
+             (void *)&distances);
+      if (planes.size() == 0) printf(" : empty");
+      printf("\n");
+      for (size_t i = 0; i < planes.size(); ++i) {
+        auto const &normal = normals[i];
+        auto distance      = distances[i];
+        printf("         [%lu]: fNormal { %g, %g, %g } fDistance %g\n", i, normal[0], normal[1], normal[2], distance);
+      }
+    };
+    printf("== PolyhedronStruct at: %p", (void *)this);
+    printf("   side count: %d  z_plane_count: %u phiStart: %g phiDelta: %g\n", fSideCount, fZPlanes.size(), fPhiStart,
+           fPhiDelta);
+    printf("   hasInnerRadii: %d hasPhiCutout: %d fHasLargePhiCutout: %d\n", fHasInnerRadii, fHasPhiCutout,
+           fHasLargePhiCutout);
+    for (size_t i = 0; i < fZSegments.size(); ++i) {
+      printf("   ZSegments[%lu]:\n", i);
+      auto const &zseg = fZSegments[i];
+      printf("     outer\n");
+      printf("       planes");
+      dump_planes(zseg.outer.GetPlanes());
+      for (size_t j = 0; j < 4; ++j) {
+        printf("       side vectors[%lu]", j);
+        dump_planes(zseg.outer.GetSideVectors()[j]);
+        auto const &corners = zseg.outer.GetCorners()[j];
+        if (corners.size()) printf("       corners[%lu]", j);
+        for (size_t k = 0; k < corners.size(); ++k)
+          printf(" %lu:{%g, %g, %g}", k, corners[k].x(), corners[k].y(), corners[k].z());
+        if (corners.size()) printf("\n");
+      }
+      printf("     inner\n");
+      printf("       planes");
+      dump_planes(zseg.inner.GetPlanes());
+      for (size_t j = 0; j < 4; ++j) {
+        printf("       side vectors[%lu]", j);
+        dump_planes(zseg.inner.GetSideVectors()[j]);
+        auto const &corners = zseg.inner.GetCorners()[j];
+        if (corners.size()) printf("       corners[%lu]", j);
+        for (size_t k = 0; k < corners.size(); ++k)
+          printf(" %lu:{%g, %g, %g}", k, corners[k].x(), corners[k].y(), corners[k].z());
+        if (corners.size()) printf("\n");
+      }
+      printf("     phi\n");
+      printf("       planes");
+      dump_planes(zseg.phi.GetPlanes());
+      for (size_t j = 0; j < 4; ++j) {
+        printf("       side vectors[%lu]", j);
+        dump_planes(zseg.phi.GetSideVectors()[j]);
+        auto const &corners = zseg.phi.GetCorners()[j];
+        if (corners.size()) printf("       corners[%lu]", j);
+        for (size_t k = 0; k < corners.size(); ++k)
+          printf(" %lu:{%g, %g, %g}", k, corners[k].x(), corners[k].y(), corners[k].z());
+        if (corners.size()) printf("\n");
+      }
+    }
+    printf("\n   fZPlanes: ");
+    for (size_t i = 0; i < fZPlanes.size(); ++i)
+      printf(" %lu: %g", i, fZPlanes[i]);
+    printf("\n   fRMin: ");
+    for (size_t i = 0; i < fRMin.size(); ++i)
+      printf(" %lu: %g", i, fRMin[i]);
+    printf("\n   fRMax: ");
+    for (size_t i = 0; i < fRMax.size(); ++i)
+      printf(" %lu: %g", i, fRMax[i]);
+    printf("\n   fSameZ: ");
+    for (size_t i = 0; i < fSameZ.size(); ++i)
+      printf(" %lu: %d", i, fSameZ[i]);
+    printf("\n   fPhiSections: ");
+    for (size_t i = 0; i < fPhiSections.size(); ++i)
+      printf(" %lu: {%g, %g, %g}", i, fPhiSections[i].x(), fPhiSections[i].y(), fPhiSections[i].z());
+    printf("\n");
+  }
+
   // This method does the proper construction of planes and segments.
   // Used by multiple constructors.
   VECCORE_ATT_HOST_DEVICE
@@ -269,11 +411,11 @@ struct PolyhedronStruct {
                   Precision const zPlanes[], Precision const rMin[], Precision const rMax[])
   {
     typedef Vector3D<Precision> Vec_t;
-    auto ApproxEqual = [](const Precision x, const Precision y) { return vecCore::math::Abs(x - y) < kTolerance; };
 
     // Sanity check of input parameters
     assert(zPlaneCount > 1);
     assert(fSideCount > 0);
+    fSize = PolyhedronStruct<T>::aligned_sizeof_data(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax);
 
     for (auto i = 0; i < zPlaneCount; ++i) {
       fZPlanes[i] = 0.;
@@ -313,6 +455,8 @@ struct PolyhedronStruct {
       if (fHasPhiCutout) {
         multiplier = (zPlanes[i] == zPlanes[i + 1]) ? 0 : 1;
         new (&fZSegments[i].phi) Quadrilaterals(2 * multiplier, phiDelta <= kPi);
+      } else {
+        new (&fZSegments[i].phi) Quadrilaterals(0);
       }
 
       multiplier = (zPlanes[i] == zPlanes[i + 1] && rMin[i] == rMin[i + 1]) ? 0 : 1;
@@ -350,8 +494,6 @@ struct PolyhedronStruct {
     for (int i = 0; i < zPlaneCount; ++i) {
       // Use distance to side for minimizing inner radius of bounding tube
       if (rMin[i] < innerRadius) innerRadius = rMin[i];
-      // rMin[i] /= cosHalfDeltaPhi;
-      // rMax[i] /= cosHalfDeltaPhi;
       assert(rMin[i] >= 0 && rMax[i] >= 0);
       // Use distance to corner for minimizing outer radius of bounding tube
       if (rMax[i] > outerRadius) outerRadius = rMax[i];
@@ -369,9 +511,175 @@ struct PolyhedronStruct {
     // not be contained. The value is empirical to satisfy ShapeTester
     Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart - kPhiTolerance;
     Precision boundsPhiDelta = !fHasPhiCutout ? kTwoPi : phiDelta + 2 * kPhiTolerance;
-    // correct inner and outer Radius with conversion factor
-    // innerRadius /= cosHalfDeltaPhi;
-    // outerRadius /= cosHalfDeltaPhi;
+
+    fBoundingTube = TubeStruct<Precision>(innerRadius - kHalfTolerance, outerRadius + kHalfTolerance, boundingTubeZ,
+                                          boundsPhiStart, boundsPhiDelta);
+
+    // The offset has to match the middle of the polyhedron
+    fBoundingTubeOffset = 0.5 * (zPlanes[0] + zPlanes[zPlaneCount - 1]);
+
+    auto getVertexImpl = [&](Precision const r[], int i, int j) {
+      if (!fHasPhiCutout && j == sideCount) {
+        j = 0;
+      }
+      return Vec_t::FromCylindrical(r[i] / cosHalfDeltaPhi, getPhi(j), zPlanes[i]).FixZeroes();
+    };
+
+    auto getInnerVertex = [&](int i, int j) { return getVertexImpl(rMin, i, j); };
+    auto getOuterVertex = [&](int i, int j) { return getVertexImpl(rMax, i, j); };
+
+    // Build segments by drawing quadrilaterals between vertices
+    for (int iPlane = 0; iPlane < zPlaneCount - 1; ++iPlane) {
+
+      auto WrongNormal = [](Vector3D<Precision> const &normal, Vector3D<Precision> const &corner) {
+        return normal[0] * corner[0] + normal[1] * corner[1] < 0;
+      };
+
+      // Draw the regular quadrilaterals along phi
+      for (int iSide = 0; iSide < fZSegments[iPlane].outer.size(); ++iSide) {
+        fZSegments[iPlane].outer.Set(iSide, getOuterVertex(iPlane, iSide), getOuterVertex(iPlane, iSide + 1),
+                                     getOuterVertex(iPlane + 1, iSide + 1), getOuterVertex(iPlane + 1, iSide));
+        // Normal has to point away from Z-axis
+        if (WrongNormal(fZSegments[iPlane].outer.GetNormal(iSide), getOuterVertex(iPlane, iSide))) {
+          fZSegments[iPlane].outer.FlipSign(iSide);
+        }
+      }
+      for (int iSide = 0; iSide < fZSegments[iPlane].inner.size(); ++iSide) {
+        fZSegments[iPlane].inner.Set(iSide, getInnerVertex(iPlane, iSide), getInnerVertex(iPlane, iSide + 1),
+                                     getInnerVertex(iPlane + 1, iSide + 1), getInnerVertex(iPlane + 1, iSide));
+        // Normal has to point away from Z-axis
+        if (WrongNormal(fZSegments[iPlane].inner.GetNormal(iSide), getInnerVertex(iPlane, iSide))) {
+          fZSegments[iPlane].inner.FlipSign(iSide);
+        }
+      }
+
+      if (fHasPhiCutout && fZSegments[iPlane].phi.size() == 2) {
+        // If there's a phi cutout, draw two quadrilaterals connecting the four
+        // corners (two inner, two outer) of the first and last phi coordinate,
+        // respectively
+        fZSegments[iPlane].phi.Set(0, getInnerVertex(iPlane, 0), getInnerVertex(iPlane + 1, 0),
+                                   getOuterVertex(iPlane + 1, 0), getOuterVertex(iPlane, 0));
+        // Make sure normal points backwards along phi
+        if (fZSegments[iPlane].phi.GetNormal(0).Dot(fPhiSections[0]) > 0) {
+          fZSegments[iPlane].phi.FlipSign(0);
+        }
+        fZSegments[iPlane].phi.Set(1, getOuterVertex(iPlane, sideCount), getOuterVertex(iPlane + 1, sideCount),
+                                   getInnerVertex(iPlane + 1, sideCount), getInnerVertex(iPlane, sideCount));
+        // Make sure normal points forwards along phi
+        if (fZSegments[iPlane].phi.GetNormal(1).Dot(fPhiSections[fSideCount]) < 0) {
+          fZSegments[iPlane].phi.FlipSign(1);
+        }
+      }
+
+    } // End loop over segments
+  }
+
+  // This method does the proper construction of planes and segments.
+  // Used by multiple constructors.
+  VECCORE_ATT_HOST_DEVICE
+  void Initialize(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
+                  Precision const zPlanes[], Precision const rMin[], Precision const rMax[], AlignedAllocator &a)
+  {
+    typedef Vector3D<Precision> Vec_t;
+
+    // Sanity check of input parameters
+    assert(zPlaneCount > 1);
+    assert(fSideCount > 0);
+
+    for (auto i = 0; i < zPlaneCount; ++i) {
+      fZPlanes[i] = 0.;
+      fRMin[i]    = 0.;
+      fRMax[i]    = 0.;
+      fSameZ[i]   = false;
+    }
+    copy(zPlanes, zPlanes + zPlaneCount, &fZPlanes[0]);
+    copy(rMin, rMin + zPlaneCount, &fRMin[0]);
+    copy(rMax, rMax + zPlaneCount, &fRMax[0]);
+
+    Precision startRmax = rMax[0];
+    for (int i = 0; i < zPlaneCount; i++) {
+      fConvexityPossible &= (rMin[i] < kTolerance);
+      fEqualRmax &= (ApproxEqual(startRmax, rMax[i]));
+      if (i > 0 && i < zPlaneCount - 2) {
+        if (ApproxEqual(fZPlanes[i], fZPlanes[i + 1])) fSameZ[i] = true;
+      }
+    }
+    fContinuousInSlope = CheckContinuityInSlope(rMax, zPlanes, zPlaneCount);
+
+    // Initialize segments
+    // sometimes there will be no quadrilaterals: for instance when
+    // rmin jumps at some z and rmax remains continouus
+    for (int i = 0; i < zPlaneCount - 1; ++i) {
+      // Z-planes must be monotonically increasing
+      assert(zPlanes[i] <= zPlanes[i + 1]);
+
+      bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
+      bool convex         = phiDelta <= kPi;
+
+      int multiplier = (ApproxEqual(zPlanes[i], zPlanes[i + 1]) && ApproxEqual(rMax[i], rMax[i + 1])) ? 0 : 1;
+      size_t nouter  = sideCount * multiplier;
+
+      // no phi segment here if degenerate z;
+      size_t nphi = 0;
+      if (fHasPhiCutout) {
+        multiplier = (zPlanes[i] == zPlanes[i + 1]) ? 0 : 1;
+        nphi       = 2 * multiplier;
+      }
+
+      multiplier    = (zPlanes[i] == zPlanes[i + 1] && rMin[i] == rMin[i + 1]) ? 0 : 1;
+      size_t ninner = 0;
+
+      if (hasInnerRadius && multiplier > 0) {
+        ninner         = sideCount * multiplier;
+        fHasInnerRadii = true;
+      }
+
+      // Create section
+      new (&fZSegments[i]) ZSegment(nouter, ninner, nphi, a, convex);
+    }
+
+    // Compute the cylindrical coordinate phi along which the corners are placed
+    if (phiDelta <= 0 || phiDelta > kTwoPi - kAngTolerance) phiDelta = kTwoPi;
+    phiStart = NormalizeAngle<kScalar>(phiStart);
+    if (phiDelta > kTwoPi) phiDelta = kTwoPi;
+    Precision sidePhi = phiDelta / sideCount;
+
+    auto getPhi = [&](int side) {
+      if (!fHasPhiCutout && side == sideCount) {
+        side = 0;
+      }
+      return NormalizeAngle<kScalar>(phiStart + side * sidePhi);
+    };
+
+    for (int i = 0, iMax = sideCount + 1; i < iMax; ++i) {
+      Vector3D<Precision> cornerVector = Vec_t::FromCylindrical(1., getPhi(i), 0).Normalized().FixZeroes();
+      fPhiSections.set(i, cornerVector.Normalized().Cross(Vector3D<Precision>(0, 0, -1)));
+    }
+
+    // Specified radii are to the sides, not to the corners. Change these values,
+    // as corners and not sides are used to build the structure
+    Precision cosHalfDeltaPhi = cos(0.5 * sidePhi);
+    Precision innerRadius = kInfLength, outerRadius = -kInfLength;
+    for (int i = 0; i < zPlaneCount; ++i) {
+      // Use distance to side for minimizing inner radius of bounding tube
+      if (rMin[i] < innerRadius) innerRadius = rMin[i];
+      assert(rMin[i] >= 0 && rMax[i] >= 0);
+      // Use distance to corner for minimizing outer radius of bounding tube
+      if (rMax[i] > outerRadius) outerRadius = rMax[i];
+    }
+    // need to convert from distance to planes to real radius in case of outerradius
+    // the inner radius of the bounding tube is given by min(rMin[])
+    outerRadius /= cosHalfDeltaPhi;
+
+    // Create bounding tube with biggest outer radius and smallest inner radius
+    Precision boundingTubeZ = 0.5 * (zPlanes[zPlaneCount - 1] - zPlanes[0]) + kTolerance;
+    // Make bounding tube phi range a bit larger to contain all points on phi boundaries
+    const Precision kPhiTolerance = 100 * kTolerance;
+    // The increase in the angle has to be large enough to contain most of
+    // kSurface points. There will be some points close to the Z axis which will
+    // not be contained. The value is empirical to satisfy ShapeTester
+    Precision boundsPhiStart = !fHasPhiCutout ? 0 : phiStart - kPhiTolerance;
+    Precision boundsPhiDelta = !fHasPhiCutout ? kTwoPi : phiDelta + 2 * kPhiTolerance;
 
     fBoundingTube = TubeStruct<Precision>(innerRadius - kHalfTolerance, outerRadius + kHalfTolerance, boundingTubeZ,
                                           boundsPhiStart, boundsPhiDelta);

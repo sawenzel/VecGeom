@@ -152,7 +152,7 @@ if(VECGEOM_USE_INDEXEDNAVSTATES)
   list(APPEND TEST_EXECUTABLES_CORE core/TestNavigationState.cpp)
 endif()
 
-if (VECGEOM_USE_NAVINDEX OR VECGEOM_USE_NAVTUPLE)
+if (VECGEOM_USE_SURF)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testLogic.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testEM3.cpp)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testTubeSurfaces.cpp)

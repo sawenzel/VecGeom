@@ -7,6 +7,7 @@
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
+#include "VecGeom/backend/scalar/Backend.h"
 #include <initializer_list>
 #ifdef VECGEOM_ENABLE_CUDA
 #include "VecGeom/backend/cuda/Interface.h"
@@ -25,11 +26,11 @@ struct AllocTrait {
 
   // Allocate raw buffer to hold the element.
   VECCORE_ATT_HOST_DEVICE
-  static T *Allocate(size_t nElems) { return reinterpret_cast<T *>(new char[nElems * sizeof(T)]); }
+  static T *Allocate(size_t nElems) { return new T[nElems]; }
 
   // Release raw buffer to hold the element.
   VECCORE_ATT_HOST_DEVICE
-  static void Deallocate(T *startBuffer) { delete[]((char *)startBuffer); }
+  static void Deallocate(T *startBuffer) { delete[] startBuffer; }
 
   VECCORE_ATT_HOST_DEVICE
   static void Destroy(T &obj) { obj.~T(); };
@@ -49,7 +50,7 @@ struct AllocTrait<T *> {
   VECCORE_ATT_HOST_DEVICE
   static T **Allocate(size_t nElems)
   {
-    T **ptr = reinterpret_cast<T **>(new char[nElems * sizeof(T *)]);
+    T **ptr = new T *[nElems];
     assert(ptr != nullptr && "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU "
                              "with CudaDeviceSetHeapLimit(new_size)");
     return ptr;
@@ -57,7 +58,7 @@ struct AllocTrait<T *> {
 
   // Release raw buffer to hold the element.
   VECCORE_ATT_HOST_DEVICE
-  static void Deallocate(T **startBuffer) { delete[]((char *)startBuffer); }
+  static void Deallocate(T **startBuffer) { delete[] startBuffer; }
 
   VECCORE_ATT_HOST_DEVICE
   static void Destroy(T *&) {}
@@ -71,43 +72,60 @@ template <typename Type>
 class VectorBase {
 
 private:
-  Type *fData;
-  size_t fSize, fMemorySize;
-  bool fAllocated;
+  Type *fData{nullptr};
+  size_t fSize{0};
+  size_t fMemorySize{0};
+  bool fAllocated{false};
 
 public:
   using value_type = Type;
 
-  VECCORE_ATT_HOST_DEVICE
-  VectorBase() : VectorBase(5) {}
+  VectorBase() = default;
 
   VECCORE_ATT_HOST_DEVICE
-  VectorBase(size_t maxsize) : fData(nullptr), fSize(0), fMemorySize(0), fAllocated(true) { reserve(maxsize); }
+  VectorBase(size_t maxsize) { reserve(maxsize); }
 
   VECCORE_ATT_HOST_DEVICE
-  VectorBase(Type *const vec, const int sz) : fData(vec), fSize(sz), fMemorySize(sz), fAllocated(false) {}
-
-  VECCORE_ATT_HOST_DEVICE
-  VectorBase(Type *const vec, const int sz, const int maxsize)
-      : fData(vec), fSize(sz), fMemorySize(maxsize), fAllocated(false)
+  VectorBase(size_t maxsize, AlignedAllocator &a) : fSize(maxsize), fMemorySize(maxsize)
   {
+    fData = a.aligned_alloc<Type>(maxsize, alignof(Type));
+    assert(fData != nullptr && "insufficient space in buffer");
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VectorBase(VectorBase const &other) : fSize(other.fSize), fMemorySize(other.fMemorySize), fAllocated(true)
+  VectorBase(Type *const vec, const int sz) : fData(vec), fSize(sz), fMemorySize(sz) {}
+
+  VECCORE_ATT_HOST_DEVICE
+  VectorBase(Type *const vec, const int sz, const int maxsize) : fData(vec), fSize(sz), fMemorySize(maxsize) {}
+
+  VECCORE_ATT_HOST_DEVICE
+  VectorBase(VectorBase const &other) : fSize(other.fSize), fMemorySize(other.fMemorySize)
   {
-    fData = Internal::AllocTrait<Type>::Allocate(fMemorySize);
-    for (size_t i = 0; i < fSize; ++i)
-      new (&fData[i]) Type(other.fData[i]);
+    if (other.fMemorySize > 0) {
+      fAllocated = true;
+      fData      = Internal::AllocTrait<Type>::Allocate(fMemorySize);
+      for (size_t i = 0; i < fSize; ++i)
+        fData[i] = other.fData[i];
+    }
   }
 
   VECCORE_ATT_HOST_DEVICE
   VectorBase &operator=(VectorBase const &other)
   {
     if (&other != this) {
-      reserve(other.fMemorySize);
+      // The array must be either already allocated or buffered with a larger size to fit the elements
+      assert((fAllocated || !fData || fMemorySize >= other.fSize) &&
+             "Trying to allocate larger vector into a preallocated one");
+      if (fSize > 0) Internal::AllocTrait<Type>::Destroy(fData, fSize);
+      if (fMemorySize < other.fSize) {
+        if (fAllocated) Internal::AllocTrait<Type>::Deallocate(fData);
+        fData       = Internal::AllocTrait<Type>::Allocate(other.fSize);
+        fAllocated  = true;
+        fMemorySize = other.fSize;
+      }
       for (size_t i = 0; i < other.fSize; ++i)
-        push_back(other.fData[i]);
+        fData[i] = other.fData[i];
+      fSize = other.fSize;
     }
     return *this;
   }
@@ -115,12 +133,11 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VectorBase(std::initializer_list<Type> entries)
   {
-    fSize       = entries.size();
-    fData       = Internal::AllocTrait<Type>::Allocate(fSize);
-    fAllocated  = true;
-    fMemorySize = entries.size() * sizeof(Type);
-    for (auto itm : entries)
-      this->push_back(itm);
+    fData      = Internal::AllocTrait<Type>::Allocate(entries.size());
+    fAllocated = true;
+    for (auto const &itm : entries)
+      new (&fData[fSize++]) Type(itm);
+    fMemorySize = fSize;
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -132,7 +149,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void clear()
   {
-    Internal::AllocTrait<Type>::Destroy(fData, fSize);
+    if (fAllocated) Internal::AllocTrait<Type>::Destroy(fData, fSize);
     fSize = 0;
   }
 
@@ -145,19 +162,21 @@ public:
   Type const &operator[](const int index) const { return fData[index]; }
 
   VECCORE_ATT_HOST_DEVICE
-  void push_back(const Type item)
+  void push_back(const Type &item)
   {
     if (fSize == fMemorySize) {
-      assert(fAllocated && "Trying to push on a 'fixed' size vector (memory "
-                           "not allocated by Vector itself)");
-      reserve(fMemorySize << 1);
+      size_t newsize = (fSize == 0) ? 4 : 2 * fMemorySize;
+      reserve(newsize);
     }
-    new (&fData[fSize]) Type(item);
-    fSize++;
+    new (&fData[fSize++]) Type(item);
   }
 
   typedef Type *iterator;
   typedef Type const *const_iterator;
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool is_allocated() const { return fAllocated; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -205,10 +224,11 @@ public:
   VECGEOM_FORCE_INLINE
   void reserve(size_t newsize)
   {
-    if (newsize <= fMemorySize) {
-      // Do nothing ...
-    } else {
+    if (newsize > fMemorySize) {
+      assert((fAllocated || (fMemorySize == 0)) && "Trying to increase a pre-allocated vector");
+      // Allocate an array of elements of size newsize, constructed in place
       Type *newdata = Internal::AllocTrait<Type>::Allocate(newsize);
+      // Copy existing elements into the new array
       for (size_t i = 0; i < fSize; ++i)
         new (&newdata[i]) Type(fData[i]);
       Internal::AllocTrait<Type>::Destroy(fData, fSize);
@@ -243,6 +263,20 @@ public:
   using VectorBase<Type>::VectorBase;
   using typename VectorBase<Type>::iterator;
   using typename VectorBase<Type>::const_iterator;
+
+  /// @brief Get size of the data held by initSize elements, with specified alignment
+  /// @tparam ...Args Argument pack to pass to Type::aligned_sizeof_data in case Type is non-arithmetic
+  /// @param initSize Number of elements held ny the vector
+  /// @param alignment Alignment requirement for the data pack held by the vector. If zero, alignof(Type) is used
+  /// @param ...args Arguments to pass to Type::aligned_sizeof_data for non-arithmetic types
+  /// @return Size needed in bytes
+  template <typename... Args>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE static size_t aligned_sizeof_data(const size_t numElements,
+                                                                                 const size_t alignment,
+                                                                                 const Args... args)
+  {
+    return (AlignedAllocator::aligned_sizeof<Type>(numElements, alignment, args...));
+  }
 
 #ifdef VECGEOM_CUDA_INTERFACE
   DevicePtr<cuda::Vector<CudaType_t<Type>>> CopyToGpu(DevicePtr<CudaType_t<Type>> const gpu_ptr_arr,

@@ -265,7 +265,7 @@ int ValidateSafety(int nrays, Vector3D<Precision> const *points, NavigationState
 //==================================================================================
 template <typename Navigator>
 void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
-                        NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1,
+                        NavigationState const *in_states, CrossingSeq *crossings, int idebug = -1, int idebug_step = -1,
                         int max_cross = vecgeom::kMaximumInt, bool validate_results = true)
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
@@ -286,13 +286,17 @@ void PropagateRaysSolid(int nrays, Vector3D<Precision> const *points, Vector3D<P
     if (validate_results) crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
     int num_cross = 0;
     do {
+      if (idebug >= 0 && num_cross == idebug_step) {
+        std::cout << "Debugging step " << idebug_step << " for solid model starting from state:\n";
+        start_state.Print();
+      }
       auto distance =
           Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
       if (validate_results)
         num_cross = crossings[i].SetNextCrossing(distance, out_state);
       else
         num_cross++;
-      if (idebug >= 0) {
+      if (idebug >= 0 && (idebug_step < 0 || num_cross == idebug_step)) {
         std::cout << std::setprecision(16) << "     dist = " << distance << "\n   " << num_cross << " : ";
         out_state.Print();
       }
@@ -424,7 +428,7 @@ void PropagateRaysSurf(int nrays, Vector3D<Precision> const *points, Vector3D<Pr
         num_cross = crossings[i].SetNextCrossing(distance, out_state);
       else
         num_cross++;
-      if (idebug >= 0) {
+      if (idebug >= 0 && (idebug_step < 0 || num_cross == idebug_step)) {
         std::cout << std::setprecision(16) << "     dist = " << distance
                   << "  surf = " << crossed_surf.hit_surf.GetCSindex()
                   << "  frame = " << crossed_surf.hit_surf.GetFSindex()
@@ -457,14 +461,15 @@ int ValidateCrossing(int nrays, Vector3D<Precision> const *points, Vector3D<Prec
       printf("\033[1;31m=== ray %d has a propagation difference at step %d (correponding solid model step %d) dist_ref "
              "= %.10g :  dist = %.10g\033[0m\n",
              i, istep_err, istep_err_solid, ref_crossings[i].fSteps[istep_err_solid], crossings[i].fSteps[istep_err]);
-      if (crossings[i].fStates[istep_err].GetState() != ref_crossings[i].fStates[istep_err_solid].GetState()) {
+      if ((istep_err < crossings[i].GetNsteps() - 1) && (istep_err_solid < ref_crossings[i].GetNsteps() - 1) &&
+          crossings[i].fStates[istep_err + 1].GetState() != ref_crossings[i].fStates[istep_err_solid + 1].GetState()) {
         printf("\033[1;32msolid model state after step:\033[0m\n");
-        ref_crossings[i].fStates[istep_err_solid].Print();
+        ref_crossings[i].fStates[istep_err_solid + 1].Print();
         printf("\033[1;31msurface model using the %s state after step:\033[0m\n", use_bvh ? "BVH" : "looper");
-        crossings[i].fStates[istep_err].Print();
+        crossings[i].fStates[istep_err + 1].Print();
       }
       printf("Replaying ray for debugging : \n\n");
-      PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i, max_cross);
+      PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, in_states, ref_crossings, i, istep_err_solid, max_cross);
       PropagateRaysSurf(nrays, points, dirs, in_states, crossings, i, istep_err, /*detect_overlaps =*/false, max_cross,
                         use_bvh);
     }
@@ -620,13 +625,13 @@ int testRaytracingHost(int nrays, Vector3D<Precision> *points, Vector3D<Precisio
 
   // Distance computation + relocation for solid model
   timer.Start();
-  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, ref_crossings, idebug, max_cross,
+  PropagateRaysSolid<LoopNavigator>(nrays, points, dirs, origStates, ref_crossings, idebug, -1, max_cross,
                                     validate_results);
   auto time_traverse_solids = timer.Stop();
 
   // Distance computation + relocation for solid model + BVH
   timer.Start();
-  PropagateRaysSolid<BVHNavigator>(nrays, points, dirs, origStates, crossings, idebug, max_cross, validate_results);
+  PropagateRaysSolid<BVHNavigator>(nrays, points, dirs, origStates, crossings, idebug, -1, max_cross, validate_results);
   auto time_traverse_solids_bvh = timer.Stop();
 
   // Distance computation + relocation for surface model

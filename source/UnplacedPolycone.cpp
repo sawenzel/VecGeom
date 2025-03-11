@@ -124,22 +124,22 @@ TGeoShape const *UnplacedPolycone::ConvertToRoot(char const *label) const
   std::vector<Precision> rmin;
   std::vector<Precision> rmax;
   std::vector<Precision> z;
-  auto original_param = fPolycone.fOriginal_parameters;
+  auto original_param = fPolycone->fOriginal_parameters;
   if (original_param) {
-    for (unsigned int i = 0; i < fPolycone.fNz; ++i) {
+    for (unsigned int i = 0; i < fPolycone->fNz; ++i) {
       z.push_back(original_param->fHZ_values[i]);
       rmin.push_back(original_param->fHRmin[i]);
       rmax.push_back(original_param->fHRmax[i]);
     }
   } else {
-    ReconstructSectionArrays(z, rmin, rmax);
+    fPolycone->ReconstructSectionArrays(z, rmin, rmax);
   }
 
-  TGeoPcon *rootshape = new TGeoPcon(fPolycone.fStartPhi * kRadToDeg, fPolycone.fDeltaPhi * kRadToDeg, z.size());
+  TGeoPcon *rootshape = new TGeoPcon(fPolycone->fStartPhi * kRadToDeg, fPolycone->fDeltaPhi * kRadToDeg, z.size());
 
-  if (fPolycone.fNz != z.size()) std::cerr << "WARNING: Inconsistency in number of polycone sections\n";
+  if (fPolycone->fNz != z.size()) std::cerr << "WARNING: Inconsistency in number of polycone sections\n";
 
-  for (unsigned int i = 0; i < fPolycone.fNz; ++i)
+  for (unsigned int i = 0; i < fPolycone->fNz; ++i)
     rootshape->DefineSection(i, z[i], rmin[i], rmax[i]);
 
   return rootshape;
@@ -155,10 +155,10 @@ G4VSolid const *UnplacedPolycone::ConvertToGeant4(char const *label) const
   std::vector<Precision> rmax;
   std::vector<Precision> z;
   // unplaced->
-  ReconstructSectionArrays(z, rmin, rmax);
+  fPolycone->ReconstructSectionArrays(z, rmin, rmax);
 
   G4Polycone *g4shape =
-      new G4Polycone("", fPolycone.fStartPhi, fPolycone.fDeltaPhi, z.size(), &z[0], &rmin[0], &rmax[0]);
+      new G4Polycone("", fPolycone->fStartPhi, fPolycone->fDeltaPhi, z.size(), &z[0], &rmin[0], &rmax[0]);
 
   return g4shape;
 }
@@ -168,19 +168,19 @@ G4VSolid const *UnplacedPolycone::ConvertToGeant4(char const *label) const
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolycone::Reset()
 {
-  Precision phiStart = fPolycone.fOriginal_parameters->fHStart_angle;
+  Precision phiStart = fPolycone->fOriginal_parameters->fHStart_angle;
   Precision *Z, *R1, *R2;
-  int num = fPolycone.fOriginal_parameters->fHNum_z_planes; // fOriginalParameters-> NumZPlanes;
+  int num = fPolycone->fOriginal_parameters->fHNum_z_planes; // fOriginalParameters-> NumZPlanes;
   Z       = new Precision[num];
   R1      = new Precision[num];
   R2      = new Precision[num];
   for (int i = 0; i < num; i++) {
-    Z[i]  = fPolycone.fOriginal_parameters->fHZ_values[i]; // fOriginalParameters->fZValues[i];
-    R1[i] = fPolycone.fOriginal_parameters->fHRmin[i];     // fOriginalParameters->Rmin[i];
-    R2[i] = fPolycone.fOriginal_parameters->fHRmax[i];     // fOriginalParameters->Rmax[i];
+    Z[i]  = fPolycone->fOriginal_parameters->fHZ_values[i]; // fOriginalParameters->fZValues[i];
+    R1[i] = fPolycone->fOriginal_parameters->fHRmin[i];     // fOriginalParameters->Rmin[i];
+    R2[i] = fPolycone->fOriginal_parameters->fHRmax[i];     // fOriginalParameters->Rmax[i];
   }
 
-  fPolycone.Init(phiStart, fPolycone.fOriginal_parameters->fHOpening_angle, num, Z, R1, R2);
+  fPolycone->Init(phiStart, fPolycone->fOriginal_parameters->fHOpening_angle, num, Z, R1, R2);
   delete[] R1;
   delete[] Z;
   delete[] R2;
@@ -199,10 +199,11 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
                                    int numRZ,          // number corners in r,z space (must be an even number)
                                    Precision const *r, // r coordinate of these corners
                                    Precision const *z) // z coordinate of these corners
+    : fPolycone(new PolyconeStruct<Precision>())
 
 {
-  fPolycone.fStartPhi = phiStart;
-  fPolycone.fDeltaPhi = phiStart + phiTotal;
+  fPolycone->fStartPhi = phiStart;
+  fPolycone->fDeltaPhi = phiStart + phiTotal;
 
   Vector<Vector2D<Precision>> rzVect;
   Vector<Precision> rMinVect;
@@ -224,7 +225,7 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
 
   ReducedPolycone p(rzVect);
   p.GetPolyconeParameters(rMinVect, rMaxVect, zVect);
-  fPolycone.fNz   = zVect.size();
+  fPolycone->fNz  = zVect.size();
   Precision *rmin = new Precision[rMinVect.size()];
   Precision *rmax = new Precision[rMaxVect.size()];
   Precision *zarg = new Precision[zVect.size()];
@@ -234,7 +235,7 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
     rmax[i] = rMaxVect[i];
     zarg[i] = zVect[i];
   }
-  fPolycone.Init(phiStart, phiTotal, fPolycone.fNz, zarg, rmin, rmax);
+  fPolycone->Init(phiStart, phiTotal, fPolycone->fNz, zarg, rmin, rmax);
   ComputeBBox();
   delete[] rmin;
   delete[] rmax;
@@ -244,17 +245,17 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolycone::Print() const
 {
-  printf("UnplacedPolycone { stPhi: %.2f, delPhi: %.2f, Nz: %d}\n",
-    fPolycone.fStartPhi, fPolycone.fDeltaPhi, fPolycone.fNz);
-  printf("\t------- %zu z planes follow ---------\n", fPolycone.fZs.size());
-  for (size_t p = 0; p < fPolycone.fZs.size(); ++p) {
-    printf("\t plane #%zu at z pos %lf\n", p, fPolycone.fZs[p]);
+  printf("UnplacedPolycone { stPhi: %.2f, delPhi: %.2f, Nz: %d}\n", fPolycone->fStartPhi, fPolycone->fDeltaPhi,
+         fPolycone->fNz);
+  printf("\t------- %zu z planes follow ---------\n", fPolycone->fZs.size());
+  for (size_t p = 0; p < fPolycone->fZs.size(); ++p) {
+    printf("\t plane #%zu at z pos %lf\n", p, fPolycone->fZs[p]);
   }
 
-  printf("\t------ %zu sections follow ----------\n", fPolycone.fSections.size());
-  for (int s = 0; s < fPolycone.GetNSections(); ++s) {
-    printf("\t section #%d, shift %lf\n\t ", s, fPolycone.fSections[s].fShift);
-    fPolycone.fSections[s].fSolid->Print();
+  printf("\t------ %zu sections follow ----------\n", fPolycone->fSections.size());
+  for (int s = 0; s < fPolycone->GetNSections(); ++s) {
+    printf("\t section #%d, shift %lf\n\t ", s, fPolycone->fSections[s].fShift);
+    fPolycone->fSections[s].fSolid.Print();
     printf("\n");
   }
   printf("\t-------------------------------------");
@@ -353,31 +354,31 @@ std::ostream &UnplacedPolycone::StreamInfo(std::ostream &os) const
      << "     ===================================================\n"
      << " Solid type: Polycone\n"
      << " Parameters: \n"
-     << "     N = number of Z-sections: " << fPolycone.fSections.size() << ", # Z-coords=" << fPolycone.fZs.size()
+     << "     N = number of Z-sections: " << fPolycone->fSections.size() << ", # Z-coords=" << fPolycone->fZs.size()
      << "\n"
      << "     z-coordinates:\n";
 
-  uint nz = fPolycone.fZs.size();
+  uint nz = fPolycone->fZs.size();
   for (uint j = 0; j < (nz - 1) / 5 + 1; ++j) {
     os << "       [ ";
     for (uint i = 0; i < 5; ++i) {
       uint ind = 5 * j + i;
-      if (ind < fPolycone.fNz) os << fPolycone.fZs[ind] << "; ";
+      if (ind < fPolycone->fNz) os << fPolycone->fZs[ind] << "; ";
     }
     os << " ]\n";
   }
-  if (fPolycone.fDeltaPhi < kTwoPi) {
-    os << "     Wedge starting angles: fSphi=" << fPolycone.fStartPhi * kRadToDeg << "deg, "
-       << ", fDphi=" << fPolycone.fDeltaPhi * kRadToDeg << "deg\n";
+  if (fPolycone->fDeltaPhi < kTwoPi) {
+    os << "     Wedge starting angles: fSphi=" << fPolycone->fStartPhi * kRadToDeg << "deg, "
+       << ", fDphi=" << fPolycone->fDeltaPhi * kRadToDeg << "deg\n";
   }
 
-  size_t nsections = fPolycone.fSections.size();
+  size_t nsections = fPolycone->fSections.size();
   os << "\n    # cone sections: " << nsections << "\n";
   for (size_t i = 0; i < nsections; ++i) {
-    ConeStruct<Precision> *subcone = fPolycone.fSections[i].fSolid;
-    os << "     cone #" << i << " Rmin1=" << subcone->fRmin1 << " Rmax1=" << subcone->fRmax1
-       << " Rmin2=" << subcone->fRmin2 << " Rmax2=" << subcone->fRmax2 << " HalfZ=" << subcone->fDz
-       << " from z=" << fPolycone.fZs[i] << " to z=" << fPolycone.fZs[i + 1] << "mm\n";
+    auto const &subcone = fPolycone->fSections[i].fSolid;
+    os << "     cone #" << i << " Rmin1=" << subcone.fRmin1 << " Rmax1=" << subcone.fRmax1
+       << " Rmin2=" << subcone.fRmin2 << " Rmax2=" << subcone.fRmax2 << " HalfZ=" << subcone.fDz
+       << " from z=" << fPolycone->fZs[i] << " to z=" << fPolycone->fZs[i + 1] << "mm\n";
   }
   os << "-----------------------------------------------------------\n";
   os.precision(oldprc);
@@ -397,7 +398,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolycone::CopyToGpu(DevicePtr<cuda::VUn
   // idea: reconstruct defining arrays: copy them to GPU; then construct the UnplacedPolycon object from scratch
   // on the GPU
   std::vector<Precision> rmin, z, rmax;
-  ReconstructSectionArrays(z, rmin, rmax);
+  fPolycone->ReconstructSectionArrays(z, rmin, rmax);
 
   Precision *z_gpu_ptr    = AllocateOnGpu<Precision>(z.size() * sizeof(Precision));
   Precision *rmin_gpu_ptr = AllocateOnGpu<Precision>(rmin.size() * sizeof(Precision));
@@ -411,7 +412,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolycone::CopyToGpu(DevicePtr<cuda::VUn
 
   // attention here z.size() might be different than fNz due to compactification during Reconstruction
   DevicePtr<cuda::VUnplacedVolume> gpupolycon = CopyToGpuImpl<SUnplacedPolycone<ConeTypes::UniversalCone>>(
-      gpu_ptr, fPolycone.fStartPhi, fPolycone.fDeltaPhi, s, z_gpu_ptr, rmin_gpu_ptr, rmax_gpu_ptr);
+      gpu_ptr, fPolycone->fStartPhi, fPolycone->fDeltaPhi, s, z_gpu_ptr, rmin_gpu_ptr, rmax_gpu_ptr);
 
   // remove temporary space from GPU
   FreeFromGpu(z_gpu_ptr);
@@ -424,12 +425,20 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolycone::CopyToGpu(DevicePtr<cuda::VUn
 void UnplacedPolycone::CopyToGpu(std::vector<VUnplacedVolume const *> const &volumes,
                                  std::vector<DevicePtr<cuda::VUnplacedVolume>> const &devicePointers)
 {
+  // UnplacedPolycone(bool continuityOverAll, bool convexityPossible, bool equalRmax, Precision phistart,
+  //                  Precision deltaphi, int nsections, int nz, Precision const *z, Precision const *rmin,
+  //                  Precision const *rmax, size_t const buff_size, void const *buffer)
   const auto size = volumes.size();
+  size_t size_buff{0};
+  std::vector<size_t> sizes_buff(size, 0);
+  std::vector<size_t> offsets_buff(size, 0);
   std::vector<Precision> startPhi, deltaPhi;
-  std::vector<int> argumentSize;
+  std::vector<char> continuityOverAll, convexityPossible, equalRmax;
+  std::vector<int> nZs, nSections;
   startPhi.reserve(size);
   deltaPhi.reserve(size);
-  argumentSize.reserve(size);
+  nZs.reserve(size);
+  nSections.reserve(size);
 
   struct VarLengthData {
     std::vector<std::size_t> offsets;
@@ -446,37 +455,53 @@ void UnplacedPolycone::CopyToGpu(std::vector<VUnplacedVolume const *> const &vol
     UnplacedPolycone const &polycone = static_cast<UnplacedPolycone const &>(*volumes[i]);
     assert(dynamic_cast<UnplacedPolycone const *>(volumes[i]));
 
-    startPhi.push_back(polycone.fPolycone.fStartPhi);
-    deltaPhi.push_back(polycone.fPolycone.fDeltaPhi);
+    startPhi.push_back(polycone.fPolycone->fStartPhi);
+    deltaPhi.push_back(polycone.fPolycone->fDeltaPhi);
+    continuityOverAll.push_back(polycone.fPolycone->fContinuityOverAll);
+    convexityPossible.push_back(polycone.fPolycone->fConvexityPossible);
+    equalRmax.push_back(polycone.fPolycone->fEqualRmax);
 
     vld.offsets.push_back(vld.z.size());
-    polycone.ReconstructSectionArrays(vld.z, vld.rmin, vld.rmax);
-    argumentSize.push_back(vld.z.size() - vld.offsets.back());
+    polycone.fPolycone->ReconstructSectionArrays(vld.z, vld.rmin, vld.rmax);
+    nZs.push_back(vld.z.size() - vld.offsets.back());
+    nSections.push_back(polycone.GetNSections());
+    sizes_buff[i]   = AlignedAllocator::aligned_sizeof<PolyconeStruct<Precision>>(1, 0, polycone.GetNSections());
+    offsets_buff[i] = size_buff;
+    size_buff += sizes_buff[i];
   }
   // Assert that it's correct to have only one offset array for all variable-length arguments
   assert(vld.z.size() == vld.rmin.size() && vld.z.size() == vld.rmax.size() && vld.offsets.back() < vld.z.size());
-  assert(startPhi.size() == size && deltaPhi.size() == size && argumentSize.size() == size);
+  assert(startPhi.size() == size && deltaPhi.size() == size && nZs.size() == size);
 
   RAIIDevPtr zGPU{vld.z.size()}, rminGPU{vld.rmin.size()}, rmaxGPU{vld.rmax.size()};
+  DevicePtr<char> bufferGPU;
+  bufferGPU.Allocate(size_buff); // not freed, will need to register to CudaManager for cleanup
+
   zGPU.devPtr.ToDevice(vld.z.data(), vld.z.size());
   rminGPU.devPtr.ToDevice(vld.rmin.data(), vld.rmin.size());
   rmaxGPU.devPtr.ToDevice(vld.rmax.data(), vld.rmax.size());
 
   std::vector<Precision const *> zGPUPtrs{size}, rminGPUPtrs{size}, rmaxGPUPtrs{size};
+  std::vector<char const *> bufferGPUPtrs{size};
   std::transform(vld.offsets.begin(), vld.offsets.end(), zGPUPtrs.begin(),
                  [&zGPU](std::size_t offset) { return zGPU.devPtr.GetPtr() + offset; });
   std::transform(vld.offsets.begin(), vld.offsets.end(), rminGPUPtrs.begin(),
                  [&rminGPU](std::size_t offset) { return rminGPU.devPtr.GetPtr() + offset; });
   std::transform(vld.offsets.begin(), vld.offsets.end(), rmaxGPUPtrs.begin(),
                  [&rmaxGPU](std::size_t offset) { return rmaxGPU.devPtr.GetPtr() + offset; });
+  std::transform(offsets_buff.begin(), offsets_buff.end(), bufferGPUPtrs.begin(),
+                 [&bufferGPU](std::size_t offset) { return bufferGPU.GetPtr() + offset; });
 
   /* Constructor we are targeting:
-    UnplacedPolycone(Precision phistart, Precision deltaphi, int Nz, Precision const *z, Precision const *rmin,
-                     Precision const *rmax)
+    UnplacedPolycone(bool continuityOverAll, bool convexityPossible, bool equalRmax, Precision phistart,
+                     Precision deltaphi, int nsections, int nz, Precision const *z, Precision const *rmin,
+                     Precision const *rmax, size_t const buff_size, void const *buffer)
    */
   ConstructManyOnGpu<cuda::SUnplacedPolycone<cuda::ConeTypes::UniversalCone>>(
-      size, devicePointers.data(), startPhi.data(), deltaPhi.data(), argumentSize.data(), zGPUPtrs.data(),
-      rminGPUPtrs.data(), rmaxGPUPtrs.data());
+      size, devicePointers.data(), reinterpret_cast<bool *>(continuityOverAll.data()),
+      reinterpret_cast<bool *>(convexityPossible.data()), reinterpret_cast<bool *>(equalRmax.data()), startPhi.data(),
+      deltaPhi.data(), nSections.data(), nZs.data(), zGPUPtrs.data(), rminGPUPtrs.data(), rmaxGPUPtrs.data(),
+      sizes_buff.data(), (void const *const *)bufferGPUPtrs.data());
 }
 
 #endif // VECGEOM_CUDA_INTERFACE
@@ -486,31 +511,31 @@ Precision UnplacedPolycone::SurfaceArea() const
   const int numPlanes = GetNSections();
 
   PolyconeSection const &sec0 = GetSection(0);
-  Precision totArea = (kPi * (sec0.fSolid->fRmax1 * sec0.fSolid->fRmax1 - sec0.fSolid->fRmin1 * sec0.fSolid->fRmin1));
+  Precision totArea = (kPi * (sec0.fSolid.fRmax1 * sec0.fSolid.fRmax1 - sec0.fSolid.fRmin1 * sec0.fSolid.fRmin1));
 
   for (int i = 0; i < numPlanes; i++) {
     PolyconeSection const &sec = GetSection(i);
 
     Precision sectionArea =
-        (sec.fSolid->fRmin1 + sec.fSolid->fRmin2) *
-        std::sqrt((sec.fSolid->fRmin1 - sec.fSolid->fRmin2) * (sec.fSolid->fRmin1 - sec.fSolid->fRmin2) +
-                  4. * sec.fSolid->fDz * sec.fSolid->fDz);
+        (sec.fSolid.fRmin1 + sec.fSolid.fRmin2) *
+        std::sqrt((sec.fSolid.fRmin1 - sec.fSolid.fRmin2) * (sec.fSolid.fRmin1 - sec.fSolid.fRmin2) +
+                  4. * sec.fSolid.fDz * sec.fSolid.fDz);
 
-    sectionArea += (sec.fSolid->fRmax1 + sec.fSolid->fRmax2) *
-                   std::sqrt((sec.fSolid->fRmax1 - sec.fSolid->fRmax2) * (sec.fSolid->fRmax1 - sec.fSolid->fRmax2) +
-                             4. * sec.fSolid->fDz * sec.fSolid->fDz);
+    sectionArea += (sec.fSolid.fRmax1 + sec.fSolid.fRmax2) *
+                   std::sqrt((sec.fSolid.fRmax1 - sec.fSolid.fRmax2) * (sec.fSolid.fRmax1 - sec.fSolid.fRmax2) +
+                             4. * sec.fSolid.fDz * sec.fSolid.fDz);
 
     sectionArea *= 0.5 * GetDeltaPhi();
 
     if (GetDeltaPhi() < kTwoPi) {
-      sectionArea += std::fabs(2 * sec.fSolid->fDz) *
-                     (sec.fSolid->fRmax1 + sec.fSolid->fRmax2 - sec.fSolid->fRmin1 - sec.fSolid->fRmin2);
+      sectionArea += std::fabs(2 * sec.fSolid.fDz) *
+                     (sec.fSolid.fRmax1 + sec.fSolid.fRmax2 - sec.fSolid.fRmin1 - sec.fSolid.fRmin2);
     }
     totArea += sectionArea;
   }
 
   PolyconeSection const &secn = GetSection(numPlanes - 1);
-  const auto last = kPi * (secn.fSolid->fRmax2 * secn.fSolid->fRmax2 - secn.fSolid->fRmin2 * secn.fSolid->fRmin2);
+  const auto last = kPi * (secn.fSolid.fRmax2 * secn.fSolid.fRmax2 - secn.fSolid.fRmin2 * secn.fSolid.fRmin2);
   totArea += last;
 
   return totArea;
@@ -721,40 +746,39 @@ Vector3D<Precision> UnplacedPolycone::SamplePointOnSurface() const
   sinphi = std::sin(phi);
   std::vector<Precision> areas;
   PolyconeSection const &sec0 = GetSection(0);
-  areas.push_back(kPi * (sec0.fSolid->fRmax1 * sec0.fSolid->fRmax1 - sec0.fSolid->fRmin1 * sec0.fSolid->fRmin1));
-  rRand =
-      sec0.fSolid->fRmin1 + ((sec0.fSolid->fRmax1 - sec0.fSolid->fRmin1) * std::sqrt(RNG::Instance().uniform(0., 1.)));
+  areas.push_back(kPi * (sec0.fSolid.fRmax1 * sec0.fSolid.fRmax1 - sec0.fSolid.fRmin1 * sec0.fSolid.fRmin1));
+  rRand = sec0.fSolid.fRmin1 + ((sec0.fSolid.fRmax1 - sec0.fSolid.fRmin1) * std::sqrt(RNG::Instance().uniform(0., 1.)));
 
-  areas.push_back(kPi * (sec0.fSolid->fRmax1 * sec0.fSolid->fRmax1 - sec0.fSolid->fRmin1 * sec0.fSolid->fRmin1));
+  areas.push_back(kPi * (sec0.fSolid.fRmax1 * sec0.fSolid.fRmax1 - sec0.fSolid.fRmin1 * sec0.fSolid.fRmin1));
 
   for (i = 0; i < numPlanes; i++) {
     PolyconeSection const &sec = GetSection(i);
-    Area                       = (sec.fSolid->fRmin1 + sec.fSolid->fRmin2) *
-           std::sqrt((sec.fSolid->fRmin1 - sec.fSolid->fRmin2) * (sec.fSolid->fRmin1 - sec.fSolid->fRmin2) +
-                     4. * sec.fSolid->fDz * sec.fSolid->fDz);
+    Area                       = (sec.fSolid.fRmin1 + sec.fSolid.fRmin2) *
+           std::sqrt((sec.fSolid.fRmin1 - sec.fSolid.fRmin2) * (sec.fSolid.fRmin1 - sec.fSolid.fRmin2) +
+                     4. * sec.fSolid.fDz * sec.fSolid.fDz);
 
-    Area += (sec.fSolid->fRmax1 + sec.fSolid->fRmax2) *
-            std::sqrt((sec.fSolid->fRmax1 - sec.fSolid->fRmax2) * (sec.fSolid->fRmax1 - sec.fSolid->fRmax2) +
-                      4. * sec.fSolid->fDz * sec.fSolid->fDz);
+    Area += (sec.fSolid.fRmax1 + sec.fSolid.fRmax2) *
+            std::sqrt((sec.fSolid.fRmax1 - sec.fSolid.fRmax2) * (sec.fSolid.fRmax1 - sec.fSolid.fRmax2) +
+                      4. * sec.fSolid.fDz * sec.fSolid.fDz);
 
     Area *= 0.5 * GetDeltaPhi();
 
     if (GetDeltaPhi() < kTwoPi) {
-      Area += std::fabs(2 * sec.fSolid->fDz) *
-              (sec.fSolid->fRmax1 + sec.fSolid->fRmax2 - sec.fSolid->fRmin1 - sec.fSolid->fRmin2);
+      Area += std::fabs(2 * sec.fSolid.fDz) *
+              (sec.fSolid.fRmax1 + sec.fSolid.fRmax2 - sec.fSolid.fRmin1 - sec.fSolid.fRmin2);
     }
 
     areas.push_back(Area);
     totArea += Area;
   }
   PolyconeSection const &secn = GetSection(numPlanes - 1);
-  areas.push_back(kPi * (secn.fSolid->fRmax2 * secn.fSolid->fRmax2 - secn.fSolid->fRmin2 * secn.fSolid->fRmin2));
+  areas.push_back(kPi * (secn.fSolid.fRmax2 * secn.fSolid.fRmax2 - secn.fSolid.fRmin2 * secn.fSolid.fRmin2));
 
   totArea += (areas[0] + areas[numPlanes + 1]);
   Precision chose = RNG::Instance().uniform(0., totArea);
 
   if ((chose >= 0.) && (chose < areas[0])) {
-    return Vector3D<Precision>(rRand * cosphi, rRand * sinphi, fPolycone.fZs[0]);
+    return Vector3D<Precision>(rRand * cosphi, rRand * sinphi, fPolycone->fZs[0]);
   }
 
   for (i = 0; i < numPlanes; i++) {
@@ -762,15 +786,14 @@ Vector3D<Precision> UnplacedPolycone::SamplePointOnSurface() const
     Achose2 = (Achose1 + areas[i + 1]);
     if (chose >= Achose1 && chose < Achose2) {
       PolyconeSection const &sec = GetSection(i);
-      return GetPointOnCut(sec.fSolid->fRmin1, sec.fSolid->fRmax1, sec.fSolid->fRmin2, sec.fSolid->fRmax2,
-                           fPolycone.fZs[i], fPolycone.fZs[i + 1], Area);
+      return GetPointOnCut(sec.fSolid.fRmin1, sec.fSolid.fRmax1, sec.fSolid.fRmin2, sec.fSolid.fRmax2,
+                           fPolycone->fZs[i], fPolycone->fZs[i + 1], Area);
     }
   }
 
-  rRand =
-      secn.fSolid->fRmin2 + ((secn.fSolid->fRmax2 - secn.fSolid->fRmin2) * std::sqrt(RNG::Instance().uniform(0., 1.)));
+  rRand = secn.fSolid.fRmin2 + ((secn.fSolid.fRmax2 - secn.fSolid.fRmin2) * std::sqrt(RNG::Instance().uniform(0., 1.)));
 
-  return Vector3D<Precision>(rRand * cosphi, rRand * sinphi, fPolycone.fZs[numPlanes]);
+  return Vector3D<Precision>(rRand * cosphi, rRand * sinphi, fPolycone->fZs[numPlanes]);
 }
 
 bool UnplacedPolycone::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const
@@ -785,14 +808,14 @@ bool UnplacedPolycone::Normal(Vector3D<Precision> const &point, Vector3D<Precisi
     return valid;
   }
   PolyconeSection const &sec = GetSection(index);
-  valid                      = sec.fSolid->Normal(point - Vector3D<Precision>(0, 0, sec.fShift), norm);
+  valid                      = sec.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec.fShift), norm);
 
   // if point is within tolerance of a Z-plane between 2 sections, get normal from other section too
-  if (size_t(index + 1) < fPolycone.fSections.size() && std::abs(point.z() - fPolycone.fZs[index + 1]) < kTolerance) {
+  if (size_t(index + 1) < fPolycone->fSections.size() && std::abs(point.z() - fPolycone->fZs[index + 1]) < kTolerance) {
     PolyconeSection const &sec2 = GetSection(index + 1);
     bool valid2                 = false;
     Vector3D<Precision> norm2;
-    valid2 = sec2.fSolid->Normal(point - Vector3D<Precision>(0, 0, sec2.fShift), norm2);
+    valid2 = sec2.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec2.fShift), norm2);
 
     if (!valid && valid2) {
       norm  = norm2;
@@ -803,14 +826,14 @@ bool UnplacedPolycone::Normal(Vector3D<Precision> const &point, Vector3D<Precisi
     if (valid && valid2) {
 
       // discover exiting direction by moving point a bit (it would be good to have track direction here)
-      // if(sec.fSolid->Contains(point + kTolerance*10*norm - Vector3D<Precision>(0, 0, sec.fShift))){
+      // if(sec.fSolid.Contains(point + kTolerance*10*norm - Vector3D<Precision>(0, 0, sec.fShift))){
 
       //}
       bool c2;
       using CI = ConeImplementation<ConeTypes::UniversalCone>;
-      // CI::Contains<Precision,false>(*sec2.fSolid,
+      // CI::Contains<Precision,false>(sec2.fSolid,
       //                            point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
-      CI::Contains(*sec2.fSolid, point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
+      CI::Contains(sec2.fSolid, point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
       if (c2) {
         norm = norm2;
       } else {
@@ -835,8 +858,8 @@ void UnplacedPolycone::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aM
 
   for (i = 0; i < GetNSections(); i++) {
     PolyconeSection const &sec = GetSection(i);
-    if (maxR < sec.fSolid->fRmax1) maxR = sec.fSolid->fRmax1;
-    if (maxR < sec.fSolid->fRmax2) maxR = sec.fSolid->fRmax2;
+    if (maxR < sec.fSolid.fRmax1) maxR = sec.fSolid.fRmax1;
+    if (maxR < sec.fSolid.fRmax2) maxR = sec.fSolid.fRmax2;
   }
 
   aMin.x() = -maxR;
@@ -867,21 +890,21 @@ void UnplacedPolycone::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aM
    *
    */
   Precision maxR = 0, minR = kInfLength;
-  Precision fSPhi = fPolycone.fStartPhi;
-  Precision fDPhi = fPolycone.fDeltaPhi;
+  Precision fSPhi = fPolycone->fStartPhi;
+  Precision fDPhi = fPolycone->fDeltaPhi;
 
   for (int i = 0; i < GetNSections(); i++) {
     PolyconeSection const &sec = GetSection(i);
-    maxR                       = Max(maxR, Max(sec.fSolid->_frmax1, sec.fSolid->_frmax2));
-    minR                       = Min(minR, Min(sec.fSolid->_frmin1, sec.fSolid->_frmin2));
+    maxR                       = Max(maxR, Max(sec.fSolid._frmax1, sec.fSolid._frmax2));
+    minR                       = Min(minR, Min(sec.fSolid._frmin1, sec.fSolid._frmin2));
   }
 
-  if (fPolycone.fZs[0] > fPolycone.fZs[GetNSections()]) {
-    aMax.z() = fPolycone.fZs[0];
-    aMin.z() = fPolycone.fZs[GetNSections()];
+  if (fPolycone->fZs[0] > fPolycone->fZs[GetNSections()]) {
+    aMax.z() = fPolycone->fZs[0];
+    aMin.z() = fPolycone->fZs[GetNSections()];
   } else {
-    aMin.z() = fPolycone.fZs[0];
-    aMax.z() = fPolycone.fZs[GetNSections()];
+    aMin.z() = fPolycone->fZs[0];
+    aMax.z() = fPolycone->fZs[GetNSections()];
   }
 
   // Using Cone to get Extent in X and Y Direction
@@ -1014,13 +1037,13 @@ void UnplacedPolycone::DetectConvexity()
   // Default safe convexity value
   fGlobalConvexity = false;
 
-  if (fPolycone.fConvexityPossible) {
-    if (fPolycone.fEqualRmax && (fPolycone.fDeltaPhi <= kPi || fPolycone.fDeltaPhi == kTwoPi))
+  if (fPolycone->fConvexityPossible) {
+    if (fPolycone->fEqualRmax && (fPolycone->fDeltaPhi <= kPi || fPolycone->fDeltaPhi == kTwoPi))
       // In this case, Polycone become solid Cylinder, No need to check anything else, 100% convex
       fGlobalConvexity = true;
     else {
-      if (fPolycone.fDeltaPhi <= kPi || fPolycone.fDeltaPhi == kTwoPi) {
-        fGlobalConvexity = fPolycone.fContinuityOverAll;
+      if (fPolycone->fDeltaPhi <= kPi || fPolycone->fDeltaPhi == kTwoPi) {
+        fGlobalConvexity = fPolycone->fContinuityOverAll;
       }
     }
   }
@@ -1038,10 +1061,17 @@ template size_t DevicePtr<cuda::SUnplacedPolycone<ConeTypes::UniversalCone>>::Si
 template void DevicePtr<cuda::SUnplacedPolycone<ConeTypes::UniversalCone>>::Construct(Precision, Precision, int,
                                                                                       Precision *, Precision *,
                                                                                       Precision *) const;
+
+// Constructor we are targeting:
+// UnplacedPolycone(bool continuityOverAll, bool convexityPossible, bool equalRmax, Precision phistart,
+//                  Precision deltaphi, int nsections, int nz, Precision const *z, Precision const *rmin,
+//                  Precision const *rmax, size_t const buff_size, void const *buffer)
 template void vecgeom::cxx::ConstructManyOnGpu<SUnplacedPolycone<cuda::ConeTypes::UniversalCone>>(
-    std::size_t nElement, DevicePtr<cuda::VUnplacedVolume> const *gpu_ptrs, Precision const *startPhi,
-    Precision const *deltaPhi, int const *sizes, Precision const *const *zGPUPtrs, Precision const *const *rminGPUPtrs,
-    Precision const *const *rmaxGPUPtrs);
+    std::size_t nElement, DevicePtr<cuda::VUnplacedVolume> const *gpu_ptrs, bool const *continuityOverAll_arr,
+    bool const *convexityPossible_arr, bool const *equalRmax_arr, Precision const *startPhi_arr,
+    Precision const *deltaPhi_arr, int const *nsections_arr, int const *nz_arr, Precision const *const *zGPUPtrs,
+    Precision const *const *rminGPUPtrs, Precision const *const *rmaxGPUPtrs, size_t const *buff_size_arr,
+    void const *const *buffer_arr);
 
 } // namespace cxx
 

@@ -48,20 +48,20 @@ void Plane::Transform(Transformation3D const &tr)
 
 VECCORE_ATT_HOST_DEVICE
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, bool convex)
-    : fN(n), fConvex(convex), fNorm(), fVert(vertices), fInd(n), fSides(n)
+    : fN(n), fConvex(convex), fNorm(), fVert(&vertices), fInd(n), fSides(n)
 {
   assert(fN > 2);
 }
 
 VECCORE_ATT_HOST_DEVICE
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, Vec_t const &normal)
-    : fN(n), fConvex(true), fHasNorm(true), fNorm(normal), fVert(vertices), fInd(n), fSides(n)
+    : fN(n), fConvex(true), fHasNorm(true), fNorm(normal), fVert(&vertices), fInd(n), fSides(n)
 {
   assert(fN > 2 && fNorm.IsNormalized());
 }
 
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, vector_t<size_t> const &indices, bool convex)
-    : fN(n), fConvex(convex), fNorm(), fVert(vertices), fInd(indices), fSides(n)
+    : fN(n), fConvex(convex), fNorm(), fVert(&vertices), fInd(indices), fSides(n)
 {
   CheckAndFixDegenerate();
 }
@@ -76,8 +76,8 @@ void Polygon::CheckAndFixDegenerate()
   vector_t<size_t> validIndices;
   validIndices.push_back(fInd[0]);
   for (size_t i = 1; i < fN; i++) {
-    auto diff1 = fVert[fInd[i]] - fVert[validIndices[0]];
-    auto diff2 = fVert[fInd[i]] - fVert[validIndices[validIndices.size() - 1]];
+    auto diff1 = (*fVert)[fInd[i]] - (*fVert)[validIndices[0]];
+    auto diff2 = (*fVert)[fInd[i]] - (*fVert)[validIndices[validIndices.size() - 1]];
 
     if (diff1.Mag2() > kTolerance && diff2.Mag2() > kTolerance) {
       validIndices.push_back(fInd[i]);
@@ -94,15 +94,15 @@ void Polygon::CheckAndFixDegenerate()
 
 bool Polygon::isConvexVertex(size_t i0, size_t i1, size_t i2) const
 {
-  return fNorm.Dot((fVert[i2] - fVert[i1]).Cross(fVert[i0] - fVert[i1])) >= 0.;
+  return fNorm.Dot(((*fVert)[i2] - (*fVert)[i1]).Cross((*fVert)[i0] - (*fVert)[i1])) >= 0.;
 }
 
 bool Polygon::isPointInsideTriangle(const Vec_t &p, size_t i0, size_t i1, size_t i2) const
 {
 
-  Vec_t &A = fVert[i0];
-  Vec_t &B = fVert[i1];
-  Vec_t &C = fVert[i2];
+  Vec_t &A = (*fVert)[i0];
+  Vec_t &B = (*fVert)[i1];
+  Vec_t &C = (*fVert)[i2];
 
   Vec_t u = B - A;
 
@@ -143,10 +143,10 @@ void Polygon::TriangulatePolygon(vector_t<Polygon> &polys) const
     while (!isConvexVertex(ind[i0], ind[i1], ind[i2]))
       i0++, i1++, i2 = (i2 + 1) % ind.size();
 
-    // fVert[ind[i1]] is a convex vertex
+    // (*fVert)[ind[i1]] is a convex vertex
     bool pointInsideTriangle = false;
     for (size_t j = 0; j < ind.size(); j++) {
-      if (j != i0 && j != i1 && j != i2 && isPointInsideTriangle(fVert[ind[j]], ind[i0], ind[i1], ind[i2])) {
+      if (j != i0 && j != i1 && j != i2 && isPointInsideTriangle((*fVert)[ind[j]], ind[i0], ind[i1], ind[i2])) {
         pointInsideTriangle = true;
         i0++, i1++, i2 = (i2 + 1) % ind.size();
         break;
@@ -154,7 +154,7 @@ void Polygon::TriangulatePolygon(vector_t<Polygon> &polys) const
     }
 
     if (!pointInsideTriangle) {
-      polys.push_back({3, fVert, {ind[i0], ind[i1], ind[i2]}, true});
+      polys.push_back({3, (*fVert), {ind[i0], ind[i1], ind[i2]}, true});
       ind.erase(ind.begin() + i1);
       i0 = 0, i1 = 1, i2 = 2;
     }
@@ -229,23 +229,23 @@ bool Polygon::IsPointInside(const Vec_t &p) const
 
   for (size_t i = 0; i < fInd.size(); i++) {
     size_t k = (i + 1) % fInd.size();
-    Line l{{fVert[fInd[i]], fVert[fInd[k]]}};
+    Line l{{(*fVert)[fInd[i]], (*fVert)[fInd[k]]}};
     if (l.IsPointOnLine(p)) {
       return true;
     }
   }
 
-  Line pl = Line{{p, fVert[fInd[0]]}};
+  Line pl = Line{{p, (*fVert)[fInd[0]]}};
 
   for (size_t i = 0; i < fInd.size(); i++) {
     size_t k = (i + 1) % fInd.size();
 
-    Line l{{fVert[fInd[i]], fVert[fInd[k]]}};
+    Line l{{(*fVert)[fInd[i]], (*fVert)[fInd[k]]}};
 
     LineIntersection *li = pl.Intersect(l);
 
     if (li->fType == LineIntersection::fIntersect) {
-      bool upwardEdge = (fVert[fInd[0]] - p).Cross(fVert[fInd[k]] - fVert[fInd[i]]).Dot(fNorm) > 0;
+      bool upwardEdge = ((*fVert)[fInd[0]] - p).Cross((*fVert)[fInd[k]] - (*fVert)[fInd[i]]).Dot(fNorm) > 0;
 
       if (upwardEdge) {
 
@@ -266,18 +266,18 @@ bool Polygon::IsPointInside(const Vec_t &p) const
 
 void Polygon::Extent(Precision x[2], Precision y[2], Precision z[2])
 {
-  x[0] = x[1] = fVert[fInd[0]].x();
-  y[0] = y[1] = fVert[fInd[0]].y();
-  z[0] = z[1] = fVert[fInd[0]].z();
+  x[0] = x[1] = (*fVert)[fInd[0]].x();
+  y[0] = y[1] = (*fVert)[fInd[0]].y();
+  z[0] = z[1] = (*fVert)[fInd[0]].z();
   for (auto i : fInd) {
-    if (fVert[i].x() > x[1]) x[1] = fVert[i].x();
-    if (fVert[i].x() < x[0]) x[0] = fVert[i].x();
+    if ((*fVert)[i].x() > x[1]) x[1] = (*fVert)[i].x();
+    if ((*fVert)[i].x() < x[0]) x[0] = (*fVert)[i].x();
 
-    if (fVert[i].y() > y[1]) y[1] = fVert[i].y();
-    if (fVert[i].x() < y[0]) y[0] = fVert[i].y();
+    if ((*fVert)[i].y() > y[1]) y[1] = (*fVert)[i].y();
+    if ((*fVert)[i].x() < y[0]) y[0] = (*fVert)[i].y();
 
-    if (fVert[i].z() > z[1]) z[1] = fVert[i].z();
-    if (fVert[i].z() < z[0]) z[0] = fVert[i].z();
+    if ((*fVert)[i].z() > z[1]) z[1] = (*fVert)[i].z();
+    if ((*fVert)[i].z() < z[0]) z[0] = (*fVert)[i].z();
   }
 }
 
@@ -300,8 +300,8 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
         // single point of intersection possible
 
         // store just the start and end point (2 boundaries) of all intersections on the plane
-        double d = (fVert[fInd[0]] - clipper.fVert[clipper.fInd[i]]).Dot(fNorm) / (fNorm.Dot(clipper.fSides[i]));
-        Vec_t intersection_pt = d * clipper.fSides[i] + clipper.fVert[clipper.fInd[i]];
+        double d = ((*fVert)[fInd[0]] - (*clipper.fVert)[clipper.fInd[i]]).Dot(fNorm) / (fNorm.Dot(clipper.fSides[i]));
+        Vec_t intersection_pt = d * clipper.fSides[i] + (*clipper.fVert)[clipper.fInd[i]];
         // std::cerr << intersection_pt << '\n';
         if (intersection_pt.x() < startPoint.x() ||
             (intersection_pt.x() == startPoint.x() && intersection_pt.y() < startPoint.y()) ||
@@ -328,7 +328,7 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
 
     for (size_t j = 0; j < fInd.size(); j++) {
       // find the intersection with each of subject's lines
-      Line l2{{fVert[fInd[j]], fVert[fInd[(j + 1) % fInd.size()]]}}; // subject line
+      Line l2{{(*fVert)[fInd[j]], (*fVert)[fInd[(j + 1) % fInd.size()]]}}; // subject line
 
       LineIntersection *li = l1.Intersect(l2);
 
@@ -384,9 +384,9 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
       double alpha                   = 0.;
       Vec_t perturbated;
 
-      GreinerHormannVertex(){};
+      GreinerHormannVertex() {};
       GreinerHormannVertex(double alpha, Vec_t coord, bool intersect)
-          : coord(coord), intersect(intersect), alpha(alpha){};
+          : coord(coord), intersect(intersect), alpha(alpha) {};
 
       void MakeNeighbor(GreinerHormannVertex *i2)
       {
@@ -399,7 +399,7 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
       GreinerHormannVertex *head = nullptr;
       int size                   = 0;
 
-      GreinerHormannPolygon(){};
+      GreinerHormannPolygon() {};
       GreinerHormannPolygon(const Polygon &poly)
       {
         head       = new GreinerHormannVertex(); // dummy head
@@ -409,7 +409,7 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
         GreinerHormannVertex *current;
         for (auto i : poly.fInd) {
           current        = new GreinerHormannVertex();
-          current->coord = poly.fVert[i];
+          current->coord = (*poly.fVert)[i];
           current->next  = head;
           current->prev  = head->prev;
 
@@ -544,14 +544,14 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
     if (noIntersection) {
 
       // test clp point
-      if ((this->fVert[this->fInd[0]] - clp->head->coord).Dot(this->fNorm) == 0 &&
+      if (((*this->fVert)[this->fInd[0]] - clp->head->coord).Dot(this->fNorm) == 0 &&
           this->IsPointInside(clp->head->coord)) {
         pi->fPolygons.push_back(clipper);
         return pi;
       }
 
       // test sbj point
-      if ((clipper.fVert[clipper.fInd[0]] - sbj->head->coord).Dot(clipper.fNorm) == 0 &&
+      if (((*clipper.fVert)[clipper.fInd[0]] - sbj->head->coord).Dot(clipper.fNorm) == 0 &&
           clipper.IsPointInside(sbj->head->coord)) {
         pi->fPolygons.push_back(*this);
         return pi;
@@ -610,10 +610,10 @@ struct PolygonIntersection *Polygon::Intersect(const Polygon &clipper)
       if (!it->fValid) {
         if (it->fN == 2) {
           // convert to line
-          pi->fLines.push_back({{it->fVert[it->fInd[0]], it->fVert[it->fInd[1]]}});
+          pi->fLines.push_back({{(*it->fVert)[it->fInd[0]], (*it->fVert)[it->fInd[1]]}});
         } else if (it->fN == 1) {
           // convert to point
-          pi->fPoints.push_back(it->fVert[it->fInd[0]]);
+          pi->fPoints.push_back((*it->fVert)[it->fInd[0]]);
         }
 
         it = pi->fPolygons.erase(it);

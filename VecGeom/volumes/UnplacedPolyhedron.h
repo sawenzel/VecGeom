@@ -85,10 +85,12 @@ class UnplacedPolyhedron
       public AlignedBase {
 
 private:
-  PolyhedronStruct<Precision> fPoly; ///< Structure holding polyhedron data
+  PolyhedronStruct<Precision> *fPoly{nullptr}; ///< Structure holding polyhedron data
+  bool fAllocated{false};
+  const void *fBuffer{nullptr};
 
 public:
-  UnplacedPolyhedron() : fPoly() { ComputeBBox(); }
+  UnplacedPolyhedron() = default;
   /// \param sideCount Number of sides along phi in each Z-segment.
   /// \param zPlaneCount Number of Z-planes to draw segments between. The number
   ///                    of segments will always be this number minus one.
@@ -113,11 +115,34 @@ public:
   /// \param zPlanes Z-coordinates of each Z-plane to draw segments between.
   /// \param rMin Radius to the sides (not to the corners!) of the inner shell
   ///             for the corresponding Z-plane.
-  /// \param rMin Radius to the sides (not to the corners!) of the outer shell
+  /// \param rMax Radius to the sides (not to the corners!) of the outer shell
   ///             for the corresponding Z-plane.
   VECCORE_ATT_HOST_DEVICE
   UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
                      Precision const zPlanes[], Precision const rMin[], Precision const rMax[]);
+
+  /// @brief CPU constructor, constructing the PolyhedronStruct in a preallocated buffer
+  /// \param phiStart Angle in phi of first corner. This will be one phi angle
+  ///                 of the phi cutout, if any cutout is specified. Specified
+  ///                 in radians.
+  /// \param phiDelta Total angle in phi over which the sides of each segment
+  ///                 will be drawn. When added to the starting angle, this will
+  ///                 mark one of the angles of the phi cutout, if any cutout is
+  ///                 specified.
+  /// \param sideCount Number of sides along phi in each Z-segment.
+  /// \param zPlaneCount Number of Z-planes to draw segments between. The number
+  ///                    of segments will always be this number minus one.
+  /// \param zPlanes Z-coordinates of each Z-plane to draw segments between.
+  /// \param rMin Radius to the sides (not to the corners!) of the inner shell
+  ///             for the corresponding Z-plane.
+  /// \param rMax Radius to the sides (not to the corners!) of the outer shell
+  ///             for the corresponding Z-plane.
+  /// @param buff_size Size of the buffer to hold the PolyhedronStruct
+  /// @param buffer Buffer on GPU already pre-allocated
+  VECCORE_ATT_HOST_DEVICE
+  UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
+                     Precision const zPlanes[], Precision const rMin[], Precision const rMax[], size_t const buff_size,
+                     void const *buffer);
 
   /// Alternative constructor, required for integration with Geant4.
   /// This constructor mirrors one in UnplacedPolycone(), for which the r[],z[] idea makes more sense.
@@ -139,78 +164,81 @@ public:
                      Precision const r[], Precision const z[]);
 
   VECCORE_ATT_HOST_DEVICE
-  virtual ~UnplacedPolyhedron() {}
+  virtual ~UnplacedPolyhedron()
+  {
+    if (fAllocated) delete[] (char *)fBuffer;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   virtual ESolidType GetType() const override { return ESolidType::polyhedron; }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyhedronStruct<Precision> const &GetStruct() const { return fPoly; }
+  PolyhedronStruct<Precision> const &GetStruct() const { return *fPoly; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  int GetSideCount() const { return fPoly.fSideCount; }
+  int GetSideCount() const { return fPoly->fSideCount; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  int GetZSegmentCount() const { return fPoly.fZSegments.size(); }
+  int GetZSegmentCount() const { return fPoly->fZSegments.size(); }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool HasInnerRadii() const { return fPoly.fHasInnerRadii; }
+  bool HasInnerRadii() const { return fPoly->fHasInnerRadii; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool HasPhiCutout() const { return fPoly.fHasPhiCutout; }
+  bool HasPhiCutout() const { return fPoly->fHasPhiCutout; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool HasLargePhiCutout() const { return fPoly.fHasLargePhiCutout; }
+  bool HasLargePhiCutout() const { return fPoly->fHasLargePhiCutout; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  ZSegment const &GetZSegment(int i) const { return fPoly.fZSegments[i]; }
+  ZSegment const &GetZSegment(int i) const { return fPoly->fZSegments[i]; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array<ZSegment> const &GetZSegments() const { return fPoly.fZSegments; }
+  Array<ZSegment> const &GetZSegments() const { return fPoly->fZSegments; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetZPlane(int i) const { return fPoly.fZPlanes[i]; }
+  Precision GetZPlane(int i) const { return fPoly->fZPlanes[i]; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array<Precision> const &GetZPlanes() const { return fPoly.fZPlanes; }
+  Array<Precision> const &GetZPlanes() const { return fPoly->fZPlanes; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array<Precision> const &GetRMin() const { return fPoly.fRMin; }
+  Array<Precision> const &GetRMin() const { return fPoly->fRMin; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Array<Precision> const &GetRMax() const { return fPoly.fRMax; }
+  Array<Precision> const &GetRMax() const { return fPoly->fRMax; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Vector3D<Precision> GetPhiSection(int i) const { return fPoly.fPhiSections[i]; }
+  Vector3D<Precision> GetPhiSection(int i) const { return fPoly->fPhiSections[i]; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  SOA3D<Precision> const &GetPhiSections() const { return fPoly.fPhiSections; }
+  SOA3D<Precision> const &GetPhiSections() const { return fPoly->fPhiSections; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  evolution::Wedge const &GetPhiWedge() const { return fPoly.fPhiWedge; }
+  evolution::Wedge const &GetPhiWedge() const { return fPoly->fPhiWedge; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  TubeStruct<Precision> const &GetBoundingTube() const { return fPoly.fBoundingTube; }
+  TubeStruct<Precision> const &GetBoundingTube() const { return fPoly->fBoundingTube; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetBoundingTubeOffset() const { return fPoly.fBoundingTubeOffset; }
+  Precision GetBoundingTubeOffset() const { return fPoly->fBoundingTubeOffset; }
 
 #ifndef VECCORE_CUDA
   VECCORE_ATT_HOST_DEVICE
@@ -250,19 +278,19 @@ public:
   /// \return The angle along phi where the first corner is placed, specified in radians.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetPhiStart() const { return fPoly.fPhiStart; }
+  Precision GetPhiStart() const { return fPoly->fPhiStart; }
 
   /// Not a stored value, and should not be called from performance critical code.
   /// \return The angle along phi where the last corner is placed, specified in degrees.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetPhiEnd() const { return fPoly.fPhiStart + fPoly.fPhiDelta; }
+  Precision GetPhiEnd() const { return fPoly->fPhiStart + fPoly->fPhiDelta; }
 
   /// Not a stored value, and should not be called from performance critical code.
   /// \return The difference in angle along phi between the last corner and the first corner.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetPhiDelta() const { return fPoly.fPhiDelta; }
+  Precision GetPhiDelta() const { return fPoly->fPhiDelta; }
 
   // \return the number of quadrilaterals (including triangles) that this
   // polyhedra consists of; this should be all visible surfaces except the endcaps
@@ -289,16 +317,16 @@ public:
     };
 
     Array<ZSegment>::const_iterator s;
-    Array<ZSegment>::const_iterator end = fPoly.fZSegments.cend();
+    Array<ZSegment>::const_iterator end = fPoly->fZSegments.cend();
 
-    for (s = fPoly.fZSegments.cbegin(); s != end; ++s) {
+    for (s = fPoly->fZSegments.cbegin(); s != end; ++s) {
       outercorners          = (*s).outer.GetCorners();
       Vector3D<Precision> a = outercorners[0][0];
       Vector3D<Precision> b = outercorners[1][0];
       rmax.push_back(getradius(a, b));
       zplanes.push_back(a.z());
 
-      if (fPoly.fHasInnerRadii) {
+      if (fPoly->fHasInnerRadii) {
         innercorners = (*s).inner.GetCorners();
         a            = innercorners[0][0];
         b            = innercorners[1][0];
@@ -314,7 +342,7 @@ public:
     rmax.push_back(getradius(a, b));
     zplanes.push_back(a.z());
 
-    if (fPoly.fHasInnerRadii) {
+    if (fPoly->fHasInnerRadii) {
       a = innercorners[2][0];
       b = innercorners[3][0];
       rmin.push_back(getradius(a, b));

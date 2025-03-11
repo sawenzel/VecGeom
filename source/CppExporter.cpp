@@ -369,7 +369,7 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
 
       std::vector<double> rmin, rmax, z;
       // serialize the arrays as temporary std::vector
-      shape->ReconstructSectionArrays(z, rmin, rmax);
+      shape->GetStruct().ReconstructSectionArrays(z, rmin, rmax);
 #ifndef NDEBUG
       for (auto element : rmin) {
         assert(element >= 0.);
@@ -380,7 +380,7 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
 #endif
       if (shape->GetNz() != z.size()) {
         VECGEOM_LOG(warning) << "Volume " << l->GetLabel()
-                  << " has a mismatch in the number of z-planes (possible duplication)";
+                             << " has a mismatch in the number of z-planes (possible duplication)";
       }
       line << z.size() << " , ";
 
@@ -773,5 +773,5 @@ void GeomCppExporter::DumpGeometry(std::ostream &s)
   s << "//std::cerr << \"loaded geometry has \" << geom.getMaxDepth() << \" levels \" << std::endl;\n";
   s << "// return 0;}\n";
 }
-}
-} // end namespace
+} // namespace cxx
+} // namespace vecgeom

@@ -28,48 +28,52 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 class UnplacedPolycone : public VUnplacedVolume {
 
 private:
-  PolyconeStruct<Precision> fPolycone;
+  PolyconeStruct<Precision> *fPolycone{nullptr};
+  bool fAllocated{false};
+  const void *fBuffer{nullptr};
 
 public:
   // Constructor needed by specialization when Polycone becomes Cone
   UnplacedPolycone(Precision rmin1, Precision rmax1, Precision rmin2, Precision rmax2, Precision dz, Precision phistart,
                    Precision deltaphi)
+      : fPolycone(new PolyconeStruct<Precision>)
   {
     int Nz = 2;
     Precision rMin[2];
     Precision rMax[2];
     Precision z[2];
-    rMin[0]                      = rmin1;
-    rMin[1]                      = rmin2;
-    rMax[0]                      = rmax1;
-    rMax[1]                      = rmax2;
-    z[0]                         = -dz;
-    z[1]                         = dz;
-    fPolycone.fContinuityOverAll = true;
-    fPolycone.fConvexityPossible = true;
-    fPolycone.fEqualRmax         = true;
-    fPolycone.Init(phistart, deltaphi, Nz, z, rMin, rMax);
+    rMin[0]                       = rmin1;
+    rMin[1]                       = rmin2;
+    rMax[0]                       = rmax1;
+    rMax[1]                       = rmax2;
+    z[0]                          = -dz;
+    z[1]                          = dz;
+    fPolycone->fContinuityOverAll = true;
+    fPolycone->fConvexityPossible = true;
+    fPolycone->fEqualRmax         = true;
+    fPolycone->Init(phistart, deltaphi, Nz, z, rMin, rMax);
     DetectConvexity();
     ComputeBBox();
   }
 
   // Constructor needed by specialization when Polycone becomes Tube
   UnplacedPolycone(Precision rmin, Precision rmax, Precision dz, Precision phistart, Precision deltaphi)
+      : fPolycone(new PolyconeStruct<Precision>)
   {
     int Nz = 2;
     Precision rMin[2];
     Precision rMax[2];
     Precision z[2];
-    rMin[0]                      = rmin;
-    rMin[1]                      = rmin;
-    rMax[0]                      = rmax;
-    rMax[1]                      = rmax;
-    z[0]                         = -dz;
-    z[1]                         = dz;
-    fPolycone.fContinuityOverAll = true;
-    fPolycone.fConvexityPossible = true;
-    fPolycone.fEqualRmax         = true;
-    fPolycone.Init(phistart, deltaphi, Nz, z, rMin, rMax);
+    rMin[0]                       = rmin;
+    rMin[1]                       = rmin;
+    rMax[0]                       = rmax;
+    rMax[1]                       = rmax;
+    z[0]                          = -dz;
+    z[1]                          = dz;
+    fPolycone->fContinuityOverAll = true;
+    fPolycone->fConvexityPossible = true;
+    fPolycone->fEqualRmax         = true;
+    fPolycone->Init(phistart, deltaphi, Nz, z, rMin, rMax);
     DetectConvexity();
     ComputeBBox();
   }
@@ -78,12 +82,29 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedPolycone(Precision phistart, Precision deltaphi, int Nz, Precision const *z, Precision const *rmin,
                    Precision const *rmax)
+      : fPolycone(new PolyconeStruct<Precision>)
   {
     // init internal members
-    fPolycone.fContinuityOverAll = true;
-    fPolycone.fConvexityPossible = true;
-    fPolycone.fEqualRmax         = true;
-    fPolycone.Init(phistart, deltaphi, Nz, z, rmin, rmax);
+    fPolycone->fContinuityOverAll = true;
+    fPolycone->fConvexityPossible = true;
+    fPolycone->fEqualRmax         = true;
+    fPolycone->Init(phistart, deltaphi, Nz, z, rmin, rmax);
+    DetectConvexity();
+    ComputeBBox();
+  }
+
+  // GPU constructor
+  VECCORE_ATT_HOST_DEVICE
+  UnplacedPolycone(bool continuityOverAll, bool convexityPossible, bool equalRmax, Precision phistart,
+                   Precision deltaphi, int nsections, int nz, Precision const *z, Precision const *rmin,
+                   Precision const *rmax, size_t const buff_size, void const *buffer)
+  {
+    fAllocated = (buffer == nullptr);
+    fBuffer    = fAllocated ? new char[buff_size] : buffer;
+    AlignedAllocator a((void *)fBuffer, buff_size);
+    fPolycone = a.aligned_alloc<PolyconeStruct<Precision>>(1, 0, continuityOverAll, convexityPossible, equalRmax,
+                                                           phistart, deltaphi, nsections, nz, z, rmin, rmax, a);
+
     DetectConvexity();
     ComputeBBox();
   }
@@ -103,64 +124,64 @@ public:
   void Reset();
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeHistorical *GetOriginalParameters() const { return fPolycone.GetOriginalParameters(); }
+  PolyconeHistorical *GetOriginalParameters() const { return fPolycone->GetOriginalParameters(); }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   virtual ESolidType GetType() const override { return ESolidType::polycone; }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeStruct<Precision> const &GetStruct() const { return fPolycone; }
+  PolyconeStruct<Precision> const &GetStruct() const { return *fPolycone; }
   VECCORE_ATT_HOST_DEVICE
-  unsigned int GetNz() const { return fPolycone.fNz; }
+  unsigned int GetNz() const { return fPolycone->fNz; }
   VECCORE_ATT_HOST_DEVICE
-  int GetNSections() const { return fPolycone.fSections.size(); }
+  int GetNSections() const { return fPolycone->fSections.size(); }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetStartPhi() const { return fPolycone.fStartPhi; }
+  Precision GetStartPhi() const { return fPolycone->fStartPhi; }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetDeltaPhi() const { return fPolycone.fDeltaPhi; }
+  Precision GetDeltaPhi() const { return fPolycone->fDeltaPhi; }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetEndPhi() const { return fPolycone.fStartPhi + fPolycone.fDeltaPhi; }
+  Precision GetEndPhi() const { return fPolycone->fStartPhi + fPolycone->fDeltaPhi; }
   VECCORE_ATT_HOST_DEVICE
-  evolution::Wedge const &GetWedge() const { return fPolycone.fPhiWedge; }
+  evolution::Wedge const &GetWedge() const { return fPolycone->fPhiWedge; }
 
   VECCORE_ATT_HOST_DEVICE
-  int GetSectionIndex(Precision zposition) const { return fPolycone.GetSectionIndex(zposition); }
+  int GetSectionIndex(Precision zposition) const { return fPolycone->GetSectionIndex(zposition); }
 
   VECCORE_ATT_HOST_DEVICE
-  PolyconeSection const &GetSection(Precision zposition) const { return fPolycone.GetSection(zposition); }
+  PolyconeSection const &GetSection(Precision zposition) const { return fPolycone->GetSection(zposition); }
 
   VECCORE_ATT_HOST_DEVICE
   // GetSection if index is known
-  PolyconeSection const &GetSection(int index) const { return fPolycone.fSections[index]; }
+  PolyconeSection const &GetSection(int index) const { return fPolycone->fSections[index]; }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRminAtPlane(int index) const { return fPolycone.GetRminAtPlane(index); }
+  Precision GetRminAtPlane(int index) const { return fPolycone->GetRminAtPlane(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmaxAtPlane(int index) const { return fPolycone.GetRmaxAtPlane(index); }
+  Precision GetRmaxAtPlane(int index) const { return fPolycone->GetRmaxAtPlane(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetZAtPlane(int index) const { return fPolycone.GetZAtPlane(index); }
+  Precision GetZAtPlane(int index) const { return fPolycone->GetZAtPlane(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmin1AtSection(int index) const { return fPolycone.GetRmin1AtSection(index); }
+  Precision GetRmin1AtSection(int index) const { return fPolycone->GetRmin1AtSection(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmax1AtSection(int index) const { return fPolycone.GetRmax1AtSection(index); }
+  Precision GetRmax1AtSection(int index) const { return fPolycone->GetRmax1AtSection(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmin2AtSection(int index) const { return fPolycone.GetRmin2AtSection(index); }
+  Precision GetRmin2AtSection(int index) const { return fPolycone->GetRmin2AtSection(index); }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmax2AtSection(int index) const { return fPolycone.GetRmax2AtSection(index); }
+  Precision GetRmax2AtSection(int index) const { return fPolycone->GetRmax2AtSection(index); }
 
   Precision Capacity() const override
   {
     Precision cubicVolume = 0.;
     for (int i = 0; i < GetNSections(); i++) {
-      PolyconeSection const &section = fPolycone.fSections[i];
-      cubicVolume += section.fSolid->Capacity();
+      PolyconeSection const &section = fPolycone->fSections[i];
+      cubicVolume += section.fSolid.Capacity();
     }
     return cubicVolume;
   }
@@ -189,10 +210,6 @@ public:
                                      Precision zOne) const;
 
 #endif // !VECCORE_CUDA
-
-  // a method to reconstruct "plane" section arrays for z, rmin and rmax
-  template <typename PushableContainer>
-  void ReconstructSectionArrays(PushableContainer &z, PushableContainer &rmin, PushableContainer &rmax) const;
 
   // these methods are required by VUnplacedVolume
   //
@@ -242,37 +259,6 @@ struct Maker<UnplacedPolycone> {
   static UnplacedPolycone *MakeInstance(Precision phistart, Precision deltaphi, int Nz, Precision const *r,
                                         Precision const *z);
 };
-
-template <typename PushableContainer>
-void UnplacedPolycone::ReconstructSectionArrays(PushableContainer &z, PushableContainer &rmin,
-                                                PushableContainer &rmax) const
-{
-
-  Precision prevrmin, prevrmax;
-  bool putlowersection = true;
-  for (int i = 0; i < GetNSections(); ++i) {
-    ConeStruct<Precision> const *cone = fPolycone.GetSection(i).fSolid;
-    if (putlowersection) {
-      rmin.push_back(cone->fRmin1); // GetRmin1());
-      rmax.push_back(cone->fRmax1); // GetRmax1());
-      z.push_back(-cone->fDz + fPolycone.GetSection(i).fShift);
-    }
-    rmin.push_back(cone->fRmin2); // GetRmin2());
-    rmax.push_back(cone->fRmax2); // GetRmax2());
-    z.push_back(cone->fDz + fPolycone.GetSection(i).fShift);
-
-    prevrmin = cone->fRmin2; // GetRmin2();
-    prevrmax = cone->fRmax2; // GetRmax2();
-
-    // take care of a possible discontinuity
-    if (i < GetNSections() - 1 && (prevrmin != fPolycone.GetSection(i + 1).fSolid->fRmin1 ||
-                                   prevrmax != fPolycone.GetSection(i + 1).fSolid->fRmax1)) {
-      putlowersection = true;
-    } else {
-      putlowersection = false;
-    }
-  }
-}
 
 template <typename PolyconeType = ConeTypes::UniversalCone>
 class SUnplacedPolycone : public UnplacedVolumeImplHelper<PolyconeImplementation<PolyconeType>, UnplacedPolycone>,

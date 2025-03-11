@@ -98,18 +98,13 @@ struct TrapezoidImplementation {
       Bool_v &completelyOutside)
   {
     // z-region
-    completelyOutside = Abs(point[2]) > MakePlusTolerant<ForInside>(unplaced.fDz);
-    // if (vecCore::EarlyReturnMaxLength(completelyOutside,1) && vecCore::MaskFull(completelyOutside)) {
-    //   completelyInside = Bool_v(false);
-    //   return;
-    // }
+    completelyOutside = Abs(point[2]) > MakePlusTolerant<true>(unplaced.fDz);
     if (ForInside) {
-      completelyInside = Abs(point[2]) < MakeMinusTolerant<ForInside>(unplaced.fDz);
+      completelyInside = Abs(point[2]) < MakeMinusTolerant<true>(unplaced.fDz);
     }
 
 #ifndef VECGEOM_PLANESHELL_DISABLE
-    unplaced.GetPlanes()->GenericKernelForContainsAndInside<Real_v, ForInside>(point, completelyInside,
-                                                                               completelyOutside);
+    unplaced.GetPlanes()->GenericKernelForContainsAndInside<Real_v, true>(point, completelyInside, completelyOutside);
 #else
     // here for PLANESHELL=OFF (disabled)
     TrapSidePlane const *fPlanes = unplaced.GetPlanes();
@@ -120,9 +115,9 @@ struct TrapezoidImplementation {
 
     for (unsigned int i = 0; i < 4; ++i) {
       // is it outside of this side plane?
-      completelyOutside = completelyOutside || dist[i] > Real_v(MakePlusTolerant<ForInside>(0.));
+      completelyOutside = completelyOutside || dist[i] > Real_v(MakePlusTolerant<true>(0.));
       if (ForInside) {
-        completelyInside = completelyInside && dist[i] < Real_v(MakeMinusTolerant<ForInside>(0.));
+        completelyInside = completelyInside && dist[i] < Real_v(MakeMinusTolerant<true>(0.));
       }
       // if (vecCore::EarlyReturnMaxLength(completelyOutside,1) && vecCore::MaskFull(completelyOutside)) return;
     }

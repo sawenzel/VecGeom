@@ -57,12 +57,13 @@ The table below shows the available CMake options for VecGeom that may be used t
 |VECGEOM_NO_SPECIALIZATION|ON|Disable specialization of volumes|
 |VECGEOM_PLANESHELL|ON|Enable the use of PlaneShell class for the trapezoid|
 |VECGEOM_QUADRILATERAL_ACCELERATION|ON|Enable SIMD vectorization when looping over quadrilaterals|
+|VECGEOM_SANITIZER|OFF|Enable memory sanitizer|
 |VECGEOM_SINGLE_PRECISION|OFF|Use single precision throughout the package|
 |VECGEOM_USE_CACHED_TRANSFORMATIONS|OFF|Use cached transformations in navigation states|
 |VECGEOM_USE_INDEXEDNAVSTATES|ON|Use indices rather than volume pointers in NavigationState objects|
 |VECGEOM_USE_NAVINDEX|OFF|Use navigation index table and index states|
-|VECGEOM_USE_NAVTUPLE|OFF|Use navigation index table and tuple states|
-|VECGEOM_NAVTUPLE_DEPTH|4|Maximum depth for navigation tuple states|
+|VECGEOM_USE_NAVTUPLE|ON|Use navigation index table and tuple states|
+|DVECGEOM_NAVTUPLE_MAXDEPTH|1|Maximum depth for navigation tuple states|
 |VECGEOM_VECTOR|sse2|Vector instruction set to be used|
 
 The following options are available for enabling, building, and running tests:

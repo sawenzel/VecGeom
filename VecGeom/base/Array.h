@@ -27,6 +27,10 @@ public:
   VECGEOM_FORCE_INLINE
   Array(const unsigned int size);
 
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Array(const unsigned int size, AlignedAllocator &a);
+
   VECGEOM_FORCE_INLINE
   Array(Array<Type> const &other);
 
@@ -54,12 +58,16 @@ public:
   VECGEOM_FORCE_INLINE
   int size() const { return fSize; }
 
-  VECGEOM_FORCE_INLINE
+  template <typename... Args>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE static size_t aligned_sizeof_data(const size_t initSize,
+                                                                                 const Args... args);
+
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   void Allocate(const unsigned int size);
 
-  VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
   void Deallocate();
 
   typedef Type *iterator;
@@ -89,6 +97,13 @@ VECCORE_ATT_HOST_DEVICE Array<Type>::Array(const unsigned int initSize)
 }
 
 template <typename Type>
+VECCORE_ATT_HOST_DEVICE Array<Type>::Array(const unsigned int initSize, AlignedAllocator &a)
+    : fSize(initSize), fAllocated(false)
+{
+  fData = a.aligned_alloc<Type>(initSize, kAlignmentBoundary);
+}
+
+template <typename Type>
 Array<Type>::Array(Array<Type> const &other)
 {
   Allocate(other.fSize);
@@ -107,6 +122,13 @@ VECCORE_ATT_HOST_DEVICE Array<Type>::~Array()
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   if (fAllocated) vecCore::AlignedFree(fData);
 #endif
+}
+
+template <class Type>
+template <class... Args>
+VECCORE_ATT_HOST_DEVICE size_t Array<Type>::aligned_sizeof_data(const size_t numElements, const Args... args)
+{
+  return (AlignedAllocator::aligned_sizeof<Type>(numElements, kAlignmentBoundary, args...));
 }
 
 template <typename Type>

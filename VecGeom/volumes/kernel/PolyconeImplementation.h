@@ -63,7 +63,7 @@ struct PolyconeImplementation {
 #endif
 
     ConeHelpers<Real_v, polyconeTypeT>::template GenericKernelForContainsAndInside<ForInside>(
-        *sec.fSolid, secLocalp, secFullyInside, secFullyOutside);
+        sec.fSolid, secLocalp, secFullyInside, secFullyOutside);
   }
 
   template <typename Real_v, typename Bool_v>
@@ -184,13 +184,13 @@ struct PolyconeImplementation {
 #ifdef POLYCONEDEBUG
       std::cerr << "Polycone::DistToIn() (spot 2):"
                 << " index=" << index << " NSec=" << polycone.GetNSections() << " &sec=" << &sec << " - secPars:"
-                << " secOffset=" << sec.fShift << " Dz=" << sec.fSolid->GetDz() << " Rmin1=" << sec.fSolid->GetRmin1()
-                << " Rmin2=" << sec.fSolid->GetRmin2() << " Rmax1=" << sec.fSolid->GetRmax1()
-                << " Rmax2=" << sec.fSolid->GetRmax2() << " -- calling Cone::DistToIn()...\n";
+                << " secOffset=" << sec.fShift << " Dz=" << sec.fSolid.GetDz() << " Rmin1=" << sec.fSolid.GetRmin1()
+                << " Rmin2=" << sec.fSolid.GetRmin2() << " Rmax1=" << sec.fSolid.GetRmax1()
+                << " Rmax2=" << sec.fSolid.GetRmax2() << " -- calling Cone::DistToIn()...\n";
 #endif
 
       ConeImplementation<polyconeTypeT>::template DistanceToIn<Real_v>(
-          *sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), v, stepMax, distance);
+          sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), v, stepMax, distance);
 
 #ifdef POLYCONEDEBUG
       std::cerr << "Polycone::DistToIn() (spot 3):"
@@ -218,7 +218,7 @@ struct PolyconeImplementation {
       const PolyconeSection &section = polycone.GetSection(0);
 
       ConeImplementation<polyconeTypeT>::template DistanceToOut<Real_v>(
-          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), dir, stepMax, distance);
+          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), dir, stepMax, distance);
 
       return;
     }
@@ -239,9 +239,9 @@ struct PolyconeImplementation {
 
       Inside_t inside;
       //      ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(
-      //          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+      //          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
       ConeImplementation<polyconeTypeT>::template Inside<Real_v>(
-          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
       if (inside == EInside::kOutside) {
         distance = -1;
         return;
@@ -252,10 +252,10 @@ struct PolyconeImplementation {
 
       Inside_t inside;
       //      ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(
-      //        *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+      //        section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
 
       ConeImplementation<polyconeTypeT>::template Inside<Real_v>(
-          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
 
       if (inside == EInside::kOutside) {
         index = indexHigh;
@@ -276,9 +276,9 @@ struct PolyconeImplementation {
 
       Inside_t inside;
       //      ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(
-      //          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+      //          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
       ConeImplementation<polyconeTypeT>::template Inside<Real_v>(
-          *section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
+          section.fSolid, point - Vector3D<Precision>(0, 0, section.fShift), inside);
       if (inside == EInside::kOutside) {
         distance = -1;
         return;
@@ -299,8 +299,8 @@ struct PolyconeImplementation {
         pn = point + totalDistance * dir; // point must be shifted, so it could eventually get into another solid
         pn.z() -= section.fShift;
         Inside_t inside;
-        //        ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(*section.fSolid, pn, inside);
-        ConeImplementation<polyconeTypeT>::template Inside<Real_v>(*section.fSolid, pn, inside);
+        //        ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(section.fSolid, pn, inside);
+        ConeImplementation<polyconeTypeT>::template Inside<Real_v>(section.fSolid, pn, inside);
 
         if (inside == EInside::kOutside) {
           break;
@@ -310,8 +310,8 @@ struct PolyconeImplementation {
 
       istep++;
 
-      // ConeImplementation<ConeTypes::UniversalCone>::DistanceToOut<Real_v>(*section.fSolid, pn, dir, stepMax, dist);
-      ConeImplementation<polyconeTypeT>::template DistanceToOut<Real_v>(*section.fSolid, pn, dir, stepMax, dist);
+      // ConeImplementation<ConeTypes::UniversalCone>::DistanceToOut<Real_v>(section.fSolid, pn, dir, stepMax, dist);
+      ConeImplementation<polyconeTypeT>::template DistanceToOut<Real_v>(section.fSolid, pn, dir, stepMax, dist);
       if (dist == -1) return;
 
       // Section Surface case
@@ -329,8 +329,8 @@ struct PolyconeImplementation {
         pte.z() -= section1.fShift;
         Vector3D<Precision> localp;
         Inside_t inside22;
-        // ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(*section1.fSolid, pte, inside22);
-        ConeImplementation<polyconeTypeT>::template Inside<Real_v>(*section1.fSolid, pte, inside22);
+        // ConeImplementation<ConeTypes::UniversalCone>::Inside<Real_v>(section1.fSolid, pte, inside22);
+        ConeImplementation<polyconeTypeT>::template Inside<Real_v>(section1.fSolid, pte, inside22);
         if (inside22 == 3 || (increment == 0)) {
           break;
         }
@@ -364,14 +364,14 @@ struct PolyconeImplementation {
     // safety to current segment
     if (needZ) {
       //      ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(
-      //          *sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), safety);
-      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(*sec.fSolid,
+      //          sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), safety);
+      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(sec.fSolid,
                                                                      p - Vector3D<Precision>(0, 0, sec.fShift), safety);
     } else {
 
       //      ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(
-      //          *sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), safety);
-      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(*sec.fSolid,
+      //          sec.fSolid, p - Vector3D<Precision>(0, 0, sec.fShift), safety);
+      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(sec.fSolid,
                                                                      p - Vector3D<Precision>(0, 0, sec.fShift), safety);
 
       if (safety < kTolerance) return;
@@ -385,10 +385,10 @@ struct PolyconeImplementation {
         PolyconeSection const &sect = polycone.GetSection(i);
 
         //      ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(
-        //          *sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
+        //          sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
 
         ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(
-            *sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
+            sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
 
         if (safety < minSafety) minSafety = safety;
       }
@@ -402,10 +402,10 @@ struct PolyconeImplementation {
           PolyconeSection const &sect = polycone.GetSection(i);
 
           //        ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(
-          //            *sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
+          //            sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
 
           ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(
-              *sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
+              sect.fSolid, p - Vector3D<Precision>(0, 0, sect.fShift), safety);
 
           if (safety < minSafety) minSafety = safety;
         }
@@ -493,8 +493,8 @@ struct PolyconeImplementation {
     PolyconeSection const &sec = polycone.GetSection(index);
 
     Vector3D<Real_v> p = point - Vector3D<Precision>(0, 0, sec.fShift);
-    // ConeImplementation<ConeTypes::UniversalCone>::SafetyToOut<Real_v>(*sec.fSolid, p, safety);
-    ConeImplementation<polyconeTypeT>::template SafetyToOut<Real_v>(*sec.fSolid, p, safety);
+    // ConeImplementation<ConeTypes::UniversalCone>::SafetyToOut<Real_v>(sec.fSolid, p, safety);
+    ConeImplementation<polyconeTypeT>::template SafetyToOut<Real_v>(sec.fSolid, p, safety);
 
     Precision minSafety = safety;
     if (minSafety == kInfLength) {
@@ -513,8 +513,8 @@ struct PolyconeImplementation {
       PolyconeSection const &sect = polycone.GetSection(i);
       p                           = point - Vector3D<Precision>(0, 0, sect.fShift);
 
-      // ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(*sect.fSolid, p, safety);
-      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(*sect.fSolid, p, safety);
+      // ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(sect.fSolid, p, safety);
+      ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(sect.fSolid, p, safety);
 
       if (safety < minSafety) minSafety = safety;
     }
@@ -527,8 +527,8 @@ struct PolyconeImplementation {
         PolyconeSection const &sect = polycone.GetSection(i);
         p                           = point - Vector3D<Precision>(0, 0, sect.fShift);
 
-        // ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(*sect.fSolid, p, safety);
-        ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(*sect.fSolid, p, safety);
+        // ConeImplementation<ConeTypes::UniversalCone>::SafetyToIn<Real_v>(sect.fSolid, p, safety);
+        ConeImplementation<polyconeTypeT>::template SafetyToIn<Real_v>(sect.fSolid, p, safety);
 
         if (safety < minSafety) minSafety = safety;
       }

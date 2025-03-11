@@ -7,6 +7,9 @@ VECCORE_ATT_HOST_DEVICE
 Planes::Planes(int size, bool convex) : fNormals(size), fDistances(size), fConvex(convex) {}
 
 VECCORE_ATT_HOST_DEVICE
+Planes::Planes(int size, AlignedAllocator &a, bool convex) : fNormals(size, a), fDistances(size, a), fConvex(convex) {}
+
+VECCORE_ATT_HOST_DEVICE
 Planes::~Planes() {}
 
 VECCORE_ATT_HOST_DEVICE
@@ -17,7 +20,7 @@ Planes &Planes::operator=(Planes const &rhs)
   fDistances = rhs.fDistances;
 #else
   fNormals   = SOA3D<Precision>(const_cast<Precision *>(rhs.fNormals.x()), const_cast<Precision *>(rhs.fNormals.y()),
-                              const_cast<Precision *>(rhs.fNormals.z()), rhs.fNormals.size());
+                                const_cast<Precision *>(rhs.fNormals.z()), rhs.fNormals.size());
   fDistances = Array<Precision>(const_cast<Precision *>(&rhs.fDistances[0]), rhs.fDistances.size());
 #endif
   return *this;

@@ -355,9 +355,9 @@ struct TubeImplementation {
 
     // very fast check on z-height
     Real_v absz       = Abs(point[2]);
-    completelyoutside = absz > MakePlusTolerant<ForInside>(tube.fZ);
+    completelyoutside = absz > MakePlusTolerant<true>(tube.fZ);
     if (ForInside) {
-      completelyinside = absz < MakeMinusTolerant<ForInside>(tube.fZ);
+      completelyinside = absz < MakeMinusTolerant<true>(tube.fZ);
     }
     if (vecCore::EarlyReturnAllowed()) {
       if (vecCore::MaskFull(completelyoutside)) {
@@ -369,9 +369,9 @@ struct TubeImplementation {
     Real_v r2 = point.x() * point.x() + point.y() * point.y();
     // calculate cone radius at the z-height of position
 
-    completelyoutside |= r2 > MakePlusTolerantSquare<ForInside>(tube.fRmax);
+    completelyoutside |= r2 > MakePlusTolerantSquare<true>(tube.fRmax);
     if (ForInside) {
-      completelyinside &= r2 < MakeMinusTolerantSquare<ForInside>(tube.fRmax);
+      completelyinside &= r2 < MakeMinusTolerantSquare<true>(tube.fRmax);
     }
     if (vecCore::EarlyReturnAllowed()) {
       if (vecCore::MaskFull(completelyoutside)) {
@@ -381,9 +381,9 @@ struct TubeImplementation {
 
     // check on RMIN
     if (checkRminTreatment<tubeTypeT>(tube)) {
-      completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>(tube.fRmin);
+      completelyoutside |= r2 <= MakeMinusTolerantSquare<true>(tube.fRmin);
       if (ForInside) {
-        completelyinside &= r2 > MakePlusTolerantSquare<ForInside>(tube.fRmin);
+        completelyinside &= r2 > MakePlusTolerantSquare<true>(tube.fRmin);
       }
       if (vecCore::EarlyReturnAllowed()) {
         if (vecCore::MaskFull(completelyoutside)) {
@@ -395,8 +395,7 @@ struct TubeImplementation {
     if (checkPhiTreatment<tubeTypeT>(tube)) {
       Bool_v completelyoutsidephi(false);
       Bool_v completelyinsidephi(false);
-      tube.fPhiWedge.GenericKernelForContainsAndInside<Real_v, ForInside>(point, completelyinsidephi,
-                                                                          completelyoutsidephi);
+      tube.fPhiWedge.GenericKernelForContainsAndInside<Real_v, true>(point, completelyinsidephi, completelyoutsidephi);
 
       completelyoutside |= completelyoutsidephi;
       if (ForInside) completelyinside &= completelyinsidephi;

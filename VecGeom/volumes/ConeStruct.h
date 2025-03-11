@@ -21,23 +21,23 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 template <typename T = double>
 struct ConeStruct {
   // Cone defining parameters
-  T fRmin1;
-  T fRmax1;
-  T fRmin2;
-  T fRmax2;
-  T fDz;
-  T fSPhi;
-  T fDPhi;
+  T fRmin1{0.};
+  T fRmax1{0.};
+  T fRmin2{0.};
+  T fRmax2{0.};
+  T fDz{0.};
+  T fSPhi{0.};
+  T fDPhi{0.};
 
   /* These new data members are introduced to store the original paramters of
    * Cone, which may change in the case where rmin is equal to rmax.
    * These are basically required by the Extent functions to do more accurate
    * bounding box calculations.
    */
-  T _frmin1;
-  T _frmin2;
-  T _frmax1;
-  T _frmax2;
+  T _frmin1{0.};
+  T _frmin2{0.};
+  T _frmax1{0.};
+  T _frmax2{0.};
 
   evolution::Wedge fPhiWedge;
 
@@ -45,42 +45,42 @@ struct ConeStruct {
   // makes task to detect phi sektors very efficient
   Vector3D<Precision> fNormalPhi1;
   Vector3D<Precision> fNormalPhi2;
-  Precision fAlongPhi1x;
-  Precision fAlongPhi1y;
-  Precision fAlongPhi2x;
-  Precision fAlongPhi2y;
+  Precision fAlongPhi1x{0.};
+  Precision fAlongPhi1y{0.};
+  Precision fAlongPhi2x{0.};
+  Precision fAlongPhi2y{0.};
 
   // Some Cached value, try to reduce them
   // Some precomputed values to avoid divisions etc
-  Precision fInnerSlope; // "gradient" of inner surface in z direction
-  Precision fOuterSlope; // "gradient" of outer surface in z direction
-  Precision fInnerOffset;
-  Precision fOuterOffset;
-  Precision fInnerTolerance; // tolerance on radial direction for inner surface
-  Precision fOuterTolerance; // tolerance on radial direction for outer surface
+  Precision fInnerSlope{0.}; // "gradient" of inner surface in z direction
+  Precision fOuterSlope{0.}; // "gradient" of outer surface in z direction
+  Precision fInnerOffset{0.};
+  Precision fOuterOffset{0.};
+  Precision fInnerTolerance{0.}; // tolerance on radial direction for inner surface
+  Precision fOuterTolerance{0.}; // tolerance on radial direction for outer surface
   // Values to be cached
-  Precision fSqRmin1, fSqRmin2;
-  Precision fSqRmax1, fSqRmax2;
-  Precision fTolIz, fTolOz;
-  Precision fInnerConeApex;
-  Precision fTanInnerApexAngle;
-  Precision fOuterConeApex;
-  Precision fTanOuterApexAngle;
+  Precision fSqRmin1{0.}, fSqRmin2{0.};
+  Precision fSqRmax1{0.}, fSqRmax2{0.};
+  Precision fTolIz{0.}, fTolOz{0.};
+  Precision fInnerConeApex{0.};
+  Precision fTanInnerApexAngle{0.};
+  Precision fOuterConeApex{0.};
+  Precision fTanOuterApexAngle{0.};
 
-  Precision fSecRMin;
-  Precision fSecRMax;
-  Precision fInvSecRMin;
-  Precision fInvSecRMax;
-  Precision fTanRMin;
-  Precision fTanRMax;
-  Precision fZNormInner;
-  Precision fZNormOuter;
+  Precision fSecRMin{0.};
+  Precision fSecRMax{0.};
+  Precision fInvSecRMin{0.};
+  Precision fInvSecRMax{0.};
+  Precision fTanRMin{0.};
+  Precision fTanRMax{0.};
+  Precision fZNormInner{0.};
+  Precision fZNormOuter{0.};
 
   /* Some additional variable to store original Rmax
    * for the cases when Rmax is modified because of Rmin==Rmax
    */
-  Precision fOriginalRmax1;
-  Precision fOriginalRmax2;
+  Precision fOriginalRmax1{0.};
+  Precision fOriginalRmax2{0.};
 
   VECCORE_ATT_HOST_DEVICE
   Precision Capacity() const
@@ -166,16 +166,10 @@ struct ConeStruct {
            fRmin1, fRmax1, fRmin2, fRmax2, fDz, fSPhi, fDPhi);
   }
 
-  void Print(std::ostream &os) const
-  {
-    os << "UnplacedCone; please implement Print to outstream\n";
-  }
+  void Print(std::ostream &os) const { os << "UnplacedCone; please implement Print to outstream\n"; }
 
   VECCORE_ATT_HOST_DEVICE
-  bool IsFullPhi() const
-  {
-    return fDPhi == kTwoPi;
-  }
+  bool IsFullPhi() const { return fDPhi == kTwoPi; }
 
   VECCORE_ATT_HOST_DEVICE
   bool Normal(Vector3D<Precision> const &p, Vector3D<Precision> &norm) const
@@ -403,35 +397,41 @@ struct ConeStruct {
   }
 
   VECCORE_ATT_HOST_DEVICE
-  Precision GetTolIz() const
-  {
-    return fTolIz;
-  }
+  Precision GetTolIz() const { return fTolIz; }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetTolOz() const
-  {
-    return fTolOz;
-  }
+  Precision GetTolOz() const { return fTolOz; }
 
   VECCORE_ATT_HOST_DEVICE
-  evolution::Wedge const &GetWedge() const
-  {
-    return fPhiWedge;
-  }
+  evolution::Wedge const &GetWedge() const { return fPhiWedge; }
 
   // constructors
   VECCORE_ATT_HOST_DEVICE
-  ConeStruct(T const &_rmin1, T const &_rmax1, T const &_rmin2, T const &_rmax2, T const &_z, T const &_sphi,
-             T const &_dphi)
-      : fRmin1(_rmin1 < 0.0 ? 0.0 : _rmin1), fRmax1(_rmax1), fRmin2(_rmin2 < 0.0 ? 0.0 : _rmin2), fRmax2(_rmax2),
-        fDz(_z), fSPhi(_sphi), fDPhi(_dphi), _frmin1(_rmin1), _frmin2(_rmin2), _frmax1(_rmax1), _frmax2(_rmax2),
-        fPhiWedge(_dphi, _sphi)
+  ConeStruct() = default;
+
+  VECCORE_ATT_HOST_DEVICE
+  ConeStruct(T const &rmin1, T const &rmax1, T const &rmin2, T const &rmax2, T const &z, T const &sphi, T const &dphi)
   {
+    Init(rmin1, rmax1, rmin2, rmax2, z, sphi, dphi);
+  }
 
-    SetAndCheckDPhiAngle(_dphi);
-    SetAndCheckSPhiAngle(_sphi);
+  VECCORE_ATT_HOST_DEVICE
+  void Init(T const &rmin1, T const &rmax1, T const &rmin2, T const &rmax2, T const &z, T const &sphi, T const &dphi)
+  {
+    fRmin1  = rmin1 < 0.0 ? 0.0 : rmin1;
+    fRmax1  = rmax1;
+    fRmin2  = rmin2 < 0.0 ? 0.0 : rmin2;
+    fRmax2  = rmax2;
+    fDz     = z;
+    fSPhi   = sphi;
+    fDPhi   = dphi;
+    _frmin1 = rmin1;
+    _frmin2 = rmin2;
+    _frmax1 = rmax1;
+    _frmax2 = rmax2;
+    fPhiWedge.Init(dphi, sphi);
+    SetAndCheckDPhiAngle(dphi);
+    SetAndCheckSPhiAngle(sphi);
     CalculateCached();
-
     // DetectConvexity();
   }
 };

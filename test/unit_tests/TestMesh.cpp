@@ -195,11 +195,7 @@ void print_msg()
                "";
 }
 
-Precision random_double(Precision min, Precision max)
-{
-
-  return ((Precision)rand() / RAND_MAX) * (max - min) + min;
-}
+Precision random_double(Precision min, Precision max) { return ((Precision)rand() / RAND_MAX) * (max - min) + min; }
 
 int main(int argc, char *argv[])
 {
@@ -857,7 +853,7 @@ int main(int argc, char *argv[])
       Precision randZ = random_double(z[0] - offset, z[1] + offset);
 
       Vec_t randPoint = Vec_t(randX, randY, randZ);
-      Precision dot   = (randPoint - p.fVert[p.fInd[0]]).Dot(p.fNorm);
+      Precision dot   = (randPoint - (*p.fVert)[p.fInd[0]]).Dot(p.fNorm);
       // std::cout << dot << ' ' << p.fNorm;
       Vec_t projected = randPoint - p.fNorm * dot;
 
@@ -899,7 +895,7 @@ int main(int argc, char *argv[])
       Precision randZ = random_double(z[0] - offset, z[1] + offset);
 
       Vec_t randPoint = Vec_t(randX, randY, randZ);
-      Precision dot   = (randPoint - p.fVert[p.fInd[0]]).Dot(p.fNorm);
+      Precision dot   = (randPoint - (*p.fVert)[p.fInd[0]]).Dot(p.fNorm);
       // std::cout << dot << ' ' << p.fNorm;
       Vec_t projected = randPoint - p.fNorm * dot;
 

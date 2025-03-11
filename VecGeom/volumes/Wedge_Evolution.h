@@ -56,13 +56,20 @@ private:
 
 public:
   VECCORE_ATT_HOST_DEVICE
-  Wedge(Precision angle, Precision zeroangle = 0);
+  Wedge(Precision angle, Precision zeroangle = 0) { Init(angle, zeroangle); }
 
   VECCORE_ATT_HOST_DEVICE
   Wedge() {}
 
   VECCORE_ATT_HOST_DEVICE
   ~Wedge() {}
+
+  VECCORE_ATT_HOST_DEVICE
+  void Init(Precision const &dphi, Precision const &sphi)
+  {
+    Set(dphi, sphi);
+    UpdateNormals();
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void SetStartPhi(Precision const &arg) { fSPhi = arg; }

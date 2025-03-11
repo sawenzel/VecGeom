@@ -215,8 +215,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Generic
   VECGEOM_CONST Precision tolerancesq = 10000. * kTolerance * kTolerance;
   // Local point has to be translated in the bbox local frame.
   Vector3D<Real_v> halfsize(unplaced.fBBdimensions[0], unplaced.fBBdimensions[1], unplaced.fBBdimensions[2]);
-  BoxImplementation::GenericKernelForContainsAndInside<Real_v, ForInside>(halfsize, point - unplaced.fBBorigin,
-                                                                          completelyinside, completelyoutside);
+  BoxImplementation::GenericKernelForContainsAndInside<Real_v, true>(halfsize, point - unplaced.fBBorigin,
+                                                                     completelyinside, completelyoutside);
   //  if (vecCore::EarlyReturnAllowed()) {
   if (vecCore::MaskFull(completelyoutside)) {
     return;
@@ -253,10 +253,10 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Generic
     Real_v cross  = (point.x() - vertexX[i]) * DeltaY - (point.y() - vertexY[i]) * DeltaX;
     if (ForInside) {
       Bool_v onsurf     = (cross * cross < tolerancesq * (DeltaX * DeltaX + DeltaY * DeltaY));
-      completelyoutside = completelyoutside || (((cross < Real_v(MakeMinusTolerant<ForInside>(0.))) && (!onsurf)));
-      completelyinside  = completelyinside && (cross > Real_v(MakePlusTolerant<ForInside>(0.))) && (!onsurf);
+      completelyoutside = completelyoutside || (((cross < Real_v(MakeMinusTolerant<true>(0.))) && (!onsurf)));
+      completelyinside  = completelyinside && (cross > Real_v(MakePlusTolerant<true>(0.))) && (!onsurf);
     } else {
-      completelyoutside = completelyoutside || (cross < Real_v(MakeMinusTolerant<ForInside>(0.)));
+      completelyoutside = completelyoutside || (cross < Real_v(MakeMinusTolerant<true>(0.)));
     }
 
     //    if (vecCore::EarlyReturnAllowed()) {

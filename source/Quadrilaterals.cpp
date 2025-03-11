@@ -9,10 +9,15 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECCORE_ATT_HOST_DEVICE
 Quadrilaterals::Quadrilaterals(int size, bool convex)
-    : fPlanes(size, convex), fSideVectors{{size}, {size}, {size}, {size}}, fCorners{{(size_t)size},
-                                                                                    {(size_t)size},
-                                                                                    {(size_t)size},
-                                                                                    {(size_t)size}}
+    : fPlanes(size, convex), fSideVectors{{size}, {size}, {size}, {size}},
+      fCorners{{(size_t)size}, {(size_t)size}, {(size_t)size}, {(size_t)size}}
+{
+}
+
+VECCORE_ATT_HOST_DEVICE
+Quadrilaterals::Quadrilaterals(int size, AlignedAllocator &a, bool convex)
+    : fPlanes(size, a, convex), fSideVectors{{size, a}, {size, a}, {size, a}, {size, a}},
+      fCorners{{(size_t)size, a}, {(size_t)size, a}, {(size_t)size, a}, {(size_t)size, a}}
 {
 }
 
@@ -117,10 +122,7 @@ void Quadrilaterals::Set(int index, Vector3D<Precision> const &corner0, Vector3D
 }
 
 VECCORE_ATT_HOST_DEVICE
-void Quadrilaterals::FlipSign(int index)
-{
-  fPlanes.FlipSign(index);
-}
+void Quadrilaterals::FlipSign(int index) { fPlanes.FlipSign(index); }
 
 VECCORE_ATT_HOST_DEVICE
 void Quadrilaterals::Print() const

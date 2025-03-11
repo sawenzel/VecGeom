@@ -216,8 +216,10 @@ public:
   static Daughter RelocatePoint(Vector3D<Precision> const &localpoint, vecgeom::NavigationState &path)
   {
     vecgeom::VPlacedVolume const *currentmother = path.Top();
+    Daughter skip                               = nullptr;
     Vector3D<Precision> transformed             = localpoint;
     do {
+      skip = currentmother;
       path.Pop();
       transformed   = currentmother->GetTransformation()->InverseTransform(transformed);
       currentmother = path.Top();
@@ -225,7 +227,7 @@ public:
 
     if (currentmother) {
       path.Pop();
-      return LocatePointIn(currentmother, transformed, path, false);
+      return LocatePointIn(currentmother, transformed, path, false, skip);
     }
     return currentmother;
   }

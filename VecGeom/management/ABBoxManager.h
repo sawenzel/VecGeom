@@ -20,8 +20,10 @@
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/volumes/kernel/BoxImplementation.h"
 
+#ifdef VECGEOM_USE_SURF
 #include "VecGeom/surfaces/SurfData.h" // still need this for the init bvh function, then we can cut this
 #include "VecGeom/surfaces/base/CpuTypes.h"
+#endif
 
 #include <map>
 #include <vector>
@@ -211,48 +213,6 @@ public:
     upper.Set(maxx, maxy, maxz);
   }
 
-  static void ComputeSurfaceABBox(vgbrep::FramedSurface<Precision, Transformation3DMP<Precision>> const &framedSurface,
-                                  Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
-                                  vgbrep::CPUsurfData<Precision> const &cpudata, LogicalVolume const *lvol,
-                                  const bool crop)
-  {
-    Vector3D<Precision> lowert, uppert;
-
-    // bounding box of volume that the surface belongs to
-    Vector3D<Precision> lower_vol, upper_vol;
-    if (crop) lvol->GetUnplacedVolume()->Extent(lower_vol, upper_vol);
-
-    // Get the frame bounding box
-    framedSurface.Extent3D(lowert, uppert, cpudata);
-    Vector3D<Precision> lower(lowert[0], lowert[1], lowert[2]);
-    Vector3D<Precision> upper(uppert[0], uppert[1], uppert[2]);
-
-    // Apply the local transformation
-    TransformBoundingBox<Transformation3DMP<Precision>>(lower, upper, framedSurface.fTrans);
-
-    // Apply the transformation with respect to the mother LV
-    TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
-    if (crop) TransformBoundingBox<Transformation3D>(lower_vol, upper_vol, volumeTransform);
-
-    if (!crop) {
-      lowerc.Set(lower.x(), lower.y(), lower.z());
-      upperc.Set(upper.x(), upper.y(), upper.z());
-    } else {
-      lowerc.Set(std::max(lower_vol.x() - 1e-3, lower.x()), std::max(lower_vol.y() - 1e-3, lower.y()),
-                 std::max(lower_vol.z() - 1e-3, lower.z()));
-      upperc.Set(std::min(upper_vol.x() + 1e-3, upper.x()), std::min(upper_vol.y() + 1e-3, upper.y()),
-                 std::min(upper_vol.z() + 1e-3, upper.z()));
-
-      // if surface bounding box is outside of volume bounding box, remove it entirely
-      if (lower.x() > upper_vol.x() + vecgeom::kTolerance || upper.x() < lower_vol.x() - vecgeom::kTolerance ||
-          lower.y() > upper_vol.y() + vecgeom::kTolerance || upper.y() < lower_vol.y() - vecgeom::kTolerance ||
-          lower.z() > upper_vol.z() + vecgeom::kTolerance || upper.z() < lower_vol.z() - vecgeom::kTolerance) {
-        lowerc.Set(0., 0., 0.);
-        upperc.Set(0., 0., 0.);
-      }
-    }
-  }
-
   static ABBoxManager<Real_b> &Instance()
   {
     static ABBoxManager<Real_b> instance;
@@ -326,6 +286,49 @@ public:
   {
     for (auto lvol : lvolumes) {
       InitABBoxes(lvol);
+    }
+  }
+
+#ifdef VECGEOM_USE_SURF
+  static void ComputeSurfaceABBox(vgbrep::FramedSurface<Precision, Transformation3DMP<Precision>> const &framedSurface,
+                                  Transformation3D const &volumeTransform, ABBox_s &lowerc, ABBox_s &upperc,
+                                  vgbrep::CPUsurfData<Precision> const &cpudata, LogicalVolume const *lvol,
+                                  const bool crop)
+  {
+    Vector3D<Precision> lowert, uppert;
+
+    // bounding box of volume that the surface belongs to
+    Vector3D<Precision> lower_vol, upper_vol;
+    if (crop) lvol->GetUnplacedVolume()->Extent(lower_vol, upper_vol);
+
+    // Get the frame bounding box
+    framedSurface.Extent3D(lowert, uppert, cpudata);
+    Vector3D<Precision> lower(lowert[0], lowert[1], lowert[2]);
+    Vector3D<Precision> upper(uppert[0], uppert[1], uppert[2]);
+
+    // Apply the local transformation
+    TransformBoundingBox<Transformation3DMP<Precision>>(lower, upper, framedSurface.fTrans);
+
+    // Apply the transformation with respect to the mother LV
+    TransformBoundingBox<Transformation3D>(lower, upper, volumeTransform);
+    if (crop) TransformBoundingBox<Transformation3D>(lower_vol, upper_vol, volumeTransform);
+
+    if (!crop) {
+      lowerc.Set(lower.x(), lower.y(), lower.z());
+      upperc.Set(upper.x(), upper.y(), upper.z());
+    } else {
+      lowerc.Set(std::max(lower_vol.x() - 1e-3, lower.x()), std::max(lower_vol.y() - 1e-3, lower.y()),
+                 std::max(lower_vol.z() - 1e-3, lower.z()));
+      upperc.Set(std::min(upper_vol.x() + 1e-3, upper.x()), std::min(upper_vol.y() + 1e-3, upper.y()),
+                 std::min(upper_vol.z() + 1e-3, upper.z()));
+
+      // if surface bounding box is outside of volume bounding box, remove it entirely
+      if (lower.x() > upper_vol.x() + vecgeom::kTolerance || upper.x() < lower_vol.x() - vecgeom::kTolerance ||
+          lower.y() > upper_vol.y() + vecgeom::kTolerance || upper.y() < lower_vol.y() - vecgeom::kTolerance ||
+          lower.z() > upper_vol.z() + vecgeom::kTolerance || upper.z() < lower_vol.z() - vecgeom::kTolerance) {
+        lowerc.Set(0., 0., 0.);
+        upperc.Set(0., 0., 0.);
+      }
     }
   }
 
@@ -410,6 +413,19 @@ public:
     InitSurfaceABBoxes(logicalvolumes, cpudata, crop);
   }
 
+  void RemoveSurfaceABBoxes(LogicalVolume const *lvol)
+  {
+    if (fVolToSurfaceABBoxesMap[lvol->id()] != nullptr) delete[] fVolToSurfaceABBoxesMap[lvol->id()];
+  }
+
+  // Returns the list of AABBs associated to a LogicalVolume
+  ABBoxContainer_t GetSurfaceABBoxes(int ivol, int &size, vgbrep::CPUsurfData<Precision> const &cpudata)
+  {
+    size = cpudata.fShells[ivol].fExitingSurfaces.size() + cpudata.fShells[ivol].fEnteringSurfaces.size();
+    return fVolToSurfaceABBoxesMap[ivol];
+  }
+#endif
+
   void InitABBoxesForCompleteGeometry()
   {
     auto &container = GeoManager::Instance().GetLogicalVolumesMap();
@@ -427,18 +443,6 @@ public:
   void RemoveABBoxes(LogicalVolume const *lvol)
   {
     if (fVolToABBoxesMap[lvol->id()] != nullptr) delete[] fVolToABBoxesMap[lvol->id()];
-  }
-
-  void RemoveSurfaceABBoxes(LogicalVolume const *lvol)
-  {
-    if (fVolToSurfaceABBoxesMap[lvol->id()] != nullptr) delete[] fVolToSurfaceABBoxesMap[lvol->id()];
-  }
-
-  // Returns the list of AABBs associated to a LogicalVolume
-  ABBoxContainer_t GetSurfaceABBoxes(int ivol, int &size, vgbrep::CPUsurfData<Precision> const &cpudata)
-  {
-    size = cpudata.fShells[ivol].fExitingSurfaces.size() + cpudata.fShells[ivol].fEnteringSurfaces.size();
-    return fVolToSurfaceABBoxesMap[ivol];
   }
 
   // returns the Container for a given logical volume or nullptr if
@@ -468,8 +472,7 @@ template <typename stream, typename Real_b>
 stream &operator<<(stream &s, std::vector<std::pair<unsigned int, double>> const &list)
 {
   for (auto i : list) {
-    s << "(" << i.first << "," << i.second << ")"
-      << " ";
+    s << "(" << i.first << "," << i.second << ")" << " ";
   }
   return s;
 }

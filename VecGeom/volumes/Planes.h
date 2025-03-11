@@ -33,8 +33,18 @@ private:
   bool fConvex{true};          ///< Convexity of the planes array (drives the inside reduction)
 
 public:
+  Planes() = default;
+
   VECCORE_ATT_HOST_DEVICE
   Planes(int size, bool convex = true);
+
+  /// @brief Construct aligned data using specialized allocator.
+  /// @details To allocate the full object, call this constructor with placement new.
+  /// @param size Size of the internal arrays
+  /// @param a Aligned allocator, pre-initialized to fit the content
+  /// @param convex Convexity of the planes array
+  VECCORE_ATT_HOST_DEVICE
+  Planes(int size, AlignedAllocator &a, bool convex = true);
 
   VECCORE_ATT_HOST_DEVICE
   ~Planes();
@@ -49,6 +59,13 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int size() const;
+
+  /// @brief Compute size of a buffer to hold the aligned content
+  /// @param initSize Number of elements
+  /// @return Size to allocate
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static size_t aligned_sizeof_data(size_t initSize);
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -118,40 +135,31 @@ Precision const *Planes::operator[](int i) const
 }
 
 VECCORE_ATT_HOST_DEVICE
-int Planes::size() const
+int Planes::size() const { return fNormals.size(); }
+
+VECCORE_ATT_HOST_DEVICE
+VECGEOM_FORCE_INLINE
+size_t Planes::aligned_sizeof_data(size_t initSize)
 {
-  return fNormals.size();
+  return (SOA3D<Precision>::aligned_sizeof_data(initSize)) + Array<Precision>::aligned_sizeof_data(initSize);
 }
 
 VECCORE_ATT_HOST_DEVICE
-SOA3D<Precision> const &Planes::GetNormals() const
-{
-  return fNormals;
-}
+SOA3D<Precision> const &Planes::GetNormals() const { return fNormals; }
 
 VECCORE_ATT_HOST_DEVICE
-Vector3D<Precision> Planes::GetNormal(int i) const
-{
-  return fNormals[i];
-}
+Vector3D<Precision> Planes::GetNormal(int i) const { return fNormals[i]; }
 
 VECCORE_ATT_HOST_DEVICE
-Array<Precision> const &Planes::GetDistances() const
-{
-  return fDistances;
-}
+Array<Precision> const &Planes::GetDistances() const { return fDistances; }
 
 VECCORE_ATT_HOST_DEVICE
-Precision Planes::GetDistance(int i) const
-{
-  return fDistances[i];
-}
+Precision Planes::GetDistance(int i) const { return fDistances[i]; }
 
 namespace {
 
 template <typename Real_v, bool = true>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains(int & i, const int,
-                                                                      SOA3D<Precision> const &,
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains(int &i, const int, SOA3D<Precision> const &,
                                                                       Array<Precision> const &,
                                                                       Vector3D<Real_v> const &,
                                                                       vecCore::Mask_v<Real_v> &)

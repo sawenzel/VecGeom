@@ -151,7 +151,9 @@ public:
   void CreateTessellated(size_t nvertices, XtruVertex2 const *vertices, size_t nsections, XtruSection const *sections)
   {
     struct FacetInd {
-      size_t ind1, ind2, ind3;
+      size_t ind1{0}, ind2{0}, ind3{0};
+
+      FacetInd() = default;
       FacetInd(int i1, int i2, int i3)
       {
         ind1 = i1;

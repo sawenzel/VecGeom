@@ -14,11 +14,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 template <typename T = double>
 struct TubeStruct {
   // tube defining parameters
-  T fRmin; //< inner radius
-  T fRmax; //< outer radius
-  T fZ;    //< half-length in +z and -z direction
-  T fSphi; //< starting phi value (in radians)
-  T fDphi; //< delta phi value of tube segment (in radians)
+  T fRmin{0.}; //< inner radius
+  T fRmax{0.}; //< outer radius
+  T fZ{0.};    //< half-length in +z and -z direction
+  T fSphi{0.}; //< starting phi value (in radians)
+  T fDphi{0.}; //< delta phi value of tube segment (in radians)
 
   // cached complex values (to avoid recomputation during usage)
   T fRmin2;
@@ -164,6 +164,8 @@ public:
 
 public:
   // constructors
+  TubeStruct() = default;
+
   VECCORE_ATT_HOST_DEVICE
   TubeStruct(T const &_rmin, T const &_rmax, T const &_z, T const &_sphi, T const &_dphi)
       : fRmin(_rmin < 0.0 ? 0.0 : _rmin), fRmax(_rmax), fZ(_z), fSphi(_sphi), fDphi(_dphi), fRmin2(0), fRmax2(0),

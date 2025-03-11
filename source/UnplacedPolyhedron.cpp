@@ -29,8 +29,23 @@ VECCORE_ATT_HOST_DEVICE
 UnplacedPolyhedron::UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount,
                                        const int zPlaneCount, Precision const zPlanes[], Precision const rMin[],
                                        Precision const rMax[])
-    : fPoly(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax)
 {
+  fPoly = new PolyhedronStruct<Precision>(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax);
+  DetectConvexity();
+  ComputeBBox();
+}
+
+VECCORE_ATT_HOST_DEVICE
+UnplacedPolyhedron::UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount,
+                                       const int zPlaneCount, Precision const zPlanes[], Precision const rMin[],
+                                       Precision const rMax[], size_t const buffer_size, void const *buffer)
+{
+
+  fAllocated = (buffer == nullptr);
+  fBuffer    = fAllocated ? new char[buffer_size] : buffer;
+  AlignedAllocator a((void *)fBuffer, buffer_size);
+  fPoly = a.aligned_alloc<PolyhedronStruct<Precision>>(1, kAlignmentBoundary, phiStart, phiDelta, sideCount,
+                                                       zPlaneCount, zPlanes, rMin, rMax, a);
   DetectConvexity();
   ComputeBBox();
 }
@@ -39,9 +54,9 @@ UnplacedPolyhedron::UnplacedPolyhedron(Precision phiStart, Precision phiDelta, c
                                        const int verticesCount,
                                        Precision const r[], // 2*zPlaneCount elements
                                        Precision const z[]  // ditto
-                                       )
-    : fPoly(phiStart, phiDelta, sideCount, verticesCount, r, z)
+)
 {
+  fPoly = new PolyhedronStruct<Precision>(phiStart, phiDelta, sideCount, verticesCount, r, z);
   DetectConvexity();
   ComputeBBox();
 }
@@ -150,7 +165,7 @@ Precision UnplacedPolyhedron::GetTriangleArea(Vector3D<Precision> const &v1, Vec
 // TODO: this functions seems to be neglecting the phi cut !!
 Precision UnplacedPolyhedron::Capacity() const
 {
-  if (fPoly.fCapacity == 0.) {
+  if (fPoly->fCapacity == 0.) {
     // Formula for section : V=h(f+F+sqrt(f*F))/3;
     // Fand f-areas of surfaces on +/-dz
     // h-heigh
@@ -184,46 +199,46 @@ Precision UnplacedPolyhedron::Capacity() const
           d = innercorners[3][0];
           volume -= VolumeHelperFunc(a, b, c, d); // subtract inner volume
         }
-        fPoly.fCapacity += volume;
+        fPoly->fCapacity += volume;
       }
     }
-    fPoly.fCapacity *= GetSideCount() * (1. / 3.);
+    fPoly->fCapacity *= GetSideCount() * (1. / 3.);
   }
-  return fPoly.fCapacity;
+  return fPoly->fCapacity;
 }
 
 // VECCORE_ATT_HOST_DEVICE
 Precision UnplacedPolyhedron::SurfaceArea() const
 {
-  if (!fPoly.fAreaStruct) {
+  if (!fPoly->fAreaStruct) {
     signed int j;
     Precision totArea = 0., area, aTop = 0., aBottom = 0.;
 
-    fPoly.fAreaStruct = new PolyhedronStruct<Precision>::AreaStruct(GetZSegmentCount());
+    fPoly->fAreaStruct = new PolyhedronStruct<Precision>::AreaStruct(GetZSegmentCount());
 
     // Below we generate the areas relevant to our solid
     // We are starting with ZSegments(lateral parts)
 
     for (j = 0; j < GetZSegmentCount(); ++j) {
-      fPoly.fAreaStruct->outer[j] = 0.;
-      fPoly.fAreaStruct->inner[j] = 0.;
-      fPoly.fAreaStruct->phi[j]   = 0.;
+      fPoly->fAreaStruct->outer[j] = 0.;
+      fPoly->fAreaStruct->inner[j] = 0.;
+      fPoly->fAreaStruct->phi[j]   = 0.;
 
       if (GetZSegment(j).outer.size() > 0) {
-        area                        = GetZSegment(j).outer.GetQuadrilateralArea(0) * GetSideCount();
-        fPoly.fAreaStruct->outer[j] = area;
+        area                         = GetZSegment(j).outer.GetQuadrilateralArea(0) * GetSideCount();
+        fPoly->fAreaStruct->outer[j] = area;
         totArea += area;
       }
 
       if (GetZSegment(j).inner.size() > 0) {
-        area                        = GetZSegment(j).inner.GetQuadrilateralArea(0) * GetSideCount();
-        fPoly.fAreaStruct->inner[j] = area;
+        area                         = GetZSegment(j).inner.GetQuadrilateralArea(0) * GetSideCount();
+        fPoly->fAreaStruct->inner[j] = area;
         totArea += area;
       }
 
       if (HasPhiCutout() && GetZSegment(j).phi.size() > 0) {
-        area                      = GetZSegment(j).phi.GetQuadrilateralArea(0) * 2.0;
-        fPoly.fAreaStruct->phi[j] = area;
+        area                       = GetZSegment(j).phi.GetQuadrilateralArea(0) * 2.0;
+        fPoly->fAreaStruct->phi[j] = area;
         totArea += area;
       }
     }
@@ -244,7 +259,7 @@ Precision UnplacedPolyhedron::SurfaceArea() const
       aTop = GetSideCount() * (GetTriangleArea(point1, point2, point3));
     }
 
-    fPoly.fAreaStruct->top_area = aTop;
+    fPoly->fAreaStruct->top_area = aTop;
     totArea += aTop;
 
     point1 = GetZSegment(GetZSegmentCount() - 1).outer.GetCorners()[2][0];
@@ -259,11 +274,11 @@ Precision UnplacedPolyhedron::SurfaceArea() const
       aBottom = GetSideCount() * GetTriangleArea(point1, point2, point3);
     }
 
-    fPoly.fAreaStruct->bottom_area = aBottom;
+    fPoly->fAreaStruct->bottom_area = aBottom;
     totArea += aBottom;
-    fPoly.fAreaStruct->area = totArea;
+    fPoly->fAreaStruct->area = totArea;
   }
-  return fPoly.fAreaStruct->area;
+  return fPoly->fAreaStruct->area;
 }
 
 #ifndef VECCORE_CUDA
@@ -271,27 +286,27 @@ void UnplacedPolyhedron::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &
 {
   aMin               = kInfLength;
   aMax               = -kInfLength;
-  Precision phiStart = fPoly.fPhiStart;
-  Precision phiDelta = fPoly.fPhiDelta;
-  Precision sidePhi  = phiDelta / fPoly.fSideCount;
+  Precision phiStart = fPoly->fPhiStart;
+  Precision phiDelta = fPoly->fPhiDelta;
+  Precision sidePhi  = phiDelta / fPoly->fSideCount;
   // Specified radii are to the sides, not to the corners. Change these values,
   // as corners and not sides are used to compute the extent
   Precision conv = 1. / cos(0.5 * sidePhi);
   Vector3D<Precision> crt;
   // Loop all vertices and update min/max
-  for (int iphi = 0; iphi <= fPoly.fSideCount; ++iphi) {
+  for (int iphi = 0; iphi <= fPoly->fSideCount; ++iphi) {
     Precision phi  = phiStart + iphi * sidePhi;
     Precision corx = conv * cos(phi);
     Precision cory = conv * sin(phi);
-    for (int zPlaneCount = 0; zPlaneCount < fPoly.fZPlanes.size(); ++zPlaneCount) {
+    for (int zPlaneCount = 0; zPlaneCount < fPoly->fZPlanes.size(); ++zPlaneCount) {
       // Do Rmin
-      crt.Set(fPoly.fRMin[zPlaneCount] * corx, fPoly.fRMin[zPlaneCount] * cory, fPoly.fZPlanes[zPlaneCount]);
+      crt.Set(fPoly->fRMin[zPlaneCount] * corx, fPoly->fRMin[zPlaneCount] * cory, fPoly->fZPlanes[zPlaneCount]);
       for (int i = 0; i < 3; ++i) {
         aMin[i] = Min(aMin[i], crt[i]);
         aMax[i] = Max(aMax[i], crt[i]);
       }
       // Do Rmax
-      crt.Set(fPoly.fRMax[zPlaneCount] * corx, fPoly.fRMax[zPlaneCount] * cory, fPoly.fZPlanes[zPlaneCount]);
+      crt.Set(fPoly->fRMax[zPlaneCount] * corx, fPoly->fRMax[zPlaneCount] * cory, fPoly->fZPlanes[zPlaneCount]);
       for (int i = 0; i < 3; ++i) {
         aMin[i] = Min(aMin[i], crt[i]);
         aMax[i] = Max(aMax[i], crt[i]);
@@ -363,7 +378,7 @@ Vector3D<Precision> UnplacedPolyhedron::SamplePointOnSurface() const
   int j;
   Precision chose, rnd, achose;
   Precision totArea = SurfaceArea();
-  auto areaStruct   = fPoly.fAreaStruct;
+  auto areaStruct   = fPoly->fAreaStruct;
 
   Vector3D<Precision> point1, point2, point3, point4, pReturn;
 
@@ -447,7 +462,7 @@ bool UnplacedPolyhedron::Normal(Vector3D<Precision> const &point, Vector3D<Preci
   // Compute normal vector to closest surface
   return (
       PolyhedronImplementation<Polyhedron::EInnerRadii::kGeneric, Polyhedron::EPhiCutout::kGeneric>::ScalarNormalKernel(
-          fPoly, point, normal));
+          *fPoly, point, normal));
 }
 
 #endif // !VECCORE_CUDA
@@ -455,27 +470,27 @@ bool UnplacedPolyhedron::Normal(Vector3D<Precision> const &point, Vector3D<Preci
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolyhedron::Print() const
 {
-  printf("UnplacedPolyhedron {%i sides, phi %f to %f, %i segments}", fPoly.fSideCount, GetPhiStart() * kRadToDeg,
-         GetPhiEnd() * kRadToDeg, fPoly.fZSegments.size());
+  printf("UnplacedPolyhedron {%i sides, phi %f to %f, %i segments}", fPoly->fSideCount, GetPhiStart() * kRadToDeg,
+         GetPhiEnd() * kRadToDeg, fPoly->fZSegments.size());
   printf("}");
 }
 
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolyhedron::PrintSegments() const
 {
-  printf("Printing %i polyhedron segments: ", fPoly.fZSegments.size());
-  for (int i = 0, iMax = fPoly.fZSegments.size(); i < iMax; ++i) {
+  printf("Printing %i polyhedron segments: ", fPoly->fZSegments.size());
+  for (int i = 0, iMax = fPoly->fZSegments.size(); i < iMax; ++i) {
     printf("  Outer: ");
-    fPoly.fZSegments[i].outer.Print();
+    fPoly->fZSegments[i].outer.Print();
     printf("\n");
-    if (fPoly.fHasPhiCutout) {
+    if (fPoly->fHasPhiCutout) {
       printf("  Phi: ");
-      fPoly.fZSegments[i].phi.Print();
+      fPoly->fZSegments[i].phi.Print();
       printf("\n");
     }
-    if (fPoly.fZSegments[i].inner.size() > 0) {
+    if (fPoly->fZSegments[i].inner.size() > 0) {
       printf("  Inner: ");
-      fPoly.fZSegments[i].inner.Print();
+      fPoly->fZSegments[i].inner.Print();
       printf("\n");
     }
   }
@@ -484,22 +499,22 @@ void UnplacedPolyhedron::PrintSegments() const
 void UnplacedPolyhedron::Print(std::ostream &os) const
 {
   int oldprc           = os.precision(16);
-  int Nz               = fPoly.fZPlanes.size();
+  int Nz               = fPoly->fZPlanes.size();
   const char *sbool[2] = {"false", "true"};
 
   os << "-----------------------------------------------------------\n"
      << "     *** Dump for solid - polyhedron ***\n"
      << "     ===================================================\n"
      << " Parameters:\n"
-     << " Phi start= " << fPoly.fPhiStart * vecgeom::kRadToDeg
-     << " deg, Phi delta= " << fPoly.fPhiDelta * vecgeom::kRadToDeg << " deg\n"
-     << "     Number of segments along phi: " << fPoly.fSideCount << "\n"
+     << " Phi start= " << fPoly->fPhiStart * vecgeom::kRadToDeg
+     << " deg, Phi delta= " << fPoly->fPhiDelta * vecgeom::kRadToDeg << " deg\n"
+     << "     Number of segments along phi: " << fPoly->fSideCount << "\n"
      << "     N = number of Z-planes: " << Nz << "\n"
      << "     z-coordinates (in cm):\n";
 
   for (int i = 0; i < Nz; ++i) {
-    os << "       at Z=" << fPoly.fZPlanes[i] << "cm:" << " Rmin=" << fPoly.fRMin[i] << "cm,"
-       << " Rmax=" << fPoly.fRMax[i] << "cm" << " sameZ=" << sbool[int(fPoly.fSameZ[i])] << std::endl;
+    os << "       at Z=" << fPoly->fZPlanes[i] << "cm:" << " Rmin=" << fPoly->fRMin[i] << "cm,"
+       << " Rmax=" << fPoly->fRMax[i] << "cm" << " sameZ=" << sbool[int(fPoly->fSameZ[i])] << std::endl;
   }
   os << "-----------------------------------------------------------\n";
   os.precision(oldprc);
@@ -511,15 +526,15 @@ void UnplacedPolyhedron::DetectConvexity()
   // Default safe convexity value
   fGlobalConvexity = false;
 
-  if (fPoly.fConvexityPossible) {
-    if (fPoly.fEqualRmax &&
-        (fPoly.fPhiDelta <= kPi ||
-         fPoly.fPhiDelta ==
+  if (fPoly->fConvexityPossible) {
+    if (fPoly->fEqualRmax &&
+        (fPoly->fPhiDelta <= kPi ||
+         fPoly->fPhiDelta ==
              kTwoPi)) // In this case, Polycone become solid Cylinder, No need to check anything else, 100% convex
       fGlobalConvexity = true;
     else {
-      if (fPoly.fPhiDelta <= kPi || fPoly.fPhiDelta == kTwoPi) {
-        fGlobalConvexity = fPoly.fContinuousInSlope;
+      if (fPoly->fPhiDelta <= kPi || fPoly->fPhiDelta == kTwoPi) {
+        fGlobalConvexity = fPoly->fContinuousInSlope;
       }
     }
   }
@@ -587,19 +602,20 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
   // on the GPU
 
   DevicePtr<Precision> zPlanesGpu;
-  zPlanesGpu.Allocate(fPoly.fZPlanes.size());
-  zPlanesGpu.ToDevice(&fPoly.fZPlanes[0], fPoly.fZPlanes.size());
+  zPlanesGpu.Allocate(fPoly->fZPlanes.size());
+  zPlanesGpu.ToDevice(&fPoly->fZPlanes[0], fPoly->fZPlanes.size());
 
   DevicePtr<Precision> rminGpu;
-  rminGpu.Allocate(fPoly.fZPlanes.size());
-  rminGpu.ToDevice(&fPoly.fRMin[0], fPoly.fZPlanes.size());
+  rminGpu.Allocate(fPoly->fZPlanes.size());
+  rminGpu.ToDevice(&fPoly->fRMin[0], fPoly->fZPlanes.size());
 
   DevicePtr<Precision> rmaxGpu;
-  rmaxGpu.Allocate(fPoly.fZPlanes.size());
-  rmaxGpu.ToDevice(&fPoly.fRMax[0], fPoly.fZPlanes.size());
+  rmaxGpu.Allocate(fPoly->fZPlanes.size());
+  rmaxGpu.ToDevice(&fPoly->fRMax[0], fPoly->fZPlanes.size());
 
-  DevicePtr<cuda::VUnplacedVolume> gpupolyhedra = CopyToGpuImpl<UnplacedPolyhedron>(
-      gpuPtr, fPoly.fPhiStart, fPoly.fPhiDelta, fPoly.fSideCount, fPoly.fZPlanes.size(), zPlanesGpu, rminGpu, rmaxGpu);
+  DevicePtr<cuda::VUnplacedVolume> gpupolyhedra =
+      CopyToGpuImpl<UnplacedPolyhedron>(gpuPtr, fPoly->fPhiStart, fPoly->fPhiDelta, fPoly->fSideCount,
+                                        fPoly->fZPlanes.size(), zPlanesGpu, rminGpu, rmaxGpu);
 
   zPlanesGpu.Deallocate();
   rminGpu.Deallocate();
@@ -609,10 +625,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
   return gpupolyhedra;
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const
-{
-  return CopyToGpuImpl<UnplacedPolyhedron>();
-}
+DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu() const { return CopyToGpuImpl<UnplacedPolyhedron>(); }
 
 /**
  * Bulk-copy UnplacedPolyhedron instances to the device.
@@ -625,6 +638,9 @@ void UnplacedPolyhedron::CopyToGpu(std::vector<VUnplacedVolume const *> const &v
                                    std::vector<DevicePtr<cuda::VUnplacedVolume>> const &devicePointers)
 {
   const auto size = volumes.size();
+  size_t size_buff{0};
+  std::vector<size_t> sizes_buff(size, 0);
+  std::vector<size_t> offsets_buff(size, 0);
   std::vector<Precision> floatData(2 * size, 0.);
   std::vector<int> intData(2 * size, 0);
 
@@ -634,22 +650,33 @@ void UnplacedPolyhedron::CopyToGpu(std::vector<VUnplacedVolume const *> const &v
   } vld;
   struct RAIIDevPtr {
     DevicePtr<Precision> devPtr;
+    DevicePtr<char> bufferPtr;
     RAIIDevPtr()                   = default;
     RAIIDevPtr(const RAIIDevPtr &) = delete;
-    ~RAIIDevPtr() { devPtr.Deallocate(); }
+    ~RAIIDevPtr()
+    {
+      devPtr.Deallocate();
+      // must NOT deallocate bufferPtr, used to construct in place the PolyhedronStruct
+      // We will need to register this device memory in a list of GPU cleanups, something like:
+      // CudaManager::Instance().RegisterCleanup(bufferPtr.GetPtr());
+    }
   } vldGPU;
 
   for (unsigned int i = 0; i < size; ++i) {
     UnplacedPolyhedron const &volume = static_cast<UnplacedPolyhedron const &>(*volumes[i]);
-    floatData[0 * size + i]          = volume.fPoly.fPhiStart;
-    floatData[1 * size + i]          = volume.fPoly.fPhiDelta;
+    floatData[0 * size + i]          = volume.fPoly->fPhiStart;
+    floatData[1 * size + i]          = volume.fPoly->fPhiDelta;
 
-    intData[0 * size + i] = volume.fPoly.fSideCount;
-    intData[1 * size + i] = volume.fPoly.fZPlanes.size();
+    intData[0 * size + i] = volume.fPoly->fSideCount;
+    intData[1 * size + i] = volume.fPoly->fZPlanes.size();
+
+    sizes_buff[i]   = volume.fPoly->fSize;
+    offsets_buff[i] = size_buff;
+    size_buff += sizes_buff[i];
 
     int offsetCounter = 0;
     for (vecgeom::cxx::Array<Precision> const *array :
-         {&volume.fPoly.fZPlanes, &volume.fPoly.fRMin, &volume.fPoly.fRMax}) {
+         {&volume.fPoly->fZPlanes, &volume.fPoly->fRMin, &volume.fPoly->fRMax}) {
       vld.offsets[offsetCounter++].push_back(vld.data.size());
       for (int j = 0; j < array->size(); ++j) {
         vld.data.push_back((*array)[j]);
@@ -659,21 +686,27 @@ void UnplacedPolyhedron::CopyToGpu(std::vector<VUnplacedVolume const *> const &v
 
   vldGPU.devPtr.Allocate(vld.data.size());
   vldGPU.devPtr.ToDevice(vld.data.data(), vld.data.size());
+  vldGPU.bufferPtr.Allocate(size_buff);
 
   std::vector<Precision const *> zPlanesGpuPtr, rMinGpuPtr, rMaxGpuPtr;
-  auto computeGpuPtr = [&vldGPU](std::size_t offset) { return vldGPU.devPtr.GetPtr() + offset; };
+  std::vector<char const *> bufferGpuPtr;
+  auto computeGpuPtr    = [&vldGPU](std::size_t offset) { return vldGPU.devPtr.GetPtr() + offset; };
+  auto computeBufferPtr = [&vldGPU](std::size_t offset) { return vldGPU.bufferPtr.GetPtr() + offset; };
   std::transform(vld.offsets[0].begin(), vld.offsets[0].end(), std::back_inserter(zPlanesGpuPtr), computeGpuPtr);
   std::transform(vld.offsets[1].begin(), vld.offsets[1].end(), std::back_inserter(rMinGpuPtr), computeGpuPtr);
   std::transform(vld.offsets[2].begin(), vld.offsets[2].end(), std::back_inserter(rMaxGpuPtr), computeGpuPtr);
+  std::transform(offsets_buff.begin(), offsets_buff.end(), std::back_inserter(bufferGpuPtr), computeBufferPtr);
 
   // Forwards all data to this constructor:
-  // UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount,
-  //                     const int zPlaneCount, Precision const zPlanes[], Precision const rMin[],
-  //                     Precision const rMax[])
+  // UnplacedPolyhedron(Precision phiStart, Precision phiDelta, const int sideCount, const int zPlaneCount,
+  //                   Precision const zPlanes[], Precision const rMin[], Precision const rMax[], size_t const
+  //                   buff_size, void const *buffer);
   ConstructManyOnGpu<vecgeom::cuda::UnplacedPolyhedron>(size, devicePointers.data(), floatData.data(),
-                                                        floatData.data() + size,               // phiStart, phiDelta
-                                                        intData.data(), intData.data() + size, // sideCount, zPlaneCount
-                                                        zPlanesGpuPtr.data(), rMinGpuPtr.data(), rMaxGpuPtr.data());
+                                                        floatData.data() + size, // phiStart, phiDelta
+                                                        intData.data(),
+                                                        intData.data() + size, // sideCount, zPlaneCount
+                                                        zPlanesGpuPtr.data(), rMinGpuPtr.data(), rMaxGpuPtr.data(),
+                                                        sizes_buff.data(), (void const *const *)bufferGpuPtr.data());
 }
 
 #endif
@@ -689,12 +722,10 @@ template void DevicePtr<cuda::UnplacedPolyhedron>::Construct(Precision phiStart,
                                                              int zPlaneCount, DevicePtr<Precision> zPlanes,
                                                              DevicePtr<Precision> rMin,
                                                              DevicePtr<Precision> rMax) const;
-template void ConstructManyOnGpu<cuda::UnplacedPolyhedron>(std::size_t nElement,
-                                                           DevicePtr<cuda::VUnplacedVolume> const *gpu_ptrs,
-                                                           Precision const *phiStart, Precision const *phiDelta,
-                                                           int const *sideCount, int const *zPlaneCount,
-                                                           Precision const *const *zPlanes,
-                                                           Precision const *const *rMin, Precision const *const *rMax);
+template void ConstructManyOnGpu<cuda::UnplacedPolyhedron>(
+    std::size_t nElement, DevicePtr<cuda::VUnplacedVolume> const *gpu_ptrs, Precision const *phiStart,
+    Precision const *phiDelta, int const *sideCount, int const *zPlaneCount, Precision const *const *zPlanes,
+    Precision const *const *rMin, Precision const *const *rMax, size_t const *buff_size, void const *const *buffer);
 
 } // namespace cxx
 

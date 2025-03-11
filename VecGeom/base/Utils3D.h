@@ -100,16 +100,17 @@ struct Line {
 /* The list of vertices is a reference to an external array. The used vertex indices have to be defined such
    that consecutive segments cross product is on the same side as the normal. */
 struct Polygon {
-  size_t fN       = 0;     ///< Number of vertices
-  bool fConvex    = false; ///< Convexity
-  bool fHasNorm   = false; ///< Normal is already supplied
-  bool fValid     = false; ///< Polygon is not degenerate
-  Precision fDist = 0.;    ///< Distance to plane in the Hessian form
-  Vec_t fNorm;             ///< Unit normal vector to plane
-  vector_t<Vec_t> &fVert;  ///< Global list of vertices shared with other polygons
-  vector_t<size_t> fInd;   ///< [fN] Indices of vertices
-  vector_t<Vec_t> fSides;  ///< [fN] Side vectors
+  size_t fN       = 0;             ///< Number of vertices
+  bool fConvex    = false;         ///< Convexity
+  bool fHasNorm   = false;         ///< Normal is already supplied
+  bool fValid     = false;         ///< Polygon is not degenerate
+  Precision fDist = 0.;            ///< Distance to plane in the Hessian form
+  Vec_t fNorm;                     ///< Unit normal vector to plane
+  vector_t<Vec_t> *fVert{nullptr}; ///< Global list of vertices shared with other polygons
+  vector_t<size_t> fInd;           ///< [fN] Indices of vertices
+  vector_t<Vec_t> fSides;          ///< [fN] Side vectors
 
+  Polygon() = default;
   /// @brief Constructor taking the number of vertices, a reference to a vector of vertices and the convexity
   VECCORE_ATT_HOST_DEVICE
   Polygon(size_t n, vector_t<Vec_t> &vertices, bool convex = false);
@@ -122,29 +123,11 @@ struct Polygon {
   Polygon(size_t n, vector_t<Vec_t> &vertices, vector_t<size_t> const &indices, bool convex);
 
   /// @brief Copy constructor
-  VECCORE_ATT_HOST_DEVICE
-  Polygon(const Polygon &other)
-      : fN(other.fN), fConvex(other.fConvex), fHasNorm(other.fHasNorm), fValid(other.fValid), fDist(other.fDist),
-        fNorm(other.fNorm), fVert(other.fVert), fInd(other.fInd), fSides(other.fSides)
-  {
-  }
+  Polygon(const Polygon &other) = default;
 
   /// @brief Assignment operator
-  VECGEOM_FORCE_INLINE
-  Polygon &operator=(const Polygon &other)
-  {
-    if (&other == this) return *this;
-    fN       = other.fN;
-    fConvex  = other.fConvex;
-    fHasNorm = other.fHasNorm;
-    fValid   = other.fValid;
-    fDist    = other.fDist;
-    fNorm    = other.fNorm;
-    fVert    = other.fVert;
-    fInd     = other.fInd;
-    fSides   = other.fSides;
-    return *this;
-  }
+
+  Polygon &operator=(const Polygon &other) = default;
 
   /// @brief Setter for a vertex index
   VECGEOM_FORCE_INLINE
@@ -152,7 +135,7 @@ struct Polygon {
 
   /// @brief Getter for a vertex
   VECGEOM_FORCE_INLINE
-  Vec_t const &GetVertex(size_t i) const { return fVert[fInd[i]]; }
+  Vec_t const &GetVertex(size_t i) const { return (*fVert)[fInd[i]]; }
 
   /// @brief Setter from an array of vertex indices
   template <typename T>
@@ -206,7 +189,7 @@ struct Polyhedron {
   vector_t<Polygon> fPolys; ///< Vector of polygons
 
   /// @brief Constructors
-  Polyhedron(){};
+  Polyhedron() = default;
   Polyhedron(size_t nvert, size_t npolys)
   {
     fVert.reserve(nvert);
