@@ -405,7 +405,6 @@ struct ConeStruct {
   evolution::Wedge const &GetWedge() const { return fPhiWedge; }
 
   // constructors
-  VECCORE_ATT_HOST_DEVICE
   ConeStruct() = default;
 
   VECCORE_ATT_HOST_DEVICE
