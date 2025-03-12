@@ -48,6 +48,13 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float
   return (x + kSign(x)) * tolerance;
 }
 
+template <typename Real_t>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Vector3D<Real_t> const &p)
+{
+  auto max_abs_coord = vecCore::math::Max(vecCore::math::Abs(p[0]), vecCore::math::Abs(p[1]), vecCore::math::Abs(p[2]));
+  return kRelTolerance<Real_t>(max_abs_coord, kToleranceStrict<Real_t>);
+}
+
 template <typename T>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr T MakePlusTolerantRel(T const x,
                                                                              T tolerance = kToleranceStrict<T>)

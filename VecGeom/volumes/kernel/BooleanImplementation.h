@@ -100,68 +100,63 @@ struct BooleanImplementation<kSubtraction> {
                                                                         Vector3D<Real_v> const &dir,
                                                                         Real_v const &stepMax, Real_v &distance)
   {
-    // Compute distance from a given point outside to the shape.
-
-    // epsilon is used to push across boundaries
-    Real_v d1, d2, snxt = 0.;
+    Real_v dist_right, dist_left, advance = 0.;
+    Real_v limit = stepMax;
     Vector3D<Real_v> hitpoint(p);
-    Vector3D<Real_v> pushpoint = hitpoint + kPushTolerance * dir;
-    // check if inside B
-    bool insideLeft  = false;
-    bool insideRight = unplaced.fRightVolume->Inside(p) != kOutside;
-
-    // AG: The push value was not correcly accounted for when returning the result
-    // Strategy: Compute distances from pushed hitpoint on boundary, then compensate snext with the push
+    // check if inside '-'
+    auto insideRight = unplaced.fRightVolume->Inside(p) != kOutside;
+    // epsil is used to push across boundaries, push records the actual push
+    Precision epsil(0.), push(0.);
     while (1) {
       if (insideRight) {
-        // propagate to outside of B
-        Real_v push(kPushTolerance);
-        d1 = unplaced.fRightVolume->PlacedDistanceToOut(pushpoint, dir, stepMax - snxt);
-        if (d1 < 0. || d1 == kInfLength) {
-          d1   = 0.;
+        //    // propagate to outside of '- / RightShape'
+        dist_right = unplaced.fRightVolume->PlacedDistanceToOut(hitpoint, dir, limit);
+        if (dist_right >= 0.) {
+          advance += dist_right + push;
+          limit = stepMax - advance;
+          epsil = kRelTolerance(hitpoint + dist_right * dir);
+          // Push point across the boundary and record push
+          hitpoint += (dist_right + epsil) * dir;
+          push = epsil;
+        } else {
           push = 0.;
         }
-        snxt += d1 + push;
-        hitpoint += (d1 + push) * dir;
-        pushpoint = hitpoint + kPushTolerance * dir;
 
-        insideLeft = unplaced.fLeftVolume->Inside(hitpoint) != kOutside;
-        if (insideLeft) {
-          d2 = unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir);
-          if (d2 > kTolerance) {
-            distance = snxt;
+        // now master outside 'B'; check if inside 'A'
+        if (unplaced.fLeftVolume->Inside(hitpoint) != kOutside) {
+          auto check = unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir);
+          if (check > epsil) {
+            distance = advance;
             return;
           }
         }
       }
 
-      // if outside of both we do a max operation
-      // master outside A and outside B ;  find distances to both from a pushed point
-      Precision push1(kPushTolerance), push2(kPushTolerance);
-      d1 = unplaced.fLeftVolume->DistanceToIn(pushpoint, dir, stepMax - snxt);
-      if (d1 < 0) {
-        d1    = 0.;
-        push1 = 0.;
-      }
-      if (d1 == kInfLength) {
+      // master outside '-' and outside '+' ;  find distances to both
+      dist_left = unplaced.fLeftVolume->DistanceToIn(hitpoint, dir, limit);
+      dist_left = vecCore::math::Max(dist_left, 0.);
+      if (dist_left >= limit) {
         distance = kInfLength;
         return;
       }
-      d2 = unplaced.fRightVolume->DistanceToIn(pushpoint, dir, stepMax - snxt);
-      if (d2 < 0) {
-        d2    = 0.;
-        push2 = 0.;
-      }
-      if (d1 < d2 - kTolerance) {
-        // Hitting A, compensate the push and exit.
-        distance = snxt + d1 + push1;
+
+      dist_right = unplaced.fRightVolume->DistanceToIn(hitpoint, dir, limit);
+      if (dist_left < dist_right - kTolerance) {
+        advance += dist_left + push;
+        distance = advance;
         return;
       }
 
-      // propagate to B which we know is closer
-      snxt += d2 + push2;
-      hitpoint += (d2 + push2) * dir;
-      pushpoint   = hitpoint + kPushTolerance * dir;
+      //        // propagate to '-'
+      if (dist_right >= 0. && dist_right < kInfLength) {
+        advance += dist_right + push;
+        limit = stepMax - advance;
+        epsil = kRelTolerance(hitpoint + dist_right * dir);
+        hitpoint += (dist_right + epsil) * dir;
+        push = epsil;
+      } else {
+        push = 0.;
+      }
       insideRight = true;
     } // end while
   }
