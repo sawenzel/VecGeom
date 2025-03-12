@@ -18,9 +18,11 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-constexpr int BVH::BVH_MAX_DEPTH;
+template <typename Real_t>
+constexpr int BVH<Real_t>::BVH_MAX_DEPTH;
 
-enum class BVH::ConstructionAlgorithm : unsigned int {
+template <typename Real_t>
+enum class BVH<Real_t>::ConstructionAlgorithm : unsigned int {
   SplitLongestAxis         = 0,
   LargestDistanceAlongAxis = 1,
   SurfaceAreaHeuristic     = 2,
@@ -49,8 +51,9 @@ enum class BVH::ConstructionAlgorithm : unsigned int {
  * children. The bounding boxes stored in fAABBs are in the original order, so they are accessed by
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
-
-BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Precision> const *cpudata, int depth)
+template <typename Real_t>
+BVH<Real_t>::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Precision> const *cpudata,
+                 int depth)
     : fRootId(volume.id())
 {
   int n;
@@ -71,9 +74,9 @@ BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Prec
 
   fRootNChild = n;
 
-  fAABBs = new AABB[n];
+  fAABBs = new AABB<Real_t>[n];
   for (int i = 0; i < n; ++i)
-    fAABBs[i] = AABB(ptr[2 * i], ptr[2 * i + 1]);
+    fAABBs[i] = AABB<Real_t>(ptr[2 * i], ptr[2 * i + 1]);
 
   /* Initialize map of primitive ids (i.e. child volume ids) as {0, 1, 2, ...}. */
   fPrimId = new int[n];
@@ -91,7 +94,7 @@ BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Prec
 
   fNChild = new int[nodes];
   fOffset = new int[nodes];
-  fNodes  = new AABB[nodes];
+  fNodes  = new AABB<Real_t>[nodes];
   std::fill(fNChild, fNChild + nodes, 0);
   std::fill(fOffset, fOffset + nodes, -1);
 
@@ -104,16 +107,17 @@ BVH::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Prec
 }
 
 #ifdef VECGEOM_ENABLE_CUDA
-VECCORE_ATT_DEVICE
-BVH::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int *dOffset, int *dNChild, AABB *dNodes)
+template <typename Real_t>
+VECCORE_ATT_DEVICE BVH<Real_t>::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB<Real_t> *dAABBs,
+                                    int *dOffset, int *dNChild, AABB<Real_t> *dNodes)
     : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fPrimId(dPrimId), fOffset(dOffset),
       fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
 {
 }
 #endif
 
-VECCORE_ATT_HOST_DEVICE
-void BVH::Print(bool verbose) const
+template <typename Real_t>
+VECCORE_ATT_HOST_DEVICE void BVH<Real_t>::Print(bool verbose) const
 {
   printf("\nBVH(%u): addr: %p, depth: %d, nodes: %d, children: %d, name: %s\n", fRootId, this, fDepth,
          (2 << fDepth) - 1, fRootNChild, " ");
@@ -135,31 +139,32 @@ void BVH::Print(bool verbose) const
 }
 
 #ifdef VECGEOM_CUDA_INTERFACE
-DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
+template <typename Real_t>
+DevicePtr<cuda::BVH<Real_t>> BVH<Real_t>::CopyToGpu(void *addr) const
 {
   int *dPrimId;
   int *dOffset;
   int *dNChild;
-  cuda::AABB *dAABBs;
-  cuda::AABB *dNodes;
+  cuda::AABB<Real_t> *dAABBs;
+  cuda::AABB<Real_t> *dNodes;
 
   if (!addr) throw std::logic_error("Cannot copy BVH into a null pointer!");
 
   CudaCheckError(CudaMalloc((void **)&dPrimId, fRootNChild * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dAABBs, fRootNChild * sizeof(AABB)));
+  CudaCheckError(CudaMalloc((void **)&dAABBs, fRootNChild * sizeof(AABB<Real_t>)));
 
   CudaCheckError(CudaCopyToDevice((void *)dPrimId, (void *)fPrimId, fRootNChild * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dAABBs, (void *)fAABBs, fRootNChild * sizeof(AABB)));
+  CudaCheckError(CudaCopyToDevice((void *)dAABBs, (void *)fAABBs, fRootNChild * sizeof(AABB<Real_t>)));
 
   int nodes = (2 << fDepth) - 1;
 
   CudaCheckError(CudaMalloc((void **)&dOffset, nodes * sizeof(int)));
   CudaCheckError(CudaMalloc((void **)&dNChild, nodes * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dNodes, nodes * sizeof(AABB)));
+  CudaCheckError(CudaMalloc((void **)&dNodes, nodes * sizeof(AABB<Real_t>)));
 
   CudaCheckError(CudaCopyToDevice((void *)dOffset, (void *)fOffset, nodes * sizeof(int)));
   CudaCheckError(CudaCopyToDevice((void *)dNChild, (void *)fNChild, nodes * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB)));
+  CudaCheckError(CudaCopyToDevice((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB<Real_t>)));
 
   // cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
   cuda::LogicalVolume const *dvolume =
@@ -170,7 +175,7 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
     throw std::logic_error("Cannot copy BVH because logical volume does not exist on the device.");
   }
 
-  DevicePtr<cuda::BVH> dBVH(addr);
+  DevicePtr<cuda::BVH<Real_t>> dBVH(addr);
 
   dBVH.Construct(dvolume, fDepth, dPrimId, dAABBs, dOffset, dNChild, dNodes);
 
@@ -178,7 +183,8 @@ DevicePtr<cuda::BVH> BVH::CopyToGpu(void *addr) const
 }
 #endif
 
-void BVH::Clear()
+template <typename Real_t>
+void BVH<Real_t>::Clear()
 {
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
   delete[] fPrimId;
@@ -201,7 +207,8 @@ int ClosestAxis(Vector3D<Precision> v)
   return v[0] > v[2] ? (v[0] > v[1] ? 0 : 1) : (v[1] > v[2] ? 1 : 2);
 }
 
-int *splitAlongLongestAxis(const AABB *primitiveBoxes, int *begin, int *end, const AABB &currentBVHNode)
+template <typename Real_t>
+int *splitAlongLongestAxis(const AABB<Real_t> *primitiveBoxes, int *begin, int *end, const AABB<Real_t> &currentBVHNode)
 {
   const Vector3D<Precision> basis[] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
   Vector3D<Precision> p             = currentBVHNode.Center();
@@ -211,7 +218,9 @@ int *splitAlongLongestAxis(const AABB *primitiveBoxes, int *begin, int *end, con
                         [&](size_t i) { return Vector3D<Precision>::Dot(primitiveBoxes[i].Center() - p, v) < 0.0; });
 }
 
-int *largestDistanceAlongAxis(const AABB *primitiveBoxes, int *begin, int *end, const AABB & /*currentBVHNode*/)
+template <typename Real_t>
+int *largestDistanceAlongAxis(const AABB<Real_t> *primitiveBoxes, int *begin, int *end,
+                              const AABB<Real_t> & /*currentBVHNode*/)
 {
   // Compute maximum extension of lower-left front corners along all axes
   float extension[3][2] = {{0.f, 0.f}, {0.f, 0.f}, {0.f, 0.f}};
@@ -259,21 +268,23 @@ bool less3D(const T &left, const T &right, const int sortAxis)
  * @param begin Index of first primitive to be considered.
  * @param end   Past-the-end index of primitives to be considered.
  */
-std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB *primitiveBoxes, int const *begin, int const *end)
+template <typename Real_t>
+std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB<Real_t> *primitiveBoxes, int const *begin,
+                                                        int const *end)
 {
   if (begin >= end) return {};
 
   std::vector<std::pair<double, double>> areas(std::distance(begin, end), {0., 0.});
 
-  AABB box{primitiveBoxes[*begin]};
+  AABB<Real_t> box{primitiveBoxes[*begin]};
   for (auto it = begin + 1; it < end; ++it) {
     areas[it - begin].first = box.SurfaceArea();
-    box                     = AABB::Union(box, primitiveBoxes[*it]);
+    box                     = AABB<Real_t>::Union(box, primitiveBoxes[*it]);
   }
 
-  AABB box2{primitiveBoxes[*(end - 1)]};
+  AABB<Real_t> box2{primitiveBoxes[*(end - 1)]};
   for (auto it = end - 1; it >= begin; --it) {
-    box2                     = AABB::Union(box2, primitiveBoxes[*(it)]);
+    box2                     = AABB<Real_t>::Union(box2, primitiveBoxes[*(it)]);
     areas[it - begin].second = box2.SurfaceArea();
   }
 
@@ -293,7 +304,9 @@ std::vector<std::pair<double, double>> sweepSurfaceArea(const AABB *primitiveBox
  * @param end   Past-the-end index of primitives to be considered.
  * @return Index of the first element of the second group. If this is `end`, no good split was found.
  */
-int *surfaceAreaHeuristic(const AABB *primitiveBoxes, int *begin, int *end, const AABB & /*currentBVHNode*/)
+template <typename Real_t>
+int *surfaceAreaHeuristic(const AABB<Real_t> *primitiveBoxes, int *begin, int *end,
+                          const AABB<Real_t> & /*currentBVHNode*/)
 {
   int bestSplitAxis          = -1;
   double bestTraversalMetric = std::distance(begin, end);
@@ -346,8 +359,9 @@ int *surfaceAreaHeuristic(const AABB *primitiveBoxes, int *begin, int *end, cons
  * Array of splitting functions that can be used to construct the BVH tree.
  * @see BVH::ConstructionAlgorithm
  */
-int *(*splittingFunction[])(const AABB * /*primitveAABBs*/, int * /*firstPrimitive*/, int * /*lastPrimitive*/,
-                            const AABB & /*currentBVHNode*/) = {
+template <typename Real_t>
+int *(*splittingFunction[])(const AABB<Real_t> * /*primitveAABBs*/, int * /*firstPrimitive*/, int * /*lastPrimitive*/,
+                            const AABB<Real_t> & /*currentBVHNode*/) = {
     &splitAlongLongestAxis,
     &largestDistanceAlongAxis,
     &surfaceAreaHeuristic,
@@ -368,9 +382,9 @@ int *(*splittingFunction[])(const AABB * /*primitveAABBs*/, int * /*firstPrimiti
  * is empty (i.e. no volumes on this node, maybe because all child volumes' centroids are on the
  * same side of the splitting plane), or if the node contains only a single volume.
  */
-
-void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes,
-                       BVH::ConstructionAlgorithm constructionAlgorithm)
+template <typename Real_t>
+void BVH<Real_t>::ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes,
+                               BVH<Real_t>::ConstructionAlgorithm constructionAlgorithm)
 {
   if (id >= nodes) return;
 
@@ -382,7 +396,7 @@ void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int node
 
   fNodes[id] = fAABBs[*first];
   for (auto it = std::next(first); it != last; ++it)
-    fNodes[id] = AABB::Union(fNodes[id], fAABBs[*it]);
+    fNodes[id] = AABB<Real_t>::Union(fNodes[id], fAABBs[*it]);
 
   // Only one child. No need to continue
   if (std::next(first) == last) return;
@@ -390,7 +404,7 @@ void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int node
   const auto algo = static_cast<unsigned int>(constructionAlgorithm);
   assert(algo < sizeof(splittingFunction));
 
-  int *pivot = splittingFunction[algo](fAABBs, first, last, fNodes[id]);
+  int *pivot = splittingFunction<Real_t>[algo](fAABBs, first, last, fNodes[id]);
   assert(first <= pivot && pivot <= last);
 
   ComputeNodes(2 * id + 1, first, pivot, nodes, constructionAlgorithm);
@@ -401,9 +415,16 @@ void BVH::ComputeNodes(unsigned int id, int *first, int *last, unsigned int node
 
 #ifdef VECCORE_CUDA
 namespace cxx {
-template void DevicePtr<cuda::BVH>::Construct(cuda::LogicalVolume const *volume, int depth, int *dPrimId,
-                                              cuda::AABB *dAABBs, int *dOffset, int *dNChild, cuda::AABB *dNodes) const;
+
+template void DevicePtr<cuda::BVH<float>>::Construct(cuda::LogicalVolume const *, int, int *, cuda::AABB<float> *,
+                                                     int *, int *, cuda::AABB<float> *) const;
+
+template void DevicePtr<cuda::BVH<double>>::Construct(cuda::LogicalVolume const *, int, int *, cuda::AABB<double> *,
+                                                      int *, int *, cuda::AABB<double> *) const;
 } // namespace cxx
 #endif
+
+template class BVH<float>;
+template class BVH<double>;
 
 } // namespace vecgeom

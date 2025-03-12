@@ -24,6 +24,14 @@ namespace vecgeom {
 
 class BVHNavigator {
 
+// to avoid changing the user code via templates, the precision is chosen at compile-time in the BVHManager and
+// BVHNavigator
+#ifdef VECGEOM_BVH_SINGLE
+  using Real_t = float;
+#else
+  using Real_t = double;
+#endif
+
 public:
   static constexpr Precision kBoundaryPush = 10 * vecgeom::kTolerance;
 
@@ -155,12 +163,13 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  static long TestBVHCheckDaughterIntersections(const vecgeom::BVH &bvh, Vector3D<Precision> &localpoint,
+  static long TestBVHCheckDaughterIntersections(const vecgeom::BVH<Real_t> &bvh, Vector3D<Precision> &localpoint,
                                                 Vector3D<Precision> &localdir, Precision &bvhstep)
   {
     long hitcandidate_index = -1;
     long last_exited_id     = -1;
-    bvh.CheckDaughterIntersections<BVHNavigator>(localpoint, localdir, bvhstep, last_exited_id, hitcandidate_index);
+    bvh.CheckDaughterIntersections<BVHNavigator, Precision>(localpoint, localdir, bvhstep, last_exited_id,
+                                                            hitcandidate_index);
     return hitcandidate_index;
   }
 
@@ -269,7 +278,8 @@ private:
       last_exited_id = -1;
       // if (last_exited != nullptr) last_exited_id = last_exited->id();
 
-      bvh->CheckDaughterIntersections<BVHNavigator>(localpoint, localdir, step, last_exited_id, hitcandidate_index);
+      bvh->CheckDaughterIntersections<BVHNavigator, Precision>(localpoint, localdir, step, last_exited_id,
+                                                               hitcandidate_index);
 
       if (hitcandidate_index >= 0) hitcandidate = pvol->GetLogicalVolume()->GetDaughters()[hitcandidate_index];
     }
@@ -354,6 +364,7 @@ public:
 
     // need to calc DistanceToOut first
     Precision safety = pvol->SafetyToOut(localpoint);
+    limit            = Min(safety, limit);
 
     if (safety > 0 && pvol->GetDaughters().size() > 0) {
       auto bvh = vecgeom::BVHManager::GetBVH(pvol->GetLogicalVolume()->id());

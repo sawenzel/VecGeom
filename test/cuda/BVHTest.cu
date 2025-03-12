@@ -6,7 +6,7 @@ using namespace vecgeom;
 
 __global__ void check_device_bvh_kernel(int id)
 {
-  if (BVH const *bvh = BVHManager::GetBVH(id)) bvh->Print();
+  if (auto const *bvh = BVHManager::GetBVH(id)) bvh->Print();
 }
 
 void check_device_bvh(int id)

@@ -24,10 +24,7 @@ static std::random_device rd;
 static std::default_random_engine rng;
 static std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-double uniform(double a, double b)
-{
-  return a + (b - a) * dist(rng);
-}
+double uniform(double a, double b) { return a + (b - a) * dist(rng); }
 
 Vector3D<Precision> random_unit_vector()
 {
@@ -44,9 +41,9 @@ bool nearly_equal(double x, double y)
   if (x == y)
     return true;
   else if (x * y == 0.0)
-    return abs(x - y) < DBL_EPSILON * DBL_EPSILON;
+    return abs(x - y) < kTolerance * kTolerance;
   else
-    return abs(x - y) < (abs(x) + abs(y)) * DBL_EPSILON;
+    return abs(x - y) < (abs(x) + abs(y)) * kTolerance;
 }
 
 VNavigator const *get_navigator(const char *name)

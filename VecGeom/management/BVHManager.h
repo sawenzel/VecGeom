@@ -15,9 +15,11 @@
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
-inline std::vector<BVH *> hBVH;
+template <typename Real_t>
+inline std::vector<BVH<Real_t> *> hBVH;
 #ifdef VECGEOM_ENABLE_CUDA
-inline __device__ BVH *dBVH;
+template <typename Real_t>
+inline __device__ BVH<Real_t> *dBVH;
 #endif
 
 // Macro allowing downstream codes to use GetDeviceBVH
@@ -27,8 +29,16 @@ inline __device__ BVH *dBVH;
  * @brief The @c BVHManager class is a singleton class to manage the association between
  * logical volumes and their bounding volume hierarchies, using the logical volumes' ids.
  */
-
 class BVHManager {
+
+// to avoid changing the user code via templates, the precision is chosen at compile-time in the BVHManager and
+// BVHNavigator
+#ifdef VECGEOM_BVH_SINGLE
+  using Real_t = float;
+#else
+  using Real_t = double;
+#endif
+
 public:
   BVHManager() = delete;
 
@@ -45,23 +55,23 @@ public:
   static void Init();
 
   /** Initializes bounding volume hierarchies on the GPU. */
-  static cuda::BVH const *DeviceInit();
+  static cuda::BVH<Real_t> const *DeviceInit();
 
   /** Access the device BVH pointer if CUDA is enabled. **/
-  static cuda::BVH const *GetDeviceBVH();
+  static cuda::BVH<Real_t> const *GetDeviceBVH();
 
   VECCORE_ATT_HOST_DEVICE
-  static BVH const *GetBVH(int id)
+  static BVH<Real_t> const *GetBVH(int id)
   {
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
-    return &cuda::dBVH[id];
+    return &cuda::dBVH<Real_t>[id];
 #else
-    return hBVH[id];
+    return hBVH<Real_t>[id];
 #endif
   }
 
   VECCORE_ATT_HOST_DEVICE
-  static BVH const *GetBVH(LogicalVolume const *v) { return GetBVH(v->id()); }
+  static BVH<Real_t> const *GetBVH(LogicalVolume const *v) { return GetBVH(v->id()); }
 };
 
 } // namespace VECGEOM_IMPL_NAMESPACE

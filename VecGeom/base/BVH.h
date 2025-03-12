@@ -22,8 +22,11 @@ struct CPUsurfData;
 }
 
 namespace vecgeom {
-VECGEOM_DEVICE_FORWARD_DECLARE(class BVH;);
-VECGEOM_DEVICE_DECLARE_CONV(class, BVH);
+namespace cuda {
+template <typename Real_t>
+class BVH;
+}
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(class, BVH, typename);
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LogicalVolume;
@@ -33,16 +36,17 @@ class VPlacedVolume;
  * @brief Bounding Volume Hierarchy class to represent an axis-aligned bounding volume hierarchy.
  * @details BVH instances can be associated with logical volumes to accelerate queries to their child volumes.
  */
+template <typename Real_t>
 class BVH {
 private:
-  uint fRootId    = 0;   ///< Id of the root element this BVH was constructed for
-  int fRootNChild = 0;   ///< Number of children of the root element
-  int *fPrimId{nullptr}; ///< Child volume ids for each BVH node
-  int *fOffset{nullptr}; ///< Offset in @c fPrimId for first child of each BVH node
-  int *fNChild{nullptr}; ///< Number of children for each BVH node
-  AABB *fNodes{nullptr}; ///< AABBs of BVH nodes
-  AABB *fAABBs{nullptr}; ///< AABBs of children of the BVH root element
-  int fDepth = 0;        ///< Depth of the BVH
+  uint fRootId    = 0;           ///< Id of the root element this BVH was constructed for
+  int fRootNChild = 0;           ///< Number of children of the root element
+  int *fPrimId{nullptr};         ///< Child volume ids for each BVH node
+  int *fOffset{nullptr};         ///< Offset in @c fPrimId for first child of each BVH node
+  int *fNChild{nullptr};         ///< Number of children for each BVH node
+  AABB<Real_t> *fNodes{nullptr}; ///< AABBs of BVH nodes
+  AABB<Real_t> *fAABBs{nullptr}; ///< AABBs of children of the BVH root element
+  int fDepth = 0;                ///< Depth of the BVH
 
 public:
   // Default constructor
@@ -57,8 +61,8 @@ public:
   const int *GetPrimId() const { return fPrimId; };
   const int *GetOffset() const { return fOffset; };
   const int *GetNChild() const { return fNChild; };
-  const AABB *GetAABBs() const { return fAABBs; };
-  const AABB *GetNodes() const { return fNodes; };
+  const AABB<Real_t> *GetAABBs() const { return fAABBs; };
+  const AABB<Real_t> *GetNodes() const { return fNodes; };
 
   /** Maximum depth. */
   static constexpr int BVH_MAX_DEPTH = 32;
@@ -89,7 +93,8 @@ public:
    * @param dNodes AABBs of BVH nodes
    */
   VECCORE_ATT_DEVICE
-  BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB *dAABBs, int *dOffset, int *NChild, AABB *dNodes);
+  BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB<Real_t> *dAABBs, int *dOffset, int *NChild,
+      AABB<Real_t> *dNodes);
 
   /**
    * Setter for all member arrays. Used to update the pointers after a copy from host to device
@@ -100,7 +105,7 @@ public:
    * @param dNodes AABBs of BVH nodes
    */
   VECCORE_ATT_DEVICE
-  void SetPointers(int *dPrimId, int *dOffset, int *dNChild, AABB *dAABBs, AABB *dNodes)
+  void SetPointers(int *dPrimId, int *dOffset, int *dNChild, AABB<Real_t> *dAABBs, AABB<Real_t> *dNodes)
   {
     fPrimId = dPrimId;
     fOffset = dOffset;
@@ -112,7 +117,7 @@ public:
 
 #ifdef VECGEOM_CUDA_INTERFACE
   /** Copy and construct an instance of this BVH on the device, at the device address @p addr. */
-  DevicePtr<cuda::BVH> CopyToGpu(void *addr) const;
+  DevicePtr<cuda::BVH<Real_t>> CopyToGpu(void *addr) const;
 #endif
 
   // void CopyToGpu(BVH *dBVH) const;
@@ -146,24 +151,31 @@ public:
    * if the sum of children in both leaves is the same as in the current node, as for leaf nodes, the
    * sum of children in the left+right child nodes will be less than for the current node.
    */
-  template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(const Vector3D<Precision> &localpoint,
-                                                          const Vector3D<Precision> &localdir, Precision &step,
+  template <typename Navigator, typename Real_i>
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(const Vector3D<Real_i> &localpoint,
+                                                          const Vector3D<Real_i> &localdir, Real_i &step,
                                                           long const last_exited_id, long &hitcandidate_index) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Precision> invdir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[0]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[1]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[2]));
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+    Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
+                               static_cast<Real_t>(localdir[2]));
+    Real_t bstep = static_cast<Real_t>(step);
 
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
       // If the current distance is shorter than the distance to the node we can safely ignore it
-      Precision min{kInfLength}, max{-kInfLength};
-      fNodes[id].ComputeIntersectionInvDir(localpoint, invdir, min, max);
-      if (min > max || max < 0.0 || min >= step) {
+      Real_t min{vecgeom::InfinityLength<Real_t>()}, max{-vecgeom::InfinityLength<Real_t>()};
+      fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, min, max);
+      if (min > max || max < Real_t{0.} || min >= step) {
         continue;
       }
 
@@ -173,11 +185,17 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           /* Check AABB first, then the element itself if needed */
-          if (fAABBs[prim].IntersectInvDir(localpoint, invdir, step)) {
-            const auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint, localdir, step);
+          Real_t approach;
+          if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
+            auto dist = Navigator::CandidateDistanceToIn(
+                fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
+            dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && !(dist <= kTolerance && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
-              step = dist, hitcandidate_index = prim;
+            if (dist < step &&
+                !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
+              step               = dist;
+              bstep              = static_cast<Real_t>(dist);
+              hitcandidate_index = prim;
             }
           }
         }
@@ -186,13 +204,14 @@ public:
         const unsigned int childR = 2 * id + 2;
 
         /* For internal nodes, check AABBs to know if we need to traverse left and right children */
-        Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
+        Real_t tminL = vecgeom::InfinityLength<Real_t>(), tmaxL = -vecgeom::InfinityLength<Real_t>(),
+               tminR = vecgeom::InfinityLength<Real_t>(), tmaxR = -vecgeom::InfinityLength<Real_t>();
 
-        fNodes[childL].ComputeIntersectionInvDir(localpoint, invdir, tminL, tmaxL);
-        fNodes[childR].ComputeIntersectionInvDir(localpoint, invdir, tminR, tmaxR);
+        fNodes[childL].ComputeIntersectionInvDir(blocalpoint, binvdir, tminL, tmaxL);
+        fNodes[childR].ComputeIntersectionInvDir(blocalpoint, binvdir, tminR, tmaxR);
 
-        const bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < step;
-        const bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < step;
+        const bool traverseL = tminL <= tmaxL && tmaxL >= static_cast<Real_t>(0.0) && tminL < bstep;
+        const bool traverseR = tminR <= tmaxR && tmaxR >= static_cast<Real_t>(0.0) && tminR < bstep;
 
         /*
          * If both left and right nodes need to be checked, check closest one first.
@@ -329,6 +348,10 @@ public:
   VECCORE_ATT_HOST_DEVICE void ApproachNextDaughter(Vector3D<Precision> localpoint, Vector3D<Precision> localdir,
                                                     Precision &step, long const last_exited_id) const
   {
+
+    // Todo: requires templation to use single precision in the BVH as CheckDaughterIntersections
+    // Omitted for now as this function is not used
+
     unsigned int stack[BVH_MAX_DEPTH] = {0}, *ptr = &stack[1];
 
     /* Calculate and reuse inverse direction to save on divisions */
@@ -353,7 +376,8 @@ public:
         unsigned int childR = 2 * id + 2;
 
         /* For internal nodes, check AABBs to know if we need to traverse left and right children */
-        Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
+        Real_t tminL = vecgeom::InfinityLength<Real_t>(), tmaxL = -vecgeom::InfinityLength<Real_t>(),
+               tminR = vecgeom::InfinityLength<Real_t>(), tmaxR = -vecgeom::InfinityLength<Real_t>();
 
         fNodes[childL].ComputeIntersectionInvDir(localpoint, invlocaldir, tminL, tmaxL);
         fNodes[childR].ComputeIntersectionInvDir(localpoint, invlocaldir, tminR, tmaxR);
@@ -391,13 +415,13 @@ public:
    * This function is meant to be used for benchmarking of the BVH, and not for actual navigation. It gathers stats
    * on the traversal of the BVH tree
    */
-  template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersectionsBenchmark(
-      const Vector3D<Precision> &localpoint, const Vector3D<Precision> &localdir,
-      // VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersections(Vector3D<Precision> localpoint, Vector3D<Precision>
-      // localdir,
-      Precision &step, long const last_exited_id, long &hitcandidate_index, long &total_visited_children,
-      long &total_visited_leaves, long &total_cut_nodes, long &total_stacked_nodes) const
+  template <typename Navigator, typename Real_i>
+  VECCORE_ATT_HOST_DEVICE void CheckDaughterIntersectionsBenchmark(const Vector3D<Real_i> &localpoint,
+                                                                   const Vector3D<Real_i> &localdir, Real_i &step,
+                                                                   long const last_exited_id, long &hitcandidate_index,
+                                                                   long &total_visited_children,
+                                                                   long &total_visited_leaves, long &total_cut_nodes,
+                                                                   long &total_stacked_nodes) const
   {
     total_visited_children = 0;
     total_visited_leaves   = 0;
@@ -408,14 +432,21 @@ public:
     stack[0] = 0;
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Precision> invdir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[0]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[1]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[2]));
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+    Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
+                               static_cast<Real_t>(localdir[2]));
+    Real_t bstep = static_cast<Real_t>(step);
 
     do {
       const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
 
       // If the current distance is shorter than the distance to the node we can safely ignore it
-      Precision min{kInfLength}, max{-kInfLength};
-      fNodes[id].ComputeIntersectionInvDir(localpoint, invdir, min, max);
+      Real_t min{vecgeom::InfinityLength<Real_t>()}, max{-vecgeom::InfinityLength<Real_t>()};
+      fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, min, max);
       if (!(min <= max && max >= 0.0 && min < step)) {
         total_cut_nodes++;
         continue;
@@ -427,12 +458,17 @@ public:
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           /* Check AABB first, then the element itself if needed */
-          if (fAABBs[prim].IntersectInvDir(localpoint, invdir, step)) {
-            total_visited_children++;
-            const auto dist = Navigator::CandidateDistanceToIn(fRootId, prim, localpoint, localdir, step);
+          Real_t approach;
+          if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
+            auto dist = Navigator::CandidateDistanceToIn(
+                fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
+            dist += static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && dist > -kTolerance && !Navigator::SkipItem(fRootId, prim, last_exited_id)) {
-              step = dist, hitcandidate_index = prim;
+            if (dist < step &&
+                !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
+              step               = dist;
+              bstep              = static_cast<Real_t>(dist);
+              hitcandidate_index = prim;
             }
           }
         }
@@ -441,10 +477,11 @@ public:
         const unsigned int childR = 2 * id + 2;
 
         /* For internal nodes, check AABBs to know if we need to traverse left and right children */
-        Precision tminL = kInfLength, tmaxL = -kInfLength, tminR = kInfLength, tmaxR = -kInfLength;
+        Real_t tminL = vecgeom::InfinityLength<Real_t>(), tmaxL = -vecgeom::InfinityLength<Real_t>(),
+               tminR = vecgeom::InfinityLength<Real_t>(), tmaxR = -vecgeom::InfinityLength<Real_t>();
 
-        fNodes[childL].ComputeIntersectionInvDir(localpoint, invdir, tminL, tmaxL);
-        fNodes[childR].ComputeIntersectionInvDir(localpoint, invdir, tminR, tmaxR);
+        fNodes[childL].ComputeIntersectionInvDir(blocalpoint, binvdir, tminL, tmaxL);
+        fNodes[childR].ComputeIntersectionInvDir(blocalpoint, binvdir, tminR, tmaxR);
 
         const bool traverseL = tminL <= tmaxL && tmaxL >= 0.0 && tminL < step;
         const bool traverseR = tminR <= tmaxR && tmaxR >= 0.0 && tminR < step;

@@ -13,8 +13,10 @@ inline
 #endif
     namespace cuda {
 
-BVH *AllocateDeviceBVHBuffer(size_t n);
-BVH *GetDeviceBVHBuffer();
+template <typename Real_t>
+BVH<Real_t> *AllocateDeviceBVHBuffer(size_t n);
+template <typename Real_t>
+BVH<Real_t> *GetDeviceBVHBuffer();
 void FreeDeviceBVHBuffer();
 
 } // namespace cuda
@@ -25,22 +27,23 @@ void BVHManager::Init()
   std::vector<LogicalVolume const *> lvols;
   GeoManager::Instance().GetAllLogicalVolumes(lvols);
   // There may be volumes not used in the hierarchy, so the maximum index may be larger
-  hBVH.resize(GeoManager::Instance().GetLogicalVolumesMap().size());
+  hBVH<Real_t>.resize(GeoManager::Instance().GetLogicalVolumesMap().size());
   for (auto logical_volume : lvols)
-    hBVH[logical_volume->id()] = logical_volume->GetDaughters().size() > 0 ? new BVH(*logical_volume) : nullptr;
+    hBVH<Real_t>[logical_volume->id()] =
+        logical_volume->GetDaughters().size() > 0 ? new BVH<Real_t>(*logical_volume) : nullptr;
 }
 
-cuda::BVH const *BVHManager::DeviceInit()
+cuda::BVH<BVHManager::Real_t> const *BVHManager::DeviceInit()
 {
 #ifdef VECGEOM_CUDA_INTERFACE
-  int n = hBVH.size();
+  int n = hBVH<Real_t>.size();
 
-  cuda::BVH *ptr = vecgeom::cuda::AllocateDeviceBVHBuffer(n);
+  cuda::BVH<Real_t> *ptr = vecgeom::cuda::AllocateDeviceBVHBuffer<Real_t>(n);
 
   for (int id = 0; id < n; ++id) {
-    if (!hBVH[id]) continue;
+    if (!hBVH<Real_t>[id]) continue;
 
-    hBVH[id]->CopyToGpu(&reinterpret_cast<cxx::BVH *>(ptr)[id]);
+    hBVH<Real_t>[id] -> CopyToGpu(&reinterpret_cast<cxx::BVH<Real_t> *>(ptr)[id]);
   }
   return ptr;
 #else
@@ -49,10 +52,10 @@ cuda::BVH const *BVHManager::DeviceInit()
 #endif
 }
 
-cuda::BVH const *BVHManager::GetDeviceBVH()
+cuda::BVH<BVHManager::Real_t> const *BVHManager::GetDeviceBVH()
 {
 #ifdef VECGEOM_CUDA_INTERFACE
-  return cuda::GetDeviceBVHBuffer();
+  return cuda::GetDeviceBVHBuffer<Real_t>();
 #else
   return nullptr;
 #endif
