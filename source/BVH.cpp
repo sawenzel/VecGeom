@@ -402,7 +402,7 @@ void BVH<Real_t>::ComputeNodes(unsigned int id, int *first, int *last, unsigned 
   if (std::next(first) == last) return;
 
   const auto algo = static_cast<unsigned int>(constructionAlgorithm);
-  assert(algo < sizeof(splittingFunction));
+  assert(algo < std::size(splittingFunction<Real_t>));
 
   int *pivot = splittingFunction<Real_t>[algo](fAABBs, first, last, fNodes[id]);
   assert(first <= pivot && pivot <= last);
