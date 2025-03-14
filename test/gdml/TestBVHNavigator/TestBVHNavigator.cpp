@@ -33,7 +33,10 @@ Vector3D<Precision> random_unit_vector()
   return {r * vecCore::math::Cos<Precision>(t), r * vecCore::math::Sin<Precision>(t), z};
 }
 
-bool nearly_equal(double x, double y) { return vecCore::Abs(x - y) < kTolerance * 0.1; }
+bool nearly_equal(double x, double y)
+{
+  return vecCore::Abs(x - y) < kRelTolerance(std::max(x, y), kToleranceStrict<double>);
+}
 
 bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, const BVHNavigator *navigator,
               const LoopNavigator *ref_navigator, Precision &checksum_add, bool verbose = true)

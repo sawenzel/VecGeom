@@ -32,27 +32,15 @@ template <typename Real_t>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Real_t x,
                                                                             Real_t tolerance = kToleranceStrict<Real_t>)
 {
-  return Real_t(0);
-}
-
-template <>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr double kRelTolerance<double>(double x, double tolerance)
-{
-  // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * tolerance;
-}
-template <>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr float kRelTolerance<float>(float x, float tolerance)
-{
-  // If x is fractional, we don't want to reduce the tolerance
-  return (x + kSign(x)) * tolerance;
+  return (vecCore::math::Abs(x) + Real_t(1.)) * tolerance;
 }
 
 template <typename Real_t>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Vector3D<Real_t> const &p)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE constexpr Real_t kRelTolerance(Vector3D<Real_t> const &p,
+                                                                            Real_t tolerance = kToleranceStrict<Real_t>)
 {
   auto max_abs_coord = vecCore::math::Max(vecCore::math::Abs(p[0]), vecCore::math::Abs(p[1]), vecCore::math::Abs(p[2]));
-  return kRelTolerance<Real_t>(max_abs_coord, kToleranceStrict<Real_t>);
+  return kRelTolerance<Real_t>(max_abs_coord, tolerance);
 }
 
 template <typename T>
