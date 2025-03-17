@@ -36,14 +36,7 @@ Vector3D<Precision> random_unit_vector()
 
 bool nearly_equal(double x, double y)
 {
-  using std::abs;
-
-  if (x == y)
-    return true;
-  else if (x * y == 0.0)
-    return abs(x - y) < kTolerance * kTolerance;
-  else
-    return abs(x - y) < (abs(x) + abs(y)) * kTolerance;
+  return vecCore::Abs(x - y) < kRelTolerance(std::max(x, y), kToleranceStrict<double>);
 }
 
 VNavigator const *get_navigator(const char *name)

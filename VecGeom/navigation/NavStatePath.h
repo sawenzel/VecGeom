@@ -305,7 +305,11 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VPlacedVolume const *GetLastExited() const
   { /*one beyond current*/
-    return (fCurrentLevel < GetMaxLevel() - 1) ? ToPlacedVolume(fPath[fCurrentLevel]) : nullptr;
+    // A.G this implementation was bugged, because it relies on the fact that this state object actually exited a deeper
+    // path which may not be true - the path may be even set from outside. This implementation cannot provide this
+    // functionality unless a specific data member is added and set via SetLastExited return (fCurrentLevel <
+    // GetMaxLevel() - 1) ? ToPlacedVolume(fPath[fCurrentLevel]) : nullptr;
+    return nullptr;
   }
 
   VECGEOM_FORCE_INLINE
