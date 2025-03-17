@@ -24,8 +24,8 @@ code_checks:
     - ctest -j8 -V
      
 # normal build against a recent ROOT; using the ALICE software stack
-# because it comes fully consistent on cvmfs (including compiler etc)
-with_ROOT:
+# Solid model with navigation index
+NOSURF_NAVINDEX_ROOT:
    tags:
      - cvmfs
    image: cern/alma9-base
@@ -38,12 +38,12 @@ with_ROOT:
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_ROOT=ON -DVECGEOM_GDML=OFF
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_SURF=OFF -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_USE_NAVTUPLE=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=OFF
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 
-# build for USING_NAVINDEX=ON and VECGEOM_GDML=ON (using the cvmfs ALICE software stack: TODO: convert to project/sft...)
-with_NAVINDEX_GDML_ROOT:
+# Solid model with navigation tuple
+NOSURF_NAVTUPLE_ROOT_GDML:
    tags:
      - cvmfs
    image: cern/alma9-base
@@ -57,29 +57,12 @@ with_NAVINDEX_GDML_ROOT:
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
-       # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
-     - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
-
-# build for VECGEOM_USE_SURF=ON  VECGEOM_USE_NAVTUPLE=ON  VECGEOM_NAVTUPLE_MAXDEPTH=4 and VECGEOM_GDML=ON
-with_SURF_NAVTUPLE:
-   tags:
-     - cvmfs
-   image: cern/alma9-base
-   stage: build
-   before_script:
-     - dnf install -y epel-release
-     - yum install -y environment-modules libX11 cmake
-     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu xerces-c-devel
-     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
-   script:
-     - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Scalar -DVECGEOM_USE_SURF=ON -DVECGEOM_USE_NAVTUPLE=ON -DVECGEOM_NAVTUPLE_MAXDEPTH=4 -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_SURF=OFF -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_USE_NAVTUPLE=ON -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 
 # build for DVECGEOM_GDML=ON (using the cvmfs ALICE software stack: TODO: convert to project/sft...)
-with_GDML_ROOT:
+NOSURF_NAVPATH_ROOT_GDML:
    tags:
      - cvmfs
    image: cern/alma9-base
@@ -93,6 +76,42 @@ with_GDML_ROOT:
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_SURF=OFF -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_USE_NAVTUPLE=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+       # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
+     - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
+
+# build for USING_NAVINDEX=ON and VECGEOM_GDML=ON (using the cvmfs ALICE software stack: TODO: convert to project/sft...)
+SURF_NAVINDEX_ROOT_GDML_BENCH_COVERAGE:
+   tags:
+     - cvmfs
+   image: cern/alma9-base
+   stage: build
+   before_script:
+     - dnf install -y epel-release
+     - yum install -y environment-modules libX11 cmake
+     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu xerces-c-devel
+     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
+     - export VC_PATH=/cvmfs/alice.cern.ch/el9-x86_64/Packages/Vc/1.4.1-13
+     - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
+   script:
+     - mkdir build && cd build
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Scalar -DVECGEOM_USE_SURF=ON -DVECGEOM_USE_NAVINDEX=ON -DVECGEOM_USE_NAVTUPLE=OFF -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
+       # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
+     - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
+
+# build for VECGEOM_USE_SURF=ON  VECGEOM_USE_NAVTUPLE=ON  VECGEOM_NAVTUPLE_MAXDEPTH=4 and VECGEOM_GDML=ON
+SURF_NAVTUPLE4_GDML_BENCH_COVERAGE:
+   tags:
+     - cvmfs
+   image: cern/alma9-base
+   stage: build
+   before_script:
+     - dnf install -y epel-release
+     - yum install -y environment-modules libX11 cmake
+     - yum install -y unzip autoconf automake make gcc git harfbuzz-icu xerces-c-devel
+     - eval $(/cvmfs/alice.cern.ch/bin/alienv printenv ROOT::v6-28-02-1)
+   script:
+     - mkdir build && cd build
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Scalar -DVECGEOM_USE_SURF=ON -DVECGEOM_USE_NAVINDEX=OFF -DVECGEOM_USE_NAVTUPLE=ON -DVECGEOM_NAVTUPLE_MAXDEPTH=4 -DVECGEOM_GDML=ON -DVECGEOM_TEST_BENCHMARK=ON -DVECGEOM_TEST_COVERAGE=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
