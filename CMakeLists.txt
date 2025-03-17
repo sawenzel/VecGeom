@@ -438,6 +438,9 @@ if(VECGEOM_ENABLE_CUDA)
         string(APPEND CMAKE_CUDA_FLAGS " --generate-code=code=[sm_${_arch},compute_${_arch}],arch=compute_${_arch}")
       endforeach()
     endif()
+  else()
+    # CUDA toolkit provides API paths to host compilers
+    find_package(CUDAToolkit REQUIRED QUIET)
   endif()
 endif()
 
@@ -817,6 +820,12 @@ if(VECGEOM_ENABLE_CUDA)
       target_link_options(${__vg_cuda_target} PUBLIC "$<DEVICE_LINK:SHELL: -Xnvlink --suppress-stack-size-warning>")
     endif()
   endforeach()
+
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+    # CUDA toolkit must be linked into the host vecgeom to forward paths to host
+    # compilers
+    target_link_libraries(vecgeom PUBLIC CUDA::toolkit)
+  endif()
 endif()
 
 # build the libraries for GDML persistency

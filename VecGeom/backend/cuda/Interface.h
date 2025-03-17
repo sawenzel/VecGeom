@@ -9,8 +9,9 @@
 
 #ifdef VECGEOM_ENABLE_CUDA
 
-#include "driver_types.h" // Required for cudaError_t type
-#include "cuda_runtime.h"
+// Include CUDA API functions for host compilers to use the cudaError_t types
+// since the host compiler (.cc) includes this file transitively
+#include <cuda_runtime_api.h>
 
 #include <vector>
 #include <unordered_map>
