@@ -64,7 +64,11 @@ struct NavTuple {
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  NavIndex_t operator[](uint i) const { return fNavInd[i]; }
+  NavIndex_t operator[](uint i) const
+  {
+    assert(i < MAX_DEPTH && "NavTuple::operator[] out of range");
+    return (i < MAX_DEPTH) ? fNavInd[i] : 0;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -125,16 +129,25 @@ struct NavTuple {
   void Push(NavIndex_t value)
   {
     if (!IsOutside()) fLevel++;
-    fNavInd[fLevel] = value;
+    assert(fLevel < MAX_DEPTH && "NavTuple::Push out of range");
+    if (fLevel < MAX_DEPTH) fNavInd[fLevel] = value;
   }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  void Set(NavIndex_t value) { fNavInd[fLevel] = value; }
+  void Set(NavIndex_t value)
+  {
+    assert(fLevel < MAX_DEPTH && "NavTuple::Set out of range");
+    if (fLevel < MAX_DEPTH) fNavInd[fLevel] = value;
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
-  NavIndex_t Top() const { return fNavInd[fLevel]; }
+  NavIndex_t Top() const
+  {
+    assert(fLevel < MAX_DEPTH && "NavTuple::Top out of range");
+    return (fLevel < MAX_DEPTH) ? fNavInd[fLevel] : 0;
+  }
 };
 
 template <unsigned int MAX_DEPTH>

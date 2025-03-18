@@ -276,7 +276,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE int FindZSegmentKernel<Precision>(P
     --index;
     --end;
   }
-  if ((index + 2 < size) && (pointZ > *(end + 1) - kTolerance)) return (index + 1);
+  if ((size_t(index + 2) < size) && (pointZ > *(end + 1) - kTolerance)) return (index + 1);
   return index;
 }
 } // End anonymous namespace
