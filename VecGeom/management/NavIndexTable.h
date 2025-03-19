@@ -91,7 +91,7 @@ public:
                          int new_scene_id);
 
   /// @brief Run the optimal compression of touchables in logical scenes, constraining the maximum scene depth to
-  ///        NAVTUPLE_MAXDEPTH, and the minimum number of touchables per scene to NAVTUPLE_MINSCENE
+  ///        VECGEOM_NAVTUPLE_MAXDEPTH, and the minimum number of touchables per scene to NAVTUPLE_MINSCENE
   /// @param selected_volumes Container indexed with the logical volume id, returning the selection of scene volumes
   /// @param target_touchables Stop creating logical scenes if the target number is reached
   /// @param min_per_scene Minimum number of touchables of a logical volume that qualifying it to become a scene.

@@ -327,7 +327,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
 {
   // Maximum allowed scene depth and minimum number of touchables per scene are exposed as cmake options
   // #define SCENEMAKE_DEBUG 1
-  int max_depth      = NAVTUPLE_MAXDEPTH - 1;
+  int max_depth      = VECGEOM_NAVTUPLE_MAXDEPTH - 1;
   using VolPtr_t     = LogicalVolume const *;
   auto &vol_selected = fSelectedVolumes;
   // This is the total number of registered volume, larger than the number of volumes in the hierarchy

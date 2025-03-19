@@ -23,11 +23,7 @@
 #
 #
 
-# - Include guard
-if(__macroutilities_isloaded)
-  return()
-endif()
-set(__macroutilities_isloaded YES)
+include_guard(GLOBAL)
 
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
@@ -126,6 +122,9 @@ function(enum_option _var)
         set(${_var} ${_var_tmp} CACHE ${_ENUMOP_TYPE} "${_ENUMOP_DOC} (${_ENUMOP_VALUES})" FORCE)
       endif()
     endif()
+  endif()
+  if(_ENUMOP_TYPE STREQUAL "STRING")
+    set_property(CACHE ${_var} PROPERTY STRINGS "${_ENUMOP_VALUES}")
   endif()
 endfunction()
 

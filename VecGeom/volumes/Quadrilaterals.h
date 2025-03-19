@@ -15,7 +15,7 @@
 #include "VecGeom/volumes/Planes.h"
 
 // Switches on/off explicit vectorization of algorithms using Vc
-// #define VECGEOM_QUADRILATERALS_VC --> now done in CMakeFile
+// #define VECGEOM_QUADRILATERAL_ACCELERATION --> now done in CMakeFile
 
 namespace vecgeom {
 
@@ -292,7 +292,7 @@ struct AcceleratedDistanceToIn {
   }
 };
 
-#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
 template <>
 struct AcceleratedDistanceToIn<Precision> {
 
@@ -411,7 +411,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut(
   return;
 }
 
-#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut<Precision>(
     int &i, const int n, Planes const &planes, Planes const (&sideVectors)[4], const Precision zMin,

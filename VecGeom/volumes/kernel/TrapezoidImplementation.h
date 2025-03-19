@@ -37,11 +37,11 @@ struct TrapezoidImplementation {
   using PlacedShape_t    = PlacedTrapezoid;
   using UnplacedStruct_t = TrapezoidStruct<Precision>;
   using UnplacedVolume_t = UnplacedTrapezoid;
-#ifdef VECGEOM_PLANESHELL_DISABLE
+#ifndef VECGEOM_PLANESHELL
   using TrapSidePlane = TrapezoidStruct<Precision>::TrapSidePlane;
 #endif
 
-#ifdef VECGEOM_PLANESHELL_DISABLE
+#ifndef VECGEOM_PLANESHELL
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void EvaluateTrack(UnplacedStruct_t const &unplaced,
                                                                          Vector3D<Real_v> const &point,
@@ -103,7 +103,7 @@ struct TrapezoidImplementation {
       completelyInside = Abs(point[2]) < MakeMinusTolerant<true>(unplaced.fDz);
     }
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     unplaced.GetPlanes()->GenericKernelForContainsAndInside<Real_v, true>(point, completelyInside, completelyOutside);
 #else
     // here for PLANESHELL=OFF (disabled)
@@ -175,7 +175,7 @@ struct TrapezoidImplementation {
     // Step 2: find distances for intersections with side planes.
     //
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     // If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
     Real_v disttoplanes = unplaced.GetPlanes()->DistanceToIn(point, dir, smin, smax);
     vecCore::MaskedAssign(distance, !done, disttoplanes);
@@ -258,7 +258,7 @@ struct TrapezoidImplementation {
     // Step 2: find distances for intersections with side planes.
     //
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     Real_v disttoplanes = unplaced.GetPlanes()->DistanceToOut(point, dir);
     vecCore::MaskedAssign(distance, disttoplanes < distance, disttoplanes);
 
@@ -309,7 +309,7 @@ struct TrapezoidImplementation {
   {
     safety = Abs(point.z()) - unplaced.fDz;
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     // Get safety over side planes
     unplaced.GetPlanes()->SafetyToIn(point, safety);
 #else
@@ -340,7 +340,7 @@ struct TrapezoidImplementation {
     //   if (vecCore::MaskFull(safety < kHalfTolerance)) return;
     // }
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     // Get safety over side planes
     unplaced.GetPlanes()->SafetyToOut(point, safety);
 #else
@@ -372,7 +372,7 @@ struct TrapezoidImplementation {
     Vector3D<Real_v> normal(0.);
     Real_v safety = -InfinityLength<Real_v>();
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
     // Get normal from side planes -- PlaneShell case
     safety = unplaced.GetPlanes()->NormalKernel(point, normal);
 

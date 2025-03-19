@@ -13,7 +13,7 @@
 #include "Visualizer.h"
 #endif
 
-#ifdef VECGEOM_FLOAT_PRECISION
+#ifdef VECGEOM_SINGLE_PRECISION
 const Precision kApproxEqualTolerance = 1e-3;
 #else
 const Precision kApproxEqualTolerance = 1e-6;

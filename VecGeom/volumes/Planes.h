@@ -11,7 +11,7 @@
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/volumes/kernel/GenericKernels.h"
 
-#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
 #include <Vc/Vc>
 typedef Vc::Vector<vecgeom::Precision> VcPrecision;
 typedef Vc::Vector<vecgeom::Precision>::Mask VcBool;
@@ -167,7 +167,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains(int &i, co
   return;
 }
 
-#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERALS_VC)
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains<Precision, true>(
     int &i, const int n, SOA3D<Precision> const &normals, Array<Precision> const &distances,
@@ -243,7 +243,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedInside(int & /*i*/,
   return;
 }
 
-#if defined(VECGEOM_VC) and defined(VECGEOM_QUADRILATERALS_VC)
+#if defined(VECGEOM_VC) and defined(VECGEOM_QUADRILATERAL_ACCELERATION)
 template <>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedInside<Precision, Inside_t, true>(
     int &i, const int n, SOA3D<Precision> const &normals, Array<Precision> const &distances,

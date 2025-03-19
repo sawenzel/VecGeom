@@ -565,13 +565,13 @@ SolidMesh *UnplacedTrapezoid::CreateMesh3D(Transformation3D const &trans, size_t
 // Return true if the ThreeVectors are coplanar + set coefficients
 //        false if ThreeVectors are not coplanar
 //
-#ifdef VECGEOM_PLANESHELL_DISABLE
+#ifndef VECGEOM_PLANESHELL
 using TrapSidePlane = TrapezoidStruct<Precision>::TrapSidePlane;
 #endif
 
 VECCORE_ATT_HOST_DEVICE
 bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D &p3, const Vec3D &p4,
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
                                    unsigned int iplane)
 #else
                                    TrapSidePlane &plane)
@@ -615,7 +615,7 @@ bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D
   }
 #endif
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   fTrap.fPlanes.Set(iplane, normalVector.x(), normalVector.y(), normalVector.z(), d);
 #else
   plane.fA = normalVector.x();
@@ -647,7 +647,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
   bool good = true;
 
 // Bottom side with normal approx. -Y
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], 0);
 #else
   good                = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
@@ -658,7 +658,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #endif
 
 // Top side with normal approx. +Y
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], 1);
 #else
   good                = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
@@ -669,7 +669,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #endif
 
 // Front side with normal approx. -X
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], 2);
 #else
   good                = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
@@ -680,7 +680,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #endif
 
 // Back side with normal approx. +X
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], 3);
 #else
   good                = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);

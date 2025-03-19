@@ -124,7 +124,7 @@ private:
 
   bool fOnBoundary; // flag indicating whether track is on boundary of the "Top()" placed volume
 
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   // Cached transformation for top level
   bool fCacheM = true; // flag indicating whether the global matrix for the state is cached
   Transformation3D fTopTrans;
@@ -143,7 +143,7 @@ private:
   VECCORE_ATT_HOST_DEVICE
   NavStatePath(size_t new_size, NavStatePath &other)
       : fCurrentLevel(other.fCurrentLevel), fCache(-1), fOnBoundary(other.fOnBoundary),
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
         fCacheM(other.fCacheM), fTopTrans(other.fTopTrans),
 #endif
         fPath(new_size, other.fPath)
@@ -354,7 +354,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void TopMatrix(Transformation3D &) const;
 
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   /* @brief Update the cached top matrix */
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -454,7 +454,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   bool IsOnBoundary() const { return fOnBoundary; }
 
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   bool IsMatrixCached() const { return fCacheM; }
@@ -481,7 +481,7 @@ NavStatePath &NavStatePath::operator=(NavStatePath const &rhs)
     fCurrentLevel = rhs.fCurrentLevel;
     fCache        = rhs.fCache;
     fOnBoundary   = rhs.fOnBoundary;
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
     fCacheM   = rhs.fCacheM;
     fTopTrans = rhs.fTopTrans;
 #endif
@@ -510,7 +510,7 @@ void NavStatePath::Pop()
     // note that we are not invalidating the "popped volume" here
     // in order to be able to query the last "exited volume" later
     fCache = -1;
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
     fCacheM = false;
 #endif
   }
@@ -522,7 +522,7 @@ void NavStatePath::Clear()
   fCurrentLevel = 0;
   fOnBoundary   = false;
   fCache        = -1;
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   fCacheM = true;
 #endif
 }
@@ -534,7 +534,7 @@ void NavStatePath::Push(VPlacedVolume const *v)
   assert(fCurrentLevel < GetMaxLevel());
 #endif
   fPath[fCurrentLevel++] = ToIndex(v);
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   fCacheM = false;
 #endif
 }
@@ -549,7 +549,7 @@ void NavStatePath::Push(unsigned short child)
     assert(child < top->GetDaughters().size());
 #endif
     fPath[fCurrentLevel++] = ToIndex(top->GetDaughters().operator[](child));
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
     fCacheM = false;
 #endif
   }
@@ -562,7 +562,7 @@ void NavStatePath::PushIndexType(NavStateIndex_t v)
   assert(fCurrentLevel < GetMaxLevel());
 #endif
   fPath[fCurrentLevel++] = v;
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   fCacheM = false;
 #endif
 }
@@ -581,7 +581,7 @@ VECCORE_ATT_HOST_DEVICE
 void NavStatePath::TopMatrix(Transformation3D &global_matrix) const
 {
   // this could be actually cached in case the path does not change ( particle stays inside a volume )
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
   if (fCacheM) {
     global_matrix = fTopTrans;
     return;
@@ -592,7 +592,7 @@ void NavStatePath::TopMatrix(Transformation3D &global_matrix) const
   }
 }
 
-#ifdef VECGEOM_CACHED_TRANS
+#ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
 // Update the cached top matrix
 VECGEOM_FORCE_INLINE
 VECCORE_ATT_HOST_DEVICE

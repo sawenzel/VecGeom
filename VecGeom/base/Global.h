@@ -10,7 +10,7 @@
 
 #include "VecGeom/base/Config.h"
 
-#ifdef VECGEOM_FLOAT_PRECISION
+#ifdef VECGEOM_SINGLE_PRECISION
 #define VECCORE_SINGLE_PRECISION
 using Precision = float;
 #else

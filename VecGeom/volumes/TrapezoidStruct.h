@@ -54,7 +54,7 @@ struct TrapezoidStruct {
   T fTthetaCphi;
   T fTthetaSphi;
 
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   typedef PlaneShell<4, Precision> Planes;
   Planes fPlanes;
 #else
@@ -97,7 +97,7 @@ public:
   }
 
 public:
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
