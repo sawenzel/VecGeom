@@ -14,7 +14,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #define VECGEOM_CONST static constexpr
 #endif
 
-#ifdef VECGEOM_FLOAT_PRECISION
+#ifdef VECGEOM_SINGLE_PRECISION
 using Precision                        = float;
 VECGEOM_CONST Precision kTolerance     = 1e-3;
 VECGEOM_CONST Precision kPushTolerance = 1e-3;

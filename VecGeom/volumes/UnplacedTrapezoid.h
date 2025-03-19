@@ -374,7 +374,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   TrapezoidStruct<Precision> const &GetStruct() const { return fTrap; }
 
-  // #ifndef VECGEOM_PLANESHELL_DISABLE
+  // #ifdef VECGEOM_PLANESHELL
   //   VECCORE_ATT_HOST_DEVICE
   //   VECGEOM_FORCE_INLINE
   //   PlaneShell<4,Precision> const *GetPlanes() const { return fTrap.GetPlanes(); }
@@ -407,7 +407,7 @@ private:
   bool MakePlanes();
 
 /// \brief Construct the four side planes from input corner points
-#ifndef VECGEOM_PLANESHELL_DISABLE
+#ifdef VECGEOM_PLANESHELL
   VECCORE_ATT_HOST_DEVICE
   bool MakeAPlane(Vector3D<Precision> const &p1, Vector3D<Precision> const &p2, Vector3D<Precision> const &p3,
                   Vector3D<Precision> const &p4, unsigned int iplane);

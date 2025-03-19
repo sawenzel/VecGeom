@@ -105,7 +105,10 @@ endif()
 
 ################################################################################
 # Configuration options
-# - ISA
+
+# Compiler flags
+option(VECGEOM_SANITIZER "Enable memory sanitizer." OFF)
+
 set(VECGEOM_ISAS empty)
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(i686|x86_64)")
   set(VECGEOM_ISAS sse2 sse3 ssse3 sse4.1 sse4.2 avx avx2 native empty)
@@ -116,126 +119,159 @@ enum_option(VECGEOM_VECTOR DOC "Vector instruction set to be used"
   VALUES ${VECGEOM_ISAS}
   CASE_INSENSITIVE)
 
-# - ISA Backend
 set(VECGEOM_BACKENDS scalar vc)
 enum_option(VECGEOM_BACKEND DOC "Vector backend API to be used"
   TYPE STRING
   VALUES ${VECGEOM_BACKENDS}
   CASE_INSENSITIVE)
 
-# Case adjustment because pass to VecCore components is
-if(VECGEOM_BACKEND STREQUAL "scalar")
-  set(VECGEOM_BACKEND "Scalar")
-elseif(VECGEOM_BACKEND STREQUAL "vc")
-  set(VECGEOM_BACKEND "Vc")
-endif()
-
-# Configure backend for export to VecGeom's Config.h and setting up VecCore
-string(TOUPPER "${VECGEOM_BACKEND}" _BACKEND_UP)
-set(VECGEOM_${_BACKEND_UP} True)
-message(STATUS "Configuring with ${VECGEOM_BACKEND} backend")
-
-if("${VECGEOM_BACKEND}" STREQUAL "Vc")
-  set(VecCore_COMPONENTS ${VecCore_COMPONENTS} ${VECGEOM_BACKEND})
-endif()
-
-# - Core
+# External dependencies
 option(VECGEOM_BUILTIN_VECCORE "Build VecCore and its dependencies from source" OFF)
-# Check/Store an internal variable to check if we switch between builtin/external
-# - If we switch from builtin -> external, then we must reset VecCore_DIR later.
-# State might have changed...
-if(NOT (__BUILTIN_VECCORE_LAST STREQUAL VECGEOM_BUILTIN_VECCORE))
-  if(NOT VECGEOM_BUILTIN_VECCORE)
-    set(__BUILTIN_VECCORE_DISABLED ON)
-  endif()
-endif()
-set(__BUILTIN_VECCORE_LAST ${VECGEOM_BUILTIN_VECCORE} CACHE INTERNAL "Builtin VecCore marker")
-
-# - Precision
-option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
-
-# - Sanitizer
-option(VECGEOM_SANITIZER "Enable memory sanitizer." OFF)
-
-# - CUDA
+option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
 option(VECGEOM_ENABLE_CUDA "Enable compilation for CUDA." OFF)
-cmake_dependent_option(VECGEOM_CUDA_VOLUME_SPECIALIZATION "Use specialized volumes for CUDA." OFF "VECGEOM_ENABLE_CUDA" OFF)
+option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" ON)
 
 if(VECGEOM_ENABLE_CUDA)
-  enable_language(CUDA)
-  # Keep these checks coherent with the C++ compiler/standard
-  if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
-    if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11)
-      message(FATAL_ERROR "CUDA 11 or newer required, found '${CMAKE_CUDA_COMPILER_VERSION}'")
-    endif()
-  else()
-    message(WARNING "Unsupported CUDA compiler '${CMAKE_CUDA_COMPILER_VERSION}', build will likely fail")
-  endif()
-  set(VecCore_COMPONENTS ${VecCore_COMPONENTS} "CUDA")
-  message(STATUS "CUDA support ${ColorBold}enabled${ColorReset}")
+  set(_default_surf ON)
 else()
-  message(STATUS "CUDA support ${ColorBold}disabled${ColorReset}")
+  set(_default_surf OFF)
 endif()
 
-option(VECGEOM_NO_SPECIALIZATION "Disable specialization of volumes." ON)
-if((NOT VECGEOM_NO_SPECIALIZATION) AND VECGEOM_ENABLE_CUDA)
-  message(STATUS "${BoldRed}Forcing VECGEOM_NO_SPECIALIZATION to ON (required by VECGEOM_ENABLE_CUDA=ON${ColorReset})")
-  set(VECGEOM_NO_SPECIALIZATION ON CACHE BOOL "Disable specialization of volumes." FORCE)
-endif()
+# Implementation options
 option(VECGEOM_PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
-option(VECGEOM_QUADRILATERAL_ACCELERATION "Enable SIMD vectorization when looping over quadrilaterals (in Polyhedron)." ON)
-option(VECGEOM_DISTANCE_DEBUG "Enable comparison of calculated distances againt ROOT/Geant4 behind the scenes" OFF)
 option(VECGEOM_INPLACE_TRANSFORMATIONS "Put transformation as members rather than pointers into PlacedVolume objects" ON)
-option(VECGEOM_USE_CACHED_TRANSFORMATIONS "Use cached transformations in navigation states" OFF)
-option(VECGEOM_USE_INDEXEDNAVSTATES "Use indices rather than volume pointers in NavigationState objects" ON)
+option(VECGEOM_USE_SURF "Enable surface model navigation" ${_default_surf})
 
-# Surface model options
-option(VECGEOM_USE_SURF "Enable surface model navigation on GPU" ON)
 if(VECGEOM_USE_SURF)
-  message(STATUS "Surface model ${ColorBold}enabled${ColorReset}")
+  set(_default_bvh_single ON)
 else()
-  message(STATUS "Surface model ${ColorBold}disabled${ColorReset}")
+  set(_default_bvh_single OFF)
 endif()
-## BVH navigation in single precision (can be disabled)
-option(VECGEOM_BVH_SINGLE "Enable using single precision for BVH traversal" ON)
-if(VECGEOM_USE_SURF)
-  if(VECGEOM_BVH_SINGLE)
-    message(STATUS "BVH surface navigation using ${ColorBold}single precision${ColorReset}")
-  else()
-    message(STATUS "BVH surface navigation using ${ColorBold}double precision${ColorReset}")
-  endif()
-endif()
-option(VECGEOM_USE_NAVINDEX "Use flat navigation table with indexed states" OFF)
-option(VECGEOM_USE_NAVTUPLE "Use navigation index table with tuple states" ON)
-set(VECGEOM_NAVTUPLE_MAXDEPTH "1" CACHE STRING "Maximum depth of navigation tuple states")
-if (VECGEOM_NAVTUPLE_MAXDEPTH LESS 1)
-  set(VECGEOM_NAVTUPLE_MAXDEPTH 1 CACHE STRING "Maximum navigation tuple depth" FORCE)
-  message(WARNING "VECGEOM_NAVTUPLE_MAXDEPTH requested value ${VECGEOM_NAVTUPLE_MAXDEPTH} while minimum allowed is 1")
-endif()
-## Either index or tuple navigation are required for CUDA or SURFACE models
-if (VECGEOM_USE_SURF OR VECGEOM_ENABLE_CUDA)
-  if (NOT VECGEOM_USE_NAVINDEX AND NOT VECGEOM_USE_NAVTUPLE)
-    set(VECGEOM_USE_NAVTUPLE ON CACHE STRING "Use navigation index table with tuple states" FORCE)
-  endif()
-endif()
-## Tuple navigation is prioritized
-if(VECGEOM_USE_NAVTUPLE)
-  set(VECGEOM_USE_NAVINDEX OFF CACHE BOOL "Use navigation index table and states" FORCE)
-  message(STATUS "${Green}Enabled scene indexing navigation with ${BoldGreen}max depth ${VECGEOM_NAVTUPLE_MAXDEPTH}${ColorReset}")
-else()
-  if (VECGEOM_USE_NAVINDEX)
-    message(STATUS "${Magenta}Enabled touchable indexing navigation - memory intensive${ColorReset}")
-  else()
-    message(STATUS "${Cyan}Enabled CPU-only touchable path navigation${ColorReset}")
-  endif()
-endif()
+option(VECGEOM_BVH_SINGLE "Use single precision for BVH traversal" ${_default_bvh_single})
 
-option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" ON)
-option(VECGEOM_GDMLDEBUG "Enable additional debug information in GDML module" OFF)
-
-option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
-
+# Precision and accuracy
+option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
+
+# Quad acceleration requires VC
+cmake_dependent_option(VECGEOM_QUADRILATERAL_ACCELERATION
+  "Enable SIMD vectorization when looping over quadrilaterals (in Polyhedron)."
+  ON
+  "VECGEOM_VC"
+  OFF
+)
+
+# Special cuda-dependent volume specialization
+cmake_dependent_option(VECGEOM_CUDA_VOLUME_SPECIALIZATION
+  "Use specialized placed volumes for CUDA"
+  OFF
+  "VECGEOM_ENABLE_CUDA"
+  OFF
+)
+# CUDA cannot specialize most volumes
+cmake_dependent_option(VECGEOM_NO_SPECIALIZATION
+  "Disable specialization of volumes"
+  ON
+  "NOT VECGEOM_ENABLE_CUDA"
+  ON
+)
+
+set(_navstate_opts tuple index)
+if(NOT VECGEOM_USE_SURF)
+  list(APPEND _navstate_opts path)
+endif()
+
+if(VECGEOM_USE_SURF)
+  set(_navstate_default 0) # tuple
+elseif(VECGEOM_USE_CUDA)
+  # Volume + GPU
+  set(_navstate_default 1) # index
+else()
+  # Volume + CPU
+  set(_navstate_default 2) # path
+endif()
+
+# BACKWARD COMPATIBILITY: remove in future (2.x?)
+if(DEFINED VECGEOM_USE_NAVTUPLE OR DEFINED VECGEOM_USE_NAVINDEX)
+  message(WARNING "Deprecated configuration option: "
+    "VECGEOM_USE_NAVTUPLE/VECGEOM_USE_NAVINDEX are replaced with VECGEOM_NAV"
+  )
+  # Set default so that if they did define VECGEOM_NAV it takes priority
+  if(VECGEOM_USE_NAVTUPLE)
+    set(_navstate_default 0)
+  elseif(VECGEOM_USE_NAVINDEX)
+    set(_navstate_default 1)
+  elseif(VECGEOM_USE_SURF)
+    message(SEND_ERROR "Given options are incompatible with surface geometry")
+  else()
+    # Path (navtuple+index are false)
+    set(_navstate_default 2)
+  endif()
+  unset(VECGEOM_USE_NAVTUPLE CACHE)
+  unset(VECGEOM_USE_NAVINDEX CACHE)
+endif()
+
+enum_option(VECGEOM_NAV DOC "Navigation state implementation"
+  TYPE STRING
+  VALUES ${_navstate_opts}
+  DEFAULT ${_navstate_default}
+  CASE_INSENSITIVE
+)
+
+cmake_dependent_option(VECGEOM_USE_CACHED_TRANSFORMATIONS
+  "Use cached transformations in NavStatePath"
+  OFF
+  "VECGEOM_NAV STREQUAL \"path\""
+  OFF
+)
+cmake_dependent_option(VECGEOM_USE_INDEXEDNAVSTATES
+  "Use indices rather than volume pointers in NavStatePath"
+  ON
+  "VECGEOM_NAV STREQUAL \"path\""
+  ON
+)
+
+if(VECGEOM_NAV STREQUAL "tuple")
+  if(DEFINED VECGEOM_NAVTUPLE_MAXDEPTH AND VECGEOM_NAVTUPLE_MAXDEPTH LESS 1)
+    message(WARNING "VECGEOM_NAVTUPLE_MAXDEPTH requested value ${VECGEOM_NAVTUPLE_MAXDEPTH} while minimum allowed is 1")
+    unset(VECGEOM_NAVTUPLE_MAXDEPTH CACHE)
+  endif()
+  set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
+else()
+  # Set to a valid value since it's needed for the code to compile even when not
+  # using navtuple
+  set(VECGEOM_NAVTUPLE_MAXDEPTH 1)
+endif()
+
+################################################################################
+# Echo options
+
+if(VECGEOM_USE_CUDA)
+  set(_cuda_enabled "enabled")
+else()
+  set(_cuda_enabled "disabled")
+endif()
+message(STATUS "CUDA support ${ColorBold}${_cuda_enabled}${ColorReset}")
+
+if(VECGEOM_BVH_SINGLE)
+  set(_bvh_prec "single")
+else()
+  set(_bvh_prec "double")
+endif()
+if(VECGEOM_USE_SURF)
+  set(_model "surface")
+else()
+  set(_model "solid")
+endif()
+message(STATUS "Using ${ColorBold}${_model}${ColorReset} geometry model with ${ColorBold}${_bvh_prec}${ColorReset} precision BVH")
+
+if(VECGEOM_NAV STREQUAL "tuple")
+  message(STATUS "Using ${ColorBold}tuple state${ColorReset} navigation with maximum depth ${VECGEOM_NAVTUPLE_MAXDEPTH}")
+elseif(VECGEOM_NAV STREQUAL "index")
+  message(STATUS "Using ${Magenta}touchable indexing${ColorReset} navigation: memory intensive")
+else()
+  message(STATUS "Using CPU-only ${Cyan}touchable path${ColorReset} navigation")
+endif()
 
 ################################################################################
 # - Testing, unit, coverage, benchmarking, validation etc
@@ -246,36 +282,71 @@ include(CTest)
 cmake_dependent_option(VECGEOM_ROOT "Enable testing using ROOT" OFF "BUILD_TESTING" OFF)
 cmake_dependent_option(VECGEOM_GEANT4 "Enable testing using Geant4" OFF "BUILD_TESTING" OFF)
 
-cmake_dependent_option(VECGEOM_TEST_BENCHMARK "Enable benchmark/performance tests" OFF "BUILD_TESTING" OFF)
-cmake_dependent_option(VECGEOM_TEST_VALIDATION "Enable validation tests from CMS geometry" OFF "BUILD_TESTING" OFF)
+# Debug options
+cmake_dependent_option(VECGEOM_DISTANCE_DEBUG
+  "Enable comparison of calculated distances againt ROOT/Geant4 behind the scenes"
+  OFF
+  "VECGEOM_ROOT;VECGEOM_GEANT4"
+  OFF
+)
+cmake_dependent_option(VECGEOM_GDMLDEBUG
+  "Enable additional debug information in GDML module"
+  OFF
+  "VECGEOM_GDML"
+  OFF
+)
+
+cmake_dependent_option(VECGEOM_TEST_BENCHMARK
+  "Enable benchmark/performance tests" OFF "BUILD_TESTING" OFF)
+cmake_dependent_option(VECGEOM_TEST_VALIDATION
+  "Enable validation tests from CMS geometry" OFF "BUILD_TESTING" OFF)
 
 # Static tests build/use clang-tidy, so require compile commands for VecGeom to be exported
-cmake_dependent_option(VECGEOM_TEST_STATIC_ANALYSIS "Enable static analysis tests on VecGeom" OFF "BUILD_TESTING" OFF)
+cmake_dependent_option(VECGEOM_TEST_STATIC_ANALYSIS
+  "Enable static analysis tests on VecGeom" OFF "BUILD_TESTING" OFF)
 if(VECGEOM_TEST_STATIC_ANALYSIS)
   # static analysis test uses compile commands to run clang-tidy
   set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
 # Thought to now be obsolete
-cmake_dependent_option(VECGEOM_TEST_VTUNE "Enable use of Intel Vtune for profiling tests" OFF "BUILD_TESTING" OFF)
+cmake_dependent_option(VECGEOM_TEST_VTUNE
+  "Enable use of Intel Vtune for profiling tests" OFF "BUILD_TESTING" OFF)
 
 # TODO: not completely set up. Will build VG+tests with correct flags/links, but no report gen.
-cmake_dependent_option(VECGEOM_TEST_COVERAGE "Enable coverage testing flags" OFF "BUILD_TESTING" OFF)
+cmake_dependent_option(VECGEOM_TEST_COVERAGE
+  "Enable coverage testing flags" OFF "BUILD_TESTING" OFF)
 
 
 ################################################################################
 # Minimum version of VecCore we need.
 set(VecCore_VERSION "0.8.2")
 
-# Enable/Disable build/use of builtin veccore
+# Use an internal variable to check if we switch between builtin and external
 if(VECGEOM_BUILTIN_VECCORE)
   include(BuiltinVecCore)
-elseif(__BUILTIN_VECCORE_DISABLED)
+elseif(VECGEOM_BUILTIN_VECCORE_PREV)
+  # - If we switch from builtin -> external, then we must reset VecCore_DIR
   # Unset VecCore_DIR if it points inside our build directory
   string(FIND "${VecCore_DIR}" "${PROJECT_BINARY_DIR}" __vcd_is_builtin)
   if(__vcd_is_builtin EQUAL 0)
     unset(VecCore_DIR CACHE)
   endif()
+endif()
+set(VECGEOM_BUILTIN_VECCORE_PREV ${VECGEOM_BUILTIN_VECCORE} CACHE INTERNAL
+  "Builtin VecCore marker")
+
+# Adjust case
+if(VECGEOM_BACKEND STREQUAL "scalar")
+  set(VECGEOM_BACKEND "Scalar")
+elseif(VECGEOM_BACKEND STREQUAL "vc")
+  set(VECGEOM_BACKEND "Vc")
+  list(APPEND VecCore_COMPONENTS ${VECGEOM_BACKEND})
+endif()
+message(STATUS "Configuring with ${VECGEOM_BACKEND} backend")
+
+if(VECGEOM_ENABLE_CUDA)
+  set(VecCore_COMPONENTS ${VecCore_COMPONENTS} "CUDA")
 endif()
 
 # Find VecCore with selected components turned on (CUDA and backend)
@@ -384,8 +455,11 @@ endif()
 message(STATUS "Compiling for ${_arch_up} SIMD architecture")
 
 # Combine/finalize flags.
-# TODO: Rationalize this or use add_compile_options as appropriate
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
+if (VECGEOM_CXX_FLAGS OR VECGEOM_COMPILATION_FLAGS)
+  # TODO: use add_compile_options as appropriate
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${VECGEOM_CXX_FLAGS} ${VECGEOM_COMPILATION_FLAGS}")
+endif()
+
 if(VECGEOM_SANITIZER)
   string(APPEND CMAKE_CXX_FLAGS " -fsanitize=address -fno-omit-frame-pointer -g")
   string(APPEND CMAKE_EXE_LINKER_FLAGS " -fsanitize=address")
@@ -395,6 +469,16 @@ endif()
 # - CUDA Compiler Flags/Settings for each build type
 #
 if(VECGEOM_ENABLE_CUDA)
+  enable_language(CUDA)
+  # Keep these checks coherent with the C++ compiler/standard
+  if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+    if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11)
+      message(FATAL_ERROR "CUDA 11 or newer required, found '${CMAKE_CUDA_COMPILER_VERSION}'")
+    endif()
+  else()
+    message(WARNING "Unsupported CUDA compiler '${CMAKE_CUDA_COMPILER_VERSION}', build will likely fail")
+  endif()
+
   if(NOT DEFINED CMAKE_CUDA_STANDARD)
     vecgeom_set_default(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
   endif()
@@ -660,6 +744,19 @@ math(EXPR _temp_version
 )
 string(SUBSTRING "${_temp_version}" 3 -1 _temp_version)
 set(VECGEOM_HEX_VERSION "0x${_temp_version}")
+
+# Configure backend for export to VecGeom's Config.h and setting up VecCore
+# NOTE: this sets VECGEOM_VC or VECGEOM_SCALAR
+string(TOUPPER "${VECGEOM_BACKEND}" _BACKEND_UP)
+set(VECGEOM_${_BACKEND_UP} TRUE)
+
+set(VECGEOM_USE_NAVTUPLE FALSE)
+set(VECGEOM_USE_NAVINDEX FALSE)
+if(VECGEOM_NAV STREQUAL "tuple")
+  set(VECGEOM_USE_NAVTUPLE TRUE)
+elseif(VECGEOM_NAV STREQUAL "index")
+  set(VECGEOM_USE_NAVINDEX TRUE)
+endif()
 
 # - Configure settings and version headers
 configure_file(VecGeom/base/Config.h.in ${PROJECT_BINARY_DIR}/VecGeom/base/Config.h @ONLY)

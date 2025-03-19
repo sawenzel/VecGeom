@@ -39,7 +39,7 @@ int runTester(ImplT const *shape, int npoints, bool debug, bool stat)
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
   tester.SetTestBoundaryErrors(true);
-  #ifdef VECGEOM_FLOAT_PRECISION
+  #ifdef VECGEOM_SINGLE_PRECISION
      tester.SetSolidTolerance(1.e-4);
   #endif
   int errCode = tester.Run(shape);

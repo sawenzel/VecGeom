@@ -23,7 +23,7 @@ better maintainable piece of software within the EU-AIDA program. As such it is 
     - Clang >= 10
 - [VecCore](https://github.com/root-project/veccore) version 0.8.0 or newer
   - VecGeom can build/install its own copy of VecCore by setting the CMake variable `VECGEOM_BUILTIN_VECCORE` to `ON`
-- _Optional_ 
+- _Optional_
   - [Vc](https://github.com/VcDevel/Vc) 1.3.3 or newer for SIMD support
   - [Xerces-C](https://xerces.apache.org/xerces-c/) for GDML support
   - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) 11.0 or newer for CUDA support
@@ -43,16 +43,16 @@ The table below shows the available CMake options for VecGeom that may be used t
 
 |Option|Default|Description|
 |------|:-----:|-----------|
-|VECGEOM_BACKEND|scalar|Vector backend API to be used|
+|VECGEOM_BACKEND|scalar|Vector backend API to be used (scalar/vc)|
 |VECGEOM_BUILTIN_VECCORE|OFF|Build VecCore and its dependencies from source|
 |VECGEOM_CUDA_VOLUME_SPECIALIZATION|OFF|Use specialized volumes for CUDA|
-|VECGEOM_DISTANCE_DEBUG|OFF|Enable comparison of calculated distances againt ROOT/Geant4 behind the scenes|
+|VECGEOM_DISTANCE_DEBUG|OFF|Enable comparison of calculated distances against ROOT/Geant4 behind the scenes|
 |VECGEOM_EMBREE|OFF|Enable Intel Embree|
 |VECGEOM_ENABLE_CUDA|OFF|Enable compilation for CUDA|
 |VECGEOM_FAST_MATH|OFF|Enable the -ffast-math compiler option in Release builds|
-|VECGEOM_GDML|OFF|Enable GDML persistency. Requres Xerces-C|
+|VECGEOM_GDML|OFF|Enable GDML persistency. Requires Xerces-C|
 |VECGEOM_GDMLDEBUG|OFF|Enable additional debug information in GDML module|
-|VECGEOM_BVH_SINGLE|OFF|Enable single precision for BVH traversal|
+|VECGEOM_BVH_SINGLE|ON if surface|Enable single precision for BVH traversal|
 |VECGEOM_INPLACE_TRANSFORMATIONS|ON|Put transformation as members rather than pointers into PlacedVolume objects|
 |VECGEOM_NO_SPECIALIZATION|ON|Disable specialization of volumes|
 |VECGEOM_PLANESHELL|ON|Enable the use of PlaneShell class for the trapezoid|
@@ -60,11 +60,14 @@ The table below shows the available CMake options for VecGeom that may be used t
 |VECGEOM_SANITIZER|OFF|Enable memory sanitizer|
 |VECGEOM_SINGLE_PRECISION|OFF|Use single precision throughout the package|
 |VECGEOM_USE_CACHED_TRANSFORMATIONS|OFF|Use cached transformations in navigation states|
-|VECGEOM_USE_INDEXEDNAVSTATES|ON|Use indices rather than volume pointers in NavigationState objects|
-|VECGEOM_USE_NAVINDEX|OFF|Use navigation index table and index states|
-|VECGEOM_USE_NAVTUPLE|ON|Use navigation index table and tuple states|
-|DVECGEOM_NAVTUPLE_MAXDEPTH|1|Maximum depth for navigation tuple states|
-|VECGEOM_VECTOR|sse2|Vector instruction set to be used|
+|VECGEOM_USE_INDEXEDNAVSTATES|ON|Use indices rather than volume pointers when VECGEOM_NAV=path|
+|VECGEOM_USE_SURF|ON if CUDA|Enable surface model for navigation|
+|VECGEOM_NAV|tuple|Navigation state implementation (tuple/index/path)|
+|VECGEOM_NAVTUPLE_MAXDEPTH|4|Maximum depth for navigation tuple states|
+|VECGEOM_VECTOR|sse2 if x86|Vector instruction set to be used|
+
+The `VECGEOM_NAV` option supports the `path` value only if the surface implementation
+is disabled.
 
 The following options are available for enabling, building, and running tests:
 
@@ -117,5 +120,5 @@ It is strongly recommended to use the first option unless you must use shared li
 It is also the developer's responsibility to handle any further device-linking of `vecgeomcuda`
 using libraries that may be required if these libraries expose device/kernel interfaces.
 
-## Bug Reports 
+## Bug Reports
 Please report all issues on our [JIRA Issue tracking system](http://sft.its.cern.ch/jira/projects/VECGEOM)

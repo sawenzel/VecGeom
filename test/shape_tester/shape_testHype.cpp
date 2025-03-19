@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
   tester.SetTestBoundaryErrors(true);
-  #ifdef VECGEOM_FLOAT_PRECISION
+  #ifdef VECGEOM_SINGLE_PRECISION
      tester.SetSolidTolerance(1.e-4);
      tester.SetSolidFarAway(1.e4);
   #endif

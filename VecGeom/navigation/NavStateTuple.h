@@ -160,7 +160,7 @@ std::ostream &operator<<(std::ostream &os, NavTuple<MAX_DEPTH> const &nav_tuple)
   return os;
 }
 
-using NavTuple_t = NavTuple<NAVTUPLE_MAXDEPTH>;
+using NavTuple_t = NavTuple<VECGEOM_NAVTUPLE_MAXDEPTH>;
 
 /**
  * @brief A class describing a current geometry state based on a tuple of indices
