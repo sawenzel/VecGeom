@@ -42,15 +42,6 @@
  */
 #define VECGEOM_LOG(LEVEL) ::vecgeom::logger()(VECGEOM_CODE_PROVENANCE, ::vecgeom::LogLevel::LEVEL)
 
-//---------------------------------------------------------------------------//
-/*!
- * \def VECGEOM_LOG_LOCAL
- *
- * Like \c VECGEOM_LOG but for code paths that may only happen on a single
- * process. Use sparingly.
- */
-#define VECGEOM_LOG_LOCAL(LEVEL) ::vecgeom::self_logger()(VECGEOM_CODE_PROVENANCE, ::vecgeom::LogLevel::LEVEL)
-
 // Allow VECGEOM_LOGto be present (but ignored) in device code
 #ifdef __CUDA_ARCH__
 #undef VECGEOM_LOG
@@ -65,8 +56,7 @@ namespace vecgeom {
 /*!
  * Manage logging in serial and parallel.
  *
- * This should generally be called by the \c world_logger and \c
- * self_logger functions below. The call \c operator() returns an object that
+ * This should generally be called by the \c logger function below. The call \c operator() returns an object that
  * should be streamed into in order to create a log message.
  *
  * This object \em is assignable, so to replace the default log handler with a
