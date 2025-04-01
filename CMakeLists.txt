@@ -203,7 +203,7 @@ endif()
 
 if(VECGEOM_USE_SURF)
   set(_navstate_default 0) # tuple
-elseif(VECGEOM_USE_CUDA)
+elseif(VECGEOM_ENABLE_CUDA)
   # Volume + GPU
   set(_navstate_default 1) # index
 else()
@@ -266,7 +266,7 @@ endif()
 ################################################################################
 # Echo options
 
-if(VECGEOM_USE_CUDA)
+if(VECGEOM_ENABLE_CUDA)
   set(_cuda_enabled "enabled")
 else()
   set(_cuda_enabled "disabled")
