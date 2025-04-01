@@ -1,4 +1,4 @@
-add_library(VecGeomTest STATIC
+set(VecGeomTest_sources
   # Shape tester
   ShapeTester.h
   ShapeTester.cpp #includes ConventionChecker.cpp ...
@@ -10,28 +10,37 @@ add_library(VecGeomTest STATIC
   NavigationBenchmarker.h
   NavigationBenchmarker.cpp
   VolumePointers.h
-  VolumePointers.cpp
-  $<$<BOOL:${VECGEOM_ENABLE_CUDA}>:
-    Benchmarker.cu;
-    NavigationBenchmarker.cu>
-  # ROOT
-  $<$<BOOL:${VECGEOM_ROOT}>:
-    NavStateConverter.h;
-    PlacedRootVolume.cpp;
-    PlacedRootVolume.h;
-    RootGeoManager.cpp;
-    RootGeoManager.h;
-    UnplacedRootVolume.cpp;
-    UnplacedRootVolume.h;
-    ShapeDebugger.cpp;
-    ShapeDebugger.h;
-    Visualizer.cpp;
-    Visualizer.h>
-  # Geant4
-  $<$<BOOL:${VECGEOM_GEANT4}>:
-    G4GeoManager.h;
-    G4GeoManager.cpp>
+  VolumePointers.cpp)
+if(VECGEOM_ENABLE_CUDA)
+  list(APPEND VecGeomTest_sources
+    Benchmarker.cu
+    NavigationBenchmarker.cu
   )
+endif()
+if(VECGEOM_ROOT)
+  list(APPEND VecGeomTest_sources
+    # ROOT
+    NavStateConverter.h
+    PlacedRootVolume.cpp
+    PlacedRootVolume.h
+    RootGeoManager.cpp
+    RootGeoManager.h
+    UnplacedRootVolume.cpp
+    UnplacedRootVolume.h
+    ShapeDebugger.cpp
+    ShapeDebugger.h
+    Visualizer.cpp
+    Visualizer.h
+  )
+endif()
+if(VECGEOM_GEANT4)
+  list(APPEND VecGeomTest_sources
+    # Geant4
+    G4GeoManager.h
+    G4GeoManager.cpp
+  )
+endif()
+cuda_rdc_add_library(VecGeomTest ${VecGeomTest_sources})
 
 # Eventually Re-expose compile definitions for when we finally sever VecGeom's ROOT/Geant4 dependencies
 # Currently done by vecgeom config header
@@ -40,16 +49,27 @@ add_library(VecGeomTest STATIC
 #  $<$<BOOL:VECGEOM_ROOT>:VECGEOM_ROOT>
 #  )
 
-target_include_directories(VecGeomTest PUBLIC ${PROJECT_SOURCE_DIR}/test)
-target_link_libraries(VecGeomTest
+cuda_rdc_target_include_directories(VecGeomTest PUBLIC ${PROJECT_SOURCE_DIR}/test)
+if(VECGEOM_ROOT)
+  list(APPEND _extra_libs ROOT::Graf3d)
+  list(APPEND _extra_priv_libs ROOT::Core ROOT::Geom ROOT::Gpad)
+endif()
+if(VECGEOM_GEANT4)
+  list(APPEND _extra_libs Geant4::G4geometry)
+  # G4persistency public because there is direct use of it in tests
+  if(TARGET Geant4::G4persistency)
+    list(APPEND _extra_libs Geant4::G4persistency)
+  else()
+    list(APPEND _extra_libs Geant4::G4gdml)
+  endif()
+endif()
+cuda_rdc_target_link_libraries(VecGeomTest
   PUBLIC
     vecgeom
-    "$<$<BOOL:${VECGEOM_ROOT}>:ROOT::Graf3d>"
-    # G4persistency public because there is direct use of it in tests
-    "$<$<BOOL:${VECGEOM_GEANT4}>:Geant4::G4geometry;$<IF:$<TARGET_EXISTS:Geant4::G4persistency>,Geant4::G4persistency,Geant4::G4gdml>>"
+    ${_extra_libs}
   PRIVATE
-    "$<$<BOOL:${VECGEOM_ROOT}>:ROOT::Core;ROOT::Geom;ROOT::Gpad>"
-  )
+    ${_extra_priv_libs}
+)
 
 if(VECGEOM_GEANT4 AND VECGEOM_ROOT)
   # We use VGM to convert (test) geometries from ROOT input to G4
@@ -78,8 +98,8 @@ if(VECGEOM_GEANT4 AND VECGEOM_ROOT)
   endif()
   add_library(VecGeom::VGM INTERFACE IMPORTED)
   target_include_directories(VecGeom::VGM INTERFACE "${VGM_INSTALL}/include")
-  target_link_libraries(VecGeom::VGM INTERFACE ${VGM_LIBRARIES})
+  cuda_rdc_target_link_libraries(VecGeom::VGM INTERFACE ${VGM_LIBRARIES})
 
-  target_link_libraries(VecGeomTest PRIVATE VecGeom::VGM)
+  cuda_rdc_target_link_libraries(VecGeomTest PRIVATE VecGeom::VGM)
   add_dependencies(VecGeomTest VGM)
 endif()

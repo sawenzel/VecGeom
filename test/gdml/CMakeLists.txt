@@ -8,11 +8,13 @@
 foreach(_vgdml_test TestXercesBackend TestXercesFrontend TestXercesMiddleware ReadMiddlewareData
                     TestVGDMLAuxiliary TestVGDMLNavigation TestBVHNavigator TestVGDMLVolumeAuxiliaryInfo)
   add_executable(${_vgdml_test} ${_vgdml_test}/${_vgdml_test}.cpp)
-  target_link_libraries(${_vgdml_test} PUBLIC vgdml $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,vecgeom>)
+  cuda_rdc_target_link_libraries(${_vgdml_test} PUBLIC ${_exec_extra_libs} vgdml vecgeom)
 endforeach()
 
 # Middleware test also needs ROOT support
-target_link_libraries(TestXercesMiddleware PRIVATE $<$<BOOL:${VECGEOM_ROOT}>:VecGeomTest>)
+if(VECGEOM_ROOT)
+  cuda_rdc_target_link_libraries(TestXercesMiddleware PRIVATE VecGeomTest)
+endif()
 
 # Tests of VGDML's types for the GDML schema and translations
 add_test(NAME TestVGDMLAuxiliary COMMAND TestVGDMLAuxiliary)

@@ -9,9 +9,7 @@ macro(build_executables EXECUTABLES)
   foreach(EXECUTABLE ${EXECUTABLES})
     get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
     add_executable(${TARGET_NAME} ${EXECUTABLE})
-    target_link_libraries(${TARGET_NAME} PUBLIC
-      $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,>
-      VecGeomTest)
+    cuda_rdc_target_link_libraries(${TARGET_NAME} PUBLIC VecGeomTest)
   endforeach()
 endmacro()
 
@@ -163,24 +161,22 @@ if (VECGEOM_USE_SURF)
     get_files_in_directory("${CMAKE_SOURCE_DIR}/test/gdml/gdmls/unit_tests" SURFACE_MODEL_TESTS)
     if (VECGEOM_ENABLE_CUDA)
       add_executable(testRaytracing surfaces/testRaytracing.cpp surfaces/testRaytracing.cu)
-      target_link_libraries(testRaytracing PUBLIC vecgeomcuda_static vgdml)
+      cuda_rdc_target_link_libraries(testRaytracing PUBLIC vgdml)
       add_test(NAME testRaytracing COMMAND testRaytracing -gdml_name ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml)
       add_tests_for_files(testRaytracing COMMAND testRaytracing -nrays 100000 -mmunit 0.1 -debug 1 -ongpu 1 -accept_zeros 1 -test_bvh 1 -gdml_name GEOMS ${SURFACE_MODEL_TESTS})
-      add_executable(testBVH surfaces/testBVH.cpp)
-      target_link_libraries(testBVH PUBLIC vecgeomcuda_static vgdml)
     else()
       add_executable(testRaytracing surfaces/testRaytracing.cpp)
-      target_link_libraries(testRaytracing PUBLIC vgdml)
+      cuda_rdc_target_link_libraries(testRaytracing PUBLIC vgdml)
       add_test(NAME testRaytracing COMMAND testRaytracing -ongpu 0 -gdml_name ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml)
       add_tests_for_files(testRaytracing COMMAND testRaytracing -nrays 100000 -mmunit 0.1 -debug 1 -ongpu 0 -accept_zeros 1 -test_bvh 1 -gdml_name GEOMS ${SURFACE_MODEL_TESTS})
-      add_executable(testBVH surfaces/testBVH.cpp)
-      target_link_libraries(testBVH PUBLIC vgdml)
     endif()
+    add_executable(testBVH surfaces/testBVH.cpp)
+    cuda_rdc_target_link_libraries(testBVH PUBLIC vgdml)
   endif()
 
   if (VECGEOM_ENABLE_CUDA AND VECGEOM_GDML)
     add_executable(testCUDA surfaces/testCUDA.cpp surfaces/testCUDA.cu)
-    target_link_libraries(testCUDA PUBLIC vecgeomcuda_static vgdml)
+    cuda_rdc_target_link_libraries(testCUDA PUBLIC vecgeom vgdml)
     add_test(NAME testCUDA COMMAND testCUDA)
   endif()
 endif()
@@ -225,12 +221,18 @@ if(VECGEOM_ROOT)
     list(APPEND TEST_EXECUTABLES_ROOT core/EmbreeManagerTest.cpp)
   endif()
 
+
+  if(VECGEOM_ENABLE_CUDA)
+    list(APPEND _test_nav_src core/TestNavigationStatePool.cu)
+  endif()
+  if(VECGEOM_ROOT)
+    list(APPEND _test_nav_libs VecGeomTest)
+  endif()
   add_executable(TestNavigationStatePool
     core/TestNavigationStatePool.cpp
-    $<$<BOOL:VECGEOM_ENABLE_CUDA>:core/TestNavigationStatePool.cu>)
-  target_link_libraries(TestNavigationStatePool PRIVATE
-    $<IF:$<BOOL:${VECGEOM_ENABLE_CUDA}>,vecgeomcuda_static,vecgeom>
-    $<$<BOOL:${VECGEOM_ROOT}>:VecGeomTest>)
+    ${_test_nav_src})
+  cuda_rdc_target_link_libraries(TestNavigationStatePool PRIVATE
+    vecgeom ${_test_nav_libs})
   add_test(NAME TestNavigationStatePool COMMAND TestNavigationStatePool)
 
   # - separate list for ROOT UNIT tests
@@ -337,8 +339,8 @@ if(VECGEOM_ENABLE_CUDA)
     add_executable(BVHTest cuda/BVHTest.cu cuda/BVHTest.cpp )
     add_executable(GeometryTest cuda/GeometryTest.cpp cuda/GeometryTest.cu)
 
-    target_link_libraries(BVHTest      PUBLIC vecgeomcuda_static vgdml)
-    target_link_libraries(GeometryTest PUBLIC vecgeomcuda_static vgdml)
+    cuda_rdc_target_link_libraries(BVHTest      PUBLIC vecgeom vgdml)
+    cuda_rdc_target_link_libraries(GeometryTest PUBLIC vecgeom vgdml)
 
     add_test(NAME BVHTest      COMMAND BVHTest ${PROJECT_SOURCE_DIR}/test/gdml/gdmls/trackML.gdml)
     add_test(NAME GeometryTest-Device-trackML
