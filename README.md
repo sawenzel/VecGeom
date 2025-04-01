@@ -94,31 +94,29 @@ you must link your binaries to _both_ the `vecgeom` _and_ `vecgeomcuda` librarie
 
 If your code uses VecGeom's CUDA interface in device code or kernels, then it must either:
 
-1. Link _and_ device-link to the `vecgeomcuda_static` target. In CMake, this is automatically handled
-   by, e.g.
+1. Link _and_ device-link to the `vecgeomcuda` target using the cuda_rdc cmake functions.
+In CMake, this is automatically handled by, e.g.
 
    ```cmake
    find_package(VecGeom)
    add_executable(MyCUDA MyCUDA.cu)
    set_target_properties(MyCUDA PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-   target_link_libraries(MyCUDA PRIVATE VecGeom::vecgeomcuda_static)
+   cuda_rdc_target_link_libraries(MyCUDA PRIVATE VecGeom::vecgeomcuda)
    ```
 
-2. Link to the `vecgeomcuda` shared library, _and_ device-link to the `vecgeomcuda_static` target, e.g.
-   in CMake (only CMake 3.18 and newer):
+3. Link to the `vecgeomcuda` shared library, _and_ device-link to the `vecgeomcuda_static` target,
+using the cuda_rdc CMake functions:
 
    ```cmake
    find_package(VecGeom)
-   add_library(MyCUDA MyCUDA.cu)
-   set_target_properties(MyCUDA PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-   target_link_libraries(MyCUDA PRIVATE VecGeom::vecgeomcuda)
-   # Requires CMake 3.18 or newer
-   target_compile_options(MyCUDA PRIVATE $<DEVICE_LINK:$<TARGET_FILE:vecgeomcuda_static>>)
+   cuda_rdc_add_library(MyCUDA MyCUDA.cu)
+   cuda_rdc_set_target_properties(MyCUDA PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+   cuda_rdc_target_link_libraries(MyCUDA PRIVATE VecGeom::vecgeomcuda)
    ```
 
-It is strongly recommended to use the first option unless you must use shared libraries.
-It is also the developer's responsibility to handle any further device-linking of `vecgeomcuda`
-using libraries that may be required if these libraries expose device/kernel interfaces.
+The cuda_rdc CMake function (see CudaRdcUtils.cmake for more details) will handle any further
+device-linking of `vecgeomcuda` using libraries that may be required if these libraries
+expose device/kernel interfaces.
 
 ## Bug Reports
 Please report all issues on our [JIRA Issue tracking system](http://sft.its.cern.ch/jira/projects/VECGEOM)
