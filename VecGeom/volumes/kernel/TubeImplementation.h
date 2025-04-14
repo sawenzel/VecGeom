@@ -754,7 +754,7 @@ struct TubeImplementation {
         vecCore::MaskedAssign(distance, ok_phi && dist_phi < distance, dist_phi);
       } else if (SectorType<tubeTypeT>::value == kOnePi) {
         PhiPlaneTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, false, false>(
-            tube.fAlongPhi2x, tube.fAlongPhi2y, w.GetNormal2().x(), w.GetNormal2().x(), tube, point, dir, dist_phi,
+            tube.fAlongPhi2x, tube.fAlongPhi2y, w.GetNormal2().x(), w.GetNormal2().y(), tube, point, dir, dist_phi,
             ok_phi);
         vecCore::MaskedAssign(distance, ok_phi && dist_phi < distance, dist_phi);
       } else {
