@@ -169,34 +169,19 @@ public:
                            Precision p2_y, Precision p3_x, Precision p3_y, Precision *i_x, Precision *i_y);
 
   VECCORE_ATT_HOST_DEVICE
-  bool GetLineIntersection(Line2D l1, Line2D l2, Vector2D<Precision> &poi);
+  bool GetLineIntersection(Line2D l1, Line2D l2);
 
-  // Returns poi at line l1 where y=yVal, and true if poi is between l1 points
-  // or false otherwise
   VECCORE_ATT_HOST_DEVICE
-  bool GetLineIntersection(Line2D l1, Precision zVal, Vector2D<Precision> &poi)
+  bool GetLineIntersection(Line2D l1, Line2D l2, Vector2D<Precision> &poi)
   {
-    // Line l1: (r1,z1) -> (r2,z2)
-    Precision r1 = l1.p1.x();
-    Precision z1 = l1.p1.y();
-    Precision r2 = l1.p2.x();
-    Precision z2 = l1.p2.y();
-
-    if (z1 == z2) {
-      // vertical line or degenerate point - no solution
-      poi.x() = poi.y() = 0.;
-      return false;
+    // Vector2D<Precision>  poi(0.,0.);
+    if (l1.p2.x() == l2.p1.x() && l1.p2.y() == l2.p1.y()) {
+      poi.x() = l1.p2.x();
+      poi.y() = l1.p2.y();
+      return true;
     }
-
-    // solution: poi(r, zVal)
-    poi.y() = zVal;
-    poi.x() = r1 + (r2 - r1) * (zVal - z1) / (z2 - z1);
-
-    // Validation: is poi contained between (r1,z1)<->(r2,z2)?
-    bool ok = (poi.x() >= vecCore::math::Min(r1, r2)) && (poi.x() <= vecCore::math::Max(r1, r2)) &&
-              (poi.y() >= vecCore::math::Min(z1, z2)) && (poi.y() <= vecCore::math::Max(z1, z2));
-
-    return ok;
+    return GetLineIntersection(l1.p1.x(), l1.p1.y(), l1.p2.x(), l1.p2.y(), l2.p1.x(), l2.p1.y(), l2.p2.x(), l2.p2.y(),
+                               &poi.x(), &poi.y());
   }
 
   VECCORE_ATT_HOST_DEVICE
