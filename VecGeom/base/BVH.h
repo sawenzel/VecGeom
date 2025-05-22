@@ -184,15 +184,16 @@ public:
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
+          if (last_exited_id >= 0 && Navigator::SkipItem(fRootId, prim, last_exited_id)) continue;
           /* Check AABB first, then the element itself if needed */
           Real_t approach;
           if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
             auto dist = Navigator::CandidateDistanceToIn(
                 fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
-            dist += static_cast<Real_i>(approach);
+            // Only compensate with the approach distance if the distance is positive (i.e. not a wrong-side error)
+            dist += (dist > 0.) * static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step &&
-                !(dist <= vecgeom::kToleranceDist<Real_i> && Navigator::SkipItem(fRootId, prim, last_exited_id))) {
+            if (dist < step && dist > -vecgeom::kToleranceDist<Real_i>) {
               step               = dist;
               bstep              = static_cast<Real_t>(dist);
               hitcandidate_index = prim;
@@ -327,6 +328,49 @@ public:
     } while (ptr > stack);
 
     return false;
+  }
+
+  /**
+   * Find child element inside which the given point @p localpoint is located.
+   * @param[in] exclude_item_id Element that should be ignored.
+   * @param[in] localpoint Point in the local coordinates of the BVH root element.
+   * @param[out] container_id Id of the element in which @p localpoint is contained
+   * @param[out] daughterlocalpoint Point in the local coordinates of the container element
+   * @returns Whether @p localpoint falls within a child element of this BVH.
+   */
+  template <typename Navigator>
+  VECCORE_ATT_HOST_DEVICE vecgeom::Inside_t LevelInside(long const exclude_item_id,
+                                                        Vector3D<Precision> const &localpoint, long &container_id,
+                                                        Vector3D<Precision> &daughterlocalpoint) const
+  {
+    unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
+    stack[0] = 0;
+
+    do {
+      const unsigned int id = *--ptr;
+
+      if (fNChild[id] >= 0) {
+        for (int i = 0; i < fNChild[id]; ++i) {
+          const int prim = fPrimId[fOffset[id] + i];
+          if (fAABBs[prim].Contains(localpoint)) {
+            if (Navigator::SkipItem(fRootId, prim, exclude_item_id)) continue;
+            auto inside = Navigator::CandidateInside(fRootId, prim, localpoint, daughterlocalpoint);
+            if (inside != kOutside) {
+              container_id = Navigator::ItemId(fRootId, prim);
+              return inside;
+            }
+          }
+        }
+      } else {
+        const unsigned int childL = 2 * id + 1;
+        if (fNodes[childL].Contains(localpoint)) *ptr++ = childL;
+
+        const unsigned int childR = 2 * id + 2;
+        if (fNodes[childR].Contains(localpoint)) *ptr++ = childR;
+      }
+    } while (ptr > stack);
+
+    return kOutside;
   }
 
   /**

@@ -119,12 +119,28 @@ public:
    * @returns Whether @localpoint falls within the PlacedVolume defined by @p aLVIndex and @p index
    */
   VECCORE_ATT_HOST_DEVICE
-  static bool CandidateContains(int aLVIndex, int index, Vector3D<Precision> const &localpoint,
-                                Vector3D<Precision> &daughterlocalpoint)
+  static vecgeom::Inside_t CandidateInside(int aLVIndex, int index, Vector3D<Precision> const &localpoint,
+                                           Vector3D<Precision> &daughterlocalpoint)
   {
     auto daughter      = GetPlacedVolume(aLVIndex, index);
     daughterlocalpoint = daughter->GetTransformation()->Transform<Precision>(localpoint);
-    return daughter->GetUnplacedVolume()->Inside(daughterlocalpoint) != EnumInside::kOutside;
+    return daughter->GetUnplacedVolume()->Inside(daughterlocalpoint);
+  };
+
+  /*
+   * @param[in] aLVIndex Global index of a LogicalVolume
+   * @param[in] index Index within the list of daughters of the specified LogicalVolume
+   * @param[in] localpoint Point in the local coordinates of the LV specified by @aLVIndex
+   * @param[out] daughterlocalpoint Point in the local coordinates of the PlacedVolume defined by
+   * @p aLVIndex and @p index
+   * @returns Whether @localpoint falls within the PlacedVolume defined by @p aLVIndex and @p index
+   */
+  VECCORE_ATT_HOST_DEVICE
+  static bool CandidateContains(int aLVIndex, int index, Vector3D<Precision> const &localpoint,
+                                Vector3D<Precision> &daughterlocalpoint)
+  {
+    auto inside = CandidateInside(aLVIndex, index, localpoint, daughterlocalpoint);
+    return inside != EnumInside::kOutside;
   };
 
   /*
@@ -187,8 +203,12 @@ public:
                                 vecgeom::VPlacedVolume const *exclude = nullptr)
   {
     if (top) {
+      // Must check the provided volume
       assert(vol != nullptr);
-      if (!vol->UnplacedContains(point)) return nullptr;
+      auto inside = vol->Inside(point);
+      if (inside == kOutside) return nullptr;
+      // Set the boundary state to the path
+      if (inside == kSurface) path.SetBoundaryState(true);
     }
 
     path.Push(vol);
@@ -207,12 +227,15 @@ public:
       }
       vol_id = -1;
 
-      if (!bvh->LevelLocate<BVHNavigator>(exclude_id, currentpoint, vol_id, daughterlocalpoint)) break;
+      auto inside = bvh->LevelInside<BVHNavigator>(exclude_id, currentpoint, vol_id, daughterlocalpoint);
+      if (inside == kOutside) break;
+      if (inside == kSurface) path.SetBoundaryState(true);
 
       currentpoint = daughterlocalpoint;
       // Update the current volume v
       v = GetPlacedVolume(vol_id);
       path.Push(v);
+
       // Only exclude the placed volume once since we could enter it again via a
       // different volume history.
       exclude = nullptr;
@@ -251,12 +274,9 @@ private:
                                      Precision step_limit, vecgeom::NavigationState const &in_state,
                                      vecgeom::NavigationState &out_state, Daughter &hitcandidate)
   {
-    if (step_limit <= 0) {
-      // We don't need to ask any solid, this step is not limited by geometry.
-      in_state.CopyTo(&out_state);
-      out_state.SetBoundaryState(false);
-      return 0;
-    }
+    in_state.CopyTo(&out_state);
+    // Just return unchanged current state if the step limit is null or invalid
+    if (step_limit <= 0) return 0.;
 
     Precision step = step_limit;
     Daughter pvol  = in_state.Top();
@@ -266,9 +286,19 @@ private:
 
     // need to calc DistanceToOut first
     step = pvol->DistanceToOut(localpoint, localdir, step_limit);
+    // This should never happen as DistanceToOut should never return infinity (TBC)
+    if (step == vecgeom::kInfLength) step = 0.;
+    // Most solids ignore step_limit
+    step = Min(step, step_limit);
+    // Boundary very close or already outside
+    if (step < kTolerance) {
+      step = Max(0., step);
+      // Even if the point is outside the volume, we have to set the boundary flag to force relocation
+      out_state.SetBoundaryState(true);
+      return step;
+    }
 
-    if (step < 0) step = 0;
-
+    // Now distance to children
     if (pvol->GetDaughters().size() > 0) {
       auto bvh = vecgeom::BVHManager::GetBVH(pvol->GetLogicalVolume()->id());
 
@@ -281,22 +311,17 @@ private:
       bvh->CheckDaughterIntersections<BVHNavigator, Precision>(localpoint, localdir, step, last_exited_id,
                                                                hitcandidate_index);
 
-      if (hitcandidate_index >= 0) hitcandidate = pvol->GetLogicalVolume()->GetDaughters()[hitcandidate_index];
-    }
-
-    // now we have the candidates and we prepare the out_state
-    in_state.CopyTo(&out_state);
-    if (step == vecgeom::kInfLength && step_limit > 0) {
-      out_state.SetBoundaryState(true);
-      do {
-        out_state.Pop();
-      } while (out_state.Top()->IsAssembly());
-
-      return vecgeom::kTolerance;
+      if (hitcandidate_index >= 0) {
+        // A child was hit within the step_limit
+        step         = Max(0., step);
+        hitcandidate = pvol->GetLogicalVolume()->GetDaughters()[hitcandidate_index];
+        out_state.SetBoundaryState(true);
+        return step;
+      }
     }
 
     // Is geometry further away than physics step?
-    if (step > step_limit) {
+    if (step >= step_limit) {
       // Then this is a phyics step and we don't need to do anything.
       out_state.SetBoundaryState(false);
       return step_limit;
@@ -304,11 +329,6 @@ private:
 
     // Otherwise it is a geometry step and we push the point to the boundary.
     out_state.SetBoundaryState(true);
-
-    if (step < 0) {
-      step = 0;
-    }
-
     return step;
   }
 
@@ -459,7 +479,7 @@ public:
       // Go as far as the step limit says, assuming there is no boundary.
       // TODO: Does this make sense?
       in_state.CopyTo(&out_state);
-      out_state.SetBoundaryState(false);
+      if (step_limit > kTolerance) out_state.SetBoundaryState(false);
       return step_limit;
     }
     step_limit -= push;
@@ -472,12 +492,13 @@ public:
     in_state.TopMatrix(m);
     localpoint = m.Transform(globalpoint);
     localdir   = m.TransformDirection(globaldir);
-    // The user may want to move point from boundary before computing the step
-    localpoint += push * localdir;
 
     Daughter hitcandidate = nullptr;
-    Precision step        = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
-    step += push;
+    // Avoid computing the distance from boundary by pushing the point
+    Precision step =
+        ComputeStepAndHit(localpoint + push * localdir, localdir, step_limit, in_state, out_state, hitcandidate);
+    // step correction with the push distance
+    step += (step > 0.) * push;
 
     if (out_state.IsOnBoundary()) {
       if (!hitcandidate) {
@@ -532,7 +553,8 @@ public:
     if (state.IsOutside()) return;
 
     // Push the point inside the next volume.
-    Vector3D<Precision> pushed = globalpoint + kBoundaryPush * globaldir;
+    // A.G. This should not be needed now since LocatePointIn is boundary-aware
+    Vector3D<Precision> pushed = globalpoint /* + kBoundaryPush * globaldir*/;
 
     // Calculate local point from global point.
     vecgeom::Transformation3D m;

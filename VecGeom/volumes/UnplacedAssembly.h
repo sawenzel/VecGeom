@@ -160,6 +160,9 @@ public:
     return step;
   }
 
+  VECCORE_ATT_HOST_DEVICE
+  bool Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const override { return false; }
+
   Vector3D<Precision> SamplePointOnSurface() const override;
   Precision Capacity() const override;
   Precision SurfaceArea() const override;

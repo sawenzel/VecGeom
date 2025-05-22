@@ -54,7 +54,7 @@ private:
 
 public:
   VECCORE_ATT_HOST_DEVICE
-  constexpr Transformation3D() : fIdentity(true), fHasRotation(false), fHasTranslation(false){};
+  constexpr Transformation3D() : fIdentity(true), fHasRotation(false), fHasTranslation(false) {};
 
   /**
    * Constructor for translation only.
@@ -400,12 +400,12 @@ public:
 
   /** The inverse transformation of an object transforming like a vector */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformDirection(Vector3D<InputType> const &master,
-                                                                              Vector3D<InputType> &local) const;
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformDirection(Vector3D<InputType> const &local,
+                                                                              Vector3D<InputType> &master) const;
 
   template <typename InputType>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> InverseTransformDirection(
-      Vector3D<InputType> const &master) const;
+      Vector3D<InputType> const &local) const;
 
   /** compose transformations - multiply transformations */
   VECCORE_ATT_HOST_DEVICE

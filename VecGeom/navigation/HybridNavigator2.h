@@ -218,11 +218,11 @@ public:
           // only consider those hitboxes which are within potential reach of this step
           if (!(step < hitbox.second)) {
             VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
-            Precision ddistance            = candidate->DistanceToIn(localpoint, localdir, step);
-            const auto valid               = !IsInf(ddistance) && ddistance < step &&
-                               !((ddistance <= 0.) && in_state && in_state->GetLastExited() == candidate);
-            hitcandidate = valid ? candidate : hitcandidate;
-            step         = valid ? ddistance : step;
+            if (in_state && in_state->GetLastExited() == candidate) return false;
+            Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
+            const auto valid    = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
+            hitcandidate        = valid ? candidate : hitcandidate;
+            step                = valid ? ddistance : step;
             return false; // not yet done; need to continue in looper
           }
           return true; // mark done in this case
@@ -253,12 +253,12 @@ public:
                 std::cerr << "HybridNav2> blocked " << candidate << " has normal.dir = " << normal.Dot(localdir)
                           << " and distToIn = " << candidate->DistanceToIn(localpoint, localdir, step) << "\n";
               }
+              return false;
             }
             const Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
-            const auto valid          = !IsInf(ddistance) && ddistance < step &&
-                               !((ddistance <= 0.) && blocked == candidate); // && normal.Dot(localdir) > 0.0);
-            hitcandidate = valid ? candidate : hitcandidate;
-            step         = valid ? ddistance : step;
+            const auto valid          = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
+            hitcandidate              = valid ? candidate : hitcandidate;
+            step                      = valid ? ddistance : step;
 #if 0 // enable for debugging
         if ( ddistance<=0 ) {
            std::cerr << "HybridNav2> negative distance found for " << candidate->GetName() << "\n"; 

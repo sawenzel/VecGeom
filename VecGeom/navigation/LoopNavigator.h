@@ -34,7 +34,10 @@ public:
   {
     if (top) {
       assert(vol != nullptr);
-      if (!vol->UnplacedContains(point)) return nullptr;
+      auto inside = vol->Inside(point);
+      if (inside == kOutside) return nullptr;
+      // Set the boundary state to the path
+      if (inside == kSurface) path.SetBoundaryState(inside == kSurface);
     }
 
     Daughter currentvolume = vol;
@@ -49,16 +52,16 @@ public:
           continue;
         }
         auto transformedpoint = daughter->GetTransformation()->Transform<Precision>(currentpoint);
-        if (daughter->GetUnplacedVolume()->Inside(transformedpoint) != EnumInside::kOutside) {
-          path.Push(daughter);
-          currentpoint  = transformedpoint;
-          currentvolume = daughter;
-          godeeper      = true;
-          // Only exclude the placed volume once since we could enter it again via a
-          // different volume history.
-          exclude = nullptr;
-          break;
-        }
+        auto inside           = daughter->GetUnplacedVolume()->Inside(transformedpoint);
+        if (inside == EnumInside::kOutside) continue;
+        if (inside == kSurface) path.SetBoundaryState(true);
+        // Point inside child
+        path.Push(daughter);
+        currentpoint  = transformedpoint;
+        currentvolume = daughter;
+        godeeper      = true;
+        // Skip checking other children
+        break;
       }
 
       // Only exclude the placed volume once since we could enter it again via a
@@ -113,11 +116,12 @@ private:
     step = pvol->DistanceToOut(localpoint, localdir, step_limit);
 
     if (step < 0) step = 0;
+    step = Min(step, step_limit);
 
     for (auto *daughter : pvol->GetDaughters()) {
       double ddistance = daughter->DistanceToIn(localpoint, localdir, step);
 
-      const bool valid = (ddistance < step && !vecgeom::IsInf(ddistance));
+      const bool valid = ddistance < step && ddistance > -kTolerance && !vecgeom::IsInf(ddistance);
       hitcandidate     = valid ? daughter : hitcandidate;
       step             = valid ? ddistance : step;
     }
@@ -134,7 +138,7 @@ private:
     }
 
     // Is geometry further away than physics step?
-    if (step > step_limit) {
+    if (step >= step_limit) {
       // Then this is a phyics step and we don't need to do anything.
       out_state.SetBoundaryState(false);
       return step_limit;
@@ -257,7 +261,7 @@ public:
       // Go as far as the step limit says, assuming there is no boundary.
       // TODO: Does this make sense?
       in_state.CopyTo(&out_state);
-      out_state.SetBoundaryState(false);
+      if (step_limit > kTolerance) out_state.SetBoundaryState(false);
       return step_limit;
     }
     step_limit -= push;
@@ -270,12 +274,13 @@ public:
     in_state.TopMatrix(m);
     localpoint = m.Transform(globalpoint);
     localdir   = m.TransformDirection(globaldir);
-    // The user may want to move point from boundary before computing the step
-    localpoint += push * localdir;
 
     Daughter hitcandidate = nullptr;
-    Precision step        = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
-    step += push;
+    // Avoid computing the distance from boundary by pushing the point
+    Precision step =
+        ComputeStepAndHit(localpoint + push * localdir, localdir, step_limit, in_state, out_state, hitcandidate);
+    // step correction with the push distance
+    step += (step > 0.) * push;
 
     if (out_state.IsOnBoundary()) {
       if (!hitcandidate) {
@@ -307,7 +312,8 @@ public:
     if (state.IsOutside()) return;
 
     // Push the point inside the next volume.
-    Vector3D<Precision> pushed = globalpoint + kBoundaryPush * globaldir;
+    // A.G. This should not be needed now since LocatePointIn is boundary-aware
+    Vector3D<Precision> pushed = globalpoint /* + kBoundaryPush * globaldir*/;
 
     // Calculate local point from global point.
     vecgeom::Transformation3D m;

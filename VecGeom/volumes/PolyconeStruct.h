@@ -458,6 +458,11 @@ struct PolyconeStruct {
   {
     // TODO: consider binary search
     int i = GetSectionIndex(zposition);
+    // i is negative if zposition is out of range
+    if (i == -1)
+      i = 0;
+    else if (i == -2)
+      i = fSections.size() - 1;
     return fSections[i];
   }
 

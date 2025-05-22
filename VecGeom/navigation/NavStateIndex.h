@@ -259,6 +259,13 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  static NavIndex_t GetChildNavInd(NavIndex_t nav_ind, int ichild)
+  {
+    return (nav_ind > 0) ? NavInd(nav_ind + 6 + ichild) : 0;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   static void PushDaughterImpl(NavIndex_t &nav_ind, int idaughter)
   {
     nav_ind = (nav_ind > 0) ? NavInd(nav_ind + 6 + idaughter) : 1;
@@ -646,6 +653,23 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   void PrintTop() const { Print(); }
+
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsValid(NavIndex_t nav_ind, int nprint = 0)
+  {
+    auto state  = NavStateIndex(nav_ind);
+    int nd      = GetNdaughtersImpl(nav_ind);
+    auto parent = NavInd(nav_ind);
+    if (nprint) printf("state %d: parent %d | %d daughters: ", nav_ind, parent, nd);
+    bool valid = nav_ind == 1 || parent > 0;
+    for (auto i = 0; i < nd; ++i) {
+      auto nav_ind_child = GetChildNavInd(nav_ind, i);
+      if (i < nprint) printf(" %d", nav_ind_child);
+      valid &= NavInd(nav_ind_child) == nav_ind;
+    }
+    if (nprint) printf(" valid = %d\n", valid);
+    return valid;
+  }
 
   VECCORE_ATT_HOST_DEVICE
   void Dump() const { Print(); }

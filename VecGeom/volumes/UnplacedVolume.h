@@ -155,7 +155,7 @@ public:
    * TODO: Clarify whether normal always points outwards.
    */
   VECCORE_ATT_HOST_DEVICE
-  virtual bool Normal(Vector3D<Precision> const &pos, Vector3D<Precision> &normal) const /* = 0 */;
+  virtual bool Normal(Vector3D<Precision> const &pos, Vector3D<Precision> &normal) const = 0;
 
   // ---------------- SamplePointOnSurface ----------------------------------------------------------
   /*!

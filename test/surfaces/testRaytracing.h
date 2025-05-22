@@ -8,6 +8,31 @@
 
 using Real_t = double;
 
+struct TestConfig {
+  int nrays{10000};
+  int debug{0};
+  int verbosity{0};
+  int min_per_scene{1000};
+  int ongpu{1};
+  int max_cross{vecgeom::kMaximumInt};
+  bool detect_overlaps{false};
+  bool accept_zeros{false};
+  bool test_bvh{false};
+  bool bvh_single_step{false};
+  bool bvh_split_step{false};
+  bool validate_results{true};
+  bool only_surf{false};
+  bool use_surf{true};
+  bool use_TB_gun{false};
+  bool on_boundary{false};
+  double mmunit{1.};
+  double safety_ratio{0.};
+  double step_limit{vecgeom::kInfLength};
+  int input_state{0}; ///< Force input state to an index (only works with indexed navigation, when a point is provided)
+  int next_state{0};
+  int compute_normal{0};
+};
+
 /// @brief Structure holding boundary crossing info for a single ray
 struct CrossingSeq {
   double fStart[6];                              ///< Start position and direction components

@@ -216,7 +216,13 @@ public:
   {
     Real_t tmin, tmax;
     ComputeIntersectionInvDir(point, invdir, tmin, tmax);
-    return tmin <= tmax && tmax >= static_cast<Real_t>(0.0) && tmin < step;
+    bool hit = tmin <= tmax && tmax >= Real_t(0.0);
+    if (hit && tmin > step) {
+      // Estimate maximum error of the result to correct the step limit
+      auto err = vecgeom::kEpsilonT<Real_t> * point.Abs().Max() / tmin;
+      hit      = tmin < step + err;
+    }
+    return hit;
   }
 
   /**
@@ -232,9 +238,14 @@ public:
   {
     Real_t tmin, tmax;
     ComputeIntersectionInvDir(point, invdir, tmin, tmax);
-    bool hit = tmin <= tmax && tmax >= Real_t(0) && tmin < step;
+    bool hit = tmin <= tmax && tmax >= Real_t(0.0);
+    if (hit && tmin > step) {
+      // Estimate maximum error of the result to correct the step limit
+      auto err = vecgeom::kEpsilonT<Real_t> * point.Abs().Max() / tmin;
+      hit      = tmin < step + err;
+    }
     // note: just approaching 0.99 to prevent overstepping
-    approach = (hit && tmin > 1e-6) ? 0.99 * tmin : Real_t(0);
+    approach = (hit && tmin > 1.) ? 0.99 * tmin : Real_t(0);
     return hit;
   }
 

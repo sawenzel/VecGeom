@@ -37,6 +37,7 @@ public:
     auto ndaughters = daughters->size();
     for (decltype(ndaughters) d = 0; d < ndaughters; ++d) {
       auto daughter = daughters->operator[](d);
+      if (in_state && in_state->GetLastExited() == daughter) continue;
 //    previous distance becomes step estimate, distance to daughter returned in workspace
 // SW: this makes the navigation more robust and it appears that I have to
 // put this at the moment since not all shapes respond yet with a negative distance if
@@ -49,10 +50,9 @@ public:
 
         // if distance is negative; we are inside that daughter and should relocate
         // unless distance is minus infinity
-        const bool valid = (ddistance < step && !IsInf(ddistance)) &&
-                           !((ddistance <= 0.) && in_state && in_state->GetLastExited() == daughter);
-        hitcandidate = valid ? daughter : hitcandidate;
-        step         = valid ? ddistance : step;
+        const bool valid = (ddistance < step && !IsInf(ddistance) && ddistance > -kTolerance);
+        hitcandidate     = valid ? daughter : hitcandidate;
+        step             = valid ? ddistance : step;
 #ifdef CHECKCONTAINS
       } else {
         std::cerr << " INDA "
@@ -136,7 +136,7 @@ public:
   static constexpr const char *gClassNameString = "NewSimpleNavigator";
   typedef SimpleSafetyEstimator SafetyEstimator_t;
 }; // end of class
-}
-} // end namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif /* NAVIGATION_NEWSIMPLENAVIGATOR_H_ */
