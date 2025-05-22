@@ -115,6 +115,7 @@ public:
     for (size_t index = 0; index < ncandidates; ++index) {
       auto &hitbox                   = hitlist[index];
       VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
+      if (in_state && in_state->GetLastExited() == candidate) continue;
 
       // only consider those hitboxes which are within potential reach of this step
       if (!(step < hitbox.second)) {
@@ -136,10 +137,9 @@ public:
 #ifdef VERBOSE
         std::cerr << "distance to " << candidate->GetLabel() << " is " << ddistance << "\n";
 #endif
-        const auto valid = !IsInf(ddistance) && ddistance < step &&
-                           !((ddistance <= 0.) && in_state && in_state->GetLastExited() == candidate);
-        hitcandidate = valid ? candidate : hitcandidate;
-        step         = valid ? ddistance : step;
+        const auto valid = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
+        hitcandidate     = valid ? candidate : hitcandidate;
+        step             = valid ? ddistance : step;
       } else {
         break;
       }

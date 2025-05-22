@@ -29,16 +29,6 @@ Vector3D<Precision> VUnplacedVolume::SamplePointOnSurface() const
 // trivial implementations for the interface functions
 // (since we are moving to these interfaces only gradually)
 
-// ---------------- Normal ---------------------------------------------------------------------
-VECCORE_ATT_HOST_DEVICE
-bool VUnplacedVolume::Normal(Vector3D<Precision> const &p, Vector3D<Precision> &normal) const
-{
-#ifndef VECCORE_CUDA
-  throw std::runtime_error("unimplemented function called");
-#endif
-  return false;
-}
-
 // ----------------- Extent --------------------------------------------------------------------
 VECCORE_ATT_HOST_DEVICE
 void VUnplacedVolume::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const

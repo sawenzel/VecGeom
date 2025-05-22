@@ -541,6 +541,57 @@ Precision UnplacedPolycone::SurfaceArea() const
   return totArea;
 }
 
+bool UnplacedPolycone::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const
+{
+  bool valid = true;
+  int index  = GetSectionIndex(point.z() - kTolerance);
+
+  if (index < 0) {
+    if (index == -1) norm = Vector3D<Precision>(0., 0., -1.);
+    if (index == -2) norm = Vector3D<Precision>(0., 0., 1.);
+    return valid;
+  }
+  PolyconeSection const &sec = GetSection(index);
+  valid                      = sec.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec.fShift), norm);
+
+  // if point is within tolerance of a Z-plane between 2 sections, get normal from other section too
+  if (size_t(index + 1) < fPolycone->fSections.size() && std::abs(point.z() - fPolycone->fZs[index + 1]) < kTolerance) {
+    PolyconeSection const &sec2 = GetSection(index + 1);
+    bool valid2                 = false;
+    Vector3D<Precision> norm2;
+    valid2 = sec2.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec2.fShift), norm2);
+
+    if (!valid && valid2) {
+      norm  = norm2;
+      valid = valid2;
+    }
+
+    // if both valid && valid2 true, norm and norm2 should be added...
+    if (valid && valid2) {
+
+      // discover exiting direction by moving point a bit (it would be good to have track direction here)
+      // if(sec.fSolid.Contains(point + kTolerance*10*norm - Vector3D<Precision>(0, 0, sec.fShift))){
+
+      //}
+      bool c2;
+      using CI = ConeImplementation<ConeTypes::UniversalCone>;
+      // CI::Contains<Precision,false>(sec2.fSolid,
+      //                            point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
+      CI::Contains(sec2.fSolid, point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
+      if (c2) {
+        norm = norm2;
+      } else {
+        norm = norm + norm2;
+        // but we might be in the interior of the polycone, and norm2=(0,0,-1) and norm1=(0,0,1) --> norm=(0,0,0)
+        // quick fix:  set a normal pointing to the input point, but setting its z=0 (radial)
+        if (norm.Mag2() < kTolerance) norm = Vector3D<Precision>(point.x(), point.y(), 0);
+      }
+    }
+  }
+  if (valid) norm /= norm.Mag();
+  return valid;
+}
+
 #ifndef VECCORE_CUDA
 /////////////////////////////////////////////////////////////////////////
 //
@@ -794,58 +845,6 @@ Vector3D<Precision> UnplacedPolycone::SamplePointOnSurface() const
   rRand = secn.fSolid.fRmin2 + ((secn.fSolid.fRmax2 - secn.fSolid.fRmin2) * std::sqrt(RNG::Instance().uniform(0., 1.)));
 
   return Vector3D<Precision>(rRand * cosphi, rRand * sinphi, fPolycone->fZs[numPlanes]);
-}
-
-bool UnplacedPolycone::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const
-{
-  bool valid = true;
-  int index  = GetSectionIndex(point.z() - kTolerance);
-
-  if (index < 0) {
-    valid = false;
-    if (index == -1) norm = Vector3D<Precision>(0., 0., -1.);
-    if (index == -2) norm = Vector3D<Precision>(0., 0., 1.);
-    return valid;
-  }
-  PolyconeSection const &sec = GetSection(index);
-  valid                      = sec.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec.fShift), norm);
-
-  // if point is within tolerance of a Z-plane between 2 sections, get normal from other section too
-  if (size_t(index + 1) < fPolycone->fSections.size() && std::abs(point.z() - fPolycone->fZs[index + 1]) < kTolerance) {
-    PolyconeSection const &sec2 = GetSection(index + 1);
-    bool valid2                 = false;
-    Vector3D<Precision> norm2;
-    valid2 = sec2.fSolid.Normal(point - Vector3D<Precision>(0, 0, sec2.fShift), norm2);
-
-    if (!valid && valid2) {
-      norm  = norm2;
-      valid = valid2;
-    }
-
-    // if both valid && valid2 true, norm and norm2 should be added...
-    if (valid && valid2) {
-
-      // discover exiting direction by moving point a bit (it would be good to have track direction here)
-      // if(sec.fSolid.Contains(point + kTolerance*10*norm - Vector3D<Precision>(0, 0, sec.fShift))){
-
-      //}
-      bool c2;
-      using CI = ConeImplementation<ConeTypes::UniversalCone>;
-      // CI::Contains<Precision,false>(sec2.fSolid,
-      //                            point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
-      CI::Contains(sec2.fSolid, point + kTolerance * 10 * norm2 - Vector3D<Precision>(0, 0, sec2.fShift), c2);
-      if (c2) {
-        norm = norm2;
-      } else {
-        norm = norm + norm2;
-        // but we might be in the interior of the polycone, and norm2=(0,0,-1) and norm1=(0,0,1) --> norm=(0,0,0)
-        // quick fix:  set a normal pointing to the input point, but setting its z=0 (radial)
-        if (norm.Mag2() < kTolerance) norm = Vector3D<Precision>(point.x(), point.y(), 0);
-      }
-    }
-  }
-  if (valid) norm /= norm.Mag();
-  return valid;
 }
 
 #if (0)

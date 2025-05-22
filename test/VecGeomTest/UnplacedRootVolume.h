@@ -64,6 +64,8 @@ public:
   VECGEOM_FORCE_INLINE
   int MemorySize() const override { return sizeof(*this); }
 
+  virtual bool Normal(Vector3D<Precision> const &pos, Vector3D<Precision> &normal) const override { return false; }
+
   void Print() const override;
 
   void Print(std::ostream &os) const override;

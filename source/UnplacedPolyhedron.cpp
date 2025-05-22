@@ -456,6 +456,8 @@ Vector3D<Precision> UnplacedPolyhedron::SamplePointOnSurface() const
   return RandVec;
 }
 
+#endif // !VECCORE_CUDA
+
 VECCORE_ATT_HOST_DEVICE
 bool UnplacedPolyhedron::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &normal) const
 {
@@ -464,8 +466,6 @@ bool UnplacedPolyhedron::Normal(Vector3D<Precision> const &point, Vector3D<Preci
       PolyhedronImplementation<Polyhedron::EInnerRadii::kGeneric, Polyhedron::EPhiCutout::kGeneric>::ScalarNormalKernel(
           *fPoly, point, normal));
 }
-
-#endif // !VECCORE_CUDA
 
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolyhedron::Print() const
