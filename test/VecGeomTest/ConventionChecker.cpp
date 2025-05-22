@@ -276,7 +276,7 @@ bool ShapeTester<ImplT>::ShapeConventionInsidePoint()
       bool ok = Dist < 0.;
       if (!ok) {
         fVolume->Inside(point);
-        Dist     = fVolume->DistanceToIn(point, direction);
+        Dist = fVolume->DistanceToIn(point, direction);
         ReportError(&nError, point, direction, Dist,
                     "DistanceToIn for Inside Point should be Negative (-1.) (Wrong side)");
         fScore |= (1 << indx);
@@ -335,7 +335,7 @@ bool ShapeTester<ImplT>::ShapeConventionOutsidePoint()
   bool outsidePointConventionPassed = true;
 
   for (int i = 0; i < fMaxPointsOutside; i++) { // test SamplePointOnSurface()
-    Vec_t point     = fPoints[fOffsetOutside + i];
+    Vec_t point = fPoints[fOffsetOutside + i];
     Vec_t pointBB;
     Vec_t direction = fDirections[fOffsetOutside + i];
     if (fVolume->Inside(point) != vecgeom::EInside::kOutside) {
@@ -345,9 +345,9 @@ bool ShapeTester<ImplT>::ShapeConventionOutsidePoint()
 
     int indx = 10;
     // Convention Check for DistanceToIn
-    DistBB = fVolume->GetUnplacedVolume()->ApproachSolid(point, 1 / direction);
+    DistBB  = fVolume->GetUnplacedVolume()->ApproachSolid(point, 1 / direction);
     pointBB = point + DistBB * direction;
-    Dist = fVolume->DistanceToIn(pointBB, direction) + DistBB;
+    Dist    = fVolume->DistanceToIn(pointBB, direction) + DistBB;
     // if (Dist >= kInfLength) Dist = kInfLength;
     if (!(Dist > 0.)) {
       ReportError(&nError, point, direction, Dist, "DistanceToIn for Outside Point should be > 0.");
@@ -364,6 +364,7 @@ bool ShapeTester<ImplT>::ShapeConventionOutsidePoint()
     {
       bool ok = (Dist < 0.);
       if (!ok) {
+        Dist = CallDistanceToOut(fVolume, point, direction, norm, convex);
         ReportError(&nError, point, direction, Dist,
                     "DistanceToOut for Outside Point should be Negative (-1.) (Wrong side).");
         fScore |= (1 << indx);

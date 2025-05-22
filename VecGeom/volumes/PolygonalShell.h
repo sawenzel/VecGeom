@@ -200,7 +200,7 @@ public:
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
       const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj <= kTolerance;
+      const Bool_v sidecorrect = proj <= -kTolerance;
       if (vecCore::MaskEmpty(sidecorrect)) {
         continue;
       }
@@ -250,7 +250,7 @@ public:
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
       const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj <= kTolerance;
+      const Bool_v sidecorrect = proj < -kTolerance;
       if (vecCore::MaskEmpty(sidecorrect)) {
         continue;
       }
@@ -302,16 +302,17 @@ VECCORE_ATT_HOST_DEVICE inline Precision PolygonalShell::DistanceToOutConvex(Vec
   if (safz > kTolerance) return -kTolerance;
 
   Precision vz   = dir.z();
-  Precision tmax = (vecCore::math::CopySign(dz, vz) - pz) / NonZero(vz);
-  const auto S   = fPolygon.fVertices.size();
+  Precision tmax = kInfLength;
+  if (Abs(vz) > kTolerance) tmax = (vecCore::math::CopySign(dz, vz) - pz) / vz;
+  const auto S = fPolygon.fVertices.size();
   for (size_t i = 0; i < S; ++i) { // side/rectangle index
 
     const Precision proj = -(fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y());
     // normals pointing inwards
     const Precision pdist = -(fPolygon.fA[i] * point.x() + fPolygon.fB[i] * point.y() + fPolygon.fD[i]);
     if (pdist > kTolerance) return -kTolerance;
-    if (proj > 0) {
-      const Precision dist = -pdist / NonZero(proj);
+    if (proj > kTolerance) {
+      const Precision dist = -pdist / proj;
       if (tmax > dist) tmax = dist;
     }
   }

@@ -108,14 +108,13 @@ struct TetImplementation {
     }
 
     for (int i = 0; i < 4; ++i) {
-      vecCore__MaskedAssignFunc(distance, (cosa[i] < Real_v(0.)), vecCore::math::Max(distance, dist[i]));
-      vecCore__MaskedAssignFunc(distanceOut, (cosa[i] > Real_v(0.)), vecCore::math::Min(distanceOut, dist[i]));
-      vecCore__MaskedAssignFunc(absSafe, (cosa[i] > Real_v(0.)),
+      vecCore__MaskedAssignFunc(distance, (cosa[i] < -kTolerance), vecCore::math::Max(distance, dist[i]));
+      vecCore__MaskedAssignFunc(distanceOut, (cosa[i] > kTolerance), vecCore::math::Min(distanceOut, dist[i]));
+      vecCore__MaskedAssignFunc(absSafe, (cosa[i] > kTolerance),
                                 vecCore::math::Min(absSafe, vecCore::math::Abs(safe[i])));
     }
 
-    vecCore::MaskedAssign(distance,
-                          distance >= distanceOut || distanceOut <= kHalfTolerance || absSafe <= -kHalfTolerance,
+    vecCore::MaskedAssign(distance, distance >= distanceOut || distanceOut <= kTolerance || absSafe <= -kTolerance,
                           Real_v(kInfLength));
   }
 
@@ -138,7 +137,7 @@ struct TetImplementation {
     }
 
     for (int i = 0; i < 4; ++i) {
-      vecCore__MaskedAssignFunc(distance, (cosa[i] > Real_v(0.)), vecCore::math::Min(distance, -safe[i] / cosa[i]));
+      vecCore__MaskedAssignFunc(distance, (cosa[i] > kTolerance), vecCore::math::Min(distance, -safe[i] / cosa[i]));
     }
     vecCore::MaskedAssign(distance, safety > kHalfTolerance, Real_v(-1.));
   }

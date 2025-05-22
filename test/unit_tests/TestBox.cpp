@@ -216,6 +216,13 @@ bool TestBox()
   assert(ApproxEqual<Precision>(Dist, 20.));
   Dist = b1.DistanceToOut(pzero, Vec_t(-1, -0, -0));
   assert(ApproxEqual<Precision>(Dist, 20.));
+  // point on corner moving along edge
+  Dist = b1.DistanceToOut(cornermXmYmZ, Vec_t(1, 0, 0));
+  assert(ApproxEqual<Precision>(Dist, 40.));
+  Dist = b1.DistanceToOut(cornermXmYmZ, Vec_t(0, 1, 0));
+  assert(ApproxEqual<Precision>(Dist, 60.));
+  Dist = b1.DistanceToOut(cornermXmYmZ, Vec_t(0, 0, 1));
+  assert(ApproxEqual<Precision>(Dist, 80.));
 
   Dist  = b1.DistanceToOut(ponxside, vx);
   valid = b1.Normal(ponxside + Dist * vx, normal);
@@ -445,8 +452,6 @@ bool Test_VECGEOM_431()
   assert(ApproxEqual<Precision>(Dist, 0.0));
   Dist       = bx.DistanceToOut(testp, testv);
   bool valid = bx.Normal(testp + Dist * testv, normal);
-  std::cout << "Line " << __LINE__ << ": point=" << testp << ", dir=" << testv << ", distOut=" << Dist
-            << ", norm=" << normal << "\n";
   assert(valid);
   assert(ApproxEqual<Precision>(Dist, 200. * sqrt(2.0)));
   assert(ApproxEqual(normal, (vy + vz).Normalized()));
@@ -468,8 +473,6 @@ bool Test_VECGEOM_431()
   assert(ApproxEqual<Precision>(Dist, 0.0));
   Dist  = bx.DistanceToOut(testp, testv);
   valid = bx.Normal(testp + Dist * testv, normal);
-  std::cout << "Line " << __LINE__ << ": point=" << testp << ", dir=" << testv << ", distOut=" << Dist
-            << ", norm=" << normal << "\n";
   assert(valid);
   assert(ApproxEqual<Precision>(Dist, 200. * sqrt(2.0)));
   assert(ApproxEqual(normal, (vy + vz).Normalized()));
@@ -491,8 +494,6 @@ bool Test_VECGEOM_431()
   Dist = by.DistanceToIn(testp, testv);
   assert(ApproxEqual<Precision>(Dist, 0.0));
   Dist = by.DistanceToOut(testp, testv);
-  std::cout << "Line " << __LINE__ << ": point=" << testp << ", dir=" << testv << ", distOut=" << Dist
-            << ", norm=" << normal << "\n";
   assert(ApproxEqual<Precision>(Dist, 200. * sqrt(2.0)));
   valid = by.Normal(testp + Dist * testv, normal);
   assert(valid);

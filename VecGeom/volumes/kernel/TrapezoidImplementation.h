@@ -252,7 +252,7 @@ struct TrapezoidImplementation {
     //
 
     Real_v distz = (Sign(dir.z()) * unplaced.fDz - point.z()) / NonZero(dir.z());
-    vecCore__MaskedAssignFunc(distance, !done && dir.z() != Real_v(0.), distz);
+    vecCore__MaskedAssignFunc(distance, !done && Abs(dir.z()) /** maxXY*/ > kTolerance, distz);
 
     //
     // Step 2: find distances for intersections with side planes.
@@ -295,7 +295,7 @@ struct TrapezoidImplementation {
       // if track is pointing towards plane and vdist<distance, then distance=vdist
       // vecCore__MaskedAssignFunc(dist1, !done && proj[i] > 0.0 && vdist[i] < dist1, vdist[i]);
       vecCore__MaskedAssignFunc(distance, pdist[i] > MakePlusTolerant<true>(0.), Real_v(-1.0));
-      vecCore__MaskedAssignFunc(distance, proj[i] > 0.0 && -Sign(pdist[i]) * vdist[i] < distance,
+      vecCore__MaskedAssignFunc(distance, proj[i] * unplaced.fDz > kTolerance && -Sign(pdist[i]) * vdist[i] < distance,
                                 -Sign(pdist[i]) * vdist[i]);
       // std::cerr<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" --> dist="<<
       // dist1 <<", "<< distance <<"\n";

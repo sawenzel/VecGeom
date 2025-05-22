@@ -13,6 +13,7 @@
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/volumes/ParallelepipedStruct.h"
 #include "VecGeom/volumes/kernel/GenericKernels.h"
+#include "VecGeom/volumes/kernel/BoxImplementation.h"
 #include <VecCore/VecCore>
 
 #include <cstdio>
@@ -109,7 +110,7 @@ struct ParallelepipedImplementation {
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &unplaced,
                                                                         Vector3D<Real_v> const &point,
                                                                         Vector3D<Real_v> const &direction,
-                                                                        Real_v const & /* stepMax */, Real_v &distance)
+                                                                        Real_v const &stepMax, Real_v &distance)
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
 
@@ -117,54 +118,28 @@ struct ParallelepipedImplementation {
     // compute safety vector
     Vector3D<Real_v> p(point);
     Vector3D<Real_v> v(direction);
-    Vector3D<Real_v> safetyVector;
 
     Transform<Real_v>(unplaced, p);
     Transform<Real_v>(unplaced, v);
-    SafetyVector<Real_v>(unplaced, p, safetyVector);
 
-    // Check if point is leaving shape
-    Bool_v leaving(false);
-    leaving |= (safetyVector.x() >= -kHalfTolerance && p.x() * v.x() >= Real_v(0.));
-    leaving |= (safetyVector.y() >= -kHalfTolerance && p.y() * v.y() >= Real_v(0.));
-    leaving |= (safetyVector.z() >= -kHalfTolerance && p.z() * v.z() >= Real_v(0.));
-
-    // Compute distances
-    const Vector3D<Real_v> invDir(Real_v(1.) / NonZero(v.x()), Real_v(1.) / NonZero(v.y()),
-                                  Real_v(1.) / NonZero(v.z()));
-    const Vector3D<Real_v> signDir(Sign(invDir.x()), Sign(invDir.y()), Sign(invDir.z()));
-    const Vector3D<Real_v> temp = signDir * unplaced.fDimensions;
-    const Real_v distIn         = ((-temp - p) * invDir).Max();
-    const Real_v distOut        = ((temp - p) * invDir).Min();
-
-    // Set distance to in
-    distance = Real_v(kInfLength);
-    vecCore__MaskedAssignFunc(distance, !leaving && distOut > distIn + kHalfTolerance, distIn);
+    BoxImplementation::DistanceToIn(BoxStruct<Precision>(unplaced.fDimensions), p, v, stepMax, distance);
   }
 
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &unplaced,
                                                                          Vector3D<Real_v> const &point,
                                                                          Vector3D<Real_v> const &direction,
-                                                                         Real_v const & /* stepMax */, Real_v &distance)
+                                                                         Real_v const &stepMax, Real_v &distance)
   {
     // Transform point and direction to local (oblique) system of coordinates,
     // compute safety vector
     Vector3D<Real_v> p(point);
     Vector3D<Real_v> v(direction);
-    Vector3D<Real_v> safetyVector;
 
     Transform<Real_v>(unplaced, p);
     Transform<Real_v>(unplaced, v);
-    SafetyVector<Real_v>(unplaced, p, safetyVector);
 
-    // Compute distance to out
-    const Vector3D<Real_v> dir(NonZero(v.x()), NonZero(v.y()), NonZero(v.z()));
-    const Vector3D<Real_v> signDir(Sign(dir.x()), Sign(dir.y()), Sign(dir.z()));
-    distance = ((signDir * unplaced.fDimensions - p) / dir).Min();
-
-    // Set distance to out
-    vecCore__MaskedAssignFunc(distance, safetyVector.Max() > kHalfTolerance, Real_v(-1.0));
+    BoxImplementation::DistanceToOut(BoxStruct<Precision>(unplaced.fDimensions), p, v, stepMax, distance);
   }
 
   template <typename Real_v>

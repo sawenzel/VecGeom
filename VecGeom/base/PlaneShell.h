@@ -106,9 +106,8 @@ public:
   /// \return the distance from point to each plane.  The type returned is float, double, or various SIMD vector types.
   /// Distances are negative (positive) for points in same (opposite) side from plane as the normal vector.
   template <typename Type2>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void DistanceToPoint(Vector3D<Type2> const &point, Type2 *distances) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DistanceToPoint(Vector3D<Type2> const &point,
+                                                                    Type2 *distances) const
   {
     for (int i = 0; i < N; ++i) {
       distances[i] = this->fA[i] * point.x() + this->fB[i] * point.y() + this->fC[i] * point.z() + this->fD[i];
@@ -118,9 +117,8 @@ public:
   /// \return the projection of a (Vector3D) direction into each plane's normal vector.
   /// The type returned is float, double, or various SIMD vector types.
   template <typename Type2>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void ProjectionToNormal(Vector3D<Type2> const &dir, Type2 *projection) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void ProjectionToNormal(Vector3D<Type2> const &dir,
+                                                                       Type2 *projection) const
   {
     for (int i = 0; i < N; ++i) {
       projection[i] = this->fA[i] * dir.x() + this->fB[i] * dir.y() + this->fC[i] * dir.z();
@@ -128,10 +126,9 @@ public:
   }
 
   template <typename Real_v, bool ForInside>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void GenericKernelForContainsAndInside(Vector3D<Real_v> const &point, vecCore::Mask_v<Real_v> &completelyInside,
-                                         vecCore::Mask_v<Real_v> &completelyOutside) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(
+      Vector3D<Real_v> const &point, vecCore::Mask_v<Real_v> &completelyInside,
+      vecCore::Mask_v<Real_v> &completelyOutside) const
   {
     // auto-vectorizable loop for Backend==scalar
     Real_v dist[N];
@@ -159,9 +156,9 @@ public:
   /// Note: smin,smax parameters are needed here, to flag shape-missing tracks.
   ///
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir, Real_v &smin, Real_v &smax) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToIn(Vector3D<Real_v> const &point,
+                                                                   Vector3D<Real_v> const &dir, Real_v &smin,
+                                                                   Real_v &smax) const
   {
     using Bool_v = vecCore::Mask_v<Real_v>;
     Bool_v done(false);
@@ -217,9 +214,8 @@ public:
   /// For some special cases, the value returned is:
   ///     (1) -1, if point is outside (wrong-side)
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Real_v DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToOut(Vector3D<Real_v> const &point,
+                                                                    Vector3D<Real_v> const &dir) const
   {
     // using Bool_v = vecCore::Mask_v<Real_v>;
     // Bool_v done(false);
@@ -248,7 +244,7 @@ public:
     // std::cerr<<"=== point="<< point <<", dir="<< dir <<"\n";
     for (int i = 0; i < N; ++i) {
       vecCore__MaskedAssignFunc(distOut, pdist[i] > kHalfTolerance, Real_v(-1.));
-      vecCore__MaskedAssignFunc(distOut, proj[i] > Real_v(0.) && vdist[i] < distOut, vdist[i]);
+      vecCore__MaskedAssignFunc(distOut, proj[i] > kTolerance && vdist[i] < distOut, vdist[i]);
       // std::cerr<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" "<< vdist1[i] <<"
       // --> dist="<< distOut <<", "<< distOut1 <<"\n";
     }
@@ -258,9 +254,7 @@ public:
 
   /// \return the safety distance to the planar shell when the point is located within the shell itself.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void SafetyToIn(Vector3D<Real_v> const &point, Real_v &safety) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SafetyToIn(Vector3D<Real_v> const &point, Real_v &safety) const
   {
     // vectorizable loop
     Real_v dist[N];
@@ -276,9 +270,7 @@ public:
 
   /// \return the distance to the planar shell when the point is located within the shell itself.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void SafetyToOut(Vector3D<Real_v> const &point, Real_v &safety) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SafetyToOut(Vector3D<Real_v> const &point, Real_v &safety) const
   {
     // vectorizable loop
     Real_v dist[N];
@@ -293,9 +285,7 @@ public:
   }
 
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  size_t ClosestFace(Vector3D<Real_v> const &point, Real_v &safety) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE size_t ClosestFace(Vector3D<Real_v> const &point, Real_v &safety) const
   {
     // vectorizable loop
     Real_v dist[N];
@@ -325,9 +315,8 @@ public:
   /// the callee knows that nsurf==2 (the maximum value possible).
   ///
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Real_v NormalKernel(Vector3D<Real_v> const &point, Vector3D<Real_v> &normal) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v NormalKernel(Vector3D<Real_v> const &point,
+                                                                   Vector3D<Real_v> &normal) const
   {
     Real_v safety = -InfinityLength<Real_v>();
 

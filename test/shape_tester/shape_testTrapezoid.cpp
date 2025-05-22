@@ -10,7 +10,7 @@ using VPlacedVolume = vecgeom::VPlacedVolume;
 using VGTrap        = vecgeom::SimpleTrapezoid;
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat);
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance);
 
 template <typename Trap_t>
 Trap_t *buildFullTrap()
@@ -76,21 +76,25 @@ int main(int argc, char *argv[])
   OPTION_BOOL(debug, false);
   OPTION_BOOL(stat, false);
   OPTION_INT(type, 2);
+  OPTION_DOUBLE(grazing, 0.);
 
   auto trap = buildATrap<VGTrap>(type);
   trap->Print();
-  return runTester<VPlacedVolume>(trap, npoints, debug, stat);
+  return runTester<VPlacedVolume>(trap, npoints, debug, stat, grazing);
 }
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat)
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance)
 {
   ShapeTester<ImplT> tester;
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
-  #ifdef VECGEOM_SINGLE_PRECISION
-    tester.SetSolidTolerance(1e-4);
-  #endif
+  tester.SetGrazingTolerance(grazing_tolerance);
+  tester.SetErrorOnZeroDoutGrazing(true);
+
+#ifdef VECGEOM_SINGLE_PRECISION
+  tester.SetSolidTolerance(1e-4);
+#endif
   int errcode = tester.Run(shape);
 
   std::cout << "Final Error count for Shape *** " << shape->GetName() << "*** = " << errcode << "\n";

@@ -80,7 +80,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void FaceTrajectoryIntersection(Trd
                                                                              Vector3D<Real_v> const &dir, Real_v &dist,
                                                                              vecCore::Mask_v<Real_v> &ok)
 {
-  Real_v alongV, posV, dirV, posK, dirK, fV, fK, halfKplus, v1, ndotv;
+  Real_v alongV, posV, dirV, posK, dirK, fV, fK, halfKplus, v1;
   //    fNormals[0].Set(-fCalfX, 0., fFx*fCalfX);
   //    fNormals[1].Set(fCalfX, 0., fFx*fCalfX);
   //    fNormals[2].Set(0., -fCalfY, fFy*fCalfY);
@@ -111,13 +111,13 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void FaceTrajectoryIntersection(Trd
     dirV *= Real_v(-1.);
   }
 
-  ndotv = dirV + fV * dir.z();
+  Real_v alongZ       = Real_v(2.0) * trd.fDZ;
+  Real_v ndotv_alongZ = alongZ * (dirV + fV * dir.z());
   if (toInside)
-    ok = ndotv < Real_v(0.);
+    ok = ndotv_alongZ < -kTolerance;
   else
-    ok = ndotv > Real_v(0.);
+    ok = ndotv_alongZ > kTolerance;
   if (vecCore::MaskEmpty(ok)) return;
-  Real_v alongZ = Real_v(2.0) * trd.fDZ;
 
   // distance from trajectory to face
   dist = (alongZ * (posV - v1) - alongV * (pos.z() + trd.fDZ)) / (dir.z() * alongV - dirV * alongZ + kTiny);
@@ -125,11 +125,11 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void FaceTrajectoryIntersection(Trd
   if (!vecCore::MaskEmpty(ok)) {
     // need to make sure z hit falls within bounds
     Real_v hitz = pos.z() + dist * dir.z();
-    ok &= vecCore::math::Abs(hitz) <= trd.fDZ;
+    ok &= vecCore::math::Abs(hitz) < MakePlusTolerant<true>(trd.fDZ);
     // need to make sure hit on varying dimension falls within bounds
     Real_v hitk = posK + dist * dirK;
     Real_v dK   = halfKplus - fK * hitz; // calculate the width of the varying dimension at hitz
-    ok &= vecCore::math::Abs(hitk) <= dK;
+    ok &= vecCore::math::Abs(hitk) < MakePlusTolerant<true>(dK);
     vecCore::MaskedAssign(dist, ok & (vecCore::math::Abs(dist) < kHalfTolerance), Real_v(0.0));
   }
 }
@@ -397,32 +397,33 @@ struct TrdImplementation {
       disty = trd.fDY1 - vecCore::math::Abs(point.y());
       out |= disty < Real_v(MakeMinusTolerant<true>(0.));
     }
-    if (/*vecCore::EarlyReturnAllowed() && */ vecCore::MaskFull(out)) {
+    if (vecCore::MaskFull(out)) {
       distance = Real_v(-1.);
       return;
     }
-    Bool_v okzt = dir.z() > Real_v(0.);
+    auto maxXY  = Max(trd.fHalfX1plusX2, trd.fHalfY1plusY2);
+    Bool_v okzt = dir.z() * maxXY > kTolerance;
     if (!vecCore::MaskEmpty(okzt)) {
       Real_v distz = (trd.fDZ - point.z()) * invdir;
       hitx         = vecCore::math::Abs(point.x() + distz * dir.x());
       hity         = vecCore::math::Abs(point.y() + distz * dir.y());
-      okzt &= hitx <= trd.fDX2 && hity <= trd.fDY2;
+      okzt &= hitx < MakePlusTolerant<true>(trd.fDX2) && hity < MakePlusTolerant<true>(trd.fDY2);
       vecCore::MaskedAssign(distance, okzt, distz);
-      if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(okzt)) {
+      if (vecCore::MaskFull(okzt)) {
         vecCore::MaskedAssign(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));
         return;
       }
     }
 
     // hit bottom Z face?
-    Bool_v okzb = dir.z() < Real_v(0.);
+    Bool_v okzb = dir.z() * maxXY < -kTolerance;
     if (!vecCore::MaskEmpty(okzb)) {
       Real_v distz = (point.z() + trd.fDZ) * invdir;
       hitx         = vecCore::math::Abs(point.x() + distz * dir.x());
       hity         = vecCore::math::Abs(point.y() + distz * dir.y());
-      okzb &= hitx <= trd.fDX1 && hity <= trd.fDY1;
+      okzb &= hitx < MakePlusTolerant<true>(trd.fDX1) && hity < MakePlusTolerant<true>(trd.fDY1);
       vecCore::MaskedAssign(distance, okzb, distz);
-      if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(okzb)) {
+      if (vecCore::MaskFull(okzb)) {
         vecCore::MaskedAssign(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));
         return;
       }
@@ -434,14 +435,14 @@ struct TrdImplementation {
     FaceTrajectoryIntersection<Real_v, false, false, false>(trd, point, dir, distx, okx);
 
     vecCore::MaskedAssign(distance, okx, distx);
-    if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(okx)) {
+    if (vecCore::MaskFull(okx)) {
       vecCore::MaskedAssign(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));
       return;
     }
 
     FaceTrajectoryIntersection<Real_v, false, true, false>(trd, point, dir, distx, okx);
     vecCore::MaskedAssign(distance, okx, distx);
-    if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(okx)) {
+    if (vecCore::MaskFull(okx)) {
       vecCore::MaskedAssign(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));
       return;
     }
@@ -452,7 +453,7 @@ struct TrdImplementation {
     if (checkVaryingY<trdTypeT>(trd)) {
       FaceTrajectoryIntersection<Real_v, true, false, false>(trd, point, dir, disty, oky);
       vecCore::MaskedAssign(distance, oky, disty);
-      if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(oky)) {
+      if (vecCore::MaskFull(oky)) {
         vecCore::MaskedAssign(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));
         return;
       }
@@ -466,7 +467,8 @@ struct TrdImplementation {
       Real_v zhit = point.z() + disty * dir.z();
       Real_v xhit = point.x() + disty * dir.x();
       Real_v dx   = trd.fHalfX1plusX2 - trd.fFx * zhit;
-      oky         = vecCore::math::Abs(xhit) < dx && vecCore::math::Abs(zhit) < trd.fDZ;
+      oky         = vecCore::math::Abs(xhit) < MakePlusTolerant<true>(dx) &&
+            vecCore::math::Abs(zhit) < MakePlusTolerant<true>(trd.fDZ);
       vecCore::MaskedAssign(distance, oky, disty);
     }
     vecCore__MaskedAssignFunc(distance, vecCore::math::Abs(distance) < kHalfTolerance, Real_v(0.0));

@@ -14,7 +14,7 @@ using VPlacedVolume = vecgeom::VPlacedVolume;
 using VGTrd         = vecgeom::SimpleTrd;
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat);
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance);
 
 template <typename Trd_t>
 Trd_t *buildATrd(int test)
@@ -56,23 +56,26 @@ int main(int argc, char *argv[])
   OPTION_BOOL(debug, false);
   OPTION_BOOL(stat, false);
   OPTION_INT(type, 0);
+  OPTION_DOUBLE(grazing, 0.);
 
   auto trd = buildATrd<VGTrd>(type);
   trd->Print();
-  return runTester<VPlacedVolume>(trd, npoints, debug, stat);
+  return runTester<VPlacedVolume>(trd, npoints, debug, stat, grazing);
 }
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat)
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance)
 {
 
   ShapeTester<ImplT> tester;
   tester.setDebug(debug);
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
-  #ifdef VECGEOM_SINGLE_PRECISION
-    tester.SetSolidTolerance(1e-4);
-  #endif
+  tester.SetGrazingTolerance(grazing_tolerance);
+  tester.SetErrorOnZeroDoutGrazing(true);
+#ifdef VECGEOM_SINGLE_PRECISION
+  tester.SetSolidTolerance(1e-4);
+#endif
   int errcode = tester.Run(shape);
 
   std::cout << "Final Error count for Shape *** " << shape->GetName() << "*** = " << errcode << "\n";

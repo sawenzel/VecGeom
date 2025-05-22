@@ -104,18 +104,26 @@ struct BoxImplementation {
                                                                          Vector3D<Real_v> const &direction,
                                                                          Real_v const & /* stepMax */, Real_v &distance)
   {
+    distance = Real_v(-1.0);
+
+    // Quick check: if the point is outside the box plus tolerance, return early
+    if ((point.Abs() - HalfSize<Real_v>(box)).Max() > Real_v(kTolerance)) return;
+
+    // Compute reciprocal direction, with fallback for zero
     const Vector3D<Real_v> invDir(Real_v(1.0) / NonZero(direction[0]), Real_v(1.0) / NonZero(direction[1]),
                                   Real_v(1.0) / NonZero(direction[2]));
-
+    // Sign of each direction component
     const Vector3D<Real_v> signDir(Sign(direction[0]), Sign(direction[1]), Sign(direction[2]));
 
-    const Real_v safetyIn = (point.Abs() - HalfSize<Real_v>(box)).Max();
-
+    // Compute distance to the exit surface along each axis
     const Vector3D<Real_v> tempOut = signDir * box.fDimensions - point;
 
-    distance = (tempOut * invDir).Min();
+    // Skip near-parallel directions (avoid div by small invDir)
+    auto skip = direction.Abs() * box.fDimensions < Vector3D<Real_v>(kTolerance);
+    // auto skip = invDir.Abs() > InvdirNearParallel(box.fDimensions);
 
-    vecCore__MaskedAssignFunc(distance, safetyIn > Real_v(kHalfTolerance), Real_v(-1.0));
+    // Compute final distance using min of unskipped axes
+    distance = (tempOut * invDir).MinSkip(skip);
   }
 
   template <typename Real_v>
