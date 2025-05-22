@@ -607,8 +607,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecCore::Mask_v<Real_v> PolyhedronI
                                                Vector3D<Real_v> const &point)
 {
   using Bool_v     = vecCore::Mask_v<Real_v>;
-  Bool_v pointSeg0 = point.Dot(segment.phi.GetNormal(0)) + segment.phi.GetDistance(0) >= 0;
-  Bool_v pointSeg1 = point.Dot(segment.phi.GetNormal(1)) + segment.phi.GetDistance(1) >= 0;
+  Bool_v pointSeg0 = point.Dot(segment.phi.GetNormal(0)) + segment.phi.GetDistance(0) >= kTolerance;
+  Bool_v pointSeg1 = point.Dot(segment.phi.GetNormal(1)) + segment.phi.GetDistance(1) >= kTolerance;
   // For a cutout larger than 180 degrees, the point is in the wedge if it is
   // in front of at least one plane.
   if (LargePhiCutout<phiCutoutT>(largePhiCutout)) {
@@ -1043,7 +1043,7 @@ VECCORE_ATT_HOST_DEVICE Precision PolyhedronImplementation<innerRadiiT, phiCutou
   }
 
   // Endcaps
-  ScalarDistanceToEndcaps<true>(unplaced, goingRight, point, direction, distance);
+  if (Abs(direction[2]) > kTolerance) ScalarDistanceToEndcaps<true>(unplaced, goingRight, point, direction, distance);
 
   // disabling stepMax until convention revised and clear
   // there is a problem when distance = infinity due to some error condition but stepMax finite

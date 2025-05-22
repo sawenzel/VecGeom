@@ -46,6 +46,8 @@ public:
   inline void SetMaxPoints(const int newMaxPoints) { fMaxPoints = newMaxPoints; }
   inline void SetMethod(const std::string &newMethod) { fMethod = newMethod; }
   inline void SetInsidePercent(const Precision percent) { fInsidePercent = percent; }
+  inline void SetGrazingTolerance(const Precision tolerance) { fGrazingTolerance = tolerance; }
+  inline void SetErrorOnZeroDoutGrazing(bool flag) { fErrorOnZeroDoutGrazing = flag; }
   inline void SetOutsidePercent(const Precision percent) { fOutsidePercent = percent; }
   inline void SetEdgePercent(const Precision percent) { fEdgePercent = percent; }
   inline void SetOutsideMaxRadiusMultiple(const Precision percent) { fOutsideMaxRadiusMultiple = percent; }
@@ -96,6 +98,7 @@ private:
 
   Vec_t GetPointOnOrb(Precision r);
   Vec_t GetRandomDirection();
+  Vec_t GetRandomDirectionPerp(Vec_t const &normal);
 
   int TestBoundaryPrecision(int mode);
   int TestConsistencySolids();
@@ -168,7 +171,7 @@ private:
   bool ShapeConventionOutsidePoint(); // Function to check conventions for Outside Points
   void SetNumDisp(int);               // Function to set num. of points to be displayed during convention failure
   bool ApproxEqual(const double &x, const double &y); // Helper function to check approximate equality of doubles
-  bool ApproxEqual(const float &x, const float &y); // Helper function to check approximate equality of floats
+  bool ApproxEqual(const float &x, const float &y);   // Helper function to check approximate equality of floats
   // Return true if the 3vector check is approximately equal to target
   template <class Vec_t>
   bool ApproxEqual(const Vec_t &check, const Vec_t &target);
@@ -176,7 +179,8 @@ private:
 protected:
   Vec_t GetRandomPoint() const;
   double GaussianRandom(const double cutoff) const;
-  void ReportError(int *nError, Vec_t &p, Vec_t &v, Precision distance, std::string comment); //, std::ostream &fLogger );
+  void ReportError(int *nError, Vec_t &p, Vec_t &v, Precision distance,
+                   std::string comment); //, std::ostream &fLogger );
   void ClearErrors();
   int CountErrors() const;
 
@@ -189,6 +193,7 @@ protected:
   Precision fEdgePercent;                   // Percentage of edge points
   Precision fOutsideMaxRadiusMultiple;      // Range of outside points
   Precision fOutsideRandomDirectionPercent; // Percentage of outside random direction
+  Precision fGrazingTolerance; // Tolerance for rays staring on surface to be perpendicular to the surface normal
 
   // XRay profile statistics
   int fGNumberOfScans;         // data member to store the number of different scan angle used for XRay profile
@@ -227,9 +232,10 @@ private:
   // Save only differences
   bool fIfSaveAllData; // save alldata, big files
   // take more time, but not affect performance measures
-  bool fDefinedNormal;      // bool variable to skip normal calculation if it does not exist in the shape
-  bool fIfException;        // data memeber to abort ShapeTester if any error found
-  bool fTestBoundaryErrors; // Enable testing boundary errors
+  bool fDefinedNormal;          // bool variable to skip normal calculation if it does not exist in the shape
+  bool fIfException;            // data memeber to abort ShapeTester if any error found
+  bool fTestBoundaryErrors;     // Enable testing boundary errors
+  bool fErrorOnZeroDoutGrazing; // If this is set, generate errors for grazing rays returning zero distance to out
 
   // Added data member required for convention checker
   std::vector<std::string> fConventionMessage; // STL vector for convention error messages.
@@ -238,7 +244,7 @@ private:
   bool fVisualize; // Flag to be set or unset by EnableDebugger() function that user will
   // call with true parameter if want to see visualization in case of some mismatch
   Precision fSolidTolerance; // Tolerance on boundary declared by solid (default kTolerance)
-  Precision fSolidFarAway; // Distance to shoot points at from solid in TestFarAwayPoints
+  Precision fSolidFarAway;   // Distance to shoot points at from solid in TestFarAwayPoints
 #ifdef VECGEOM_ROOT
   vecgeom::Visualizer fVisualizer; // Visualizer object to visualize the geometry if fVisualize is set.
 #endif

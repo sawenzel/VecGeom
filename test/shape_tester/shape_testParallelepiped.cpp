@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
   OPTION_BOOL(debug, false);
   OPTION_BOOL(stat, false);
   OPTION_INT(type, 0);
+  OPTION_DOUBLE(grazing, 0.);
 
   using namespace vecgeom;
 
@@ -53,10 +54,12 @@ int main(int argc, char *argv[])
   tester.setDebug(debug);
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
-  tester.SetTestBoundaryErrors(true);
-  #ifdef VECGEOM_SINGLE_PRECISION
-     tester.SetSolidTolerance(1.e-4);
-  #endif
+  tester.SetTestBoundaryErrors(false);
+  tester.SetGrazingTolerance(grazing);
+  tester.SetErrorOnZeroDoutGrazing(true);
+#ifdef VECGEOM_SINGLE_PRECISION
+  tester.SetSolidTolerance(1.e-4);
+#endif
   int errCode = tester.Run(solid);
 
   std::cout << "Final Error count for Shape *** " << solid->GetName() << "*** = " << errCode << "\n";

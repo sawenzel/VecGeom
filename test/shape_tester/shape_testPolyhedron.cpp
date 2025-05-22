@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
   OPTION_BOOL(debug, false);
   OPTION_BOOL(stat, false);
   OPTION_INT(type, 5);
+  OPTION_DOUBLE(grazing, 0.);
   using namespace vecgeom;
 
   Polyhedron_t *solid = 0;
@@ -105,6 +106,8 @@ int main(int argc, char *argv[])
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
   tester.SetTestBoundaryErrors(false);
+  tester.SetGrazingTolerance(grazing);
+  tester.SetErrorOnZeroDoutGrazing(true);
   int errCode = tester.Run(solid);
 
   std::cout << "Final Error count for Shape *** " << solid->GetName() << "*** = " << errCode << "\n";

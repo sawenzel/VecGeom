@@ -40,6 +40,7 @@ bool TestTubs()
   Vec_t ponxside(50, 0, 0);
   Vec_t ponyside(0, 50, 0);
   Vec_t ponzside(0, 0, 50);
+  Vec_t ponlowcircle(50, 0, -50);
 
   Vec_t vx(1, 0, 0), vy(0, 1, 0), vz(0, 0, 1);
   Vec_t vmx(-1, 0, 0), vmy(0, -1, 0), vmz(0, 0, -1);
@@ -208,6 +209,12 @@ bool TestTubs()
   valid = t1.Normal(pzero + Dist * vxy, norm);
   assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vxy));
 
+  Dist = t1.DistanceToOut(ponlowcircle + Vec_t(3.e-10, 0, 0), vmx + Vec_t(0, 0, -1.e-13));
+  assert(ApproxEqual<Precision>(Dist, 100));
+
+  Dist = t1.DistanceToOut(ponlowcircle, vz);
+  assert(ApproxEqual<Precision>(Dist, 100));
+
   Dist = t2.DistanceToOut(pzero, vxy);
   //  std::cout<<"Dist=t2.DistanceToOut(pzero,vxy) = "<<Dist<<std::endl;
 
@@ -240,7 +247,7 @@ bool TestTubs()
   assert(ApproxEqual<Precision>(Dist, 0));
 
   Dist = t3.DistanceToOut(Vec_t(0.5, 10, 0), vx); // checking an outside point
-  assert(t3.Inside(Vec_t(0.5, 10, 0))==vecgeom::EInside::kOutside);
+  assert(t3.Inside(Vec_t(0.5, 10, 0)) == vecgeom::EInside::kOutside);
   // std::cout<<"Dist=t3.DistanceToOut((0.5,10,0),vx) = "<<Dist<<std::endl;
   // assert(ApproxEqual<Precision>(Dist, 48.489795)); // distance  can't be positive, buggy test case
   assert(Dist < 0.);

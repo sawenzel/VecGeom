@@ -17,6 +17,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #ifdef VECGEOM_SINGLE_PRECISION
 using Precision                        = float;
 VECGEOM_CONST Precision kTolerance     = 1e-3;
+VECGEOM_CONST Precision kInvTolerance  = 1e3;
 VECGEOM_CONST Precision kPushTolerance = 1e-3;
 VECGEOM_CONST Precision kSqrtTolerance = 3.1622777e-2;
 VECGEOM_CONST Precision kAngTolerance  = 1e-2;
@@ -25,6 +26,7 @@ VECGEOM_CONST Precision kFarAway       = 1e5;
 #else
 using Precision                        = double;
 VECGEOM_CONST Precision kTolerance     = 1e-9;
+VECGEOM_CONST Precision kInvTolerance  = 1e9;
 VECGEOM_CONST Precision kPushTolerance = 1e-6;
 VECGEOM_CONST Precision kSqrtTolerance = 3.1622777e-5;
 VECGEOM_CONST Precision kAngTolerance  = 1e-9;
@@ -50,9 +52,9 @@ inline constexpr float kToleranceStrict<float> = float(1e-6);
 template <typename Real_t>
 constexpr Real_t kToleranceDistSquared = Real_t(0);
 template <>
-inline constexpr double kToleranceDistSquared<double> = kToleranceDist<double> *kToleranceDist<double>;
+inline constexpr double kToleranceDistSquared<double> = kToleranceDist<double> * kToleranceDist<double>;
 template <>
-inline constexpr float kToleranceDistSquared<float> = kToleranceDist<float> *kToleranceDist<float>;
+inline constexpr float kToleranceDistSquared<float> = kToleranceDist<float> * kToleranceDist<float>;
 
 template <typename Real_t>
 constexpr Real_t kToleranceCone = Real_t(0);
@@ -62,9 +64,9 @@ template <>
 inline constexpr float kToleranceCone<float> = float(1e-3);
 
 #ifdef VECGEOM_BVH_SINGLE
-  constexpr double kToleranceBVH = double(1e-4);
+constexpr double kToleranceBVH = double(1e-4);
 #else
-  constexpr float kToleranceBVH = float(1e-9);
+constexpr float kToleranceBVH = float(1e-9);
 #endif
 
 using namespace vecCore::math;
@@ -72,8 +74,8 @@ using namespace vecCore::math;
 VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;
 VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
 template <typename Real_t>
-constexpr Real_t kEpsilonT = std::numeric_limits<Real_t>::epsilon();
-// VECGEOM_CONST Precision kInfinity         = std::numeric_limits<Precision>::infinity();
+constexpr Real_t kEpsilonT        = std::numeric_limits<Real_t>::epsilon();
+VECGEOM_CONST double kInfinityDbl = std::numeric_limits<double>::infinity();
 // a special constant to indicate a "miss" length
 VECGEOM_CONST Precision kInfLength        = vecCore::NumericLimits<Precision>::Max();
 VECGEOM_CONST Precision kMaximum          = vecCore::NumericLimits<Precision>::Max();

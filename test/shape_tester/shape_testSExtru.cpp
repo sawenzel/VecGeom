@@ -11,6 +11,7 @@ int main(int argc, char *argv[])
   OPTION_INT(npoints, 10000);
   OPTION_BOOL(debug, false);
   OPTION_BOOL(stat, false);
+  OPTION_DOUBLE(grazing, 0.);
 
   int N = 20;
   vecgeom::Precision x[N], y[N];
@@ -26,6 +27,9 @@ int main(int argc, char *argv[])
   tester.setDebug(debug);
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
+  tester.SetGrazingTolerance(grazing);
+  tester.SetErrorOnZeroDoutGrazing(true);
+
   int errCode = tester.Run(volume);
 
   std::cout << "Final Error count for Shape *** " << volume->GetName() << "*** = " << errCode << "\n";

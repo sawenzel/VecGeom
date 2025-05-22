@@ -110,6 +110,18 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE T MakeMinusTolerantSquare(T const &
   return (tolerant) ? Abs(x * (x - T(2.0 * tol))) : x * x;
 }
 
+template <typename Real_t>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Real_t> NonZeroVector(Vector3D<Real_t> const &vect)
+{
+  return Vector3D<Real_t>(NonZero(vect[0]), NonZero(vect[1]), NonZero(vect[2]));
+}
+
+template <typename Real_t>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_t InvdirNearParallel(Real_t dist)
+{
+  return kInvTolerance * dist;
+}
+
 template <bool treatSurfaceT, class Backend>
 struct TreatSurfaceTraits;
 template <class Backend>

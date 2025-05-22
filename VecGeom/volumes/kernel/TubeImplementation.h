@@ -328,7 +328,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Is
     UnplacedStruct_t const &tube, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
   return IsOnTubeSurface<Real_v, UnplacedStruct_t, ForInnerSurface>(tube, point) &&
-         (direction.Dot(GetNormal<Real_v, ForInnerSurface>(point)) <= Real_v(0.));
+         (direction.Dot(GetNormal<Real_v, ForInnerSurface>(point)) < -0.5 * int(!ForInnerSurface) * kTolerance);
 }
 
 } // namespace TubeUtilities
@@ -536,8 +536,16 @@ struct TubeImplementation {
     vecCore::MaskedAssign(distance, !done && okz, distz);
     done |= okz;
 
-    Bool_v isOnSurfaceAndMovingInside = IsMovingInsideTubeSurface<Real_v, UnplacedStruct_t, false>(tube, point, dir);
+    // point on outer cyl?
+    Bool_v isOnSurface   = IsOnTubeSurface<Real_v, UnplacedStruct_t, false>(tube, point);
+    Bool_v movingInsideR = dir.Dot(GetNormal<Real_v, false>(point)) < -0.5 * kTolerance;
+    done |= isOnSurface && !movingInsideR;
+    vecCore::MaskedAssign(distance, isOnSurface && !movingInsideR, kInfLength);
+    if (vecCore::MaskFull(done)) return;
+
+    Bool_v isOnSurfaceAndMovingInside = isOnSurface && movingInsideR;
     if (checkRminTreatment<tubeTypeT>(tube)) {
+      // point on inner cyl?
       isOnSurfaceAndMovingInside |= IsMovingInsideTubeSurface<Real_v, UnplacedStruct_t, true>(tube, point, dir);
     }
 
@@ -688,9 +696,9 @@ struct TubeImplementation {
     vecCore::MaskedAssign(distance, !done, Real_v(kInfLength));
 
     Real_v invdirz = Real_v(1.) / NonZero(dir.z());
-    distz          = (tube.fZ - point.z()) * invdirz;
+    distz          = (Sign(dir.z()) * tube.fZ - point.z()) * invdirz;
     vecCore__MaskedAssignFunc(distz, dir.z() < 0, (-tube.fZ - point.z()) * invdirz);
-    vecCore::MaskedAssign(distance, !done && dir.z() != Real_v(0.) && distz < distance, distz);
+    vecCore::MaskedAssign(distance, !done && Abs(invdirz) < InvdirNearParallel(tube.fRmax) && distz < distance, distz);
 
     /*
      * Find the intersection of the trajectories with the two circles.
@@ -699,17 +707,27 @@ struct TubeImplementation {
 
     Real_v invnsq = Real_v(1.) / NonZero(Real_v(1.) - dir.z() * dir.z());
     Real_v b      = invnsq * rdotn;
+    // Ignore cylindrical surface crossings for directions near-parallel to Z
+    // The upper limit matches the direction for which a point on the surface could still hit the cylinder before
+    // hitting the Z plane
+    bool checkTube = invnsq < tube.fZ * tube.fZ * kInvTolerance * kInvTolerance;
 
     /*
      * rmin
      */
 
-    if (checkRminTreatment<tubeTypeT>(tube)) {
+    if (checkTube && checkRminTreatment<tubeTypeT>(tube)) {
       Real_v dist_rmin(kInfLength);
       Bool_v ok_rmin(false);
-      crmin *= invnsq;
-      CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, false, false>(b, crmin, tube, point, dir,
-                                                                                      dist_rmin, ok_rmin);
+      Bool_v isOnSurface = IsOnTubeSurface<Real_v, UnplacedStruct_t, true>(tube, point);
+      if (vecCore::MaskFull(isOnSurface)) {
+        ok_rmin   = dir.Dot(GetNormal<Real_v, true>(point)) > 0.5 * kTolerance;
+        dist_rmin = 0.;
+      } else {
+        crmin *= invnsq;
+        CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, false, false>(b, crmin, tube, point, dir,
+                                                                                        dist_rmin, ok_rmin);
+      }
       vecCore::MaskedAssign(distance, ok_rmin && dist_rmin < distance, dist_rmin);
     }
 
@@ -719,10 +737,12 @@ struct TubeImplementation {
 
     Real_v dist_rmax(kInfLength);
     Bool_v ok_rmax(false);
-    crmax *= invnsq;
-    CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, true, false>(b, crmax, tube, point, dir,
-                                                                                   dist_rmax, ok_rmax);
-    vecCore::MaskedAssign(distance, ok_rmax && dist_rmax < distance, dist_rmax);
+    if (checkTube) {
+      crmax *= invnsq;
+      CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, true, false>(b, crmax, tube, point, dir,
+                                                                                     dist_rmax, ok_rmax);
+      vecCore::MaskedAssign(distance, ok_rmax && dist_rmax < distance, dist_rmax);
+    }
 
     /* Phi planes
      *

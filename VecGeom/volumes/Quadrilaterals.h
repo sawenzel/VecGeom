@@ -382,7 +382,7 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToIn(Vector3D<Real_v> con
     Bool_v valid = Flip<behindPlanesT>::FlipSign(distance) > -kTolerance;
     if (vecCore::MaskEmpty(valid)) continue;
     Real_v directionProjection = direction.Dot(normal);
-    valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > 0;
+    valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > kTolerance;
     if (vecCore::MaskEmpty(valid)) continue;
     distance /= -(directionProjection + CopySign(Real_v(1E-20), directionProjection));
     Vector3D<Real_v> intersection = point + direction * distance;
@@ -495,10 +495,10 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToOut(Vector3D<Real_v> co
     Real_v directionProjection = direction.Dot(normal);
     // Because the point is behind the plane, the direction must be along the
     // normal
-    valid &= directionProjection > 0;
+    valid &= directionProjection > kTolerance;
     if (vecCore::MaskEmpty(valid)) continue;
     distanceTest /= -directionProjection;
-    valid &= distanceTest < bestDistance;
+    valid &= distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
     if (vecCore::MaskEmpty(valid)) continue;
 
     // this is a tricky test when zMin == zMax ( degenerate planes )

@@ -176,7 +176,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains<Precision,
   for (; i < n - kVectorSize; i += kVectorSize) {
     VcBool inside = VcPrecision(normals.x() + i) * point[0] + VcPrecision(normals.y() + i) * point[1] +
                         VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <
-                    0;
+                    kTolerance;
     // Early return if not inside all planes (convex case)
     result = vecCore::MaskFull(inside);
     if (!result) {
@@ -194,7 +194,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains<Precision,
   for (; i < n - kVectorSize; i += kVectorSize) {
     VcBool inside = VcPrecision(normals.x() + i) * point[0] + VcPrecision(normals.y() + i) * point[1] +
                         VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <
-                    0;
+                    kTolerance;
     // Early return ifinside any planes (non-convex case)
     result = !vecCore::MaskEmpty(inside);
     if (result) {
@@ -219,12 +219,12 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecCore::Mask_v<Real_v> Planes::Con
   if (fConvex) {
     AcceleratedContains<Real_v, true>(i, n, fNormals, fDistances, point, result);
     for (; i < n; ++i) {
-      result &= point.Dot(fNormals[i]) + fDistances[i] < 0;
+      result &= point.Dot(fNormals[i]) + fDistances[i] <= kTolerance;
     }
   } else {
     AcceleratedContains<Real_v, false>(i, n, fNormals, fDistances, point, result);
     for (; i < n; ++i) {
-      result |= point.Dot(fNormals[i]) + fDistances[i] < 0;
+      result |= point.Dot(fNormals[i]) + fDistances[i] <= kTolerance;
     }
   }
 

@@ -271,9 +271,23 @@ public:
   VECGEOM_FORCE_INLINE
   Type Min() const { return vecCore::math::Min(vec[0], vec[1], vec[2]); }
 
+  template <typename BoolVector>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Type MinSkip(BoolVector const &skip) const
+  {
+    // Fast implementation that works if the vector elements are finite
+    return (*this + kInfLength * Vector3D<Type>(skip[0], skip[1], skip[2])).Min();
+  }
+
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Type Max() const { return vecCore::math::Max(vec[0], vec[1], vec[2]); }
+
+  template <typename BoolVector>
+  VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Type MaxSkip(BoolVector const &skip) const
+  {
+    // Fast implementation that works if the vector elements are finite
+    return (*this - kInfLength * Vector3D<Type>(skip[0], skip[1], skip[2])).Max();
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -295,7 +309,7 @@ public:
 #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR)                                                       \
   VECCORE_ATT_HOST_DEVICE                                                                                   \
   VECGEOM_FORCE_INLINE                                                                                      \
-  VecType &operator OPERATOR(const VecType &other)                                                          \
+  VecType &operator OPERATOR(const VecType & other)                                                         \
   {                                                                                                         \
     vec[0] OPERATOR other.vec[0];                                                                           \
     vec[1] OPERATOR other.vec[1];                                                                           \
@@ -312,7 +326,7 @@ public:
   }                                                                                                         \
   VECCORE_ATT_HOST_DEVICE                                                                                   \
   VECGEOM_FORCE_INLINE                                                                                      \
-  VecType &operator OPERATOR(const Type &scalar)                                                            \
+  VecType &operator OPERATOR(const Type & scalar)                                                           \
   {                                                                                                         \
     vec[0] OPERATOR scalar;                                                                                 \
     vec[1] OPERATOR scalar;                                                                                 \
@@ -382,27 +396,31 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator!=(Vector3D<Type> cons
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator<(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<bool> operator<(Vector3D<Type> const &lhs,
+                                                                      Vector3D<Type> const &rhs)
 {
-  return lhs[0] < rhs[0] && lhs[1] < rhs[1] && lhs[2] < rhs[2];
+  return {lhs[0] < rhs[0], lhs[1] < rhs[1], lhs[2] < rhs[2]};
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator<=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<bool> operator<=(Vector3D<Type> const &lhs,
+                                                                       Vector3D<Type> const &rhs)
 {
-  return lhs[0] <= rhs[0] && lhs[1] <= rhs[1] && lhs[2] <= rhs[2];
+  return {lhs[0] <= rhs[0], lhs[1] <= rhs[1], lhs[2] <= rhs[2]};
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator>(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<bool> operator>(Vector3D<Type> const &lhs,
+                                                                      Vector3D<Type> const &rhs)
 {
-  return lhs[0] > rhs[0] && lhs[1] > rhs[1] && lhs[2] > rhs[2];
+  return {lhs[0] > rhs[0], lhs[1] > rhs[1], lhs[2] > rhs[2]};
 }
 
 template <typename Type>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator>=(Vector3D<Type> const &lhs, Vector3D<Type> const &rhs)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<bool> operator>=(Vector3D<Type> const &lhs,
+                                                                       Vector3D<Type> const &rhs)
 {
-  return lhs[0] >= rhs[0] && lhs[1] >= rhs[1] && lhs[2] >= rhs[2];
+  return {lhs[0] >= rhs[0], lhs[1] >= rhs[1], lhs[2] >= rhs[2]};
 }
 
 template <typename Type>

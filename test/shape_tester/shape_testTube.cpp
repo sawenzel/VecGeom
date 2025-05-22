@@ -7,7 +7,7 @@ using VPlacedVolume = vecgeom::VPlacedVolume;
 using VGTube        = vecgeom::SimpleTube;
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat);
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance);
 
 int main(int argc, char *argv[])
 {
@@ -20,20 +20,22 @@ int main(int argc, char *argv[])
   OPTION_DOUBLE(rmin, 2.);
   OPTION_DOUBLE(sphi, 0.);
   OPTION_DOUBLE(dphi, vecgeom::kTwoPi);
+  OPTION_DOUBLE(grazing, 0.);
 
   auto tube = new VGTube("vecgeomTube", dz, rmax, rmin, sphi, dphi);
   tube->Print();
-  return runTester<VPlacedVolume>(tube, npoints, debug, stat);
+  return runTester<VPlacedVolume>(tube, npoints, debug, stat, grazing);
 }
 
 template <typename ImplT>
-int runTester(ImplT const *shape, int npoints, bool debug, bool stat)
+int runTester(ImplT const *shape, int npoints, bool debug, bool stat, double grazing_tolerance)
 {
   ShapeTester<ImplT> tester;
   tester.setDebug(debug);
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
   tester.SetSolidTolerance(vecgeom::kHalfTolerance);
+  tester.SetGrazingTolerance(grazing_tolerance);
   int errcode = tester.Run(shape);
 
   std::cout << "Final Error count for Shape *** " << shape->GetName() << "*** = " << errcode << "\n";
