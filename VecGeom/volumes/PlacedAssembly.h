@@ -64,14 +64,12 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual bool UnplacedContains(Vector3D<Precision> const &point) const override
   {
     return static_cast<UnplacedAssembly const *>(GetUnplacedVolume())->UnplacedAssembly::Contains(point);
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual EnumInside Inside(Vector3D<Precision> const & /*point*/) const override
   {
 #ifndef VECCORE_CUDA
@@ -81,7 +79,6 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
                                  const Precision step_max = kInfLength) const override
   {
@@ -91,7 +88,6 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual Precision DistanceToOut(Vector3D<Precision> const & /*position*/, Vector3D<Precision> const & /*direction*/,
                                   Precision const /*stepMax*/) const override
   {
@@ -113,14 +109,12 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const override
   {
     return GetUnplacedVolume()->SafetyToOut(position);
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const override
   {
     return static_cast<UnplacedAssembly const *>(GetUnplacedVolume())
