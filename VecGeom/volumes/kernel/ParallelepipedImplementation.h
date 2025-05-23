@@ -112,8 +112,6 @@ struct ParallelepipedImplementation {
                                                                         Vector3D<Real_v> const &direction,
                                                                         Real_v const &stepMax, Real_v &distance)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-
     // Transform point and direction to local (oblique) system of coordinates,
     // compute safety vector
     Vector3D<Real_v> p(point);

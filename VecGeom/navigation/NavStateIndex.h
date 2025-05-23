@@ -657,7 +657,6 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static bool IsValid(NavIndex_t nav_ind, int nprint = 0)
   {
-    auto state  = NavStateIndex(nav_ind);
     int nd      = GetNdaughtersImpl(nav_ind);
     auto parent = NavInd(nav_ind);
     if (nprint) printf("state %d: parent %d | %d daughters: ", nav_ind, parent, nd);
