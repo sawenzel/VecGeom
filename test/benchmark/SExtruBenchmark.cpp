@@ -20,7 +20,8 @@ int main(int argc, char *argv[])
   Precision dz = 5;
   UnplacedBox worldUnplaced(dx * 4, dy * 4, dz * 4);
 
-  Precision x[N], y[N];
+  auto x = new Precision[N];
+  auto y = new Precision[N];
   for (size_t i = 0; i < (size_t)N; ++i) {
     x[i] = dx * std::sin(i * (2. * M_PI) / N);
     y[i] = dy * std::cos(i * (2. * M_PI) / N);
@@ -46,5 +47,7 @@ int main(int argc, char *argv[])
   tester.RunToOutFromBoundaryBenchmark();
   tester.RunToOutFromBoundaryExitingBenchmark();
   tester.RunToInFromBoundaryBenchmark();
+  delete[] x;
+  delete[] y;
   return errcode;
 }
