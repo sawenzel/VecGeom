@@ -6,18 +6,10 @@
 #include "VecGeom/surfaces/bvh/BVHsurf.h"
 #include "VecGeom/volumes/VolumeTree.h"
 #include "VecGeom/management/Logger.h"
+#include "VecGeom/base/Assert.h"
 #include <cuda_runtime_api.h>
 
 namespace vgbrep {
-
-#define BREP_CUDA_CHECK(cmd)                            \
-  do {                                                  \
-    cudaError_t err = cmd;                              \
-    if (err != cudaSuccess) {                           \
-      VECGEOM_LOG(critical) << cudaGetErrorString(err); \
-      throw std::runtime_error("Failed " #cmd);         \
-    }                                                   \
-  } while (0)
 
 template <typename Real_t>
 __global__ void FinishBVHCopy(bvh::BVHsurf<Real_t> *dBVH, int *dPrimId, int *dOffset, int *dNChild,
@@ -73,22 +65,22 @@ void CopyBVH(const bvh::BVHsurf<Real_t> &hBVH, bvh::BVHsurf<Real_t> *dBVH)
     throw std::logic_error(oss.str());
   }
 
-  BREP_CUDA_CHECK(cudaMalloc(&dPrimId, hBVH.GetRootNChild() * sizeof(int)));
-  BREP_CUDA_CHECK(cudaMalloc(&dOffset, nodes * sizeof(int)));
-  BREP_CUDA_CHECK(cudaMalloc(&dNChild, nodes * sizeof(int)));
-  BREP_CUDA_CHECK(cudaMalloc(&dNodes, nodes * sizeof(bvh::AABBsurf<Real_t>)));
-  BREP_CUDA_CHECK(cudaMalloc(&dAABBs, hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dPrimId, hBVH.GetRootNChild() * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dOffset, nodes * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dNChild, nodes * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dNodes, nodes * sizeof(bvh::AABBsurf<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dAABBs, hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>)));
 
   // Ensure pointers are not null after allocation
   if (!dPrimId || !dAABBs || !dOffset || !dNChild || !dNodes) {
     throw std::runtime_error("Memory allocation failed: One or more pointers are null.");
   }
 
-  BREP_CUDA_CHECK(cudaMemcpy(dPrimId, hBVH.GetPrimId(), hBVH.GetRootNChild() * sizeof(int), cudaMemcpyHostToDevice));
-  BREP_CUDA_CHECK(cudaMemcpy(dOffset, hBVH.GetOffset(), nodes * sizeof(int), cudaMemcpyHostToDevice));
-  BREP_CUDA_CHECK(cudaMemcpy(dNChild, hBVH.GetNChild(), nodes * sizeof(int), cudaMemcpyHostToDevice));
-  BREP_CUDA_CHECK(cudaMemcpy(dNodes, hBVH.GetNodes(), nodes * sizeof(bvh::AABBsurf<Real_t>), cudaMemcpyHostToDevice));
-  BREP_CUDA_CHECK(cudaMemcpy(dAABBs, hBVH.GetAABBs(), hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>),
+  VECGEOM_DEVICE_API_CALL(Memcpy(dPrimId, hBVH.GetPrimId(), hBVH.GetRootNChild() * sizeof(int), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(Memcpy(dOffset, hBVH.GetOffset(), nodes * sizeof(int), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(Memcpy(dNChild, hBVH.GetNChild(), nodes * sizeof(int), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(Memcpy(dNodes, hBVH.GetNodes(), nodes * sizeof(bvh::AABBsurf<Real_t>), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(Memcpy(dAABBs, hBVH.GetAABBs(), hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>),
                              cudaMemcpyHostToDevice));
 
   // Adjust pointers in the GPU instance
@@ -209,25 +201,24 @@ public:
     size_t sizePlaced   = volumeTree.fNplaced * sizeof(vecgeom::PlacedId);
     size_t sizeChildren = volumeTree.fNplacedC * sizeof(vecgeom::PlacedId);
     // Allocate the buffer on device
-    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fLogical, sizeLogical));
-    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fPlaced, sizePlaced));
-    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTreeStaging.fChildren, sizeChildren));
-    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTreeStaging.fLogical, volumeTree.fLogical, sizeLogical, cudaMemcpyHostToDevice));
-    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTreeStaging.fPlaced, volumeTree.fPlaced, sizePlaced, cudaMemcpyHostToDevice));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fVolumeTreeStaging.fChildren, volumeTree.fChildren, sizeChildren, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fVolumeTreeStaging.fLogical, sizeLogical));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fVolumeTreeStaging.fPlaced, sizePlaced));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fVolumeTreeStaging.fChildren, sizeChildren));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fVolumeTreeStaging.fLogical, volumeTree.fLogical, sizeLogical, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fVolumeTreeStaging.fPlaced, volumeTree.fPlaced, sizePlaced, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fVolumeTreeStaging.fChildren, volumeTree.fChildren, sizeChildren, cudaMemcpyHostToDevice));
     // long shift_placed = reinterpret_cast<long>(fVolumeTreeStaging.fPlaced) -
     // reinterpret_cast<long>(volumeTree.fPlaced);
     long shift_children =
         reinterpret_cast<long>(fVolumeTreeStaging.fChildren) - reinterpret_cast<long>(volumeTree.fChildren);
 
     // Now copy the staged data to the GPU
-    BREP_CUDA_CHECK(cudaMalloc(&fVolumeTree, sizeof(vecgeom::VolumeTree)));
-    BREP_CUDA_CHECK(cudaMemcpy(fVolumeTree, &fVolumeTreeStaging, sizeof(vecgeom::VolumeTree), cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fVolumeTree, sizeof(vecgeom::VolumeTree)));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fVolumeTree, &fVolumeTreeStaging, sizeof(vecgeom::VolumeTree), cudaMemcpyHostToDevice));
 
     // Finally finish the transfer by calling a kernel to write some pointers
     FinishVolumeTreeTransfer<<<1, 1>>>(fVolumeTree, shift_children);
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
     // The arrays in the staging area are device pointers, null them to avoid deletion
     fVolumeTreeStaging.fLogical  = nullptr;
     fVolumeTreeStaging.fPlaced   = nullptr;
@@ -250,43 +241,42 @@ public:
     // Allocate and copy transformations
     fSurfDataStaging.fNvolTrans = surfData.fNvolTrans;
     sizeInBytes                 = sizeof(surfData.fPVolTrans[0]) * surfData.fNvolTrans;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fPVolTrans, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fPVolTrans, surfData.fPVolTrans, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fPVolTrans, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fPVolTrans, surfData.fPVolTrans, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy surface data
     fSurfDataStaging.fNellip = surfData.fNellip;
     sizeInBytes              = sizeof(surfData.fEllipData[0]) * surfData.fNellip;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fEllipData, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fEllipData, surfData.fEllipData, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fEllipData, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fEllipData, surfData.fEllipData, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNtorus = surfData.fNtorus;
     sizeInBytes              = sizeof(surfData.fTorusData[0]) * surfData.fNtorus;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTorusData, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fTorusData, surfData.fTorusData, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fTorusData, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fTorusData, surfData.fTorusData, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNarb4 = surfData.fNarb4;
     sizeInBytes             = sizeof(surfData.fArb4Data[0]) * surfData.fNarb4;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fArb4Data, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fArb4Data, surfData.fArb4Data, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fArb4Data, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fArb4Data, surfData.fArb4Data, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy volume shells
     fSurfDataStaging.fNshells = surfData.fNshells;
     sizeInBytes               = sizeof(surfData.fShells[0]) * surfData.fNshells;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShells, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShells, surfData.fShells, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShells, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShells, surfData.fShells, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: the fShells[i].fSurfaces are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
     sizeInBytes = sizeof(surfData.fSurfShellList[0]) * surfData.fNlocalSurf;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSurfShellList, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fSurfShellList, surfData.fSurfShellList, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSurfShellList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSurfShellList, surfData.fSurfShellList, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: fShells[i].fLogic are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
     sizeInBytes = sizeof(logic_int) * surfData.fNlogic;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLogicList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fLogicList, surfData.fLogicList, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fLogicList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fLogicList, surfData.fLogicList, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: fShells[i].fShellExiting/EnteringSurfaceList are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
@@ -294,50 +284,50 @@ public:
     fSurfDataStaging.fNEnteringSurfaces = surfData.fNEnteringSurfaces;
 
     sizeInBytes = sizeof(surfData.fShellExitingSurfaceList[0]) * surfData.fNExitingSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellExitingSurfaceList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellExitingSurfaceList, surfData.fShellExitingSurfaceList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellExitingSurfaceList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellExitingSurfaceList, surfData.fShellExitingSurfaceList,
                                sizeInBytes, cudaMemcpyHostToDevice));
     sizeInBytes = sizeof(surfData.fShellEnteringSurfaceList[0]) * surfData.fNEnteringSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfaceList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfaceList, surfData.fShellEnteringSurfaceList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellEnteringSurfaceList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellEnteringSurfaceList, surfData.fShellEnteringSurfaceList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: fShells[i].fShellEnteringSurfacePvolList are backed by the following array
     // and set via BrepCudaManagerFinishTransfer.
     sizeInBytes = sizeof(surfData.fShellEnteringSurfacePvolList[0]) * surfData.fNEnteringSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfacePvolList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfacePvolList, surfData.fShellEnteringSurfacePvolList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellEnteringSurfacePvolList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellEnteringSurfacePvolList, surfData.fShellEnteringSurfacePvolList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     sizeInBytes = sizeof(surfData.fShellEnteringSurfacePvolTransList[0]) * surfData.fNEnteringSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfacePvolTransList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfacePvolTransList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellEnteringSurfacePvolTransList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellEnteringSurfacePvolTransList,
                                surfData.fShellEnteringSurfacePvolTransList, sizeInBytes, cudaMemcpyHostToDevice));
 
     sizeInBytes = sizeof(surfData.fShellEnteringSurfaceLvolIdList[0]) * surfData.fNEnteringSurfaces;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellEnteringSurfaceLvolIdList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellEnteringSurfaceLvolIdList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellEnteringSurfaceLvolIdList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellEnteringSurfaceLvolIdList,
                                surfData.fShellEnteringSurfaceLvolIdList, sizeInBytes, cudaMemcpyHostToDevice));
 
     sizeInBytes = sizeof(surfData.fShellDaughterPvolIdList[0]) * surfData.fNPlacedVolumes;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterPvolIdList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolIdList, surfData.fShellDaughterPvolIdList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellDaughterPvolIdList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellDaughterPvolIdList, surfData.fShellDaughterPvolIdList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     sizeInBytes = sizeof(surfData.fShellDaughterPvolTransList[0]) * surfData.fNPlacedVolumes;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fShellDaughterPvolTransList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fShellDaughterPvolTransList, surfData.fShellDaughterPvolTransList,
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fShellDaughterPvolTransList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fShellDaughterPvolTransList, surfData.fShellDaughterPvolTransList,
                                sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate space for the BVHs
     // Surface BVHs
     sizeInBytes = sizeof(surfData.fBVH[0]) * surfData.fNshells;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fBVH, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fBVH, surfData.fBVH, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fBVH, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fBVH, surfData.fBVH, sizeInBytes, cudaMemcpyHostToDevice));
     // Solid BVHs
     sizeInBytes = sizeof(surfData.fBVHSolids[0]) * surfData.fNshells;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fBVHSolids, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fBVHSolids, surfData.fBVHSolids, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fBVHSolids, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fBVHSolids, surfData.fBVHSolids, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy BVH members
     for (int i = 0; i < surfData.fNshells; ++i) {
@@ -359,66 +349,60 @@ public:
     // Allocate and copy surfaces
     fSurfDataStaging.fNlocalSurf = surfData.fNlocalSurf;
     sizeInBytes                  = sizeof(surfData.fLocalSurf[0]) * surfData.fNlocalSurf;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fLocalSurf, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fLocalSurf, surfData.fLocalSurf, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fLocalSurf, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fLocalSurf, surfData.fLocalSurf, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNglobalSurf = surfData.fNglobalSurf;
     sizeInBytes                   = sizeof(surfData.fFramedSurf[0]) * surfData.fNglobalSurf;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fFramedSurf, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fFramedSurf, surfData.fFramedSurf, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fFramedSurf, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fFramedSurf, surfData.fFramedSurf, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy masks
     fSurfDataStaging.fNwindows = surfData.fNwindows;
     sizeInBytes                = sizeof(surfData.fWindowMasks[0]) * surfData.fNwindows;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fWindowMasks, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fWindowMasks, surfData.fWindowMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fWindowMasks, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fWindowMasks, surfData.fWindowMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNrings = surfData.fNrings;
     sizeInBytes              = sizeof(surfData.fRingMasks[0]) * surfData.fNrings;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fRingMasks, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fRingMasks, surfData.fRingMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fRingMasks, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fRingMasks, surfData.fRingMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNzphis = surfData.fNzphis;
     sizeInBytes              = sizeof(surfData.fZPhiMasks[0]) * surfData.fNzphis;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fZPhiMasks, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fZPhiMasks, surfData.fZPhiMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fZPhiMasks, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fZPhiMasks, surfData.fZPhiMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNquads = surfData.fNquads;
     sizeInBytes              = sizeof(surfData.fQuadMasks[0]) * surfData.fNquads;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fQuadMasks, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fQuadMasks, surfData.fQuadMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fQuadMasks, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fQuadMasks, surfData.fQuadMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     fSurfDataStaging.fNtriangs = surfData.fNtriangs;
     sizeInBytes                = sizeof(surfData.fTriangleMasks[0]) * surfData.fNtriangs;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fTriangleMasks, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fTriangleMasks, surfData.fTriangleMasks, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fTriangleMasks, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fTriangleMasks, surfData.fTriangleMasks, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy scene indices
     fSurfDataStaging.fNscenes = surfData.fNscenes;
     sizeInBytes               = sizeof(int) * surfData.fNscenes;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSceneStartIndex, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSceneTouchables, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fSceneStartIndex, surfData.fSceneStartIndex, sizeInBytes, cudaMemcpyHostToDevice));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fSceneTouchables, surfData.fSceneTouchables, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSceneStartIndex, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSceneTouchables, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSceneStartIndex, surfData.fSceneStartIndex, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSceneTouchables, surfData.fSceneTouchables, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy common surfaces
     fSurfDataStaging.fNcommonSurf = surfData.fNcommonSurf;
     sizeInBytes                   = sizeof(surfData.fCommonSurfaces[0]) * surfData.fNcommonSurf;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCommonSurfaces, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fCommonSurfaces, surfData.fCommonSurfaces, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fCommonSurfaces, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fCommonSurfaces, surfData.fCommonSurfaces, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: the fCommonSurfaces[i].f{Left,Right}Side.fSurfaces are backed
     // by the following array and set via BrepCudaManagerFinishTransfer.
     fSurfDataStaging.fNsides = surfData.fNsides;
     sizeInBytes              = sizeof(surfData.fSides[0]) * surfData.fNsides;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSides, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fSides, surfData.fSides, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSides, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSides, surfData.fSides, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy side divisions
     // Nota bene: the fSideDivisions[i].fSlices and fSlices[i].fCandidates are backed
@@ -427,85 +411,82 @@ public:
     fSurfDataStaging.fNslices          = surfData.fNslices;
     fSurfDataStaging.fNsliceCandidates = surfData.fNsliceCandidates;
     sizeInBytes                        = sizeof(surfData.fSideDivisions[0]) * surfData.fNsideDivisions;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSideDivisions, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fSideDivisions, surfData.fSideDivisions, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSideDivisions, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSideDivisions, surfData.fSideDivisions, sizeInBytes, cudaMemcpyHostToDevice));
     sizeInBytes = sizeof(surfData.fSlices[0]) * surfData.fNslices;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSlices, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fSlices, surfData.fSlices, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSlices, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSlices, surfData.fSlices, sizeInBytes, cudaMemcpyHostToDevice));
     sizeInBytes = sizeof(int) * surfData.fNsliceCandidates;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fSliceCandidates, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fSliceCandidates, surfData.fSliceCandidates, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fSliceCandidates, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fSliceCandidates, surfData.fSliceCandidates, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Allocate and copy candidates lists
     fSurfDataStaging.fNStates = surfData.fNStates;
     sizeInBytes               = sizeof(surfData.fCandidates[0]) * surfData.fNStates;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCandidates, sizeInBytes));
-    BREP_CUDA_CHECK(
-        cudaMemcpy(fSurfDataStaging.fCandidates, surfData.fCandidates, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fCandidates, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fCandidates, surfData.fCandidates, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Nota bene: the fCandidates[i].{fCandidates,fFrameInd,fSides} are backed by the
     // following array and set via BrepCudaManagerFinishTransfer.
     fSurfDataStaging.fSizeCandList = surfData.fSizeCandList;
     sizeInBytes                    = sizeof(surfData.fCandList[0]) * surfData.fSizeCandList;
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfDataStaging.fCandList, sizeInBytes));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfDataStaging.fCandList, surfData.fCandList, sizeInBytes, cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfDataStaging.fCandList, sizeInBytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfDataStaging.fCandList, surfData.fCandList, sizeInBytes, cudaMemcpyHostToDevice));
 
     // Now copy the staged data to the GPU
-    BREP_CUDA_CHECK(cudaMalloc(&fSurfData, sizeof(SurfData_t)));
-    BREP_CUDA_CHECK(cudaMemcpy(fSurfData, &fSurfDataStaging, sizeof(SurfData_t), cudaMemcpyHostToDevice));
+    VECGEOM_DEVICE_API_CALL(Malloc(&fSurfData, sizeof(SurfData_t)));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fSurfData, &fSurfDataStaging, sizeof(SurfData_t), cudaMemcpyHostToDevice));
 
     // Finally finish the transfer by calling a kernel to write some pointers
     BrepCudaManagerFinishTransfer<<<1, 1>>>(fSurfData);
-    BREP_CUDA_CHECK(cudaDeviceSynchronize());
+    VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
   }
 
   void Cleanup()
   {
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fPVolTrans));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fPVolTrans));
     fSurfDataStaging.fPVolTrans = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fEllipData));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fEllipData));
     fSurfDataStaging.fEllipData = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fTorusData));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fTorusData));
     fSurfDataStaging.fTorusData = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fArb4Data));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fArb4Data));
     fSurfDataStaging.fArb4Data = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShells));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fShells));
     fSurfDataStaging.fShells = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fSurfShellList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fSurfShellList));
     fSurfDataStaging.fSurfShellList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLogicList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fLogicList));
     fSurfDataStaging.fLogicList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellExitingSurfaceList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fShellExitingSurfaceList));
     fSurfDataStaging.fShellExitingSurfaceList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellEnteringSurfaceList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fShellEnteringSurfaceList));
     fSurfDataStaging.fShellEnteringSurfaceList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellEnteringSurfacePvolList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fShellEnteringSurfacePvolList));
     fSurfDataStaging.fShellEnteringSurfacePvolList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fShellEnteringSurfacePvolTransList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fShellEnteringSurfacePvolTransList));
     fSurfDataStaging.fShellEnteringSurfacePvolTransList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fLocalSurf));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fLocalSurf));
     fSurfDataStaging.fLocalSurf = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fFramedSurf));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fFramedSurf));
     fSurfDataStaging.fFramedSurf = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fWindowMasks));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fWindowMasks));
     fSurfDataStaging.fWindowMasks = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fRingMasks));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fRingMasks));
     fSurfDataStaging.fRingMasks = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fZPhiMasks));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fZPhiMasks));
     fSurfDataStaging.fZPhiMasks = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fQuadMasks));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fQuadMasks));
     fSurfDataStaging.fQuadMasks = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCommonSurfaces));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fCommonSurfaces));
     fSurfDataStaging.fCommonSurfaces = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fSides));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fSides));
     fSurfDataStaging.fSides = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCandidates));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fCandidates));
     fSurfDataStaging.fCandidates = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfDataStaging.fCandList));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfDataStaging.fCandList));
     fSurfDataStaging.fCandList = nullptr;
-    BREP_CUDA_CHECK(cudaFree(fSurfData));
+    VECGEOM_DEVICE_API_CALL(Free(fSurfData));
     fSurfData = nullptr;
   }
 };

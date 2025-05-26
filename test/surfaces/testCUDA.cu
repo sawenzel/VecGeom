@@ -37,7 +37,7 @@ void TestCUDA(const SurfData &surfData, Precision px, Precision py, Precision pz
   NavigationState state = Locate(pos.x(), pos.y(), pos.z());
 
   Test<<<1, 1>>>(pos, dir, state);
-  BREP_CUDA_CHECK(cudaDeviceSynchronize());
+  VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
   BrepCudaManager::Instance().Cleanup();
 }
