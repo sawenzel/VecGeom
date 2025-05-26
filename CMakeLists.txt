@@ -678,6 +678,7 @@ set(VECGEOM_CPPONLY_SRCS
   source/CppExporter.cpp
   source/ReflFactory.cpp
 
+  source/Assert.cpp
   source/ColorUtils.cpp
   source/Environment.cpp
   source/Logger.cpp
