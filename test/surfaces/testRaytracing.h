@@ -1,6 +1,7 @@
 #ifndef SURF_TEST_RAYTRACING
 #define SURF_TEST_RAYTRACING
 
+#include <cstdint>
 #include <vector>
 
 #include <VecGeom/navigation/NavigationState.h>
@@ -28,8 +29,9 @@ struct TestConfig {
   double mmunit{1.};
   double safety_ratio{0.};
   double step_limit{vecgeom::kInfLength};
-  int input_state{0}; ///< Force input state to an index (only works with indexed navigation, when a point is provided)
-  int next_state{0};
+  uint64_t input_state{
+      0}; ///< Force input state to an index (only works with indexed navigation, when a point is provided)
+  uint64_t next_state{0}; ///< Triggers computation of normal for the input state
   int compute_normal{0};
 };
 
