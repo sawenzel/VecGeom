@@ -7,6 +7,7 @@
 #include "VecGeom/volumes/SpecializedPolyhedron.h"
 #include "VecGeom/volumes/utilities/GenerationUtilities.h"
 #include "VecGeom/management/VolumeFactory.h"
+#include "VecGeom/base/Assert.h"
 
 #include <cmath>
 #include <memory>
@@ -621,7 +622,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedPolyhedron::CopyToGpu(DevicePtr<cuda::V
   rminGpu.Deallocate();
   rmaxGpu.Deallocate();
 
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
   return gpupolyhedra;
 }
 

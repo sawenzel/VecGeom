@@ -1,7 +1,7 @@
 #ifndef VECGEOM_SURFACE_COMMONTYPES_H
 #define VECGEOM_SURFACE_COMMONTYPES_H
 
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <VecGeom/base/Transformation3D.h>
 #include <VecGeom/base/Transformation3DMP.h>
 #include <VecGeom/base/Transformation2DMP.h>

@@ -33,7 +33,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(4., 0.));
   vecgeom::ReducedPolycone p(rzVect);
   contour = p.Check();
-  assert(contour && "Trivial Fails....");
+  VECGEOM_VALIDATE(contour, << "Trivial Fails....");
 
   std::cout << "========================= (Trivial with Mirror Image) ============================" << std::endl;
   rzVect.clear();
@@ -54,7 +54,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(0., -1.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(contour && "Trivial with Mirror Image Fails....");
+  VECGEOM_VALIDATE(contour, << "Trivial with Mirror Image Fails....");
 
   std::cout << "==========  (Contour with only one point in Top and Bottom Z) ====================" << std::endl;
   rzVect.clear();
@@ -68,7 +68,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(1., -2.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(contour && "A2 Fails ....");
+  VECGEOM_VALIDATE(contour, << "A2 Fails ....");
 
   std::cout << "============================== AnitclockWise Contour =============================" << std::endl;
   rzVect.clear();
@@ -83,7 +83,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(3., 3.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(contour && "AnitclockWise Contour Fails ....");
+  VECGEOM_VALIDATE(contour, << "AnitclockWise Contour Fails ....");
 
   std::cout << "============================== Triangular Spikes =================================" << std::endl;
   rzVect.clear();
@@ -97,7 +97,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(2., -2.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(!contour && "Triangular Spikes Fails ....");
+  VECGEOM_VALIDATE(!contour, << "Triangular Spikes Fails ....");
 
   std::cout << "============================== Square Spikes at End ==============================" << std::endl;
   rzVect.clear();
@@ -124,7 +124,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(0., -1.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(!contour && "Square Spikes at End Fails ....");
+  VECGEOM_VALIDATE(!contour, << "Square Spikes at End Fails ....");
 
   std::cout << "============================== Square Spikes in beginning ========================" << std::endl;
   rzVect.clear();
@@ -142,7 +142,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(5., 0.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(!contour && "Square Spikes in beginning Fails ....");
+  VECGEOM_VALIDATE(!contour, << "Square Spikes in beginning Fails ....");
 
   std::cout << "================================= PLUS symbole ===================================" << std::endl;
   rzVect.clear();
@@ -161,7 +161,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(0., -1.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(contour && "PLUS symbole Fails ....");
+  VECGEOM_VALIDATE(contour, << "PLUS symbole Fails ....");
 
   std::cout << "========================== Contour with only three points ========================" << std::endl;
   rzVect.clear();
@@ -170,7 +170,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(2., -1.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(contour && "X symbole (X) Fails ....");
+  VECGEOM_VALIDATE(contour, << "X symbole (X) Fails ....");
 
   std::cout << "================================= X symbole ======================================" << std::endl;
   rzVect.clear();
@@ -182,7 +182,7 @@ bool TestReducedPolycone()
   rzVect.push_back(Vector2D<Precision>(2., 3.));
   p.SetRZ(rzVect);
   contour = p.Check();
-  assert(!contour && "X2 symbole (X2) Fails ....");
+  VECGEOM_VALIDATE(!contour, << "X2 symbole (X2) Fails ....");
 
   std::cout << "======================  (Trivial Using UnplacedPolycone) =========================" << std::endl;
   const int numRZ    = 10;

@@ -136,7 +136,7 @@ int UnplacedTube::ChooseSurface() const
   while (rand > S[choice])
     rand -= S[choice], choice++;
 
-  assert(choice < 6);
+  VECGEOM_ASSERT(choice < 6);
 
   return choice;
 }

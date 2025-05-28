@@ -57,77 +57,77 @@ bool TestTrd()
 
   vol      = trd1.Capacity();
   volCheck = 8 * 20 * 30 * 40;
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   // Check Surface area
 
   // std::cout<<"Trd Surface Area : " << trd1.SurfaceArea()<<std::endl;
-  assert(trd1.SurfaceArea() == 20800);
+  VECGEOM_ASSERT(trd1.SurfaceArea() == 20800);
 
   // Check Inside
 
-  assert(trd1.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(trd1.Inside(pbigz) == vecgeom::EInside::kOutside);
-  assert(trd1.Inside(ponxside) == vecgeom::EInside::kSurface);
-  assert(trd1.Inside(ponyside) == vecgeom::EInside::kSurface);
-  assert(trd1.Inside(ponzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd1.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(trd1.Inside(pbigz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(trd1.Inside(ponxside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd1.Inside(ponyside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd1.Inside(ponzside) == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(20, 30, 40));
   //  std::cout << "trd1.Inside((20,30,40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(-20, 30, 40));
   // std::cout << "trd1.Inside((-20,30,40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(20, -30, 40));
   //  std::cout << "trd1.Inside((20,-30,40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(20, 30, -40));
   // std::cout << "trd1.Inside((20,30,-40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(20, 30, 0));
   // std::cout << "trd1.Inside((20,30,0)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(0, 30, 40));
   // std::cout << "trd1.Inside((0,30,40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(20, 0, 40));
   // std::cout << "trd1.Inside((20,0,40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = trd1.Inside(Vec_t(-20, -30, -40));
   // std::cout << "trd1.Inside((-20,-30,-40)) = " << OutputInside(inside) << std::ensl ;
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
-  assert(trd2.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(trd2.Inside(pbigz) == vecgeom::EInside::kOutside);
-  assert(trd2.Inside(ponxside) == vecgeom::EInside::kSurface);
-  assert(trd2.Inside(ponyside) == vecgeom::EInside::kSurface);
-  assert(trd2.Inside(ponzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd2.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(trd2.Inside(pbigz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(trd2.Inside(ponxside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd2.Inside(ponyside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(trd2.Inside(ponzside) == vecgeom::EInside::kSurface);
 
   // Check Surface Normal
 
   valid = trd1.Normal(ponxside, normal);
-  assert(ApproxEqual(normal, Vec_t(1, 0, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(1, 0, 0)));
   valid = trd1.Normal(ponmxside, normal);
-  assert(ApproxEqual(normal, Vec_t(-1, 0, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-1, 0, 0)));
   valid = trd1.Normal(ponyside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 1, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 1, 0)));
   valid = trd1.Normal(ponmyside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, -1, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, -1, 0)));
   valid = trd1.Normal(ponzside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, 1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, 1)));
   valid = trd1.Normal(ponmzside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, -1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, -1)));
   valid = trd1.Normal(ponzsidey, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, 1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, 1)));
   valid = trd1.Normal(ponmzsidey, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, -1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, -1)));
 
   // Normals on Edges
 
@@ -148,35 +148,35 @@ bool TestTrd()
   double invSqrt3 = 1.0 / std::sqrt(3.0);
 
   valid = trd1.Normal(edgeXY, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt2, invSqrt2, 0.0)) && valid);
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt2, invSqrt2, 0.0)) && valid);
 
   // std::cout << " Normal at " << edgeXY << " is " << normal
   //    << " Expected is " << Vec_t( invSqrt2, invSqrt2, 0.0) << std::ensl;
 
   valid = trd1.Normal(edgemXmY, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt2, -invSqrt2, 0.0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt2, -invSqrt2, 0.0)));
   valid = trd1.Normal(edgeXmY, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt2, -invSqrt2, 0.0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt2, -invSqrt2, 0.0)));
   valid = trd1.Normal(edgemXY, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt2, invSqrt2, 0.0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt2, invSqrt2, 0.0)));
 
   valid = trd1.Normal(edgeXZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, invSqrt2)));
   valid = trd1.Normal(edgemXmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, -invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, -invSqrt2)));
   valid = trd1.Normal(edgeXmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, -invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, -invSqrt2)));
   valid = trd1.Normal(edgemXZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, invSqrt2)));
 
   valid = trd1.Normal(edgeYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0.0, invSqrt2, invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, invSqrt2, invSqrt2)));
   valid = trd1.Normal(edgemYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, -invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, -invSqrt2)));
   valid = trd1.Normal(edgeYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0.0, invSqrt2, -invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, invSqrt2, -invSqrt2)));
   valid = trd1.Normal(edgemYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, invSqrt2)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, invSqrt2)));
 
   // Normals on corners
 
@@ -190,212 +190,212 @@ bool TestTrd()
   Vec_t cornermXmYmZ(-20.0, -30., -40.0);
 
   valid = trd1.Normal(cornerXYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt3, invSqrt3, invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt3, invSqrt3, invSqrt3)));
   valid = trd1.Normal(cornermXYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt3, invSqrt3, invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt3, invSqrt3, invSqrt3)));
   valid = trd1.Normal(cornerXmYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt3, -invSqrt3, invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt3, -invSqrt3, invSqrt3)));
   valid = trd1.Normal(cornermXmYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt3, -invSqrt3, invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt3, -invSqrt3, invSqrt3)));
   valid = trd1.Normal(cornerXYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt3, invSqrt3, -invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt3, invSqrt3, -invSqrt3)));
   valid = trd1.Normal(cornermXYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt3, invSqrt3, -invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt3, invSqrt3, -invSqrt3)));
   valid = trd1.Normal(cornerXmYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(invSqrt3, -invSqrt3, -invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt3, -invSqrt3, -invSqrt3)));
   valid = trd1.Normal(cornermXmYmZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-invSqrt3, -invSqrt3, -invSqrt3)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt3, -invSqrt3, -invSqrt3)));
 
   double cosa = 4 / std::sqrt(17.), sina = 1 / std::sqrt(17.);
 
   valid = trd2.Normal(ponxside, normal);
-  assert(ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
   valid = trd2.Normal(ponmxside, normal);
-  assert(ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
   valid = trd2.Normal(ponyside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, cosa, -sina)));
   valid = trd2.Normal(ponmyside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
   valid = trd2.Normal(ponzside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, 1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, 1)));
   valid = trd2.Normal(ponmzside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, -1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, -1)));
   valid = trd2.Normal(ponzsidey, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, 1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, 1)));
   valid = trd2.Normal(ponmzsidey, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, -1))); // (0,cosa,-sina) ?
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, -1))); // (0,cosa,-sina) ?
 
   // SafetyToOut(P)
 
   Dist = trd1.SafetyToOut(pzero);
-  assert(ApproxEqual<Precision>(Dist, 20));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
   Dist = trd1.SafetyToOut(vx);
-  assert(ApproxEqual<Precision>(Dist, 19));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 19));
   Dist = trd1.SafetyToOut(vy);
-  assert(ApproxEqual<Precision>(Dist, 20));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
   Dist = trd1.SafetyToOut(vz);
-  assert(ApproxEqual<Precision>(Dist, 20));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
 
   Dist = trd2.SafetyToOut(pzero);
-  assert(ApproxEqual<Precision>(Dist, 20 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20 * cosa));
   Dist = trd2.SafetyToOut(vx);
-  assert(ApproxEqual<Precision>(Dist, 19 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 19 * cosa));
   Dist = trd2.SafetyToOut(vy);
-  assert(ApproxEqual<Precision>(Dist, 20 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20 * cosa));
   Dist = trd2.SafetyToOut(vz);
-  assert(ApproxEqual<Precision>(Dist, 20 * cosa + sina));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20 * cosa + sina));
 
   // DistanceToOut(P,V)
 
   Dist = trd1.DistanceToOut(pzero, vx);
-  assert(ApproxEqual<Precision>(Dist, 20));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
   Dist = trd1.DistanceToOut(pzero, vmx);
-  assert(ApproxEqual<Precision>(Dist, 20));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
   Dist = trd1.DistanceToOut(pzero, vy);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = trd1.DistanceToOut(pzero, vmy);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = trd1.DistanceToOut(pzero, vz);
-  assert(ApproxEqual<Precision>(Dist, 40));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40));
   Dist = trd1.DistanceToOut(pzero, vmz);
-  assert(ApproxEqual<Precision>(Dist, 40));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40));
   Dist = trd1.DistanceToOut(pzero, vxy);
-  assert(ApproxEqual<Precision>(Dist, std::sqrt(800.)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, std::sqrt(800.)));
 
   Dist = trd1.DistanceToOut(ponxside, vx);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = trd1.DistanceToOut(ponmxside, vmx);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = trd1.DistanceToOut(ponyside, vy);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = trd1.DistanceToOut(ponmyside, vmy);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = trd1.DistanceToOut(ponzside, vz);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = trd1.DistanceToOut(ponmzside, vmz);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
 
   Dist  = trd2.DistanceToOut(pzero, vx);
   valid = trd2.Normal(pzero + Dist * vx, normal);
-  assert(ApproxEqual<Precision>(Dist, 20) && ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20) && ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
 
   Dist  = trd2.DistanceToOut(pzero, vmx);
   valid = trd2.Normal(pzero + Dist * vmx, normal);
-  assert(ApproxEqual<Precision>(Dist, 20) && ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20) && ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
 
   Dist  = trd2.DistanceToOut(pzero, vy);
   valid = trd2.Normal(pzero + Dist * vy, normal);
-  assert(ApproxEqual<Precision>(Dist, 30) && ApproxEqual(normal, Vec_t(0, cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30) && ApproxEqual(normal, Vec_t(0, cosa, -sina)));
 
   Dist  = trd2.DistanceToOut(pzero, vmy);
   valid = trd2.Normal(pzero + Dist * vmy, normal);
-  assert(ApproxEqual<Precision>(Dist, 30) && ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30) && ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
 
   Dist  = trd2.DistanceToOut(pzero, vz);
   valid = trd2.Normal(pzero + Dist * vz, normal);
-  assert(ApproxEqual<Precision>(Dist, 40) && ApproxEqual(normal, vz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40) && ApproxEqual(normal, vz));
 
   Dist  = trd2.DistanceToOut(pzero, vmz);
   valid = trd2.Normal(pzero + Dist * vmz, normal);
-  assert(ApproxEqual<Precision>(Dist, 40) && ApproxEqual(normal, vmz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40) && ApproxEqual(normal, vmz));
 
   Dist  = trd2.DistanceToOut(pzero, vxy);
   valid = trd2.Normal(pzero + Dist * vxy, normal);
-  assert(ApproxEqual<Precision>(Dist, std::sqrt(800.)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, std::sqrt(800.)));
 
   Dist  = trd2.DistanceToOut(ponxside, vx);
   valid = trd2.Normal(ponxside + Dist * vx, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(cosa, 0, -sina)));
 
   Dist  = trd2.DistanceToOut(ponmxside, vmx);
   valid = trd2.Normal(ponmxside + Dist * vmx, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(-cosa, 0, -sina)));
 
   Dist  = trd2.DistanceToOut(ponyside, vy);
   valid = trd2.Normal(ponyside + Dist * vy, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(0, cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(0, cosa, -sina)));
 
   Dist  = trd2.DistanceToOut(ponmyside, vmy);
   valid = trd2.Normal(ponmyside + Dist * vmy, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, Vec_t(0, -cosa, -sina)));
 
   Dist  = trd2.DistanceToOut(ponzside, vz);
   valid = trd2.Normal(ponzside + Dist * vz, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, vz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, vz));
 
   Dist  = trd2.DistanceToOut(ponmzside, vmz);
   valid = trd2.Normal(ponmzside + Dist * vmz, normal);
-  assert(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, vmz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0) && ApproxEqual(normal, vmz));
 
   // SafetyToIn(P)
 
   Dist = trd1.SafetyToIn(pbigx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd1.SafetyToIn(pbigmx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd1.SafetyToIn(pbigy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd1.SafetyToIn(pbigmy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd1.SafetyToIn(pbigz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd1.SafetyToIn(pbigmz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
 
   Dist = trd2.SafetyToIn(pbigx);
-  assert(ApproxEqual<Precision>(Dist, 80 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80 * cosa));
   Dist = trd2.SafetyToIn(pbigmx);
-  assert(ApproxEqual<Precision>(Dist, 80 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80 * cosa));
   Dist = trd2.SafetyToIn(pbigy);
-  assert(ApproxEqual<Precision>(Dist, 70 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70 * cosa));
   Dist = trd2.SafetyToIn(pbigmy);
-  assert(ApproxEqual<Precision>(Dist, 70 * cosa));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70 * cosa));
   Dist = trd2.SafetyToIn(pbigz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd2.SafetyToIn(pbigmz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
 
   // DistanceToIn(P,V)
 
   Dist = trd1.DistanceToIn(pbigx, vmx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd1.DistanceToIn(pbigmx, vx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd1.DistanceToIn(pbigy, vmy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd1.DistanceToIn(pbigmy, vy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd1.DistanceToIn(pbigz, vmz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd1.DistanceToIn(pbigmz, vz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd1.DistanceToIn(pbigx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
   Dist = trd1.DistanceToIn(pbigmx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   Dist = trd2.DistanceToIn(pbigx, vmx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd2.DistanceToIn(pbigmx, vx);
-  assert(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
   Dist = trd2.DistanceToIn(pbigy, vmy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd2.DistanceToIn(pbigmy, vy);
-  assert(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
   Dist = trd2.DistanceToIn(pbigz, vmz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd2.DistanceToIn(pbigmz, vz);
-  assert(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
   Dist = trd2.DistanceToIn(pbigx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
   Dist = trd2.DistanceToIn(pbigmx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   Dist = trd3.DistanceToIn(Vec_t(0.15000000000000185, -22.048743592955137, 2.4268539333219472),
                            Vec_t(-0.76165597579890043, 0.64364445891356026, -0.074515708658524193).Unit());
 
   //    std::cout<<"BABAR trd distance = "<<Dist<<std::ensl ;
-  assert(ApproxEqual<Precision>(Dist, 0.0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.0));
 
   // return-value = 2.4415531753644804e-15
 
@@ -405,68 +405,68 @@ bool TestTrd()
   trd1.Extent(minExtent, maxExtent);
   trd1.GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
   // std::cout<<" min="<<minExtent<<" max="<<maxExtent<<std::endl;
-  assert(ApproxEqual(minExtent, Vec_t(-20, -30, -40)));
-  assert(ApproxEqual(maxExtent, Vec_t(20, 30, 40)));
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-20, -30, -40)));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(20, 30, 40)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
   trd2.Extent(minExtent, maxExtent);
   trd2.GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
   // std::cout<<" min="<<minExtent<<" max="<<maxExtent<<std::endl;
-  assert(ApproxEqual(minExtent, Vec_t(-30, -40, -40)));
-  assert(ApproxEqual(maxExtent, Vec_t(30, 40, 40)));
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-30, -40, -40)));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(30, 40, 40)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
 
   // Simple Unit Tests for Factory of Trd.
   // Trd_t trdBoxTrd1("Test Trd", 20, 20, 30, 40);
   auto trdBoxTrd1 = GeoManager::MakeInstance<UnplacedTrd>(20, 20, 30, 40);
-  assert(trdBoxTrd1->dx1() == 20);
-  assert(trdBoxTrd1->dx2() == 20);
-  assert(trdBoxTrd1->dy1() == 30);
-  assert(trdBoxTrd1->dy2() == 30);
-  assert(trdBoxTrd1->dz() == 40);
+  VECGEOM_ASSERT(trdBoxTrd1->dx1() == 20);
+  VECGEOM_ASSERT(trdBoxTrd1->dx2() == 20);
+  VECGEOM_ASSERT(trdBoxTrd1->dy1() == 30);
+  VECGEOM_ASSERT(trdBoxTrd1->dy2() == 30);
+  VECGEOM_ASSERT(trdBoxTrd1->dz() == 40);
 
   // Trd_t trdBoxTrd2("TestTrdBox", 20, 20, 30, 30, 40);
   auto trdBoxTrd2 = GeoManager::MakeInstance<UnplacedTrd>(20, 20, 30, 30, 40);
-  assert(trdBoxTrd2->dx1() == 20);
-  assert(trdBoxTrd2->dx2() == 20);
-  assert(trdBoxTrd2->dy1() == 30);
-  assert(trdBoxTrd2->dy2() == 30);
-  assert(trdBoxTrd2->dz() == 40);
+  VECGEOM_ASSERT(trdBoxTrd2->dx1() == 20);
+  VECGEOM_ASSERT(trdBoxTrd2->dx2() == 20);
+  VECGEOM_ASSERT(trdBoxTrd2->dy1() == 30);
+  VECGEOM_ASSERT(trdBoxTrd2->dy2() == 30);
+  VECGEOM_ASSERT(trdBoxTrd2->dz() == 40);
 
   // Trd_t trdType1("Test Trd", 20, 25, 30, 40);
   auto trdType1 = GeoManager::MakeInstance<UnplacedTrd>(20, 25, 30, 40);
-  assert(trdType1->dx1() == 20);
-  assert(trdType1->dx2() == 25);
-  assert(trdType1->dy1() == 30);
-  assert(trdType1->dy2() == 30);
-  assert(trdType1->dz() == 40);
+  VECGEOM_ASSERT(trdType1->dx1() == 20);
+  VECGEOM_ASSERT(trdType1->dx2() == 25);
+  VECGEOM_ASSERT(trdType1->dy1() == 30);
+  VECGEOM_ASSERT(trdType1->dy2() == 30);
+  VECGEOM_ASSERT(trdType1->dz() == 40);
 
   // Trd_t trdType2("Test Trd", 20, 25, 30, 35, 40);
   auto trdType2 = GeoManager::MakeInstance<UnplacedTrd>(20, 25, 30, 35, 40);
-  assert(trdType2->dx1() == 20);
-  assert(trdType2->dx2() == 25);
-  assert(trdType2->dy1() == 30);
-  assert(trdType2->dy2() == 35);
-  assert(trdType2->dz() == 40);
+  VECGEOM_ASSERT(trdType2->dx1() == 20);
+  VECGEOM_ASSERT(trdType2->dx2() == 25);
+  VECGEOM_ASSERT(trdType2->dy1() == 30);
+  VECGEOM_ASSERT(trdType2->dy2() == 35);
+  VECGEOM_ASSERT(trdType2->dz() == 40);
 
 #ifndef VECGEOM_NO_SPECIALIZATION
   using trd1Box = SUnplacedImplAs<SUnplacedTrd<TrdTypes::Trd1>, UnplacedBox>;
   // Checking type of trdBoxTrd1, it should return true with pointer of trd1Box
-  assert(dynamic_cast<trd1Box *>(trdBoxTrd1));
+  VECGEOM_ASSERT(dynamic_cast<trd1Box *>(trdBoxTrd1));
   // Checking type of other specialized Trd's with type of trdBoxTrd1, all should return false
-  assert(!dynamic_cast<trd1Box *>(trdBoxTrd2));
-  assert(!dynamic_cast<trd1Box *>(trdType1));
-  assert(!dynamic_cast<trd1Box *>(trdType2));
+  VECGEOM_ASSERT(!dynamic_cast<trd1Box *>(trdBoxTrd2));
+  VECGEOM_ASSERT(!dynamic_cast<trd1Box *>(trdType1));
+  VECGEOM_ASSERT(!dynamic_cast<trd1Box *>(trdType2));
 
   // Similar test for trdBoxTrd2
   using trd2Box = SUnplacedImplAs<SUnplacedTrd<TrdTypes::Trd2>, UnplacedBox>;
   // Checking type of trdBoxTrd2, it should return true with pointer of trd2Box
-  assert(dynamic_cast<trd2Box *>(trdBoxTrd2));
+  VECGEOM_ASSERT(dynamic_cast<trd2Box *>(trdBoxTrd2));
   // Checking type of other specialized Trd's with type of trdBoxTrd2, all should return false
-  assert(!dynamic_cast<trd2Box *>(trdBoxTrd1));
-  assert(!dynamic_cast<trd2Box *>(trdType1));
-  assert(!dynamic_cast<trd2Box *>(trdType2));
+  VECGEOM_ASSERT(!dynamic_cast<trd2Box *>(trdBoxTrd1));
+  VECGEOM_ASSERT(!dynamic_cast<trd2Box *>(trdType1));
+  VECGEOM_ASSERT(!dynamic_cast<trd2Box *>(trdType2));
 #endif
 
   return true;

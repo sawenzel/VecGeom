@@ -16,7 +16,7 @@ VECCORE_ATT_HOST_DEVICE
 Wedge::Wedge(Precision angle, Precision zeroangle) : fSPhi(zeroangle), fDPhi(angle), fAlongVector1(), fAlongVector2()
 {
   // check input
-  assert(angle > 0.0 && angle <= kTwoPi);
+  VECGEOM_ASSERT(angle > 0.0 && angle <= kTwoPi);
 
   // initialize angles
   fAlongVector1.x() = std::cos(fSPhi);

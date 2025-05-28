@@ -316,7 +316,7 @@ public:
     auto const &surfdata = SurfData<Real_t>::Instance();
 
     if (top) {
-      assert(pvol_id >= 0);
+      VECGEOM_ASSERT(pvol_id >= 0);
       auto ivol   = NavigationState::ToPlacedId(pvol_id).fVolume.fId;
       auto inside = vgbrep::protonav::LogicInsideLocal(point, ivol, surfdata);
       if (!inside) return -1;

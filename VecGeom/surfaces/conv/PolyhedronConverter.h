@@ -34,7 +34,7 @@ bool CreatePolyhedronSurfaces(vecgeom::UnplacedPolyhedron const &upoly, int logi
   auto const &zPlanes = poly.fZPlanes;
   vecgeom::Precision csphi, ssphi, cephi, sephi;
 
-  if (sideCount == 1) assert(smallerPi && "Polyhedron with one segment cannot have angle larger than pi!");
+  if (sideCount == 1) VECGEOM_VALIDATE(smallerPi, << "Polyhedron with one segment cannot have angle larger than pi!");
 
   auto sidePhi            = phiDelta / sideCount;
   auto cosHalfDeltaPhi    = vecCore::math::Cos(0.5 * sidePhi);

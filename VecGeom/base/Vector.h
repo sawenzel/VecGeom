@@ -51,8 +51,9 @@ struct AllocTrait<T *> {
   static T **Allocate(size_t nElems)
   {
     T **ptr = new T *[nElems];
-    assert(ptr != nullptr && "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU "
-                             "with CudaDeviceSetHeapLimit(new_size)");
+    VECGEOM_VALIDATE(
+        ptr != nullptr, << "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU "
+                           "with CudaDeviceSetHeapLimit(new_size)");
     return ptr;
   }
 
@@ -89,7 +90,7 @@ public:
   VectorBase(size_t maxsize, AlignedAllocator &a) : fSize(maxsize), fMemorySize(maxsize)
   {
     fData = a.aligned_alloc<Type>(maxsize, alignof(Type));
-    assert(fData != nullptr && "insufficient space in buffer");
+    VECGEOM_VALIDATE(fData != nullptr, << "insufficient space in buffer");
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -114,8 +115,8 @@ public:
   {
     if (&other != this) {
       // The array must be either already allocated or buffered with a larger size to fit the elements
-      assert((fAllocated || !fData || fMemorySize >= other.fSize) &&
-             "Trying to allocate larger vector into a preallocated one");
+      VECGEOM_ASSERT((fAllocated || !fData || fMemorySize >= other.fSize) &&
+                     "Trying to allocate larger vector into a preallocated one");
       if (fSize > 0) Internal::AllocTrait<Type>::Destroy(fData, fSize);
       if (fMemorySize < other.fSize) {
         if (fAllocated) Internal::AllocTrait<Type>::Deallocate(fData);
@@ -225,7 +226,7 @@ public:
   void reserve(size_t newsize)
   {
     if (newsize > fMemorySize) {
-      assert((fAllocated || (fMemorySize == 0)) && "Trying to increase a pre-allocated vector");
+      VECGEOM_VALIDATE((fAllocated || (fMemorySize == 0)), << "Trying to increase a pre-allocated vector");
       // Allocate an array of elements of size newsize, constructed in place
       Type *newdata = Internal::AllocTrait<Type>::Allocate(newsize);
       // Copy existing elements into the new array

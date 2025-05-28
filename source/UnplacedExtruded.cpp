@@ -348,7 +348,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu(DevicePtr<cuda::VUn
 #ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
   return CopyToGpuImpl<UnplacedExtruded>(in_gpu_ptr);
 #else
-  assert(0 && "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
+  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 #endif
 }
@@ -358,7 +358,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu() const
 #ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
   return CopyToGpuImpl<UnplacedExtruded>();
 #else
-  assert(0 && "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
+  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 #endif
 }

@@ -29,42 +29,42 @@ bool TestEllipticalTube()
   std::cout << "=== Check Set/Get, Print(), SurfaceArea(), Capacity(), Extent()" << std::endl;
 
   EllipticalTube_t tube("Test_Elliptical_Tube", 1., 2., 3.);
-  assert(tube.GetDx() == 1.);
-  assert(tube.GetDy() == 2.);
-  assert(tube.GetDz() == 3.);
+  VECGEOM_ASSERT(tube.GetDx() == 1.);
+  VECGEOM_ASSERT(tube.GetDy() == 2.);
+  VECGEOM_ASSERT(tube.GetDz() == 3.);
 
   tube.SetParameters(4., 5., 6.);
-  assert(tube.GetDx() == 4.);
-  assert(tube.GetDy() == 5.);
-  assert(tube.GetDz() == 6.);
+  VECGEOM_ASSERT(tube.GetDx() == 4.);
+  VECGEOM_ASSERT(tube.GetDy() == 5.);
+  VECGEOM_ASSERT(tube.GetDz() == 6.);
 
   tube.SetDx(7.);
   tube.SetDy(8.);
   tube.SetDz(9.);
-  assert(tube.GetDx() == 7.);
-  assert(tube.GetDy() == 8.);
-  assert(tube.GetDz() == 9.);
+  VECGEOM_ASSERT(tube.GetDx() == 7.);
+  VECGEOM_ASSERT(tube.GetDy() == 8.);
+  VECGEOM_ASSERT(tube.GetDz() == 9.);
 
   double a, b, z;
   tube.SetParameters(a = 4., b = 3., z = 5.);
   std::cout << "EllipticalTube(" << a << ", " << b << ", " << z << ")" << std::endl;
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
 
   double area = tube.SurfaceArea();
   std::cout << "Area : " << area << std::endl;
   double sbase = vecgeom::kPi * a * b;
   double sside = 2. * z * vecgeom::EllipticUtilities::EllipsePerimeter(a, b);
-  assert(area == 2. * sbase + sside);
+  VECGEOM_ASSERT(area == 2. * sbase + sside);
 
   double vol = tube.Capacity();
   std::cout << "Volume : " << vol << std::endl;
-  assert(vol == 2. * sbase * z);
+  VECGEOM_ASSERT(vol == 2. * sbase * z);
 
   Vec_t bmin, bmax;
   tube.Extent(bmin, bmax);
   std::cout << "Extent : " << bmin << ", " << bmax << std::endl;
-  assert(bmax == Vec_t(a, b, z));
-  assert(bmin == -bmax);
+  VECGEOM_ASSERT(bmax == Vec_t(a, b, z));
+  VECGEOM_ASSERT(bmin == -bmax);
 
   // Check Inside()
   //
@@ -90,7 +90,7 @@ bool TestEllipticalTube()
         if (tube.Inside(Vec_t(curx, cury, curz) * scale) != vecgeom::kInside) {
           std::cout << "iphi, iz, scale = " << iphi << ", " << iz << ", " << scale << std::endl;
           std::cout << "Point = " << Vec_t(curx, cury, curz) * scale << std::endl;
-          assert(tube.Inside(Vec_t(curx, cury, curz) * scale) == vecgeom::kInside);
+          VECGEOM_ASSERT(tube.Inside(Vec_t(curx, cury, curz) * scale) == vecgeom::kInside);
         }
       }
     }
@@ -107,29 +107,29 @@ bool TestEllipticalTube()
       // base at -Z
       if (tube.Inside(Vec_t(curx * scale, cury * scale, -z)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, -z) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, -z)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, -z)) == vecgeom::kSurface);
       }
       if (tube.Inside(Vec_t(curx * scale, cury * scale, -z - delta)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, -z - delta) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, -z - delta)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, -z - delta)) == vecgeom::kSurface);
       }
       if (tube.Inside(Vec_t(curx * scale, cury * scale, -z + delta)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, -z + delta) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, -z + delta)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, -z + delta)) == vecgeom::kSurface);
       }
 
       // base at +Z
       if (tube.Inside(Vec_t(curx * scale, cury * scale, z)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, z) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, z)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, z)) == vecgeom::kSurface);
       }
       if (tube.Inside(Vec_t(curx * scale, cury * scale, z - delta)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, z - delta) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, z - delta)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, z - delta)) == vecgeom::kSurface);
       }
       if (tube.Inside(Vec_t(curx * scale, cury * scale, z + delta)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, z + delta) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, z + delta)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, z + delta)) == vecgeom::kSurface);
       }
     }
   }
@@ -143,7 +143,7 @@ bool TestEllipticalTube()
       double curz = iz * dz - z;
       if (tube.Inside(Vec_t(curx, cury, curz)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx, cury, curz) << std::endl;
-        assert(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
       }
     }
   }
@@ -155,7 +155,7 @@ bool TestEllipticalTube()
       double curz = iz * dz - z;
       if (tube.Inside(Vec_t(curx, cury, curz)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx, cury, curz) << std::endl;
-        assert(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
       }
     }
   }
@@ -167,7 +167,7 @@ bool TestEllipticalTube()
       double curz = iz * dz - z;
       if (tube.Inside(Vec_t(curx, cury, curz)) != vecgeom::kSurface) {
         std::cout << "Point = " << Vec_t(curx, cury, curz) << std::endl;
-        assert(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curz, cury, curz)) == vecgeom::kSurface);
       }
     }
   }
@@ -182,12 +182,12 @@ bool TestEllipticalTube()
       // near base at -Z
       if (tube.Inside(Vec_t(curx * scale, cury * scale, -z - kTolerance)) != vecgeom::kOutside) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, -z - kTolerance) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, -z - kTolerance)) == vecgeom::kOutside);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, -z - kTolerance)) == vecgeom::kOutside);
       }
       // near base at +Z
       if (tube.Inside(Vec_t(curx * scale, cury * scale, z + kTolerance)) != vecgeom::kOutside) {
         std::cout << "Point = " << Vec_t(curx * scale, cury * scale, z + kTolerance) << std::endl;
-        assert(tube.Inside(Vec_t(curx * scale, cury * scale, z + kTolerance)) == vecgeom::kOutside);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx * scale, cury * scale, z + kTolerance)) == vecgeom::kOutside);
       }
     }
   }
@@ -200,7 +200,7 @@ bool TestEllipticalTube()
       // around lateral surface
       if (tube.Inside(Vec_t(curx, cury, curz) * 1.001) != vecgeom::kOutside) {
         std::cout << "Point = " << Vec_t(curx, cury, curz) * 1.001 << std::endl;
-        assert(tube.Inside(Vec_t(curx, cury, curz) * 1.001) == vecgeom::kOutside);
+        VECGEOM_ASSERT(tube.Inside(Vec_t(curx, cury, curz) * 1.001) == vecgeom::kOutside);
       }
     }
   }
@@ -221,69 +221,69 @@ bool TestEllipticalTube()
     double px  = nx * scaleX;
     double py  = ny * scaleY;
     valid      = tube.Normal(Vec_t(px, py, 0), normal);
-    assert(normal == Vec_t(nx * scaleY, ny * scaleX, 0).Unit());
+    VECGEOM_ASSERT(normal == Vec_t(nx * scaleY, ny * scaleX, 0).Unit());
   }
 
   // points near axes
   for (int i = 0; i < 21; ++i) {
     double curx = tube.GetDx() + 0.1 * kTolerance * (i - 10);
     valid       = tube.Normal(Vec_t(curx, 0, 0), normal);
-    assert(normal == Vec_t(1, 0, 0));
+    VECGEOM_ASSERT(normal == Vec_t(1, 0, 0));
     valid = tube.Normal(Vec_t(-curx, 0, 0), normal);
-    assert(normal == Vec_t(-1, 0, 0));
+    VECGEOM_ASSERT(normal == Vec_t(-1, 0, 0));
 
     double cury = tube.GetDy() + 0.1 * kTolerance * (i - 10);
     valid       = tube.Normal(Vec_t(0, cury, 0), normal);
-    assert(normal == Vec_t(0, 1, 0));
+    VECGEOM_ASSERT(normal == Vec_t(0, 1, 0));
     valid = tube.Normal(Vec_t(0, -cury, 0), normal);
-    assert(normal == Vec_t(0, -1, 0));
+    VECGEOM_ASSERT(normal == Vec_t(0, -1, 0));
 
     double curz = tube.GetDz() + 0.1 * kTolerance * (i - 10);
     valid       = tube.Normal(Vec_t(0, 0, curz), normal);
-    assert(normal == Vec_t(0, 0, 1));
+    VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
     valid = tube.Normal(Vec_t(0, 0, -curz), normal);
-    assert(normal == Vec_t(0, 0, -1));
+    VECGEOM_ASSERT(normal == Vec_t(0, 0, -1));
   }
 
   // point on edge
   valid = tube.Normal(Vec_t(tube.GetDx(), 0, tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(1, 0, 1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(1, 0, 1).Unit());
   valid = tube.Normal(Vec_t(0, tube.GetDy(), tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(0, 1, 1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, 1, 1).Unit());
   valid = tube.Normal(Vec_t(-tube.GetDx(), 0, tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(-1, 0, 1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(-1, 0, 1).Unit());
   valid = tube.Normal(Vec_t(0, -tube.GetDy(), tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(0, -1, 1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, -1, 1).Unit());
 
   valid = tube.Normal(Vec_t(tube.GetDx(), 0, -tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(1, 0, -1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(1, 0, -1).Unit());
   valid = tube.Normal(Vec_t(0, tube.GetDy(), -tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(0, 1, -1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, 1, -1).Unit());
   valid = tube.Normal(Vec_t(-tube.GetDx(), 0, -tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(-1, 0, -1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(-1, 0, -1).Unit());
   valid = tube.Normal(Vec_t(0, -tube.GetDy(), -tube.GetDz()), normal);
-  assert(valid);
-  assert(normal == Vec_t(0, -1, -1).Unit());
+  VECGEOM_ASSERT(valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, -1, -1).Unit());
 
   // special case of point on Z-axis
   valid = tube.Normal(Vec_t(0, 0, 0), normal);
-  assert(!valid);
-  assert(normal == Vec_t(0, 0, 1));
+  VECGEOM_ASSERT(!valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
   valid = tube.Normal(Vec_t(0, 0, -kTolerance), normal);
-  assert(!valid);
-  assert(normal == Vec_t(0, 0, -1));
+  VECGEOM_ASSERT(!valid);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, -1));
 
   // Check SafetyToIn()
   //
   std::cout << "=== Check SafetyToIn()" << std::endl;
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
   for (int iz = 1; iz < izmax; ++iz) {
     double curz = iz * dz - z;
     for (int iphi = 0; iphi < iphimax; ++iphi) {
@@ -293,97 +293,97 @@ bool TestEllipticalTube()
       if (tube.SafetyToIn(Vec_t(curx, cury, curz)) < b - error) {
         std::cout << "SafetyToIn" << Vec_t(curx, cury, curz) << " = " << std::setprecision(16)
                   << tube.SafetyToIn(Vec_t(curx, cury, curz)) << std::endl;
-        assert(tube.SafetyToIn(Vec_t(curx, cury, curz)) >= b - error);
+        VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(curx, cury, curz)) >= b - error);
       }
       curx = (a + delta) * std::cos(phi);
       cury = (b - delta) * std::sin(phi);
       if (tube.SafetyToIn(Vec_t(curx, cury, curz)) != 0) {
         std::cout << "SafetyToIn" << Vec_t(curx, cury, curz) << " = " << std::setprecision(16)
                   << tube.SafetyToIn(Vec_t(curx, cury, curz)) << std::endl;
-        assert(tube.SafetyToIn(Vec_t(curx, cury, curz)) == 0);
+        VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(curx, cury, curz)) == 0);
       }
       curx = 0.999 * a * std::cos(phi);
       cury = 0.999 * b * std::sin(phi);
       if (tube.SafetyToIn(Vec_t(curx, cury, curz)) >= 0) {
         std::cout << "SafetyToIn" << Vec_t(curx, cury, curz) << " = " << std::setprecision(16)
                   << tube.SafetyToIn(Vec_t(curx, cury, curz)) << std::endl;
-        assert(tube.SafetyToIn(Vec_t(curx, cury, curz)) < 0);
+        VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(curx, cury, curz)) < 0);
       }
     }
   }
 
-  assert(tube.SafetyToIn(Vec_t(0, 0, 0)) < 0);
-  assert(tube.SafetyToIn(Vec_t(0, 2 * b, 0)) == b);
-  assert(tube.SafetyToIn(Vec_t(2 * a, 0, 0)) >= b);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 2 * b, 0)) == b);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(2 * a, 0, 0)) >= b);
 
-  assert(tube.SafetyToIn(Vec_t(a, 0, 0)) == 0);
-  assert(tube.SafetyToIn(Vec_t(a - delta, 0, 0)) == 0);
-  assert(tube.SafetyToIn(Vec_t(a + delta, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(a, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(a - delta, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(a + delta, 0, 0)) == 0);
 
-  assert(tube.SafetyToIn(Vec_t(0, b, 0)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, b - delta, 0)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, b + delta, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, b, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, b - delta, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, b + delta, 0)) == 0);
 
-  assert(tube.SafetyToIn(Vec_t(a / 2, b / 2, 0)) < 0);
-  assert(tube.SafetyToIn(Vec_t(a / 2, 0, 0)) < 0);
-  assert(tube.SafetyToIn(Vec_t(0, b / 2, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(a / 2, b / 2, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(a / 2, 0, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, b / 2, 0)) < 0);
 
   // points around the bases
-  assert(tube.SafetyToIn(Vec_t(0, 0, -z - 1)) == 1);
-  assert(tube.SafetyToIn(Vec_t(0, 0, z + 2)) == 2);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, -z - 1)) == 1);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, z + 2)) == 2);
 
-  assert(tube.SafetyToIn(Vec_t(0, 0, -z)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, 0, -z - delta)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, 0, -z + delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, -z)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, -z - delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, -z + delta)) == 0);
 
-  assert(tube.SafetyToIn(Vec_t(0, 0, z)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, 0, z - delta)) == 0);
-  assert(tube.SafetyToIn(Vec_t(0, 0, z + delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, z)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, z - delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, z + delta)) == 0);
 
-  assert(tube.SafetyToIn(Vec_t(0, 0, -z + 1)) < 0);
-  assert(tube.SafetyToIn(Vec_t(0, 0, z - 2)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, -z + 1)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, 0, z - 2)) < 0);
 
-  assert(tube.SafetyToIn(Vec_t(-3 * a, 0, z + 10)) == 10);
-  assert(tube.SafetyToIn(Vec_t(0, -3 * b, z + 10)) == 10);
-  assert(tube.SafetyToIn(Vec_t(-3 * a, 0, -z - 1)) >= 2 * b);
-  assert(tube.SafetyToIn(Vec_t(0, -3 * b, -z - 2)) == 2 * b);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(-3 * a, 0, z + 10)) == 10);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, -3 * b, z + 10)) == 10);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(-3 * a, 0, -z - 1)) >= 2 * b);
+  VECGEOM_ASSERT(tube.SafetyToIn(Vec_t(0, -3 * b, -z - 2)) == 2 * b);
 
   // Check SafetyToOut()
   //
   std::cout << "=== Check SafetyToOut()" << std::endl;
-  assert(tube.SafetyToOut(Vec_t(0, 0, 0)) == b);
-  assert(tube.SafetyToOut(Vec_t(0, b / 2, 0)) == b / 2);
-  assert(tube.SafetyToOut(Vec_t(a / 2, 0, 0)) >= b / 2);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, 0)) == b);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, b / 2, 0)) == b / 2);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(a / 2, 0, 0)) >= b / 2);
 
-  assert(tube.SafetyToOut(Vec_t(a, 0, 0)) == 0);
-  assert(tube.SafetyToOut(Vec_t(a - delta, 0, 0)) == 0);
-  assert(tube.SafetyToOut(Vec_t(a + delta, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(a, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(a - delta, 0, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(a + delta, 0, 0)) == 0);
 
-  assert(tube.SafetyToOut(Vec_t(0, b, 0)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, b - delta, 0)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, b + delta, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, b, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, b - delta, 0)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, b + delta, 0)) == 0);
 
-  assert(tube.SafetyToOut(Vec_t(2 * a, 2 * b, 0)) < 0);
-  assert(tube.SafetyToOut(Vec_t(-a, -b, z / 2)) < 0);
-  assert(tube.SafetyToOut(Vec_t(2 * a, 0, 0)) < 0);
-  assert(tube.SafetyToOut(Vec_t(0, 2 * b, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(2 * a, 2 * b, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(-a, -b, z / 2)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(2 * a, 0, 0)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 2 * b, 0)) < 0);
 
   // points around the bases
-  assert(tube.SafetyToOut(Vec_t(0, 0, -z + 1)) == 1);
-  assert(tube.SafetyToOut(Vec_t(0, 0, z - 2)) == 2);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, -z + 1)) == 1);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, z - 2)) == 2);
 
-  assert(tube.SafetyToOut(Vec_t(0, 0, -z)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, 0, -z - delta)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, 0, -z + delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, -z)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, -z - delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, -z + delta)) == 0);
 
-  assert(tube.SafetyToOut(Vec_t(0, 0, z)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, 0, z - delta)) == 0);
-  assert(tube.SafetyToOut(Vec_t(0, 0, z + delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, z)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, z - delta)) == 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, z + delta)) == 0);
 
-  assert(tube.SafetyToOut(Vec_t(0, 0, -z - 1)) < 0);
-  assert(tube.SafetyToOut(Vec_t(0, 0, z + 2)) < 0);
-  assert(tube.SafetyToOut(Vec_t(a, 0, -z - 1)) < 0);
-  assert(tube.SafetyToOut(Vec_t(0, b, z + 2)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, -z - 1)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, 0, z + 2)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(a, 0, -z - 1)) < 0);
+  VECGEOM_ASSERT(tube.SafetyToOut(Vec_t(0, b, z + 2)) < 0);
 
   // Check DistanceToIn()
   //
@@ -408,26 +408,26 @@ bool TestEllipticalTube()
         Vec_t rho(pnt.x(), pnt.y(), 0);
 
         dist = tube.DistanceToIn(pnt, dir = Vec_t(0, 0, 1));
-        if (tube.Inside(pnt) == vecgeom::kInside) assert(dist < 0);
+        if (tube.Inside(pnt) == vecgeom::kInside) VECGEOM_ASSERT(dist < 0);
         if (tube.Inside(rho) != vecgeom::kInside) {
-          assert(dist == kInfLength);
+          VECGEOM_ASSERT(dist == kInfLength);
         } else {
           if (tube.Inside(pnt) != vecgeom::kInside && pnt.z() > 0) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
-            assert(dist == -pnt.z() - z);
+            VECGEOM_ASSERT(dist == -pnt.z() - z);
           }
         }
 
         dist = tube.DistanceToIn(pnt, dir = Vec_t(0, 0, -1));
-        if (tube.Inside(pnt) == vecgeom::kInside) assert(dist < 0);
+        if (tube.Inside(pnt) == vecgeom::kInside) VECGEOM_ASSERT(dist < 0);
         if (tube.Inside(rho) != vecgeom::kInside) {
-          assert(dist == kInfLength);
+          VECGEOM_ASSERT(dist == kInfLength);
         } else {
           if (tube.Inside(pnt) != vecgeom::kInside && pnt.z() < 0) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
-            assert(dist == pnt.z() - z);
+            VECGEOM_ASSERT(dist == pnt.z() - z);
           }
         }
       }
@@ -445,19 +445,19 @@ bool TestEllipticalTube()
         double intx = (tmp < 0) ? 0 : std::sqrt(tmp) * a;
 
         dist = tube.DistanceToIn(pnt, dir = Vec_t(1, 0, 0));
-        if (tube.Inside(pnt) == vecgeom::kInside) assert(dist < 0);
+        if (tube.Inside(pnt) == vecgeom::kInside) VECGEOM_ASSERT(dist < 0);
         if (tube.Inside(pnt) == vecgeom::kInside) continue;
-        if (tube.Inside(height) != vecgeom::kInside) assert(dist == vecgeom::kInfLength);
+        if (tube.Inside(height) != vecgeom::kInside) VECGEOM_ASSERT(dist == vecgeom::kInfLength);
         if (tube.Inside(height) != vecgeom::kInside) continue;
-        if (tmp <= 0) assert(dist == kInfLength);
+        if (tmp <= 0) VECGEOM_ASSERT(dist == kInfLength);
         if (tmp <= 0) continue;
 
-        if (pnt.x() > 0) assert(dist == kInfLength);
-        if (pnt.x() < 0) assert(ApproxEqual(dist, std::abs(pnt.x()) - intx));
+        if (pnt.x() > 0) VECGEOM_ASSERT(dist == kInfLength);
+        if (pnt.x() < 0) VECGEOM_ASSERT(ApproxEqual(dist, std::abs(pnt.x()) - intx));
 
         dist = tube.DistanceToIn(pnt, dir = Vec_t(-1, 0, 0));
-        if (pnt.x() < 0) assert(dist == kInfLength);
-        if (pnt.x() > 0) assert(ApproxEqual(dist, std::abs(pnt.x()) - intx));
+        if (pnt.x() < 0) VECGEOM_ASSERT(dist == kInfLength);
+        if (pnt.x() > 0) VECGEOM_ASSERT(ApproxEqual(dist, std::abs(pnt.x()) - intx));
       }
     }
   }
@@ -472,7 +472,7 @@ bool TestEllipticalTube()
       double vz    = std::cos(theta);
       dir.Set(vx, vy, vz);
       dist = tube.DistanceToIn(Vec_t(0, 0, 0), dir);
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     }
   }
 
@@ -493,17 +493,17 @@ bool TestEllipticalTube()
       Vec_t ort = (axis.Cross(dir)).Unit(); // orthogonal direction
 
       dist = tube.DistanceToIn(pnt, dir);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, ort);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, -ort);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, -dir);
-      assert(dist > 0 && dist < Rsph);
-      assert(tube.Inside(pnt - dist * dir) == vecgeom::kSurface);
+      VECGEOM_ASSERT(dist > 0 && dist < Rsph);
+      VECGEOM_ASSERT(tube.Inside(pnt - dist * dir) == vecgeom::kSurface);
     }
   }
 
@@ -525,16 +525,16 @@ bool TestEllipticalTube()
       Vec_t ort = (axis.Cross(dir)).Unit(); // orthogonal direction
 
       dist = tube.DistanceToIn(pnt, dir);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, ort);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, -ort);
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
 
       dist = tube.DistanceToIn(pnt, -dir);
-      assert(tube.Inside(pnt - dist * dir) == vecgeom::kSurface);
+      VECGEOM_ASSERT(tube.Inside(pnt - dist * dir) == vecgeom::kSurface);
     }
   }
 
@@ -549,12 +549,12 @@ bool TestEllipticalTube()
         pnt.Set(xxx[ix], yyy[iy], zzz[iz]);
 
         dist = tube.DistanceToOut(pnt, dir = Vec_t(0, 0, 1));
-        if (tube.Inside(pnt) == vecgeom::kOutside) assert(dist == -1);
-        if (tube.Inside(pnt) != vecgeom::kOutside) assert(dist == (z - pnt.z()));
+        if (tube.Inside(pnt) == vecgeom::kOutside) VECGEOM_ASSERT(dist == -1);
+        if (tube.Inside(pnt) != vecgeom::kOutside) VECGEOM_ASSERT(dist == (z - pnt.z()));
 
         dist = tube.DistanceToOut(pnt, dir = Vec_t(0, 0, -1));
-        if (tube.Inside(pnt) == vecgeom::kOutside) assert(dist == -1);
-        if (tube.Inside(pnt) != vecgeom::kOutside) assert(dist == (z + pnt.z()));
+        if (tube.Inside(pnt) == vecgeom::kOutside) VECGEOM_ASSERT(dist == -1);
+        if (tube.Inside(pnt) != vecgeom::kOutside) VECGEOM_ASSERT(dist == (z + pnt.z()));
       }
     }
   }
@@ -569,14 +569,14 @@ bool TestEllipticalTube()
         double intx = (tmp < 0) ? 0 : std::sqrt(tmp) * a;
 
         dist = tube.DistanceToOut(pnt, dir = Vec_t(1, 0, 0));
-        if (tube.Inside(pnt) == vecgeom::kOutside) assert(dist < 0);
+        if (tube.Inside(pnt) == vecgeom::kOutside) VECGEOM_ASSERT(dist < 0);
         if (tube.Inside(pnt) == vecgeom::kOutside) continue;
-        if (tmp <= 0) assert(dist == 0);
-        if (tmp > 0) assert(ApproxEqual(dist, intx - pnt.x()));
+        if (tmp <= 0) VECGEOM_ASSERT(dist == 0);
+        if (tmp > 0) VECGEOM_ASSERT(ApproxEqual(dist, intx - pnt.x()));
 
         dist = tube.DistanceToOut(pnt, dir = Vec_t(-1, 0, 0));
-        if (tmp <= 0) assert(dist == 0);
-        if (tmp > 0) assert(ApproxEqual(dist, intx + pnt.x()));
+        if (tmp <= 0) VECGEOM_ASSERT(dist == 0);
+        if (tmp > 0) VECGEOM_ASSERT(ApproxEqual(dist, intx + pnt.x()));
       }
     }
   }
@@ -591,8 +591,8 @@ bool TestEllipticalTube()
       double vz    = std::cos(theta);
       dir.Set(vx, vy, vz);
       dist = tube.DistanceToOut(Vec_t(0, 0, 0), dir);
-      assert(dist > 0 && dist < Rsph);
-      assert(tube.Inside(dist * dir) == vecgeom::kSurface);
+      VECGEOM_ASSERT(dist > 0 && dist < Rsph);
+      VECGEOM_ASSERT(tube.Inside(dist * dir) == vecgeom::kSurface);
     }
   }
 
@@ -607,10 +607,10 @@ bool TestEllipticalTube()
       dir.Set(vx, vy, vz);
 
       dist = tube.DistanceToOut(Rsph * dir, dir);
-      assert(dist == -1.); // convention: assert(dist < 0);
+      VECGEOM_ASSERT(dist == -1.); // convention: VECGEOM_ASSERT(dist < 0);
 
       dist = tube.DistanceToOut(Rsph * dir, -dir);
-      assert(dist == -1.); // convention: assert(dist < 0);
+      VECGEOM_ASSERT(dist == -1.); // convention: VECGEOM_ASSERT(dist < 0);
     }
   }
 
@@ -622,7 +622,7 @@ bool TestEllipticalTube()
   int nzneg = 0, nzpos = 0, nside = 0, nfactor = 10000, ntot = 4 * area * nfactor;
   for (int i = 0; i < ntot; i++) {
     Vec_t rndPoint = tube.GetUnplacedVolume()->SamplePointOnSurface();
-    assert(tube.Inside(rndPoint) == vecgeom::EInside::kSurface);
+    VECGEOM_ASSERT(tube.Inside(rndPoint) == vecgeom::EInside::kSurface);
     if (rndPoint.x() < 0 || rndPoint.y() < 0) continue;
     if (rndPoint.z() == -z)
       ++nzneg;
@@ -633,16 +633,16 @@ bool TestEllipticalTube()
   }
   std::cout << "szneg,sside,szpos = " << sbase << ", \t" << sside << ", \t" << sbase << std::endl;
   std::cout << "nzneg,nside,nzpos = " << nzneg << ", \t" << nside << ", \t" << nzpos << std::endl;
-  assert(std::abs(nzneg - sbase * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nzpos - sbase * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzneg - sbase * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzpos - sbase * nfactor) < 2. * std::sqrt(ntot));
 
   return true;
 }
 
 int main(int argc, char *argv[])
 {
-  assert(TestEllipticalTube<vecgeom::SimpleEllipticalTube>());
+  VECGEOM_ASSERT(TestEllipticalTube<vecgeom::SimpleEllipticalTube>());
   std::cout << "VecGeomEllipticalTube passed\n";
 
   return 0;

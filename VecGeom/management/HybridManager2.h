@@ -96,12 +96,12 @@ public:
   ABBoxContainer_v GetABBoxes_v(HybridBoxAccelerationStructure const &structure, int &size, int &numberOfNodes) const
   {
     constexpr auto kVS = vecCore::VectorSize<Float_v>();
-    assert(structure.fNumberOfOriginalBoxes != 0);
+    VECGEOM_ASSERT(structure.fNumberOfOriginalBoxes != 0);
     int numberOfFirstLevelNodes =
         structure.fNumberOfOriginalBoxes / kVS + (structure.fNumberOfOriginalBoxes % kVS == 0 ? 0 : 1);
     numberOfNodes = numberOfFirstLevelNodes + structure.fNumberOfOriginalBoxes;
     size = numberOfFirstLevelNodes / kVS + (numberOfFirstLevelNodes % kVS == 0 ? 0 : 1) + numberOfFirstLevelNodes;
-    assert(structure.fABBoxes_v != nullptr);
+    VECGEOM_ASSERT(structure.fABBoxes_v != nullptr);
     return structure.fABBoxes_v;
   }
 

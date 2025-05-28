@@ -195,7 +195,7 @@ void GeoManager::CompactifyMemory()
 
 void GeoManager::CloseGeometry()
 {
-  assert(GetWorld() != nullptr);
+  VECGEOM_ASSERT(GetWorld() != nullptr);
   if (fIsClosed) {
     std::cerr << "geometry is already closed; I cannot close it again (very likely this message signifies a "
                  "substational error !!!\n";
@@ -263,17 +263,17 @@ void GeoManager::CreateIndexHierarchy() const
   for (int ivol = 0; ivol < nvol; ++ivol) {
     auto lvol       = GetLogicalVolume(ivol);
     auto solid_type = lvol->GetUnplacedVolume()->GetType();
-    assert(int(lvol->id()) == ivol); // id must be the index in the list
+    VECGEOM_ASSERT(int(lvol->id()) == ivol); // id must be the index in the list
     int nchildren = lvol->GetDaughters().size();
     volTree.fLogical[ivol].Set(ivol, solid_type, nchildren, children);
     children += nchildren;
-    assert(ivol == volTree.fLogical[ivol].fId && nchildren == volTree.fLogical[ivol].fNplaced);
+    VECGEOM_ASSERT(ivol == volTree.fLogical[ivol].fId && nchildren == volTree.fLogical[ivol].fNplaced);
   }
 
   // Fill the placed volumes
   for (int iplaced = 0; iplaced < nplaced; ++iplaced) {
     auto pvol = GetPlacedVolume(iplaced);
-    assert(int(pvol->id()) == iplaced); // id must be the index in the list
+    VECGEOM_ASSERT(int(pvol->id()) == iplaced); // id must be the index in the list
     auto lvol = pvol->GetLogicalVolume();
     int ivol  = lvol->id();
     volTree.fPlaced[iplaced].Set(iplaced, pvol->GetCopyNo(), pvol->GetChildId(), volTree.fLogical[ivol]);
@@ -289,7 +289,7 @@ void GeoManager::CreateIndexHierarchy() const
   }
 
   // Set the world placed id
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
   volTree.fWorld = volTree.fPlaced[fWorld->id()];
   VECGEOM_LOG(info) << "VolumeTree size is " << std::setprecision(5) << float(volTree.GetSize()) / (1024 * 1024)
                     << " MBytes";
@@ -304,10 +304,10 @@ bool GeoManager::CheckIndexHierarchy() const
     state->Push(pvol);
     auto lvol = pvol->GetLogicalVolume();
     int ivol  = lvol->id();
-    assert(lvol == GetLogicalVolume(ivol));
+    VECGEOM_ASSERT(lvol == GetLogicalVolume(ivol));
     int nchildren = lvol->GetDaughters().size();
     int iplaced   = pvol->id();
-    assert(pvol == GetPlacedVolume(iplaced));
+    VECGEOM_ASSERT(pvol == GetPlacedVolume(iplaced));
     int ichild = pvol->GetChildId();
     int icopy  = pvol->GetCopyNo();
     // check the corresponding index elements

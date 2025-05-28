@@ -6,7 +6,7 @@
 #include <VecGeom/navigation/BVHNavigatorV.h>
 #include <VecGeom/navigation/BVHSafetyEstimator.h>
 
-using vecgeom::cxx::CudaCheckError;
+#include "VecGeom/base/Assert.h"
 
 namespace vecgeom {
 inline namespace cuda {
@@ -14,9 +14,9 @@ template <typename Real_t>
 inline BVH<Real_t> *AllocateDeviceBVHBuffer(size_t n)
 {
   BVH<Real_t> *ptr = nullptr;
-  CudaCheckError(cudaMalloc((void **)&ptr, n * sizeof(BVH<Real_t>)));
-  CudaCheckError(cudaMemcpyToSymbol(dBVH<Real_t>, &ptr, sizeof(ptr)));
-  CudaCheckError(cudaDeviceSynchronize());
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&ptr, n * sizeof(BVH<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(MemcpyToSymbol(dBVH<Real_t>, &ptr, sizeof(ptr)));
+  VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
   return ptr;
 }
 
@@ -25,14 +25,14 @@ inline BVH<Real_t> *GetDeviceBVHBuffer()
 {
   BVH<Real_t> *ptr = nullptr;
 
-  CudaCheckError(cudaMemcpyFromSymbol(&ptr, dBVH<Real_t>, sizeof(ptr)));
+  VECGEOM_DEVICE_API_CALL(MemcpyFromSymbol(&ptr, dBVH<Real_t>, sizeof(ptr)));
   return ptr;
 }
 
 template <typename Real_t>
 inline void FreeDeviceBVHBuffer()
 {
-  CudaCheckError(cudaFree(GetDeviceBVHBuffer<Real_t>()));
+  VECGEOM_DEVICE_API_CALL(Free(GetDeviceBVHBuffer<Real_t>()));
 }
 
 // Temporary hack (used already in LogicalVolume.cpp) implementing the Instance functionality

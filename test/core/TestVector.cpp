@@ -14,36 +14,36 @@ int test()
   aVector.resize(2, 0.0);
   size_t newSize = aVector.size();
 
-  assert(newSize == 2);
+  VECGEOM_ASSERT(newSize == 2);
 
   aVector.reserve(10);
-  assert(aVector.capacity() == 10);
-  assert(aVector.size() == 2);
+  VECGEOM_ASSERT(aVector.capacity() == 10);
+  VECGEOM_ASSERT(aVector.size() == 2);
 
   for (int i = 0; i < 12; ++i) {
     aVector.push_back(i);
   }
-  assert(aVector.capacity() > 10);
-  assert(aVector.size() == 14);
+  VECGEOM_ASSERT(aVector.capacity() > 10);
+  VECGEOM_ASSERT(aVector.size() == 14);
 
   int i = 0;
   for (auto val : aVector) {
     if (i < 2)
-      assert(val == 0);
+      VECGEOM_ASSERT(val == 0);
     else
-      assert(val == (i - 2));
+      VECGEOM_ASSERT(val == (i - 2));
     ++i;
   }
   for (i = 0; i < 12; ++i) {
     if (i < 2)
-      assert(aVector[i] == 0);
+      VECGEOM_ASSERT(aVector[i] == 0);
     else
-      assert(aVector[i] == (i - 2));
+      VECGEOM_ASSERT(aVector[i] == (i - 2));
   }
 
   aVector.clear();
-  assert(aVector.capacity() > 10);
-  assert(aVector.size() == 0);
+  VECGEOM_ASSERT(aVector.capacity() > 10);
+  VECGEOM_ASSERT(aVector.size() == 0);
   return 0;
 }
 

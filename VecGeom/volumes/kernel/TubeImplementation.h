@@ -61,7 +61,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PointInCyclicalSector(Unplaced
                                                                         typename vecCore::Mask_v<Real_v> &ret)
 {
   using namespace ::vecgeom::TubeTypes;
-  // assert(SectorType<ShapeType>::value != kNoAngle && "ShapeType without a
+  // VECGEOM_VALIDATE(SectorType<ShapeType>::value != kNoAngle, << "ShapeType without a
   // sector passed to PointInCyclicalSector");
 
   Real_v startx(volume.fAlongPhi1x);

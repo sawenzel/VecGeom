@@ -49,7 +49,7 @@ struct Tile {
   bool SetVertices(Vector3D<T> const &vtx0, Vector3D<T> const &vtx1, Vector3D<T> const &vtx2, size_t ind0 = 0,
                    size_t ind1 = 0, size_t ind2 = 0)
   {
-    assert(NVERT == 3);
+    VECGEOM_ASSERT(NVERT == 3);
     AddVertex(vtx0, ind0);
     AddVertex(vtx1, ind1);
     return AddVertex(vtx2, ind2);
@@ -60,7 +60,7 @@ struct Tile {
   bool SetVertices(Vector3D<T> const &vtx0, Vector3D<T> const &vtx1, Vector3D<T> const &vtx2, Vector3D<T> const &vtx3,
                    size_t ind0 = 0, size_t ind1 = 0, size_t ind2 = 0, size_t ind3 = 0)
   {
-    assert(NVERT == 4);
+    VECGEOM_ASSERT(NVERT == 4);
     AddVertex(vtx0, ind0);
     AddVertex(vtx1, ind1);
     AddVertex(vtx2, ind2);
@@ -137,7 +137,7 @@ struct Tile {
       Vector3D<T> e2 = fVertices[i + 1] - fVertices[0];
       fSurfaceArea += 0.5 * (e1.Cross(e2)).Mag();
     }
-    assert(fSurfaceArea > kTolerance * kTolerance);
+    VECGEOM_ASSERT(fSurfaceArea > kTolerance * kTolerance);
 
     // Center of the tile
     for (size_t i = 0; i < NVERT; ++i)

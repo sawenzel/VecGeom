@@ -38,7 +38,7 @@ VPlacedVolume const *LocateGlobalPoint(VPlacedVolume const *vol, Vector3D<Precis
   VPlacedVolume const *candvolume = vol;
   Vector3D<Precision> currentpoint(point);
   if (top) {
-    assert(vol != nullptr);
+    VECGEOM_ASSERT(vol != nullptr);
     candvolume = (vol->UnplacedContains(point)) ? vol : nullptr;
   }
   if (candvolume) {
@@ -91,7 +91,7 @@ VPlacedVolume const *LocateGlobalPointExclVolume(VPlacedVolume const *vol, VPlac
   VPlacedVolume const *candvolume = vol;
   Vector3D<Precision> currentpoint(point);
   if (top) {
-    assert(vol != nullptr);
+    VECGEOM_ASSERT(vol != nullptr);
     candvolume = (vol->UnplacedContains(point)) ? vol : nullptr;
   }
   if (candvolume) {

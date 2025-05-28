@@ -22,7 +22,7 @@ Vector3D<Precision> VUnplacedVolume::SamplePointOnSurface() const
   Vector3D<Precision> dir = volumeUtilities::SampleDirection();
   surfacepoint            = points[0] + DistanceToOut(points[0], dir) * dir;
 
-  // assert( Inside(surfacepoint) == vecgeom::kSurface );
+  // VECGEOM_ASSERT( Inside(surfacepoint) == vecgeom::kSurface );
   return surfacepoint;
 }
 
@@ -207,14 +207,14 @@ VPlacedVolume *VUnplacedVolume::PlaceVolume(char const *const label, LogicalVolu
 void VUnplacedVolume::CopyBBoxesToGpu(const std::vector<VUnplacedVolume const *> &volumes,
                                       const std::vector<DevicePtr<cuda::VUnplacedVolume>> &gpu_ptrs)
 {
-  assert(volumes.size() == gpu_ptrs.size() && "Unequal CPU/GPU vectors for copying bounding boxes.");
+  VECGEOM_VALIDATE(volumes.size() == gpu_ptrs.size(), << "Unequal CPU/GPU vectors for copying bounding boxes.");
   // Copy boxes data in a contiguous array, box icrt starting at index 6*icrt
   std::vector<Precision> boxesData(6 * gpu_ptrs.size());
   int icrt = 0;
   for (auto vol : volumes) {
     Vector3D<Precision> amin, amax;
     vol->GetBBox(amin, amax);
-    assert((amax - amin).Mag() > 0);
+    VECGEOM_ASSERT((amax - amin).Mag() > 0);
     for (unsigned int i = 0; i < 3; ++i) {
       boxesData[6 * icrt + i]     = amin[i];
       boxesData[6 * icrt + i + 3] = amax[i];

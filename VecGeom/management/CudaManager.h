@@ -231,7 +231,7 @@ inline VPlacedVolume const *CudaManager::LookupPlacedCPUPtr(const void *address)
 {
   const VPlacedVolume *cpu_ptr =
       (const VPlacedVolume *)fGPUtoCPUmapForPlacedVolumes_[GpuAddress(const_cast<void *>(address))];
-  assert(cpu_ptr != NULL);
+  VECGEOM_ASSERT(cpu_ptr != NULL);
   return cpu_ptr;
 }
 } // namespace cxx

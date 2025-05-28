@@ -19,7 +19,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 /* Simple test for the scalability of creation of the tessellated structure.
    An orb is split into ngrid theta and phi regions; each cell is represented

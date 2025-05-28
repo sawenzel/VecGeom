@@ -211,7 +211,7 @@ VPlacedVolume *RootGeoManager::Convert(TGeoNode const *const node)
   {
     // All or no daughters should have been placed already
     remaining_daughters = node->GetNdaughters() - logical_volume->GetDaughters().size();
-    assert(remaining_daughters <= 0 || remaining_daughters == (int)node->GetNdaughters());
+    VECGEOM_ASSERT(remaining_daughters <= 0 || remaining_daughters == (int)node->GetNdaughters());
   }
 
   // we have to convert here assemblies to list of normal nodes
@@ -264,7 +264,7 @@ TGeoNode *RootGeoManager::Convert(VPlacedVolume const *const placed_volume)
   // So only need to check if
   // logical volume already done ( if it already has the right number of daughters )
   auto remaining_daughters = placed_volume->GetDaughters().size() - geovolume->GetNdaughters();
-  assert(remaining_daughters == 0 || remaining_daughters == placed_volume->GetDaughters().size());
+  VECGEOM_ASSERT(remaining_daughters == 0 || remaining_daughters == placed_volume->GetDaughters().size());
 
   // do daughters
   for (size_t i = 0; i < remaining_daughters; ++i) {
@@ -337,8 +337,8 @@ LogicalVolume *RootGeoManager::Convert(TGeoVolume const *const volume)
   //    const auto v2 = volume->Capacity();
   //    std::cerr << "v1 " << v1 << " " << v2 << "\n";
   //
-  //    assert(v1 > 0.);
-  //    assert(std::abs(v1 - v2 * LUnit() * LUnit() * LUnit())/v1 < 0.05);
+  //    VECGEOM_ASSERT(v1 > 0.);
+  //    VECGEOM_ASSERT(std::abs(v1 - v2 * LUnit() * LUnit() * LUnit())/v1 < 0.05);
   //  }
   return logical_volume;
 }
@@ -347,7 +347,7 @@ LogicalVolume *RootGeoManager::Convert(TGeoVolume const *const volume)
 // they should match
 TGeoVolume *RootGeoManager::Convert(VPlacedVolume const *const placed_volume, LogicalVolume const *const logical_volume)
 {
-  assert(placed_volume->GetLogicalVolume() == logical_volume);
+  VECGEOM_ASSERT(placed_volume->GetLogicalVolume() == logical_volume);
 
   if (fLogicalVolumeMap.Contains(logical_volume)) return const_cast<TGeoVolume *>(fLogicalVolumeMap[logical_volume]);
 
@@ -530,8 +530,8 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
     VUnplacedVolume const *leftunplaced  = Convert(boolnode->GetLeftShape());
     VUnplacedVolume const *rightunplaced = Convert(boolnode->GetRightShape());
 
-    assert(leftunplaced != nullptr);
-    assert(rightunplaced != nullptr);
+    VECGEOM_ASSERT(leftunplaced != nullptr);
+    VECGEOM_ASSERT(rightunplaced != nullptr);
 
     // the problem is that I can only place logical volumes
     VPlacedVolume *const leftplaced  = (new LogicalVolume("inner_virtual", leftunplaced))->Place(lefttrans);

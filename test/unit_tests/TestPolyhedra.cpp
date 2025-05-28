@@ -12,7 +12,7 @@
 //-- ensure asserts are compiled in
 #undef NDEBUG
 #include "VecGeom/base/FpeEnable.h"
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 using vecgeom::kPi;
 
@@ -112,7 +112,7 @@ bool TestPolyhedra()
   Polyhedra_t *MyPGon3 = new Polyhedra_t("MyPGon3", sphi3, dphi3, 4, 4, Z_Values3, RMINVec3, RMAXVec3);
   std::cout << "=== Polyhedron3: \n";
   std::cout << *MyPGon3 << std::endl;
-  assert(MyPGon3->GetUnplacedVolume()->GetStruct().fSameZ[1]);
+  VECGEOM_ASSERT(MyPGon3->GetUnplacedVolume()->GetStruct().fSameZ[1]);
 
   Precision RMINVec4[12]  = {0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0.};
   Precision RMAXVec4[12]  = {5., 5., 2., 4., 4., 2., 2., 2., 5., 5., 2., 0.};
@@ -126,18 +126,18 @@ bool TestPolyhedra()
   std::cout << "=== Polyhedron4: \n";
   std::cout << *MyPGon4 << std::endl;
   auto const &pgon_struct = MyPGon4->GetUnplacedVolume()->GetStruct();
-  assert(pgon_struct.fSameZ[1] && pgon_struct.fSameZ[4] && pgon_struct.fSameZ[7] && pgon_struct.fSameZ[9]);
+  VECGEOM_ASSERT(pgon_struct.fSameZ[1] && pgon_struct.fSameZ[4] && pgon_struct.fSameZ[7] && pgon_struct.fSameZ[9]);
 
   // Check Cubic volume
   // Precision vol;
   // vol = MyPGon->Capacity();
   std::cout.precision(20);
   std::cout << "Complex Polyhedron Capacity =" << MyPGon->Capacity() << std::endl;
-  // assert(ApproxEqual(vol,155138.6874225));
+  // VECGEOM_ASSERT(ApproxEqual(vol,155138.6874225));
 
   // Check Surface area
   // vol=MyPGon->SurfaceArea();
-  // assert(ApproxEqual(vol,1284298.5697));
+  // VECGEOM_ASSERT(ApproxEqual(vol,1284298.5697));
   std::cout << "Complex Polyhedron SurfaceArea =" << MyPGon->SurfaceArea() << std::endl;
 
   // Check Cubic volume
@@ -147,11 +147,11 @@ bool TestPolyhedra()
   std::cout << "Simple Polyhedron(HalfBox) Capacity =" << MyPGon0->Capacity() << " has to be 12" << std::endl;
   std::cout << "Less Simple Polyhedron(2 cutted piramides) Capacity =" << MyPGon1->Capacity() << " has to be 18, ..."
             << std::endl;
-  // assert(ApproxEqual(vol,155138.6874225));
+  // VECGEOM_ASSERT(ApproxEqual(vol,155138.6874225));
 
   // Check Surface area
   // vol=MyPGon0->SurfaceArea();
-  // assert(ApproxEqual(vol,1284298.5697));
+  // VECGEOM_ASSERT(ApproxEqual(vol,1284298.5697));
   std::cout << "Simple Polyhedron(Half) SurfaceArea =" << MyPGon0->SurfaceArea() << " has to be 41.6585425"
             << std::endl;
   std::cout << "Less Simple Polyhedron(2 cutted piramides) SurfaceArea =" << MyPGon1->SurfaceArea()
@@ -184,10 +184,10 @@ bool TestPolyhedra()
   MyPGon->GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
   std::cout << "polyhedra Extent():  min=" << minExtent << " max=" << maxExtent << std::endl;
   // In VecGeom the extent is minimal
-  assert(ApproxEqual(minExtent, Vec_t(0, 0, -30)));
-  assert(ApproxEqual(maxExtent, Vec_t(80. / cos(halfdphi), 40. * sqrt(2.) / cos(halfdphi), 40)));
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(0, 0, -30)));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(80. / cos(halfdphi), 40. * sqrt(2.) / cos(halfdphi), 40)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
 
   // Check Inside
   const char *sInside[4] = {"none", "inside", "surface", "outside"};
@@ -208,20 +208,20 @@ bool TestPolyhedra()
   std::cout << " MyPGon3->Inside(" << p13 << ") = " << sInside[MyPGon3->Inside(p13)] << "\n";
   std::cout << " MyPGon3->Contains(" << p14 << ") = " << MyPGon3->Contains(p14) << "\n";
 
-  assert(MyPGon->Inside(p1) == vecgeom::EInside::kSurface);
-  assert(MyPGon->Inside(p2) == vecgeom::EInside::kSurface);
-  assert(MyPGon->Inside(p3) == vecgeom::EInside::kInside);
-  assert(MyPGon->Inside(p4) == vecgeom::EInside::kInside);
-  assert(MyPGon->Inside(p5) == vecgeom::EInside::kOutside);
-  assert(MyPGon->Inside(p6) == vecgeom::EInside::kOutside);
-  assert(MyPGon2->Inside(p7) == vecgeom::EInside::kInside);
-  assert(MyPGon2->Inside(p8) == vecgeom::EInside::kSurface);
-  assert(MyPGon3->Inside(p9) == vecgeom::EInside::kSurface);
-  assert(MyPGon3->Inside(p10) == vecgeom::EInside::kSurface);
-  assert(MyPGon3->Inside(p11) == vecgeom::EInside::kSurface);
-  assert(MyPGon3->Inside(p12) == vecgeom::EInside::kInside);
-  assert(MyPGon3->Inside(p13) == vecgeom::EInside::kOutside);
-  assert(MyPGon3->Contains(p14));
+  VECGEOM_ASSERT(MyPGon->Inside(p1) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon->Inside(p2) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon->Inside(p3) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(MyPGon->Inside(p4) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(MyPGon->Inside(p5) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(MyPGon->Inside(p6) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(MyPGon2->Inside(p7) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(MyPGon2->Inside(p8) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon3->Inside(p9) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon3->Inside(p10) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon3->Inside(p11) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(MyPGon3->Inside(p12) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(MyPGon3->Inside(p13) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(MyPGon3->Contains(p14));
 
   // Check that Inside and Contains agree for points around phi tolerance.
   {
@@ -230,8 +230,8 @@ bool TestPolyhedra()
     std::cout << " MyPGon->Contains(" << pPhiInside << ") = " << MyPGon->Contains(pPhiInside) << "\n";
     std::cout << " MyPGon->Inside(" << pPhiInside << ") = " << MyPGon->Inside(pPhiInside) << "\n";
 
-    assert(MyPGon->Contains(pPhiInside));
-    assert(MyPGon->Inside(pPhiInside) == vecgeom::EInside::kInside);
+    VECGEOM_ASSERT(MyPGon->Contains(pPhiInside));
+    VECGEOM_ASSERT(MyPGon->Inside(pPhiInside) == vecgeom::EInside::kInside);
   }
 
   {
@@ -239,7 +239,7 @@ bool TestPolyhedra()
     std::cout << " MyPGon->Contains(" << pPhiSurface << ") = " << MyPGon->Contains(pPhiSurface) << "\n";
     std::cout << " MyPGon->Inside(" << pPhiSurface << ") = " << MyPGon->Inside(pPhiSurface) << "\n";
 
-    assert(MyPGon->Inside(pPhiSurface) == vecgeom::EInside::kSurface);
+    VECGEOM_ASSERT(MyPGon->Inside(pPhiSurface) == vecgeom::EInside::kSurface);
   }
 
   {
@@ -248,31 +248,31 @@ bool TestPolyhedra()
     std::cout << " MyPGon->Contains(" << pPhiOutside << ") = " << MyPGon->Contains(pPhiOutside) << "\n";
     std::cout << " MyPGon->Inside(" << pPhiOutside << ") = " << MyPGon->Inside(pPhiOutside) << "\n";
 
-    assert(!MyPGon->Contains(pPhiOutside));
-    assert(MyPGon->Inside(pPhiOutside) == vecgeom::EInside::kOutside);
+    VECGEOM_ASSERT(!MyPGon->Contains(pPhiOutside));
+    VECGEOM_ASSERT(MyPGon->Inside(pPhiOutside) == vecgeom::EInside::kOutside);
   }
 
   // Check DistanceToIn
-  assert(std::fabs((MyPGon->DistanceToIn(p1, dirx))) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToIn(p1, -diry))) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p1, dirx))) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p1, -diry))) < tolerance);
   // Point on top endcap moving horizontally: either enter at 0 or not enter at all
-  assert(std::fabs((MyPGon->DistanceToIn(p2, diry))) < tolerance ||
-         std::fabs((MyPGon->DistanceToIn(p2, diry))) > 1.E10);
-  assert(std::fabs((MyPGon->DistanceToIn(p5, dirx) - 40.12368793931)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToIn(p6, -dirx) - 0.87631206069)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToIn(p6, dirz) - 0.218402670765)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p2, diry))) < tolerance ||
+                 std::fabs((MyPGon->DistanceToIn(p2, diry))) > 1.E10);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p5, dirx) - 40.12368793931)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p6, -dirx) - 0.87631206069)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToIn(p6, dirz) - 0.218402670765)) < tolerance);
 
   // Check DistanceToOut
   Vec_t normal;
-  assert(std::fabs((MyPGon->DistanceToOut(p1, -dirx))) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToOut(p3, -diry) - 1.)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToOut(p3, dirz) - 1.27382374146)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToOut(p4, dirz) - 10.)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToOut(p4, dirx) - 34.8538673445)) < tolerance);
-  assert(std::fabs((MyPGon->DistanceToOut(p4, diry) - 40.)) < tolerance);
-  assert(MyPGon2->DistanceToOut(p7, dirx) > 0);
-  assert(MyPGon2->DistanceToOut(p7, diry) > 0);
-  assert(MyPGon2->DistanceToOut(p7, dirz) > 0);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p1, -dirx))) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p3, -diry) - 1.)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p3, dirz) - 1.27382374146)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p4, dirz) - 10.)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p4, dirx) - 34.8538673445)) < tolerance);
+  VECGEOM_ASSERT(std::fabs((MyPGon->DistanceToOut(p4, diry) - 40.)) < tolerance);
+  VECGEOM_ASSERT(MyPGon2->DistanceToOut(p7, dirx) > 0);
+  VECGEOM_ASSERT(MyPGon2->DistanceToOut(p7, diry) > 0);
+  VECGEOM_ASSERT(MyPGon2->DistanceToOut(p7, dirz) > 0);
   std::cout << "MyPGon2->DistanceToOut(p7, dirx) = " << MyPGon2->DistanceToOut(p7, dirx) << std::endl;
   std::cout << "MyPGon2->DistanceToOut(p7, diry) = " << MyPGon2->DistanceToOut(p7, diry) << std::endl;
   std::cout << "MyPGon2->DistanceToOut(p7, dirz) = " << MyPGon2->DistanceToOut(p7, dirz) << std::endl;
@@ -479,7 +479,7 @@ bool TestPolyhedra()
 
 int main(int argc, char *argv[])
 {
-  assert(TestPolyhedra<vecgeom::SimplePolyhedron>());
+  VECGEOM_ASSERT(TestPolyhedra<vecgeom::SimplePolyhedron>());
   std::cout << "VecGeom Polyhedron passed\n";
 
   return 0;

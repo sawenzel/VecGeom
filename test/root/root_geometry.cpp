@@ -1,5 +1,5 @@
 
-// force assert() to be used, even in Release mode
+// force VECGEOM_ASSERT() to be used, even in Release mode
 #undef NDEBUG
 
 #include "VecGeom/management/GeoManager.h"
@@ -39,7 +39,7 @@ int main()
   auto CheckPoint = [&](const Precision x, const Precision y, const Precision z, VPlacedVolume const *const volume) {
     Vector3D<Precision> const point = Vector3D<Precision>(x, y, z);
     NavigationState *path           = NavigationState::MakeInstance(2);
-    assert(GlobalLocator::LocateGlobalPoint(world, point, *path, true) == volume);
+    VECGEOM_ASSERT(GlobalLocator::LocateGlobalPoint(world, point, *path, true) == volume);
   };
 
   CheckPoint(0, 0, 0, world);

@@ -66,73 +66,75 @@ bool TestPolycone()
   SUnplacedCone<ConeTypes::UniversalCone> section1(rmin[1], rmax[1], rmin[2], rmax[2], (z[2] - z[1]) / 2., 0, kTwoPi);
   SUnplacedCone<ConeTypes::UniversalCone> section2(rmin[2], rmax[2], rmin[3], rmax[3], (z[3] - z[2]) / 2., 0, kTwoPi);
 
-  assert(poly1->GetNz() == 4);
-  assert(poly1->GetNSections() == 3);
-  assert(poly1->GetSectionIndex(-0.8) == 0);
-  assert(poly1->GetSectionIndex(0.51) == 2);
-  assert(poly1->GetSectionIndex(0.) == 1);
-  assert(poly1->GetSectionIndex(-2.) == -1);
-  assert(poly1->GetSectionIndex(3.) == -2);
-  assert(poly1->GetStartPhi() == 0.);
-  assert((std::fabs(poly1->GetDeltaPhi() - kTwoPi)) < 1e-10);
+  VECGEOM_ASSERT(poly1->GetNz() == 4);
+  VECGEOM_ASSERT(poly1->GetNSections() == 3);
+  VECGEOM_ASSERT(poly1->GetSectionIndex(-0.8) == 0);
+  VECGEOM_ASSERT(poly1->GetSectionIndex(0.51) == 2);
+  VECGEOM_ASSERT(poly1->GetSectionIndex(0.) == 1);
+  VECGEOM_ASSERT(poly1->GetSectionIndex(-2.) == -1);
+  VECGEOM_ASSERT(poly1->GetSectionIndex(3.) == -2);
+  VECGEOM_ASSERT(poly1->GetStartPhi() == 0.);
+  VECGEOM_ASSERT((std::fabs(poly1->GetDeltaPhi() - kTwoPi)) < 1e-10);
 
-  assert(poly1->GetStruct().fZs[0] == z[0]);
-  assert(poly1->GetStruct().fZs[poly1->GetNSections()] == z[Nz - 1]);
-  assert(poly1->Capacity() > 0);
-  assert(std::fabs(poly1->Capacity() - (section0.Capacity() + section1.Capacity() + section2.Capacity())) < 1e-6);
+  VECGEOM_ASSERT(poly1->GetStruct().fZs[0] == z[0]);
+  VECGEOM_ASSERT(poly1->GetStruct().fZs[poly1->GetNSections()] == z[Nz - 1]);
+  VECGEOM_ASSERT(poly1->Capacity() > 0);
+  VECGEOM_ASSERT(std::fabs(poly1->Capacity() - (section0.Capacity() + section1.Capacity() + section2.Capacity())) <
+                 1e-6);
 
   // create a placed version
   VPlacedVolume const *placedpoly1 = (new LogicalVolume("poly1", poly1))->Place(new Transformation3D());
 
   // test contains/inside
-  assert(placedpoly1->Contains(Vec_t(0., 0., 0.)) == true);
-  assert(placedpoly1->Contains(Vec_t(0., 0., -2.)) == false);
-  assert(placedpoly1->Contains(Vec_t(0., 0., -0.8)) == false);
-  assert(placedpoly1->Contains(Vec_t(0., 0., -1.8)) == false);
-  assert(placedpoly1->Contains(Vec_t(0., 0., 10)) == false);
-  assert(placedpoly1->Contains(Vec_t(0., 0., 1.8)) == false);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., 0.)) == true);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., -2.)) == false);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., -0.8)) == false);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., -1.8)) == false);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., 10)) == false);
+  VECGEOM_ASSERT(placedpoly1->Contains(Vec_t(0., 0., 1.8)) == false);
 
   // test DistanceToIn
-  assert(placedpoly1->DistanceToIn(Vec_t(0., 0., -3.), Vec_t(0., 0., 1.)) == 2.5);
-  assert(placedpoly1->DistanceToIn(Vec_t(0., 0., -2.), Vec_t(0., 0., -1.)) == kInfLength);
-  assert(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., -1.)) == 2.5);
-  assert(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., 1.)) == kInfLength);
-  assert(placedpoly1->DistanceToIn(Vec_t(3., 0., 0), Vec_t(-1., 0., 0.)) == 1);
-  assert(std::fabs(placedpoly1->DistanceToIn(Vec_t(0., 0., 1.9999999), Vec_t(1., 0., 0.)) - 0.4) < 1000. * kTolerance);
+  VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(0., 0., -3.), Vec_t(0., 0., 1.)) == 2.5);
+  VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(0., 0., -2.), Vec_t(0., 0., -1.)) == kInfLength);
+  VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., -1.)) == 2.5);
+  VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(0., 0., 3), Vec_t(0., 0., 1.)) == kInfLength);
+  VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(3., 0., 0), Vec_t(-1., 0., 0.)) == 1);
+  VECGEOM_ASSERT(std::fabs(placedpoly1->DistanceToIn(Vec_t(0., 0., 1.9999999), Vec_t(1., 0., 0.)) - 0.4) <
+                 1000. * kTolerance);
 
   // test SafetyToIn
-  assert(placedpoly1->SafetyToIn(Vec_t(0., 0., -3.)) == 2.);
-  assert(placedpoly1->SafetyToIn(Vec_t(0.5, 0., -1.)) == 0.);
-  assert(placedpoly1->SafetyToIn(Vec_t(0., 0., 3)) == 1);
-  assert(placedpoly1->SafetyToIn(Vec_t(2., 0., 0.1)) == 0);
+  VECGEOM_ASSERT(placedpoly1->SafetyToIn(Vec_t(0., 0., -3.)) == 2.);
+  VECGEOM_ASSERT(placedpoly1->SafetyToIn(Vec_t(0.5, 0., -1.)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->SafetyToIn(Vec_t(0., 0., 3)) == 1);
+  VECGEOM_ASSERT(placedpoly1->SafetyToIn(Vec_t(2., 0., 0.1)) == 0);
 
   // test SafetyToOut
-  assert(placedpoly1->SafetyToOut(Vec_t(0., 0., 0.)) == 0.5);
-  assert(placedpoly1->SafetyToOut(Vec_t(0., 0., 0.5)) == 0.);
-  assert(std::fabs(placedpoly1->SafetyToOut(Vec_t(1.9, 0., 0.0)) - 0.1) < 1000. * kTolerance);
-  assert(placedpoly1->SafetyToOut(Vec_t(0.2, 0., -1)) == 0.);
-  assert(placedpoly1->SafetyToOut(Vec_t(1.4, 0., 2)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->SafetyToOut(Vec_t(0., 0., 0.)) == 0.5);
+  VECGEOM_ASSERT(placedpoly1->SafetyToOut(Vec_t(0., 0., 0.5)) == 0.);
+  VECGEOM_ASSERT(std::fabs(placedpoly1->SafetyToOut(Vec_t(1.9, 0., 0.0)) - 0.1) < 1000. * kTolerance);
+  VECGEOM_ASSERT(placedpoly1->SafetyToOut(Vec_t(0.2, 0., -1)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->SafetyToOut(Vec_t(1.4, 0., 2)) == 0.);
 
   // test DistanceToOut
-  assert(placedpoly1->DistanceToOut(Vec_t(0., 0., 0.), Vec_t(0., 0., 1.)) == 0.5);
-  assert(placedpoly1->DistanceToOut(Vec_t(0., 0., 0.), Vec_t(0., 0., -1.)) == 0.5);
-  assert(placedpoly1->DistanceToOut(Vec_t(2., 0., 0.), Vec_t(1., 0., 0.)) == 0.);
-  assert(placedpoly1->DistanceToOut(Vec_t(2., 0., 0.), Vec_t(-1., 0., 0.)) == 4.);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(0., 0., 0.), Vec_t(0., 0., 1.)) == 0.5);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(0., 0., 0.), Vec_t(0., 0., -1.)) == 0.5);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(2., 0., 0.), Vec_t(1., 0., 0.)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(2., 0., 0.), Vec_t(-1., 0., 0.)) == 4.);
 
-  assert(placedpoly1->DistanceToOut(Vec_t(1., 0., 2), Vec_t(0., 0., 1.)) == 0.);
-  assert(placedpoly1->DistanceToOut(Vec_t(0.5, 0., -1), Vec_t(0., 0., -1.)) == 0.);
-  assert(placedpoly1->DistanceToOut(Vec_t(0.5, 0., -1), Vec_t(0., 0., 1.)) == 3.);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(1., 0., 2), Vec_t(0., 0., 1.)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(0.5, 0., -1), Vec_t(0., 0., -1.)) == 0.);
+  VECGEOM_ASSERT(placedpoly1->DistanceToOut(Vec_t(0.5, 0., -1), Vec_t(0., 0., 1.)) == 3.);
 
   // Check Cubic volume
   Precision vol, volCheck;
   vol      = Simple.Capacity();
   volCheck = kPi * (70 * 70 * 10 + 10 * (70 * 70 + 80 * 80 + 70 * 80) / 3.);
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   // Check Surface area
   vol      = Simple.SurfaceArea();
   volCheck = kPi * (70 * 70 + 80 * 80 + (70 + 80) * std::sqrt(10 * 10 + 10 * 10) + 10 * 2 * 70);
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   // Check Inside
   Vec_t pzero(0, 0, 0);
@@ -153,19 +155,19 @@ bool TestPolycone()
   Precision Dist;
   Vec_t normal;
   bool valid;
-  assert(Simple.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(Simple.Inside(pbigz) == vecgeom::EInside::kOutside);
-  assert(Simple.Inside(pbigx) == vecgeom::EInside::kOutside);
-  assert(Simple.Inside(pbigy) == vecgeom::EInside::kOutside);
-  assert(Simple.Inside(ponxside) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(ponyside) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(ponzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(pbigz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(pbigx) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(pbigy) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(ponxside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(ponyside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(ponzside) == vecgeom::EInside::kSurface);
 
-  assert(Simple.Inside(ponmxside) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(ponmyside) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(ponmzside) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(ponzsidey) == vecgeom::EInside::kInside);
-  assert(Simple.Inside(ponmzsidey) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(ponmxside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(ponmyside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(ponmzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(ponzsidey) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(ponmzsidey) == vecgeom::EInside::kInside);
 
   // check that Normal() returns valid=false and a non-zero normal for points away from the surface
 
@@ -187,15 +189,15 @@ bool TestPolycone()
   // Check Surface Normal
 
   valid = Simple.Normal(ponxside, normal);
-  assert(ApproxEqual(normal, Vec_t(1, 0, 0)) && valid);
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(1, 0, 0)) && valid);
   valid = Simple.Normal(ponmxside, normal);
-  assert(ApproxEqual(normal, Vec_t(-1, 0, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-1, 0, 0)));
   valid = Simple.Normal(ponyside, normal);
-  assert(ApproxEqual(normal, Vec_t(0, 1, 0)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 1, 0)));
   valid = Simple.Normal(Vec_t(0, 0, 10), normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, 1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, 1)));
   valid = Simple.Normal(Vec_t(0, 0, -10), normal);
-  assert(ApproxEqual(normal, Vec_t(0, 0, -1)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, 0, -1)));
 
   // Normals on Edges
 
@@ -211,34 +213,34 @@ bool TestPolycone()
   // Precision invSqrt3 = 1.0 / std::sqrt( 3.0);
 
   valid = Simple.Normal(edgeXmZ, normal);
-  // assert(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, -invSqrt2)));
+  // VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(invSqrt2, 0.0, -invSqrt2)));
   valid = Simple.Normal(edgemXmZ, normal);
-  // assert(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, -invSqrt2)));
+  // VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-invSqrt2, 0.0, -invSqrt2)));
   valid = Simple.Normal(edgeYmZ, normal);
-  // assert(ApproxEqual(normal, Vec_t(0.0, invSqrt2, -invSqrt2)));
+  // VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, invSqrt2, -invSqrt2)));
   valid = Simple.Normal(edgemYmZ, normal);
-  // assert(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, -invSqrt2)));
+  // VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0.0, -invSqrt2, -invSqrt2)));
 
   const Precision xyn = 0.92388, zn = 0.382683;
   valid = Simple.Normal(edgeXZ, normal);
   std::cout << "Simple.Normal(): p=" << edgeXZ << ", normal=" << normal << ", valid=" << valid << std::endl;
-  assert(ApproxEqual(normal, Vec_t(xyn, 0, zn)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(xyn, 0, zn)));
   valid = Simple.Normal(edgemXZ, normal);
-  assert(ApproxEqual(normal, Vec_t(-xyn, 0, zn)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(-xyn, 0, zn)));
   valid = Simple.Normal(edgeYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0, xyn, zn)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, xyn, zn)));
   valid = Simple.Normal(edgemYZ, normal);
-  assert(ApproxEqual(normal, Vec_t(0, -xyn, zn)));
+  VECGEOM_ASSERT(ApproxEqual(normal, Vec_t(0, -xyn, zn)));
 
   // SafetyToOut(P)
   Dist = Simple.SafetyToOut(Vec_t(5, 5, -5));
-  assert(ApproxEqual<Precision>(Dist, 5));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 5));
   Dist = Simple.SafetyToOut(Vec_t(5, 5, 7));
-  assert(ApproxEqual<Precision>(Dist, 3));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 3));
   Dist = Simple.SafetyToOut(Vec_t(69, 0, -5));
-  assert(ApproxEqual<Precision>(Dist, 1));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 1));
   Dist = Simple.SafetyToOut(Vec_t(-3, -3, 8));
-  assert(ApproxEqual<Precision>(Dist, 2));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 2));
 
   // DistanceToOut(P,V)
 
@@ -246,81 +248,81 @@ bool TestPolycone()
   valid = Simple.Normal(pzero + Dist * vx, normal);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << pzero << ", dir=" << vx << ", norm=" << normal
             << "\n";
-  assert(ApproxEqual<Precision>(Dist, 70)); // && ApproxEqual(normal,vx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70)); // && ApproxEqual(normal,vx));
   Dist  = Simple.DistanceToOut(pzero, vmx);
   valid = Simple.Normal(pzero + Dist * vmx, normal);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << pzero << ", dir=" << vmx << ", norm=" << normal
             << "\n";
-  assert(ApproxEqual<Precision>(Dist, 70)); // && ApproxEqual(normal,vmx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70)); // && ApproxEqual(normal,vmx));
   Dist  = Simple.DistanceToOut(pzero, vy);
   valid = Simple.Normal(pzero + Dist * vy, normal);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << pzero << ", dir=" << vy << ", norm=" << normal
             << "\n";
-  assert(ApproxEqual<Precision>(Dist, 70)); // &&ApproxEqual(normal,vy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70)); // &&ApproxEqual(normal,vy));
   Dist  = Simple.DistanceToOut(pzero, vmy);
   valid = Simple.Normal(pzero + Dist * vmy, normal);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << pzero << ", dir=" << vmy << ", norm=" << normal
             << "\n";
-  assert(ApproxEqual<Precision>(Dist, 70)); // &&ApproxEqual(normal,vmy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70)); // &&ApproxEqual(normal,vmy));
   Dist  = Simple.DistanceToOut(pzero, vz);
   valid = Simple.Normal(pzero + Dist * vz, normal);
   // std::cout<<Dist<< " " <<norm<<"\n";
-  assert(ApproxEqual<Precision>(Dist, 10) && ApproxEqual(normal, vz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 10) && ApproxEqual(normal, vz));
   Dist  = Simple.DistanceToOut(Vec_t(70, 0, -10), vx);
   valid = Simple.Normal(Vec_t(70, 0, -10) + Dist * vx, normal);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << pzero << ", dir=" << vx << ", dist=" << Dist
             << ", norm=" << normal << "\n";
-  // assert(ApproxEqual<Precision>(Dist,0)&&ApproxEqual(normal,(vx-vz)/(vx-vz).Mag()));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,0)&&ApproxEqual(normal,(vx-vz)/(vx-vz).Mag()));
   Dist = Simple.DistanceToOut(Vec_t(-70, 0, -1), vmx);
-  assert(ApproxEqual<Precision>(Dist, 0)); // && ApproxEqual(normal, vmx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0)); // && ApproxEqual(normal, vmx));
   Dist = Simple.DistanceToOut(Vec_t(0, 70, -10), vy);
   std::cout << "D2O normal not checked: Line " << __LINE__ << ", p=" << Vec_t(0, 70, -10) << ", dir=" << vy
             << ", dist=" << Dist << ", norm=" << normal << "\n";
-  assert(ApproxEqual<Precision>(Dist, 0)); //&&ApproxEqual(normal,vy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0)); //&&ApproxEqual(normal,vy));
   Dist = Simple.DistanceToOut(Vec_t(0, -70, -1), vmy);
-  assert(ApproxEqual<Precision>(Dist, 0)); //&& ApproxEqual(normal, vmy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0)); //&& ApproxEqual(normal, vmy));
 
   // SafetyToIn(P)
 
   Dist = Simple.SafetyToIn(pbigx);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,20));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,20));
   Dist = Simple.SafetyToIn(pbigmx);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigmx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,20));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,20));
   Dist = Simple.SafetyToIn(pbigy);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigmx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,20));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,20));
   Dist = Simple.SafetyToIn(pbigmy);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigmx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,20));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,20));
   Dist = Simple.SafetyToIn(pbigz);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigmx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,80));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,80));
   Dist = Simple.SafetyToIn(pbigmz);
   std::cout << "S2O unverified: Line " << __LINE__ << ", p=" << pbigmx << ", safety=" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist,80));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist,80));
 
   // DistanceToIn(P,V)
 
   Dist = Simple.DistanceToIn(Vec_t(100, 0, -1), vmx);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = Simple.DistanceToIn(Vec_t(-100, 0, -1), vx);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = Simple.DistanceToIn(Vec_t(0, 100, -5), vmy);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = Simple.DistanceToIn(Vec_t(0, -100, -5), vy);
-  assert(ApproxEqual<Precision>(Dist, 30));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30));
   Dist = Simple.DistanceToIn(pbigz, vmz);
-  assert(ApproxEqual<Precision>(Dist, 90));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 90));
   Dist = Simple.DistanceToIn(pbigmz, vz);
-  assert(ApproxEqual<Precision>(Dist, 90));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 90));
   Dist = Simple.DistanceToIn(pbigx, vxy);
   // std::cout <<"D2I unverified: Line "<< __LINE__ <<", p="<< pbigx <<", dir="<< vxy <<", dist="<<Dist<<"\n";
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
   Dist = Simple.DistanceToIn(pbigmx, vmxy);
   // std::cout <<"D2I unverified: Line "<< __LINE__ <<", p="<< pbigx <<", dir="<< vxy <<", dist="<<Dist<<"\n";
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   // Check Extent and cached BBox
   Vec_t minExtent, maxExtent;
@@ -328,17 +330,17 @@ bool TestPolycone()
   Simple.Extent(minExtent, maxExtent);
   Simple.GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
   // std::cout<<" min="<<minExtent<<" max="<<maxExtent<<std::endl;
-  assert(ApproxEqual(minExtent, Vec_t(-80, -80, -10)));
-  assert(ApproxEqual(maxExtent, Vec_t(80, 80, 10)));
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-80, -80, -10)));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(80, 80, 10)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
   MyPCone->Extent(minExtent, maxExtent);
   MyPCone->GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
   // std::cout<<" min="<<minExtent<<" max="<<maxExtent<<std::endl;
-  // assert(ApproxEqual(minExtent, Vec_t(-80, -80, -20)));
-  // assert(ApproxEqual(maxExtent, Vec_t(80, 80, 40)));
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  // VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-80, -80, -20)));
+  // VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(80, 80, 40)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
 
 #ifdef SCAN_SOLID
 
@@ -542,11 +544,11 @@ bool TestPolycone()
 
   Vec_t point175a{-18.1079855387881, -54.3917837284389, 121.5};
 
-  assert(pcon175.Inside(point175a) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(pcon175.Inside(point175a) == vecgeom::EInside::kSurface);
 
   Vec_t norm175;
   bool valid175 = pcon175.Normal(point175a, norm175);
-  assert(ApproxEqual(norm175, Vec_t(0, 0, -1)) && valid175);
+  VECGEOM_ASSERT(ApproxEqual(norm175, Vec_t(0, 0, -1)) && valid175);
 
   {
     // Test cases corresponding to issue-618
@@ -557,7 +559,7 @@ bool TestPolycone()
     int nZ               = 4;
     Polycone_t *newPCone = new Polycone_t("NewPCone", 0, 2 * kPi, nZ, z, rmin, rmax);
     Vec_t pin(0.4, 0., -0.5);
-    assert(newPCone->SafetyToOut(pin) != 0.);
+    VECGEOM_ASSERT(newPCone->SafetyToOut(pin) != 0.);
   }
 
   return true;

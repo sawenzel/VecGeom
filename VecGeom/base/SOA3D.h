@@ -281,7 +281,7 @@ VECCORE_ATT_HOST_DEVICE size_t SOA3D<T>::capacity() const
 template <typename T>
 VECCORE_ATT_HOST_DEVICE void SOA3D<T>::resize(size_t newSize)
 {
-  assert(newSize <= fCapacity);
+  VECGEOM_ASSERT(newSize <= fCapacity);
   fSize = newSize;
 }
 
@@ -420,7 +420,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SOA3D<T>::set(size_t index, T 
 // not asserting in case of NVCC -- still getting annoying
 // errors on CUDA < 8.0
 #ifndef VECCORE_CUDA
-  assert(index < fCapacity);
+  VECGEOM_ASSERT(index < fCapacity);
 #endif
   fX[index] = xval;
   fY[index] = yval;
@@ -433,7 +433,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SOA3D<T>::set(size_t index, Ve
 // not asserting in case of NVCC -- still getting annoying
 // errors on CUDA < 8.0
 #ifndef VECCORE_CUDA
-  assert(index < fCapacity);
+  VECGEOM_ASSERT(index < fCapacity);
 #endif
   fX[index] = vec[0];
   fY[index] = vec[1];

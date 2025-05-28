@@ -37,7 +37,7 @@ VPlacedVolume::VPlacedVolume(char const *const label, LogicalVolume const *const
 VECCORE_ATT_HOST_DEVICE
 VPlacedVolume::VPlacedVolume(VPlacedVolume const &other) : id_(), label_(NULL), logical_volume_(), fTransformation()
 {
-  assert(0 && "COPY CONSTRUCTOR FOR PlacedVolumes NOT IMPLEMENTED");
+  VECGEOM_VALIDATE(0, << "COPY CONSTRUCTOR FOR PlacedVolumes NOT IMPLEMENTED");
 }
 
 VECCORE_ATT_HOST_DEVICE

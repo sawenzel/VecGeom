@@ -34,7 +34,7 @@ int main()
   const Vector3D<Precision> bounds(4, 4, 4);
   for (int i = 0; i < 50000; ++i) {
     Vector3D<Precision> sample = volumeUtilities::SamplePoint(bounds);
-    assert(vecgeom.Contains(sample) == reconverted->Contains(sample));
+    VECGEOM_ASSERT(vecgeom.Contains(sample) == reconverted->Contains(sample));
   }
 
   return 0;

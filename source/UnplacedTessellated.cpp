@@ -147,7 +147,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu(DevicePtr<cuda::
 #ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
   return CopyToGpuImpl<UnplacedTessellated>(in_gpu_ptr);
 #else
-  assert(0 && "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 #endif
 }
@@ -157,7 +157,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu() const
 #ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
   return CopyToGpuImpl<UnplacedTessellated>();
 #else
-  assert(0 && "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 #endif
 }

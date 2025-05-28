@@ -232,7 +232,8 @@ struct SurfData {
   {
     auto const &surf = fCommonSurfaces[locator.GetCSindex()];
     auto const &side = locator.IsLeftSide() ? surf.fLeftSide : surf.fRightSide;
-    assert((locator.frame_id >= 0 && locator.frame_id < side.fNsurf && "Wrong locator") || locator.GetCSindex() == 0);
+    VECGEOM_ASSERT(locator.GetCSindex() == 0 ||
+                   (locator.frame_id >= 0 && locator.frame_id < side.fNsurf)); // Wrong locator
     return fFramedSurf[side.fSurfaces[locator.frame_id]];
   }
 
@@ -336,7 +337,7 @@ struct SurfData {
   void TouchableToSceneLocator(FSlocator const &ltouchable, FSlocator &lscene) const
   {
     auto const &framedsurf = GetFramedSurface(ltouchable);
-    assert(framedsurf.fSceneCS > 0 && "Touchable locator not on a scene surface");
+    VECGEOM_VALIDATE(framedsurf.fSceneCS > 0, << "Touchable locator not on a scene surface");
     lscene.common_id = framedsurf.fSceneCS * (1 - 2 * int(framedsurf.fSceneCSind < 0));
     lscene.frame_id  = vecCore::math::Abs(framedsurf.fSceneCSind) - 1;
   }

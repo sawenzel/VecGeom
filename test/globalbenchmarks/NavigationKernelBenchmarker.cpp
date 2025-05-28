@@ -48,7 +48,7 @@
 #include <dlfcn.h>
 
 #undef NDEBUG
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 // #define CALLGRIND_ENABLED
 #ifdef CALLGRIND_ENABLED

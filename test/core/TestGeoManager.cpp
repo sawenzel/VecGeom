@@ -6,9 +6,9 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 // Noddy assertion with message
-#define assert_m(exp, msg) assert(((void)msg, exp))
+#define assert_m(exp, msg) VECGEOM_ASSERT(((void)msg, exp))
 
 using vecgeom::GeoManager;
 using vecgeom::LogicalVolume;

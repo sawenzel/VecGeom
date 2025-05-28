@@ -139,8 +139,8 @@
  *
  * Always-on runtime assertion macro. This can check user input and input data
  * consistency, and will raise std::runtime_error on failure with a descriptive error
- * message that is streamed as the second argument. This macro cannot be used
- * in \c __device__ -annotated code.
+ * message that is streamed as the second argument. If used
+ * in \c __device__ -annotated code, the second argument *must* be a single C string.
  *
  * An always-on debug-type assertion without a detailed message can be
  * constructed by omitting the stream (but leaving the comma):
@@ -189,13 +189,10 @@
 
 #if !VECGEOM_DEVICE_COMPILE
 #define VECGEOM_RUNTIME_THROW(WHICH, WHAT, COND) \
-  throw ::vecgeom::make_runtime_error(#WHICH, WHAT, COND, __FILE__, __LINE__)
-#elif VECGEOM_DEBUG
+  throw ::vecgeom::make_runtime_error(WHICH, WHAT, COND, __FILE__, __LINE__)
+#else
 #define VECGEOM_RUNTIME_THROW(WHICH, WHAT, COND) \
   VECGEOM_DEBUG_FAIL("Runtime errors cannot be thrown from device code", unreachable);
-#else
-// Avoid printf statements which can add substantially to local memory
-#define VECGEOM_RUNTIME_THROW(WHICH, WHAT, COND) ::vecgeom::unreachable()
 #endif
 
 #if !VECGEOM_DEVICE_COMPILE
@@ -208,7 +205,12 @@
     }                                                                         \
   } while (0)
 #else
-#define VECGEOM_VALIDATE(COND, MSG) VECGEOM_RUNTIME_THROW(nullptr, "", #COND)
+#define VECGEOM_VALIDATE(COND, MSG)                                                            \
+  do {                                                                                         \
+    if (VECGEOM_UNLIKELY(!(COND))) {                                                           \
+      VECGEOM_RUNTIME_THROW("runtime", (::vecgeom::detail::StreamlikeIdentity {} MSG), #COND); \
+    }                                                                                          \
+  } while (0)
 #endif
 
 #define VECGEOM_NOT_CONFIGURED(WHAT) VECGEOM_RUNTIME_THROW("not configured", WHAT, nullptr)
@@ -229,11 +231,6 @@
    VECGEOM_DEVICE_API_CALL(Malloc(&ptr_gpu, 100 * sizeof(float)));
    VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
  * \endcode
- *
- * \note A file that uses this macro must include \c
- * corecel/DeviceRuntimeApi.hh . The \c CorecelDeviceRuntimeApiHh
- * declaration enforces this when CUDA/HIP are disabled, and the absence of
- * \c VECGEOM_DEVICE_API_SYMBOL enforces when enabled.
  */
 #if defined(VECGEOM_ENABLE_CUDA) || defined(VECGEOM_ENABLE_HIP)
 #define VECGEOM_DEVICE_API_CALL(STMT)                                                                              \
@@ -258,10 +255,12 @@ namespace vecgeom {
 // FUNCTION DECLARATIONS
 //---------------------------------------------------------------------------//
 
+#ifndef __CUDA_ARCH__
 [[nodiscard]] std::logic_error make_debug_error(char const *which, char const *condition, char const *file, int line);
 
 [[nodiscard]] std::runtime_error make_runtime_error(char const *which, char const *what, char const *condition,
                                                     char const *file, int line);
+#endif
 
 //---------------------------------------------------------------------------//
 // INLINE FUNCTION DEFINITIONS
@@ -304,6 +303,15 @@ inline __attribute__((noinline)) __device__ void device_debug_error(char const *
   abort();
 }
 #endif
+
+namespace detail {
+//! Allow passing a single string into a streamlike operator for device-compatible VECGEOM_VALIDATE messages
+struct StreamlikeIdentity {
+   VECCORE_ATT_HOST_DEVICE operator char const *() const { return ""; }
+};
+inline VECCORE_ATT_HOST_DEVICE char const *operator<<(StreamlikeIdentity const &, char const *s) { return s; }
+} // namespace detail
+
 } // namespace vecgeom
 
 #endif

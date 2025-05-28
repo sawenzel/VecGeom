@@ -29,7 +29,7 @@ template <bool IsAssemblyAware, bool ModifyState>
     if (nextvolume->GetUnplacedVolume()->IsAssembly()) {
       // in this case we call a special version of Contains
       // offered by the assembly
-      assert(ModifyState == true);
+      VECGEOM_ASSERT(ModifyState == true);
       if (((PlacedAssembly *)nextvolume)->Contains(localpoint, daughterlocalpoint, *state)) {
         return true;
       }
@@ -64,7 +64,7 @@ template <bool IsAssemblyAware, bool ModifyState>
     /* if (nextvolume->GetUnplacedVolume()->IsAssembly()) { */
     /*   // in this case we call a special version of Contains */
     /*   // offered by the assembly */
-    /*   assert(ModifyState == true); */
+    /*   VECGEOM_ASSERT(ModifyState == true); */
     /*   if (((PlacedAssembly *)nextvolume)->Inside(localpoint, daughterlocalpoint, *state)) { */
     /*     return true; */
     /*   } */
@@ -74,7 +74,7 @@ template <bool IsAssemblyAware, bool ModifyState>
     /*     return true; */
     /*   } */
     /* } */
-    assert(false && "not implemented yet");
+    VECGEOM_VALIDATE(false, << "not implemented yet");
   } else {
     //
     const auto transf            = nextvolume->GetTransformation();

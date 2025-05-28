@@ -18,7 +18,7 @@ VECGEOM_FORCE_INLINE char const *to_cstring<SurfaceType>(SurfaceType type)
 {
   static const char *const data[] = {"no_surf",   "planar", "cylindrical", "conical",
                                      "spherical", "torus",  "elliptical",  "arb4"};
-  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  VECGEOM_ASSERT(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
 
@@ -33,7 +33,7 @@ template <>
 VECGEOM_FORCE_INLINE char const *to_cstring<FrameType>(FrameType type)
 {
   static const char *const data[] = {"no_frame", "rangeZ", "ring", "z_phi", "rangeSph", "window", "triangle", "quad"};
-  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  VECGEOM_ASSERT(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
 
@@ -41,7 +41,7 @@ template <>
 VECGEOM_FORCE_INLINE char const *to_cstring<AxisType>(AxisType type)
 {
   static const char *const data[] = {"x-axis", "y-axis", "z-axis", "r-axis", "phi-axis", "xy-grid", "no-axis"};
-  assert(size_t(type) * sizeof(const char *) < sizeof(data));
+  VECGEOM_ASSERT(size_t(type) * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(type)];
 }
 
@@ -244,7 +244,7 @@ struct SideDivisionCPU {
 
   double Efficiency() const
   {
-    // assert(fSlices[0].size() * fSlices[fNslices - 1].size() > 0); // except kXY
+    // VECGEOM_ASSERT(fSlices[0].size() * fSlices[fNslices - 1].size() > 0); // except kXY
     double average = 0;
     for (auto i = 0; i < fNslices; ++i)
       average += fSlices[i].size();

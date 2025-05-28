@@ -223,7 +223,7 @@ VECCORE_ATT_HOST_DEVICE size_t AOS3D<T>::capacity() const
 template <typename T>
 void AOS3D<T>::resize(size_t newSize)
 {
-  assert(newSize <= fCapacity);
+  VECGEOM_ASSERT(newSize <= fCapacity);
   fSize = newSize;
 }
 

@@ -142,7 +142,7 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision dx, Precision dy, Precision dz, P
 #ifndef VECCORE_CUDA
   fprintf(stderr, "*** ERROR: STEP-based trapezoid constructor called, but not implemented ***");
 #endif
-  assert(false);
+  VECGEOM_ASSERT(false);
 }*/
 
 VECCORE_ATT_HOST_DEVICE

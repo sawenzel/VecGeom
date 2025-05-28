@@ -63,7 +63,7 @@ public:
 
   G4Navigator *GetNavigator() const
   {
-    assert(fNavigator != nullptr && "Please load a G4geometry !! ");
+    VECGEOM_VALIDATE(fNavigator != nullptr, << "Please load a G4geometry !! ");
     return fNavigator;
   }
 

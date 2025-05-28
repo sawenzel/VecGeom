@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   Plane pl1(Vec_t(1., 0., 0.), -10.);
   Transformation3D transf1(10., 0., 0., 0., 0., 180.);
   pl1.Transform(transf1);
-  assert(ApproxEqual<Precision>(pl1.fNorm[0], -1.) && ApproxEqual<Precision>(pl1.fDist, 0.));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(pl1.fNorm[0], -1.) && ApproxEqual<Precision>(pl1.fDist, 0.));
 
   // Polygon intersection
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   poly2.Init();
 
   Line line1;
-  assert(Utils3D::PolygonXing(poly1, poly2, &line1) == Utils3D::kOverlapping);
+  VECGEOM_ASSERT(Utils3D::PolygonXing(poly1, poly2, &line1) == Utils3D::kOverlapping);
 
   ///* Test plane crossings */
   Vector3D<Precision> point, direction;
@@ -115,28 +115,28 @@ int main(int argc, char *argv[])
   n2.Set(0., 0., 1.);
   p1 = -3.;
   p2 = -3.;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIdentical);
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIdentical);
 
   // identical planes with opposite normals
   n1.Set(0., 0., 1.);
   n2.Set(0., 0., -1.);
   p1 = -3.;
   p2 = 3.;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIdentical);
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIdentical);
 
   // opposite planes with opposite normals
   n1.Set(0., 0., 1.);
   n2.Set(0., 0., -1.);
   p1 = -3;
   p2 = -3;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
 
   // opposite planes with identical normal
   n1.Set(0., 0., 1.);
   n2.Set(0., 0., 1.);
   p1 = -3;
   p2 = 3;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
 
   // arbitrary parallel planes
   n1.Set(1., 2., 3.);
@@ -144,21 +144,21 @@ int main(int argc, char *argv[])
   n2 = -n1;
   p1 = 1;
   p2 = -2;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kParallel);
 
   // +z face of a box with +x face of the same box
   n1.Set(0., 0., 1.);
   n2.Set(1., 0., 0.);
   p1 = -3;
   p2 = -2;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIntersecting);
-  assert(ValidXing(point, direction, n1, p1, n2, p2));
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIntersecting);
+  VECGEOM_ASSERT(ValidXing(point, direction, n1, p1, n2, p2));
 
   // same as above but 1 face has opposite normal
   n2 = -n2;
   p2 = -p2;
-  assert(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIntersecting);
-  assert(ValidXing(point, direction, n1, p1, n2, p2));
+  VECGEOM_ASSERT(Utils3D::PlaneXing(Plane(n1, p1), Plane(n2, p2), point, direction) == Utils3D::kIntersecting);
+  VECGEOM_ASSERT(ValidXing(point, direction, n1, p1, n2, p2));
 
   ///* Test box crossings */
   Vec_t box1(1., 2., 3.);
@@ -171,25 +171,25 @@ int main(int argc, char *argv[])
   // Touching boxes
   tr1 = Transformation3D(0., 0., 0.);
   tr2 = Transformation3D(3., 5., 0.);
-  assert(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kTouching);
+  VECGEOM_ASSERT(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kTouching);
 
   // Disjoint boxes
   tr1 = Transformation3D(0., 0., 0.);
   tr2 = Transformation3D(2.5, 4.5, 10.2);
-  assert(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kDisjoint);
+  VECGEOM_ASSERT(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kDisjoint);
 
   // Overlapping boxes
   tr1 = Transformation3D(0., 0., 0.);
   tr2 = Transformation3D(2.5, 4.5, 6.5);
-  assert(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kOverlapping);
+  VECGEOM_ASSERT(Utils3D::BoxCollision(box1, tr1, box2, tr2) == Utils3D::kOverlapping);
 
   tr1 = Transformation3D(-1, -0.5, 0.5);
   tr2 = Transformation3D(-3., -0.5, 0.5);
   tr3 = Transformation3D(1., 2., 3., 0., 45., 45.);
   polyh1.Transform(tr1);
   polyh2.Transform(tr3);
-  assert(Utils3D::BoxCollision(box1, tr1, box2, tr3) == Utils3D::kOverlapping &&
-         Utils3D::BoxCollision(box1, tr2, box2, tr3) == Utils3D::kDisjoint);
+  VECGEOM_ASSERT(Utils3D::BoxCollision(box1, tr1, box2, tr3) == Utils3D::kOverlapping &&
+                 Utils3D::BoxCollision(box1, tr2, box2, tr3) == Utils3D::kDisjoint);
 
   std::cout << "TestUtils3D passed\n";
 

@@ -474,7 +474,7 @@ struct PolyconeStruct {
   Precision GetRminAtPlane(int index) const
   {
     int nsect = fSections.size();
-    assert(index >= 0 && index <= nsect);
+    VECGEOM_ASSERT(index >= 0 && index <= nsect);
     if (index == nsect)
       return fSections[index - 1].fSolid.fRmin2; // GetRmin2();
     else
@@ -485,7 +485,7 @@ struct PolyconeStruct {
   Precision GetRmaxAtPlane(int index) const
   {
     int nsect = fSections.size();
-    assert(index >= 0 || index <= nsect);
+    VECGEOM_ASSERT(index >= 0 || index <= nsect);
     if (index == nsect)
       return fSections[index - 1].fSolid.fRmax2; // GetRmax2();
     else
@@ -495,35 +495,35 @@ struct PolyconeStruct {
   VECCORE_ATT_HOST_DEVICE
   Precision GetZAtPlane(unsigned int index) const
   {
-    assert(index <= fSections.size());
+    VECGEOM_ASSERT(index <= fSections.size());
     return fZs[index];
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmin1AtSection(size_t index) const
   {
-    assert(index < fSections.size());
+    VECGEOM_ASSERT(index < fSections.size());
     return fSections[index].fSolid.fRmin1;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmin2AtSection(size_t index) const
   {
-    assert(index < fSections.size());
+    VECGEOM_ASSERT(index < fSections.size());
     return fSections[index].fSolid.fRmin2;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmax1AtSection(size_t index) const
   {
-    assert(index < fSections.size());
+    VECGEOM_ASSERT(index < fSections.size());
     return fSections[index].fSolid.fRmax1;
   }
 
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmax2AtSection(size_t index) const
   {
-    assert(index < fSections.size());
+    VECGEOM_ASSERT(index < fSections.size());
     return fSections[index].fSolid.fRmax2;
   }
 

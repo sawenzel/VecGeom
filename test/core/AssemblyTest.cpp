@@ -8,7 +8,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 using namespace vecgeom;
 
@@ -20,33 +20,33 @@ int main()
   LogicalVolume *lb = new LogicalVolume("boxlv", b);
 
   UnplacedAssembly *ass = new UnplacedAssembly();
-  assert(ass->GetLogicalVolume() == nullptr);
+  VECGEOM_ASSERT(ass->GetLogicalVolume() == nullptr);
 
   // this statement makes lv an assembly
   LogicalVolume *lv = new LogicalVolume("assemblylv", ass);
-  assert(ass->GetLogicalVolume() == lv);
+  VECGEOM_ASSERT(ass->GetLogicalVolume() == lv);
 
   // make simple assembly out of 2 placed boxes
   ass->AddVolume(lb->Place(new Transformation3D(-20., 0., 0.)));
   ass->AddVolume(lb->Place(new Transformation3D(20., 0., 0.)));
-  assert(ass->GetNVolumes() == 2);
+  VECGEOM_ASSERT(ass->GetNVolumes() == 2);
 
   // check that the bounding box is initialized
-  assert(ass->GetLowerCorner().x() > -kInfLength);
+  VECGEOM_ASSERT(ass->GetLowerCorner().x() > -kInfLength);
 
   VPlacedVolume *const pv = lv->Place();
 
   // check the assembly property
-  assert(pv->GetUnplacedVolume()->IsAssembly());
-  assert(ass->IsAssembly());
-  assert(!b->IsAssembly());
+  VECGEOM_ASSERT(pv->GetUnplacedVolume()->IsAssembly());
+  VECGEOM_ASSERT(ass->IsAssembly());
+  VECGEOM_ASSERT(!b->IsAssembly());
 
   GeoManager::Instance().SetWorld(pv);
   GeoManager::Instance().CloseGeometry();
 
   // verify correct conversion of Unplaced to Placed type
   PlacedAssembly const *pa = dynamic_cast<PlacedAssembly const *>(pv);
-  assert(pa != nullptr);
+  VECGEOM_ASSERT(pa != nullptr);
 
   // some checks on Contains, Safety and DistanceToIn
   {
@@ -58,27 +58,27 @@ int main()
     state->Clear();
     std::cerr << pa->Contains(p, lp, *state) << "\n";
     state->Clear();
-    assert(!pa->Contains(p, lp, *state));
+    VECGEOM_ASSERT(!pa->Contains(p, lp, *state));
     state->Clear();
     std::cerr << pa->Contains(p2, lp, *state) << "\n";
     state->Clear();
-    assert(pa->Contains(p2, lp, *state));
+    VECGEOM_ASSERT(pa->Contains(p2, lp, *state));
     state->Clear();
     std::cerr << pa->Contains(p) << "\n";
     state->Clear();
-    assert(!pa->Contains(p));
+    VECGEOM_ASSERT(!pa->Contains(p));
     state->Clear();
     std::cerr << pa->Contains(p2) << "\n";
     state->Clear();
-    assert(pa->Contains(p2));
+    VECGEOM_ASSERT(pa->Contains(p2));
 
-    assert(pa->SafetyToIn(Vector3D<Precision>(-10, 0, 0)) == 0.);
-    assert(pa->SafetyToIn(Vector3D<Precision>(0, 0, 0)) == 10.);
+    VECGEOM_ASSERT(pa->SafetyToIn(Vector3D<Precision>(-10, 0, 0)) == 0.);
+    VECGEOM_ASSERT(pa->SafetyToIn(Vector3D<Precision>(0, 0, 0)) == 10.);
 
-    assert(pa->DistanceToIn(Vector3D<Precision>(-40, 0, 0), Vector3D<Precision>(1., 0, 0)) == 10);
-    assert(pa->DistanceToIn(Vector3D<Precision>(0, -40, 0), Vector3D<Precision>(0, 1, 0)) == kInfLength);
-    assert(pa->DistanceToIn(Vector3D<Precision>(0, 0, 0), Vector3D<Precision>(1., 0, 0)) == 10);
-    assert(pa->DistanceToIn(Vector3D<Precision>(0, 0, 0), Vector3D<Precision>(-1., 0, 0)) == 10);
+    VECGEOM_ASSERT(pa->DistanceToIn(Vector3D<Precision>(-40, 0, 0), Vector3D<Precision>(1., 0, 0)) == 10);
+    VECGEOM_ASSERT(pa->DistanceToIn(Vector3D<Precision>(0, -40, 0), Vector3D<Precision>(0, 1, 0)) == kInfLength);
+    VECGEOM_ASSERT(pa->DistanceToIn(Vector3D<Precision>(0, 0, 0), Vector3D<Precision>(1., 0, 0)) == 10);
+    VECGEOM_ASSERT(pa->DistanceToIn(Vector3D<Precision>(0, 0, 0), Vector3D<Precision>(-1., 0, 0)) == 10);
   }
 
   if (pv->GetUnplacedVolume()->IsAssembly()) {
@@ -91,32 +91,32 @@ int main()
   }
 
   // check Capacity and Surface Area
-  assert(ass->Capacity() == 2. * b->Capacity());
-  assert(ass->SurfaceArea() == 2. * b->SurfaceArea());
-  assert(((PlacedAssembly *)pa)->Capacity() == 2. * b->Capacity());
-  assert(((PlacedAssembly *)pa)->SurfaceArea() == 2. * b->SurfaceArea());
+  VECGEOM_ASSERT(ass->Capacity() == 2. * b->Capacity());
+  VECGEOM_ASSERT(ass->SurfaceArea() == 2. * b->SurfaceArea());
+  VECGEOM_ASSERT(((PlacedAssembly *)pa)->Capacity() == 2. * b->Capacity());
+  VECGEOM_ASSERT(((PlacedAssembly *)pa)->SurfaceArea() == 2. * b->SurfaceArea());
 
   // check Extent
   Vector3D<Precision> emin;
   Vector3D<Precision> emax;
   ass->Extent(emin, emax);
-  assert(emin.x() <= -30);
-  assert(emin.y() <= -10);
-  assert(emin.z() <= -10);
-  assert(emax.x() >= 30);
-  assert(emax.y() >= 10);
-  assert(emax.z() >= 10);
+  VECGEOM_ASSERT(emin.x() <= -30);
+  VECGEOM_ASSERT(emin.y() <= -10);
+  VECGEOM_ASSERT(emin.z() <= -10);
+  VECGEOM_ASSERT(emax.x() >= 30);
+  VECGEOM_ASSERT(emax.y() >= 10);
+  VECGEOM_ASSERT(emax.z() >= 10);
 
-  assert(emin == ass->GetLowerCorner());
-  assert(emax == ass->GetUpperCorner());
+  VECGEOM_ASSERT(emin == ass->GetLowerCorner());
+  VECGEOM_ASSERT(emax == ass->GetUpperCorner());
 
   // test bounding box
   Vector3D<Precision> minExtent, maxExtent;
   Vector3D<Precision> minBBox, maxBBox;
   ass->Extent(minExtent, maxExtent);
   ass->GetBBox(minBBox, maxBBox);
-  assert(ApproxEqual<Precision>(minExtent, minBBox));
-  assert(ApproxEqual<Precision>(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(maxExtent, maxBBox));
 
   // check Normal
   // TBD
@@ -127,16 +127,16 @@ int main()
   Vector3D<Precision> d(1., 0., 0.);
   Precision dist;
   BoxImplementation::DistanceToIn(bs, p, d, kInfLength, dist);
-  assert(dist < kInfLength);
+  VECGEOM_ASSERT(dist < kInfLength);
   bool cont;
   BoxImplementation::Contains(bs, p, cont);
-  assert(cont);
+  VECGEOM_ASSERT(cont);
   std::cerr << "dist " << dist << "\n";
 
   Vector3D<Precision> corners[2];
   corners[0].Set(-kInfLength, -kInfLength, -kInfLength);
   corners[1].Set(kInfLength, kInfLength, kInfLength);
-  assert(BoxImplementation::Intersect(corners, p, d, 0, kInfLength));
+  VECGEOM_ASSERT(BoxImplementation::Intersect(corners, p, d, 0, kInfLength));
 
   return 0;
 }

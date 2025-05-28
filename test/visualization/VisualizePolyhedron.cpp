@@ -42,7 +42,7 @@ int main()
     Vector3D<Precision> sample;
     sample = polyhedron.GetUnplacedVolume()
                  ->SamplePointOnSurface(); // volumeUtilities::SamplePoint(Vector3D<Precision>(20, 20, 20));
-    assert(polyhedron.Inside(sample) == vecgeom::EInside::kSurface);
+    VECGEOM_ASSERT(polyhedron.Inside(sample) == vecgeom::EInside::kSurface);
     pm.SetNextPoint(sample[0], sample[1], sample[2]);
   }
 

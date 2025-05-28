@@ -3,7 +3,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 int gGlobalIntForSideEffect = -1;
 
@@ -19,7 +19,7 @@ __attribute__((noinline)) void test1(double y)
   double x                = 1;
   // this variant calls the foo function
   vecCore::MaskedAssign(x, y < 0., foo(x)); // NOLINT
-  assert(gGlobalIntForSideEffect == 1);
+  VECGEOM_ASSERT(gGlobalIntForSideEffect == 1);
 }
 
 __attribute__((noinline)) void test2(double y)
@@ -28,7 +28,7 @@ __attribute__((noinline)) void test2(double y)
   double x                = 1;
   // this variant should never call the foo function
   vecCore__MaskedAssignFunc(x, y < 0., foo(x)); // NOLINT
-  assert(gGlobalIntForSideEffect == -1);
+  VECGEOM_ASSERT(gGlobalIntForSideEffect == -1);
 }
 
 int main()

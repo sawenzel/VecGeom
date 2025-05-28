@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------//
 #include "VecGeom/management/LoggerMessage.h"
 
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <exception>
 #include <functional>
 #include <sstream>
@@ -28,7 +28,7 @@ namespace detail {
 LoggerMessage::LoggerMessage(LogHandler *handle, Provenance prov, LogLevel lev)
     : handle_(handle), prov_(prov), lev_(lev)
 {
-  assert(!handle_ || *handle_);
+  VECGEOM_ASSERT(!handle_ || *handle_);
   if (handle_) {
     // std::function is defined, so create the output stream
     os_ = std::make_unique<std::ostringstream>();

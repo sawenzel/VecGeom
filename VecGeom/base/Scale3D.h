@@ -4,6 +4,7 @@
 #ifndef VECGEOM_BASE_SCALE3D_H_
 #define VECGEOM_BASE_SCALE3D_H_
 
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
 
@@ -95,7 +96,7 @@ public:
   VECGEOM_FORCE_INLINE
   void Update()
   {
-    assert(((fScale[0] != 0) && (fScale[1] != 0) && (fScale[2] != 0)));
+    VECGEOM_ASSERT(((fScale[0] != 0) && (fScale[1] != 0) && (fScale[2] != 0)));
     fInvScale.Set(1. / fScale[0], 1. / fScale[1], 1. / fScale[2]);
     // Keep into account that scale components may be negative for reflections
     fSclLocal  = Min(Abs(fInvScale[0]), Abs(fInvScale[1]));
@@ -144,17 +145,14 @@ public:
    * Transform point from master to local frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void Transform(Vector3D<InputType> const &master, Vector3D<InputType> &local) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Transform(Vector3D<InputType> const &master,
+                                                              Vector3D<InputType> &local) const
   {
     local.Set(master[0] * fInvScale[0], master[1] * fInvScale[1], master[2] * fInvScale[2]);
   }
 
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<InputType> Transform(Vector3D<InputType> const &master) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> Transform(Vector3D<InputType> const &master) const
   {
     Vector3D<InputType> local(master[0] * fInvScale[0], master[1] * fInvScale[1], master[2] * fInvScale[2]);
     return local;
@@ -164,17 +162,15 @@ public:
    * Transform point from local to master frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void InverseTransform(Vector3D<InputType> const &local, Vector3D<InputType> &master) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransform(Vector3D<InputType> const &local,
+                                                                     Vector3D<InputType> &master) const
   {
     master.Set(local[0] * fScale[0], local[1] * fScale[1], local[2] * fScale[2]);
   }
 
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<InputType> InverseTransform(Vector3D<InputType> const &local) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> InverseTransform(
+      Vector3D<InputType> const &local) const
   {
     Vector3D<InputType> master(local[0] * fScale[0], local[1] * fScale[1], local[2] * fScale[2]);
     return master;
@@ -184,18 +180,16 @@ public:
    * Transform normal from master to local frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void TransformNormal(Vector3D<InputType> const &master, Vector3D<InputType> &local) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void TransformNormal(Vector3D<InputType> const &master,
+                                                                    Vector3D<InputType> &local) const
   {
     local.Set(master[0] * fInvScale[1] * fInvScale[2], master[1] * fInvScale[2] * fInvScale[0],
               master[2] * fInvScale[0] * fInvScale[1]);
   }
 
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<InputType> TransformNormal(Vector3D<InputType> const &master) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> TransformNormal(
+      Vector3D<InputType> const &master) const
   {
     Vector3D<InputType> local(master[0] * fInvScale[1] * fInvScale[2], master[1] * fInvScale[2] * fInvScale[0],
                               master[2] * fInvScale[0] * fInvScale[1]);
@@ -206,17 +200,15 @@ public:
    * Transform normal from local to master frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  void InverseTransformNormal(Vector3D<InputType> const &local, Vector3D<InputType> &master) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformNormal(Vector3D<InputType> const &local,
+                                                                           Vector3D<InputType> &master) const
   {
     master.Set(local[0] * fScale[1] * fScale[2], local[1] * fScale[2] * fScale[0], local[2] * fScale[0] * fScale[1]);
   }
 
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  Vector3D<InputType> InverseTransformNormal(Vector3D<InputType> const &local) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> InverseTransformNormal(
+      Vector3D<InputType> const &local) const
   {
     Vector3D<InputType> master(local[0] * fScale[1] * fScale[2], local[1] * fScale[2] * fScale[0],
                                local[2] * fScale[0] * fScale[1]);
@@ -227,9 +219,8 @@ public:
    * Transform distance along given direction from master to local frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  InputType TransformDistance(InputType const &dist, Vector3D<InputType> const &dir) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE InputType TransformDistance(InputType const &dist,
+                                                                           Vector3D<InputType> const &dir) const
   {
     Vector3D<InputType> v = dir * fInvScale;
     InputType scale       = Sqrt(Vector3D<InputType>::Dot(v, v));
@@ -240,9 +231,7 @@ public:
    * Transform safe distance from master to local frame (conservative)
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  InputType TransformSafety(InputType safety) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE InputType TransformSafety(InputType safety) const
   {
     return (safety * fSclLocal);
   }
@@ -251,9 +240,8 @@ public:
    * Transform distance along given direction from local to master frame
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  InputType InverseTransformDistance(InputType const &dist, Vector3D<InputType> const &dir) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE InputType InverseTransformDistance(InputType const &dist,
+                                                                                  Vector3D<InputType> const &dir) const
   {
     Vector3D<InputType> v = dir * fScale;
     InputType scale       = Sqrt(Vector3D<InputType>::Dot(v, v));
@@ -264,9 +252,7 @@ public:
    * Transform safe distance from local to master frame (conservative)
    */
   template <typename InputType>
-  VECGEOM_FORCE_INLINE
-  VECCORE_ATT_HOST_DEVICE
-  InputType InverseTransformSafety(InputType safety) const
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE InputType InverseTransformSafety(InputType safety) const
   {
     return (safety * fSclMaster);
   }

@@ -22,26 +22,26 @@ int main()
   Transformation3D t5(1, 2, 3, 15, 45, 30);
   Transformation3D t6(-3, -2, 1, 75, 30, 90);
   // Test identity
-  assert(t0 == Transformation3D::kIdentity);
-  assert(t0.IsIdentity());
-  assert(!t0.HasRotation());
-  assert(!t0.HasTranslation());
-  assert(t0.Transform(point) == point);
+  VECGEOM_ASSERT(t0 == Transformation3D::kIdentity);
+  VECGEOM_ASSERT(t0.IsIdentity());
+  VECGEOM_ASSERT(!t0.HasRotation());
+  VECGEOM_ASSERT(!t0.HasTranslation());
+  VECGEOM_ASSERT(t0.Transform(point) == point);
   // Test pure translation
-  assert(!t1.IsIdentity());
-  assert(t1.HasTranslation());
-  assert(!t1.HasRotation());
+  VECGEOM_ASSERT(!t1.IsIdentity());
+  VECGEOM_ASSERT(t1.HasTranslation());
+  VECGEOM_ASSERT(!t1.HasRotation());
   // Test copy constructor
   Transformation3D t2(t1);
-  assert(t1 == t2);
+  VECGEOM_ASSERT(t1 == t2);
   // Test composing translations
-  assert(t2.Transform(point) == Vector3D<Precision>(1, 3, 4));
-  assert(t3.Transform(t1.Transform(point)) == point);
+  VECGEOM_ASSERT(t2.Transform(point) == Vector3D<Precision>(1, 3, 4));
+  VECGEOM_ASSERT(t3.Transform(t1.Transform(point)) == point);
   // Test pure rotation
-  assert(!t4.IsIdentity());
-  assert(!t4.HasTranslation());
-  assert(t4.HasRotation());
-  assert(t4.Transform(t4.Transform(point)) == Vector3D<Precision>(1, -1, 2));
+  VECGEOM_ASSERT(!t4.IsIdentity());
+  VECGEOM_ASSERT(!t4.HasTranslation());
+  VECGEOM_ASSERT(t4.HasRotation());
+  VECGEOM_ASSERT(t4.Transform(t4.Transform(point)) == Vector3D<Precision>(1, -1, 2));
   // Test multiplications
   auto testMultiply = [](Transformation3D const &tr1, Transformation3D const &tr2) {
     Transformation3D tr1c = tr1;
@@ -51,11 +51,11 @@ int main()
     std::cout << tr1c << "\n" << tr2c << "\n";
     return tr1c.ApproxEqual(tr2c);
   };
-  assert(testMultiply(t0, t1));
-  assert(testMultiply(t5, t0));
-  assert(testMultiply(t1, t3));
-  assert(testMultiply(t3, t4));
-  assert(testMultiply(t5, t6));
+  VECGEOM_ASSERT(testMultiply(t0, t1));
+  VECGEOM_ASSERT(testMultiply(t5, t0));
+  VECGEOM_ASSERT(testMultiply(t1, t3));
+  VECGEOM_ASSERT(testMultiply(t3, t4));
+  VECGEOM_ASSERT(testMultiply(t5, t6));
 
 #ifdef VECGEOM_GEANT4
   Transformation3D t7;
@@ -74,7 +74,7 @@ int main()
   rg5.rectify();
   G4AffineTransform tg5(rg5, {10, 20, 30});
   auto vec2 = tg5.InverseTransformPoint({1, 1, 1});
-  assert(vec1[0] == vec2[0] && vec1[1] == vec2[1] && vec1[2] == vec2[2]);
+  VECGEOM_ASSERT(vec1[0] == vec2[0] && vec1[1] == vec2[1] && vec1[2] == vec2[2]);
 #endif
 
   return 0;

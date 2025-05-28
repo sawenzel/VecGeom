@@ -52,64 +52,64 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
     // Check vx
     dist = cone.DistanceToIn(p, vx);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
     }
 
     // Check -vx
     dist = cone.DistanceToIn(p, -vx);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
     }
 
     // Check vy
     dist = cone.DistanceToIn(p, vy);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
-      assert(dist == kInfLength);
+      VECGEOM_ASSERT(dist == kInfLength);
     }
 
     // Check -vy
     dist = cone.DistanceToIn(p, -vy);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (std::abs(p.z()) > zcut - kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
-        assert(std::abs(dist - (p.y() - rho)) < 0.01 * kTolerance);
+        VECGEOM_ASSERT(std::abs(dist - (p.y() - rho)) < 0.01 * kTolerance);
       }
     }
 
     // Check vz
     dist = cone.DistanceToIn(p, vz);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       double abspy = std::abs(p.y());
       if (p.z() > zcut - kHalfTolerance || abspy > rho - kHalfTolerance || abspy > rbot - kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
-        assert(std::abs(dist - (-zcut - p.z())) < 0.01 * kTolerance);
+        VECGEOM_ASSERT(std::abs(dist - (-zcut - p.z())) < 0.01 * kTolerance);
       }
     }
 
     // Check -vz
     dist = cone.DistanceToIn(p, -vz);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() < -zcut + kHalfTolerance || std::abs(p.y()) > rbot - kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
         if (p.y() >= -rtop && p.y() <= rtop) {
-          assert(std::abs(dist - (p.z() - zcut)) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - (p.z() - zcut)) < 0.01 * kTolerance);
         } else {
-          assert(std::abs(dist - (p.z() - (h - std::abs(p.y()) / b))) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - (p.z() - (h - std::abs(p.y()) / b))) < 0.01 * kTolerance);
         }
       }
     }
@@ -117,17 +117,17 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
     // Check vright (\)
     dist = cone.DistanceToIn(p, vright);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() > zcut - kHalfTolerance || p.y() > rho - kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
         double dz = (-zcut - p.z());
         double dy = dz * b;
         if (p.y() - dy < -rbot + kHalfTolerance) {
-          assert(dist == kInfLength);
+          VECGEOM_ASSERT(dist == kInfLength);
         } else {
-          assert(std::abs(dist - dz * sqrt(1 + b * b)) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - dz * sqrt(1 + b * b)) < 0.01 * kTolerance);
         }
       }
     }
@@ -135,7 +135,7 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
     // Check -vright (\)
     dist = cone.DistanceToIn(p, -vright);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       double B     = vright.z();
       double C     = -vright.y();
@@ -146,16 +146,16 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
       double dist2 = B * p.y() + C * p.z() + D2;
       double dist3 = B * p.y() + C * p.z() + D3;
       if (p.z() < -zcut + kHalfTolerance || dist1 > -kHalfTolerance || dist3 < kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
         if (dist2 >= 0) {
           double dztop = p.z() - zcut;
-          assert(std::abs(dist - dztop * std::sqrt(1 + b * b)) < 0.01 * kHalfTolerance);
+          VECGEOM_ASSERT(std::abs(dist - dztop * std::sqrt(1 + b * b)) < 0.01 * kHalfTolerance);
         } else {
           double rr  = -b * (h - p.z());
           double dy  = (rr - p.y()) / 2.;
           double exp = dy * std::sqrt(1 + b * b) / b;
-          assert(std::abs(dist - exp) < kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - exp) < kTolerance);
         }
       }
     }
@@ -163,17 +163,17 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
     // Check vleft (/)
     dist = cone.DistanceToIn(p, vleft);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() > zcut - kHalfTolerance || p.y() >= rho - kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
         double dz = (-zcut - p.z());
         double dy = dz * b;
         if (p.y() + dy > rbot - kHalfTolerance) {
-          assert(dist == kInfLength);
+          VECGEOM_ASSERT(dist == kInfLength);
         } else {
-          assert(std::abs(dist - dz * sqrt(1 + b * b)) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - dz * sqrt(1 + b * b)) < 0.01 * kTolerance);
         }
       }
     }
@@ -181,7 +181,7 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
     // Check -vleft (/)
     dist = cone.DistanceToIn(p, -vleft);
     if (cone.Inside(p) == vecgeom::kInside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       double B     = -vleft.z();
       double C     = vleft.y();
@@ -192,16 +192,16 @@ void CheckDistanceToIn(const SimpleEllipticalCone &cone, double Z)
       double distm = B * p.y() + C * p.z() + Dm;
       double distr = B * p.y() + C * p.z() + Dr;
       if (p.z() < -zcut + kHalfTolerance || distl > -kHalfTolerance || distr < kHalfTolerance) {
-        assert(dist == kInfLength);
+        VECGEOM_ASSERT(dist == kInfLength);
       } else {
         if (distm >= 0) {
           double dztop = p.z() - zcut;
-          assert(std::abs(dist - dztop * std::sqrt(1 + b * b)) < 0.01 * kHalfTolerance);
+          VECGEOM_ASSERT(std::abs(dist - dztop * std::sqrt(1 + b * b)) < 0.01 * kHalfTolerance);
         } else {
           double rr  = b * (h - p.z());
           double dy  = (p.y() - rr) / 2.;
           double exp = dy * std::sqrt(1 + b * b) / b;
-          assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+          VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
         }
       }
     }
@@ -243,68 +243,68 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
     // Check vx
     dist = cone.DistanceToOut(p, vx);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (std::abs(p.y()) >= rho || p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         exp = a * std::sqrt(((h - p.z()) - p.y() / b) * ((h - p.z()) + p.y() / b));
-        assert(std::abs(dist - exp) < kHalfTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < kHalfTolerance);
       }
     }
 
     // Check -vx
     dist = cone.DistanceToOut(p, -vx);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (std::abs(p.y()) >= rho || p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         exp = a * std::sqrt(((h - Z) - p.y() / b) * ((h - Z) + p.y() / b));
-        assert(std::abs(dist - exp) < kHalfTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < kHalfTolerance);
       }
     }
 
     // Check vy
     dist = cone.DistanceToOut(p, vy);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         exp = rho - p.y();
-        assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
       }
     }
 
     // Check -vy
     dist = cone.DistanceToOut(p, -vy);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         exp = p.y() + rho;
-        assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
       }
     }
 
     // Check vz
     dist = cone.DistanceToOut(p, vz);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         if (std::abs(p.y()) <= rtop) {
-          assert(std::abs(dist - (zcut - p.z())) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - (zcut - p.z())) < 0.01 * kTolerance);
         } else {
           exp = (h - std::abs(p.y()) / b) - p.z();
-          assert(std::abs(dist - exp) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
         }
       }
     }
@@ -312,30 +312,30 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
     // Check -vz
     dist = cone.DistanceToOut(p, -vz);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
-      assert(std::abs(dist - (p.z() + zcut)) < 0.01 * kTolerance);
+      VECGEOM_ASSERT(std::abs(dist - (p.z() + zcut)) < 0.01 * kTolerance);
     }
 
     // Check vright (\)
     dist = cone.DistanceToOut(p, vright);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         if (p.y() > rho + 0.01 * kHalfTolerance) {
-          assert(dist <= 0);
+          VECGEOM_ASSERT(dist <= 0);
         } else if (p.y() > rho - 0.01 * kHalfTolerance) {
           double dztop = zcut - p.z();
           exp          = dztop * sqrt(1 + b * b);
-          assert(std::abs(dist) < kHalfTolerance || std::abs(dist - exp) < 0.01 * kHalfTolerance);
+          VECGEOM_ASSERT(std::abs(dist) < kHalfTolerance || std::abs(dist - exp) < 0.01 * kHalfTolerance);
         } else if (p.y() > rho - kHalfTolerance) {
           if (zcut < h) {
             double dztop = zcut - p.z();
             exp          = dztop * sqrt(1 + b * b);
-            assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
           } else { // zcut == h
             double py    = p.y() / b;
             double pz    = p.z() - h;
@@ -346,7 +346,7 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
             double dztop = zcut - p.z();
             double exp2  = dztop * sqrt(1 + b * b);
             exp          = std::min(exp1, exp2);
-            assert(std::abs(dist - exp) < 0.01 * kTolerance);
+            VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
           }
         } else {
           double B   = vright.z(); // line going trough left upper corner at YZ projection
@@ -356,11 +356,11 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
           if (del > 0) {
             double dztop = zcut - p.z();
             exp          = dztop * sqrt(1 + b * b);
-            assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
           } else {
             double dy = (p.y() + rho) / 2.;
             exp       = dy * std::sqrt(1 + b * b) / b;
-            assert(std::abs(dist - exp) < 0.01 * kTolerance);
+            VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
           }
         }
       }
@@ -369,26 +369,26 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
     // Check -vright (\)
     dist = cone.DistanceToOut(p, -vright);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h && p.y() >= -rho) {
-        assert(dist == 0.);
+        VECGEOM_ASSERT(dist == 0.);
       } else if (p.y() >= rho) {
-        assert(dist <= 0.);
+        VECGEOM_ASSERT(dist <= 0.);
       } else {
         double dzbot = p.z() + zcut;
         exp          = dzbot * sqrt(1 + b * b);
-        assert(std::abs(dist - exp) < 0.01 * kTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
       }
     }
 
     // Check vleft (/)
     dist = cone.DistanceToOut(p, vleft);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h) {
-        assert(dist == 0);
+        VECGEOM_ASSERT(dist == 0);
       } else {
         double B   = -vleft.z(); // line going trough right upper corner at YZ projection
         double C   = vleft.y();
@@ -397,11 +397,11 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
         if (del >= 0.) {
           double dztop = zcut - p.z();
           exp          = dztop * sqrt(1 + b * b);
-          assert(std::abs(dist - exp) < 0.01 * kHalfTolerance);
+          VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kHalfTolerance);
         } else {
           double dy = (rho - p.y()) / 2.;
           exp       = dy * std::sqrt(1 + b * b) / b;
-          assert(std::abs(dist - exp) < 0.01 * kTolerance);
+          VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
         }
       }
     }
@@ -409,14 +409,14 @@ void CheckDistanceToOut(const SimpleEllipticalCone &cone, double Z)
     // Check -vleft (/)
     dist = cone.DistanceToOut(p, -vleft);
     if (cone.Inside(p) == vecgeom::kOutside) {
-      assert(dist < 0);
+      VECGEOM_ASSERT(dist < 0);
     } else {
       if (p.z() >= h && p.y() <= rho) {
-        assert(dist == 0.);
+        VECGEOM_ASSERT(dist == 0.);
       } else {
         double dzbot = p.z() + zcut;
         exp          = dzbot * sqrt(1 + b * b);
-        assert(std::abs(dist - exp) < 0.01 * kTolerance);
+        VECGEOM_ASSERT(std::abs(dist - exp) < 0.01 * kTolerance);
       }
     }
   }
@@ -438,20 +438,20 @@ bool TestEllipticalCone()
   std::cout << "=== Check Set/Get, Print(), SurfaceArea(), Capacity(), Extent()" << std::endl;
 
   EllipticalCone_t cone("Test_Elliptical_Cone", 1., 2., 3., 4.);
-  assert(cone.GetSemiAxisX() == 1.);
-  assert(cone.GetSemiAxisY() == 2.);
-  assert(cone.GetZMax() == 3.);
-  assert(cone.GetZTopCut() == 3.);
+  VECGEOM_ASSERT(cone.GetSemiAxisX() == 1.);
+  VECGEOM_ASSERT(cone.GetSemiAxisY() == 2.);
+  VECGEOM_ASSERT(cone.GetZMax() == 3.);
+  VECGEOM_ASSERT(cone.GetZTopCut() == 3.);
 
   cone.SetParameters(0.1, 0.2, 10., 8.);
-  assert(cone.GetSemiAxisX() == 0.1);
-  assert(cone.GetSemiAxisY() == 0.2);
-  assert(cone.GetZMax() == 10.);
-  assert(cone.GetZTopCut() == 8.);
+  VECGEOM_ASSERT(cone.GetSemiAxisX() == 0.1);
+  VECGEOM_ASSERT(cone.GetSemiAxisY() == 0.2);
+  VECGEOM_ASSERT(cone.GetZMax() == 10.);
+  VECGEOM_ASSERT(cone.GetZTopCut() == 8.);
 
   double a, b, h, zcut;
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 5.);
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
   cone.Print();
   std::cout << "EllipticalCone (" << a << ", " << b << ", " << h << ", " << zcut << ")" << std::endl;
 
@@ -464,17 +464,17 @@ bool TestEllipticalCone()
   double sbase2 = kPi * a * b * h2 * h2;
   double sside1 = EllipticUtilities::EllipticalConeLateralArea(a * h1, b * h1, h1);
   double sside2 = EllipticUtilities::EllipticalConeLateralArea(a * h2, b * h2, h2);
-  assert(ApproxEqual(area, sbase1 + sbase2 + sside2 - sside1));
+  VECGEOM_ASSERT(ApproxEqual(area, sbase1 + sbase2 + sside2 - sside1));
 
   double volume = cone.Capacity();
   std::cout << "Volume : " << volume << std::endl;
-  assert(ApproxEqual(volume, sbase2 * h2 / 3. - sbase1 * h1 / 3.));
+  VECGEOM_ASSERT(ApproxEqual(volume, sbase2 * h2 / 3. - sbase1 * h1 / 3.));
 
   Vec_t bmin, bmax;
   cone.Extent(bmin, bmax);
   std::cout << "Extent : " << bmin << ", " << bmax << std::endl;
-  assert(bmax == Vec_t(a * h2, b * h2, zcut));
-  assert(bmin == -bmax);
+  VECGEOM_ASSERT(bmax == Vec_t(a * h2, b * h2, zcut));
+  VECGEOM_ASSERT(bmin == -bmax);
   std::cout << std::endl;
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -490,7 +490,7 @@ bool TestEllipticalCone()
       for (double scale = 0.; scale < 0.99; scale += 0.1) {
         double x = scale * a * (h - z) * std::cos(phi);
         double y = scale * b * (h - z) * std::sin(phi);
-        assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
+        VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
       }
     }
   }
@@ -501,7 +501,7 @@ bool TestEllipticalCone()
       double x = a * (h - z) * std::cos(phi);
       double y = b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z + (0.5 - RNG::Instance().uniform()) * kHalfTolerance);
-      assert(cone.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
     }
   }
 
@@ -511,11 +511,11 @@ bool TestEllipticalCone()
       double x1 = scale * a * (h - zcut) * std::cos(phi);
       double y1 = scale * b * (h - zcut) * std::sin(phi);
       double z1 = zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
       double x2 = scale * a * (h + zcut) * std::cos(phi);
       double y2 = scale * b * (h + zcut) * std::sin(phi);
       double z2 = -zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
     }
   }
 
@@ -525,7 +525,7 @@ bool TestEllipticalCone()
       double scale = 1.1;
       double x     = scale * a * (h - z) * std::cos(phi);
       double y     = scale * b * (h - z) * std::sin(phi);
-      assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
     }
   }
 
@@ -540,14 +540,14 @@ bool TestEllipticalCone()
 
   // points on lateral surface
   for (double dz = 0.2, z = -zcut + dz; z < zcut - 0.01; z += dz) {
-    assert(valid = cone.Normal(Vec_t(a * (h - z), 0, z), normal));
-    assert(normal == Vec_t(h, 0, a * h).Unit());
-    assert(valid = cone.Normal(Vec_t(a * (z - h), 0, z), normal));
-    assert(normal == Vec_t(-h, 0, a * h).Unit());
-    assert(valid = cone.Normal(Vec_t(0, b * (h - z), z), normal));
-    assert(normal == Vec_t(0, h, b * h).Unit());
-    assert(valid = cone.Normal(Vec_t(0, b * (z - h), z), normal));
-    assert(normal == Vec_t(0, -h, b * h).Unit());
+    VECGEOM_ASSERT(valid = cone.Normal(Vec_t(a * (h - z), 0, z), normal));
+    VECGEOM_ASSERT(normal == Vec_t(h, 0, a * h).Unit());
+    VECGEOM_ASSERT(valid = cone.Normal(Vec_t(a * (z - h), 0, z), normal));
+    VECGEOM_ASSERT(normal == Vec_t(-h, 0, a * h).Unit());
+    VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, b * (h - z), z), normal));
+    VECGEOM_ASSERT(normal == Vec_t(0, h, b * h).Unit());
+    VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, b * (z - h), z), normal));
+    VECGEOM_ASSERT(normal == Vec_t(0, -h, b * h).Unit());
   }
 
   // points on bases
@@ -555,47 +555,47 @@ bool TestEllipticalCone()
     for (double dphi = 30. * deg, phi = 0.; phi < kTwoPi; phi += dphi) {
       double x = rho * std::cos(phi);
       double y = rho * std::sin(phi);
-      assert(valid = cone.Normal(Vec_t(x, y, zcut), normal));
-      assert(normal == Vec_t(0, 0, 1));
-      assert(valid = cone.Normal(Vec_t(x, y, -zcut), normal));
-      assert(normal == Vec_t(0, 0, -1));
+      VECGEOM_ASSERT(valid = cone.Normal(Vec_t(x, y, zcut), normal));
+      VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
+      VECGEOM_ASSERT(valid = cone.Normal(Vec_t(x, y, -zcut), normal));
+      VECGEOM_ASSERT(normal == Vec_t(0, 0, -1));
     }
   }
 
   // points on top edge
-  assert(valid = cone.Normal(Vec_t(a * (h - zcut), 0, zcut), normal));
-  assert(normal == (Vec_t(0, 0, 1) + Vec_t(h, 0, a * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(a * (zcut - h), 0, zcut), normal));
-  assert(normal == (Vec_t(0, 0, 1) + Vec_t(-h, 0, a * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(0, b * (h - zcut), zcut), normal));
-  assert(normal == (Vec_t(0, 0, 1) + Vec_t(0, h, b * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(0, b * (zcut - h), zcut), normal));
-  assert(normal == (Vec_t(0, 0, 1) + Vec_t(0, -h, b * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(a * (h - zcut), 0, zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, 1) + Vec_t(h, 0, a * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(a * (zcut - h), 0, zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, 1) + Vec_t(-h, 0, a * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, b * (h - zcut), zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, 1) + Vec_t(0, h, b * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, b * (zcut - h), zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, 1) + Vec_t(0, -h, b * h).Unit()).Unit());
 
   // points on bottom edge
-  assert(valid = cone.Normal(Vec_t(a * (h + zcut), 0, -zcut), normal));
-  assert(normal == (Vec_t(0, 0, -1) + Vec_t(h, 0, a * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(-a * (h + zcut), 0, -zcut), normal));
-  assert(normal == (Vec_t(0, 0, -1) + Vec_t(-h, 0, a * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(0, b * (h + zcut), -zcut), normal));
-  assert(normal == (Vec_t(0, 0, -1) + Vec_t(0, h, b * h).Unit()).Unit());
-  assert(valid = cone.Normal(Vec_t(0, -b * (h + zcut), -zcut), normal));
-  assert(normal == (Vec_t(0, 0, -1) + Vec_t(0, -h, b * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(a * (h + zcut), 0, -zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, -1) + Vec_t(h, 0, a * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(-a * (h + zcut), 0, -zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, -1) + Vec_t(-h, 0, a * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, b * (h + zcut), -zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, -1) + Vec_t(0, h, b * h).Unit()).Unit());
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, -b * (h + zcut), -zcut), normal));
+  VECGEOM_ASSERT(normal == (Vec_t(0, 0, -1) + Vec_t(0, -h, b * h).Unit()).Unit());
 
   // points on z-axis, not on surface
-  assert((valid = cone.Normal(Vec_t(0, 0, h), normal)) == false);
-  assert(normal == Vec_t(0, 0, 1));
-  assert((valid = cone.Normal(Vec_t(0, 0, 0), normal)) == false);
-  assert(normal == Vec_t(0, 0, 1));
-  assert((valid = cone.Normal(Vec_t(0, 0, -zcut + kTolerance), normal)) == false);
-  assert(normal == Vec_t(0, 0, -1));
-  assert((valid = cone.Normal(Vec_t(0, 0, -zcut - kTolerance), normal)) == false);
-  assert(normal == Vec_t(0, 0, -1));
+  VECGEOM_ASSERT((valid = cone.Normal(Vec_t(0, 0, h), normal)) == false);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
+  VECGEOM_ASSERT((valid = cone.Normal(Vec_t(0, 0, 0), normal)) == false);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
+  VECGEOM_ASSERT((valid = cone.Normal(Vec_t(0, 0, -zcut + kTolerance), normal)) == false);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, -1));
+  VECGEOM_ASSERT((valid = cone.Normal(Vec_t(0, 0, -zcut - kTolerance), normal)) == false);
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, -1));
 
   // Full cone, point in apex
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 20.);
-  assert(valid = cone.Normal(Vec_t(0, 0, h), normal));
-  assert(normal == Vec_t(0, 0, 1));
+  VECGEOM_ASSERT(valid = cone.Normal(Vec_t(0, 0, h), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0, 0, 1));
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -603,7 +603,7 @@ bool TestEllipticalCone()
   //
   std::cout << "=== Check SafetyToIn()" << std::endl;
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 5.);
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
 
   // Check inside points ("wrong side")
   for (double dz = 0.2, z = -zcut + dz; z < zcut - 0.01; z += dz) {
@@ -611,8 +611,8 @@ bool TestEllipticalCone()
       for (double scale = 0.; scale < 0.99; scale += 0.1) {
         double x = scale * a * (h - z) * std::cos(phi);
         double y = scale * b * (h - z) * std::sin(phi);
-        assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
-        assert(cone.SafetyToIn(Vec_t(x, y, z)) < 0.);
+        VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
+        VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(x, y, z)) < 0.);
       }
     }
   }
@@ -623,8 +623,8 @@ bool TestEllipticalCone()
       double x = a * (h - z) * std::cos(phi);
       double y = b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z + (0.5 - RNG::Instance().uniform()) * kHalfTolerance);
-      assert(cone.Inside(p) == vecgeom::kSurface);
-      assert(cone.SafetyToIn(p) == 0.);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToIn(p) == 0.);
     }
   }
 
@@ -634,13 +634,13 @@ bool TestEllipticalCone()
       double x1 = scale * a * (h - zcut) * std::cos(phi);
       double y1 = scale * b * (h - zcut) * std::sin(phi);
       double z1 = zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
-      assert(cone.SafetyToIn(Vec_t(x1, y1, z1)) == 0.);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(x1, y1, z1)) == 0.);
       double x2 = scale * a * (h + zcut) * std::cos(phi);
       double y2 = scale * b * (h + zcut) * std::sin(phi);
       double z2 = -zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
-      assert(cone.SafetyToIn(Vec_t(x2, y2, z2)) == 0.);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(x2, y2, z2)) == 0.);
     }
   }
 
@@ -652,18 +652,18 @@ bool TestEllipticalCone()
         double y    = scale * b * (h - z) * std::sin(phi);
         double hp   = std::sqrt(x * x / a / a + y * y / b / b) + z;
         double dist = (hp - h) * b / std::sqrt(1 + b * b);
-        assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
-        assert(dist > kHalfTolerance);
-        assert(cone.SafetyToIn(Vec_t(x, y, z)) > dist - kHalfTolerance);
+        VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
+        VECGEOM_ASSERT(dist > kHalfTolerance);
+        VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(x, y, z)) > dist - kHalfTolerance);
       }
     }
   }
 
   // Check some other outside points
-  assert(cone.SafetyToIn(Vec_t(0, 0, h)) == h - zcut);
-  assert(cone.SafetyToIn(Vec_t(a * h, 0, h)) == h - zcut);
-  assert(cone.SafetyToIn(Vec_t(a * h, 0, -h)) == h - zcut);
-  assert(cone.SafetyToIn(Vec_t(a * h, 0, 2 * h)) == 2 * h - zcut);
+  VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(0, 0, h)) == h - zcut);
+  VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(a * h, 0, h)) == h - zcut);
+  VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(a * h, 0, -h)) == h - zcut);
+  VECGEOM_ASSERT(cone.SafetyToIn(Vec_t(a * h, 0, 2 * h)) == 2 * h - zcut);
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -671,17 +671,17 @@ bool TestEllipticalCone()
   //
   std::cout << "=== Check SafetyToOut()" << std::endl;
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 5.);
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
 
   // Check outside points ("wrong side")
-  assert(cone.SafetyToOut(Vec_t(0, 0, h)) == -h + zcut); // apex
+  VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(0, 0, h)) == -h + zcut); // apex
   for (double dz = 0.2, z = -(zcut + dz); z <= (zcut + dz); z += dz) {
     for (double dphi = 10. * deg, phi = 0.; phi < kTwoPi; phi += dphi) {
       double scale = 1.1;
       double x     = scale * a * (h - z) * std::cos(phi);
       double y     = scale * b * (h - z) * std::sin(phi);
-      assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
-      assert(cone.SafetyToOut(Vec_t(x, y, z)) < 0.);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kOutside);
+      VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(x, y, z)) < 0.);
     }
   }
 
@@ -691,8 +691,8 @@ bool TestEllipticalCone()
       double x = a * (h - z) * std::cos(phi);
       double y = b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z + (0.5 - RNG::Instance().uniform()) * kHalfTolerance);
-      assert(cone.Inside(p) == vecgeom::kSurface);
-      assert(cone.SafetyToOut(p) == 0.);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToOut(p) == 0.);
     }
   }
 
@@ -702,13 +702,13 @@ bool TestEllipticalCone()
       double x1 = scale * a * (h - zcut) * std::cos(phi);
       double y1 = scale * b * (h - zcut) * std::sin(phi);
       double z1 = zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
-      assert(cone.SafetyToOut(Vec_t(x1, y1, z1)) == 0.);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x1, y1, z1)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(x1, y1, z1)) == 0.);
       double x2 = scale * a * (h + zcut) * std::cos(phi);
       double y2 = scale * b * (h + zcut) * std::sin(phi);
       double z2 = -zcut + (0.5 - RNG::Instance().uniform()) * kHalfTolerance;
-      assert(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
-      assert(cone.SafetyToOut(Vec_t(x2, y2, z2)) == 0.);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x2, y2, z2)) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(x2, y2, z2)) == 0.);
     }
   }
 
@@ -720,16 +720,16 @@ bool TestEllipticalCone()
       double y     = scale * b * (h - z) * std::sin(phi);
       double hp    = std::sqrt(x * x / a / a + y * y / b / b) + z;
       double dist  = (h - hp) * b / std::sqrt(1 + b * b);
-      assert(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
-      assert(dist > kHalfTolerance);
-      assert(cone.SafetyToOut(Vec_t(x, y, z)) > dist - kHalfTolerance);
+      VECGEOM_ASSERT(cone.Inside(Vec_t(x, y, z)) == vecgeom::kInside);
+      VECGEOM_ASSERT(dist > kHalfTolerance);
+      VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(x, y, z)) > dist - kHalfTolerance);
     }
   }
 
   // Check some other inside points
-  assert(cone.SafetyToOut(Vec_t(0, 0, 0)) == h * b / std::sqrt(1 + b * b));
-  assert(cone.SafetyToOut(Vec_t(0, 0, 0.5 * zcut)) == 0.5 * zcut);
-  assert(cone.SafetyToOut(Vec_t(0, 0, -0.5 * zcut)) == 0.5 * zcut);
+  VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(0, 0, 0)) == h * b / std::sqrt(1 + b * b));
+  VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(0, 0, 0.5 * zcut)) == 0.5 * zcut);
+  VECGEOM_ASSERT(cone.SafetyToOut(Vec_t(0, 0, -0.5 * zcut)) == 0.5 * zcut);
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -737,7 +737,7 @@ bool TestEllipticalCone()
   //
   std::cout << "=== Check DistanceToIn()" << std::endl;
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 5.);
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
 
   // Check inside points (negative distances)
   for (double dz = 0.2, z = -zcut + dz; z < zcut - 0.01; z += dz) {
@@ -747,8 +747,8 @@ bool TestEllipticalCone()
         double y = scale * b * (h - z) * std::sin(phi);
         Vec_t p(x, y, z);
         Vec_t v = Vec_t(x, y, z).Unit();
-        assert(cone.Inside(p) == vecgeom::kInside);
-        assert(cone.DistanceToIn(p, v) < 0);
+        VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kInside);
+        VECGEOM_ASSERT(cone.DistanceToIn(p, v) < 0);
       }
     }
   }
@@ -761,13 +761,13 @@ bool TestEllipticalCone()
       double x = a * (h - z) * std::cos(phi);
       double y = b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z + (0.5 - RNG::Instance().uniform()) * kHalfTolerance);
-      assert(cone.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
       // point is moving to outside
       Vec_t v = Vec_t(x, y, z).Unit();
-      assert(cone.DistanceToIn(p, v) == kInfLength);
+      VECGEOM_ASSERT(cone.DistanceToIn(p, v) == kInfLength);
       // point is moving to inside
       double dist = cone.DistanceToIn(p, -v);
-      assert(dist != 0 && std::abs(dist) < kHalfTolerance);
+      VECGEOM_ASSERT(dist != 0 && std::abs(dist) < kHalfTolerance);
     }
   }
   // Check points on lateral surface (2)
@@ -775,51 +775,51 @@ bool TestEllipticalCone()
   // - infinity if touch
   for (double dz = 0.2, z = -zcut + dz; z < zcut - 0.01; z += dz) {
     Vec_t p(a * (h - z), 0, z);
-    assert(cone.Inside(p) == vecgeom::kSurface);
-    assert(valid = cone.Normal(p, normal));
-    assert(normal == Vec_t(h, 0, a * h).Unit());
+    VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
+    VECGEOM_ASSERT(valid = cone.Normal(p, normal));
+    VECGEOM_ASSERT(normal == Vec_t(h, 0, a * h).Unit());
     // move along surface
     Vec_t v = Vec_t(a * h, 0, -h).Unit();
-    assert(cone.DistanceToIn(p, v) == kInfLength);
-    assert(cone.DistanceToIn(p, -v) == kInfLength);
+    VECGEOM_ASSERT(cone.DistanceToIn(p, v) == kInfLength);
+    VECGEOM_ASSERT(cone.DistanceToIn(p, -v) == kInfLength);
     // touch
     v = normal.Cross(Vec_t(0, 0, 1)).Unit();
-    assert(cone.DistanceToIn(p, v) == kInfLength);
-    assert(cone.DistanceToIn(p, -v) == kInfLength);
+    VECGEOM_ASSERT(cone.DistanceToIn(p, v) == kInfLength);
+    VECGEOM_ASSERT(cone.DistanceToIn(p, -v) == kInfLength);
   }
 
   // Check outside points
   // - infinity if point is moving parallel to the surface
   Vec_t pzax(0, 0, h + 1);                 // point is on z axis
   Vec_t vzax = Vec_t(a * h, 0, -h).Unit(); // moving parallel to x-surface (y = 0)
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   pzax.Set(kTolerance, 0, h + 1); // point is inside upper nappe
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   pzax.Set(-kTolerance, 0, h + 1); // point is inside upper nappe
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   pzax.Set(0, kTolerance, h + 1); // point is inside upper nappe
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   pzax.Set(0, -kTolerance, h + 1); // point is inside upper nappe
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   pzax.Set(-1, 0, h + 1); // point is outside upper nappe
-  assert(cone.Inside(pzax) == vecgeom::kOutside);
-  assert(std::abs(cone.DistanceToIn(pzax, vzax) - std::sqrt(6 * 6 + 3 * 3)) < kHalfTolerance);
-  assert(cone.DistanceToIn(pzax, -vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.Inside(pzax) == vecgeom::kOutside);
+  VECGEOM_ASSERT(std::abs(cone.DistanceToIn(pzax, vzax) - std::sqrt(6 * 6 + 3 * 3)) < kHalfTolerance);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, -vzax) == kInfLength);
 
   // Special cases to check:
   //   0) Point is leaving the solid (already checked)
@@ -830,24 +830,24 @@ bool TestEllipticalCone()
   // Trajectory traverses the apex
   pzax.Set(0, 0, h + 1);
   vzax.Set(0, 0, -1);
-  assert(cone.DistanceToIn(pzax, vzax) == (h + 1 - zcut));
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == (h + 1 - zcut));
 
   pzax.Set(1, 0, h + 1);
   vzax = Vec_t(-1, 0, -1).Unit();
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
 
   pzax.Set(1, 0, h);
   vzax.Set(0, 0, -1);
-  assert(cone.DistanceToIn(pzax, vzax) == (h - zcut));
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == (h - zcut));
 
   // Touch
   pzax.Set(7.5, 0, h);
   vzax.Set(0, 0, -1);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
 
   pzax.Set(7.5 - 0.1 * kHalfTolerance, 0, h);
   vzax.Set(0, 0, -1);
-  assert(cone.DistanceToIn(pzax, vzax) == kInfLength);
+  VECGEOM_ASSERT(cone.DistanceToIn(pzax, vzax) == kInfLength);
 
   // Check set of points at certain Z
   double Z;
@@ -887,7 +887,7 @@ bool TestEllipticalCone()
   //
   std::cout << "=== Check DistanceToOut()" << std::endl;
   cone.SetParameters(a = 0.5, b = 0.4, h = 10., zcut = 5.);
-  assert(a >= b);
+  VECGEOM_ASSERT(a >= b);
 
   // Check outside points ("wrong side")
   for (double dz = 0.2, z = -(zcut + dz); z <= (zcut + dz); z += dz) {
@@ -897,9 +897,9 @@ bool TestEllipticalCone()
       double y     = scale * b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z);
       Vec_t v = Vec_t(x, y, z).Unit();
-      assert(cone.Inside(p) == vecgeom::kOutside);
-      assert(cone.DistanceToOut(p, v) < 0);
-      assert(cone.DistanceToOut(p, -v) < 0);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kOutside);
+      VECGEOM_ASSERT(cone.DistanceToOut(p, v) < 0);
+      VECGEOM_ASSERT(cone.DistanceToOut(p, -v) < 0);
     }
   }
 
@@ -910,11 +910,11 @@ bool TestEllipticalCone()
       double x = a * (h - z) * std::cos(phi);
       double y = b * (h - z) * std::sin(phi);
       Vec_t p(x, y, z + (0.5 - RNG::Instance().uniform()) * kHalfTolerance);
-      assert(cone.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
       // point is moving to outside
       Vec_t v     = Vec_t(x, y, z).Unit();
       double dist = cone.DistanceToOut(p, v);
-      assert(dist != 0 && std::abs(dist) < kHalfTolerance);
+      VECGEOM_ASSERT(dist != 0 && std::abs(dist) < kHalfTolerance);
     }
   }
 
@@ -922,17 +922,17 @@ bool TestEllipticalCone()
   // - 0 if touch
   for (double dz = 0.2, z = -zcut + dz; z < zcut - 0.01; z += dz) {
     Vec_t p(a * (h - z), 0, z);
-    assert(cone.Inside(p) == vecgeom::kSurface);
-    assert(valid = cone.Normal(p, normal));
-    assert(normal == Vec_t(1, 0, a).Unit());
+    VECGEOM_ASSERT(cone.Inside(p) == vecgeom::kSurface);
+    VECGEOM_ASSERT(valid = cone.Normal(p, normal));
+    VECGEOM_ASSERT(normal == Vec_t(1, 0, a).Unit());
     // move along surface
     Vec_t v = Vec_t(a, 0, -1).Unit();
-    assert(cone.DistanceToOut(p, v) == 0);
-    assert(cone.DistanceToOut(p, -v) == 0);
+    VECGEOM_ASSERT(cone.DistanceToOut(p, v) == 0);
+    VECGEOM_ASSERT(cone.DistanceToOut(p, -v) == 0);
     // touch
     v = normal.Cross(Vec_t(0, 0, 1)).Unit();
-    assert(cone.DistanceToOut(p, v) == 0);
-    assert(cone.DistanceToOut(p, -v) == 0);
+    VECGEOM_ASSERT(cone.DistanceToOut(p, v) == 0);
+    VECGEOM_ASSERT(cone.DistanceToOut(p, -v) == 0);
   }
 
   // Check set of points at certain Z
@@ -978,7 +978,7 @@ bool TestEllipticalCone()
   int nzneg = 0, nzpos = 0, nside = 0, nfactor = 10000, ntot = 4 * area * nfactor;
   for (int i = 0; i < ntot; i++) {
     Vec_t rndPoint = cone.GetUnplacedVolume()->SamplePointOnSurface();
-    assert(cone.Inside(rndPoint) == vecgeom::kSurface);
+    VECGEOM_ASSERT(cone.Inside(rndPoint) == vecgeom::kSurface);
     if (rndPoint.x() < 0 || rndPoint.y() < 0) continue;
     if (rndPoint.z() == -zcut)
       ++nzneg;
@@ -990,16 +990,16 @@ bool TestEllipticalCone()
   std::cout << std::endl;
   std::cout << "szneg,sside,szpos = " << szneg << ", \t" << sside << ", \t" << szpos << std::endl;
   std::cout << "nzneg,nside,nzpos = " << nzneg << ", \t" << nside << ", \t" << nzpos << std::endl;
-  assert(std::abs(nzneg - szneg * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nzpos - szpos * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzneg - szneg * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzpos - szpos * nfactor) < 2. * std::sqrt(ntot));
 
   return true;
 }
 
 int main()
 {
-  assert(TestEllipticalCone<SimpleEllipticalCone>());
+  VECGEOM_ASSERT(TestEllipticalCone<SimpleEllipticalCone>());
   std::cout << "\n   Test EllipticalCone passed\n" << std::endl;
 
   return 0;

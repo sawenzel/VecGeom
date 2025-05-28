@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -49,7 +49,7 @@ void default_global_handler(Provenance prov, LogLevel lev, std::string msg)
         case LogLevel::warning:    c = 'y'; break;
         case LogLevel::error:      c = 'r'; break;
         case LogLevel::critical:   c = 'R'; break;
-        case LogLevel::size_: assert(false);
+        case LogLevel::size_: VECGEOM_ASSERT(false);
     };
   // clang-format on
   std::clog << color_code(c) << to_cstring(lev) << ": " << color_code(' ') << msg << std::endl;
@@ -61,7 +61,7 @@ void default_global_handler(Provenance prov, LogLevel lev, std::string msg)
  */
 void set_log_level_from_env(Logger *log, std::string const &level_env)
 {
-  assert(log);
+  VECGEOM_ASSERT(log);
   try {
     log->level(log_level_from_env(level_env));
   } catch (std::runtime_error const &e) {

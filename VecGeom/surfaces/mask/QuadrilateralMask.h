@@ -44,7 +44,8 @@ struct QuadrilateralMask {
       auto k      = (i + 2) % 4;
       auto seg_ij = p[j] - p[i];
       auto seg_ik = p[k] - p[i];
-      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared); // use vecgeom tolerance since p is in vecgeom precision
+      VECGEOM_ASSERT(seg_ij.Mag2() >
+                     vecgeom::kToleranceSquared); // use vecgeom tolerance since p is in vecgeom precision
       // normal in XY plane
       n[i].Set(seg_ij.y(), -seg_ij.x());
       // flip the normal so point k is 'backwards'

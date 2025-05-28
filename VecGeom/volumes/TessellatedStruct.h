@@ -432,7 +432,7 @@ public:
   {
     // Create cluster starting from fCandidates list
     unsigned nfacets = 0;
-    assert(fCandidates.size() > 0); // call the method with at least one candidate in the list
+    VECGEOM_ASSERT(fCandidates.size() > 0); // call the method with at least one candidate in the list
     constexpr int rankmax = 3;      // ??? how to determine an appropriate value ???
     int rank              = 0;
     fCluster.clear();
@@ -595,7 +595,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   bool AddTriangularFacet(Vector3D<T> const &vt0, Vector3D<T> const &vt1, Vector3D<T> const &vt2, bool absolute = true)
   {
-    assert(NVERT == 3);
+    VECGEOM_ASSERT(NVERT == 3);
     Facet_t *facet = new Facet_t;
     bool added     = false;
     if (absolute)
@@ -627,7 +627,7 @@ public:
     // We should check the quadrilateral convexity to correctly define the
     // triangle facets
     // CheckConvexity()vt0, vt1, vt2, vt3, absolute);
-    assert(NVERT <= 4);
+    VECGEOM_ASSERT(NVERT <= 4);
     Facet_t *facet = new Facet_t;
     if (NVERT == 3) {
       if (absolute) {

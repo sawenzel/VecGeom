@@ -154,7 +154,7 @@ int *surfaceAreaHeuristic(const AABBsurf<Real_b> *primitiveBoxes, int *begin, in
     for (int *splitObject = begin; splitObject < end; ++splitObject) {
       const auto left  = surfaceSweep[splitObject - begin].first / NonZero(totSurfArea);
       const auto right = surfaceSweep[splitObject - begin].second / NonZero(totSurfArea);
-      assert(left <= 1. && right <= 1.);
+      VECGEOM_ASSERT(left <= 1. && right <= 1.);
 
       // Original heuristic
       const auto splitMetric = left * std::distance(begin, splitObject) + right * std::distance(splitObject, end) +
@@ -224,10 +224,10 @@ void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, in
   if (std::next(first) == last) return;
 
   const auto algo = static_cast<unsigned int>(constructionAlgorithm);
-  // assert(algo < sizeof(splittingFunction<Real_b>));
+  // VECGEOM_ASSERT(algo < sizeof(splittingFunction<Real_b>));
 
   int *pivot = splittingFunction<Real_b>[algo](aAABBs, first, last, aNodes[id]);
-  assert(first <= pivot && pivot <= last);
+  VECGEOM_ASSERT(first <= pivot && pivot <= last);
 
   ComputeNodes(2 * id + 1, first, pivot, nodes, aPrimId, aNChild, aOffset, aNodes, aAABBs, constructionAlgorithm);
   ComputeNodes(2 * id + 2, pivot, last, nodes, aPrimId, aNChild, aOffset, aNodes, aAABBs, constructionAlgorithm);

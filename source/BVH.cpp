@@ -150,21 +150,26 @@ DevicePtr<cuda::BVH<Real_t>> BVH<Real_t>::CopyToGpu(void *addr) const
 
   if (!addr) throw std::logic_error("Cannot copy BVH into a null pointer!");
 
-  CudaCheckError(CudaMalloc((void **)&dPrimId, fRootNChild * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dAABBs, fRootNChild * sizeof(AABB<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&dPrimId, fRootNChild * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&dAABBs, fRootNChild * sizeof(AABB<Real_t>)));
 
-  CudaCheckError(CudaCopyToDevice((void *)dPrimId, (void *)fPrimId, fRootNChild * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dAABBs, (void *)fAABBs, fRootNChild * sizeof(AABB<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Memcpy((void *)dPrimId, (void *)fPrimId, fRootNChild * sizeof(int),
+                                 VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
+  VECGEOM_DEVICE_API_CALL(Memcpy((void *)dAABBs, (void *)fAABBs, fRootNChild * sizeof(AABB<Real_t>),
+                                 VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 
   int nodes = (2 << fDepth) - 1;
 
-  CudaCheckError(CudaMalloc((void **)&dOffset, nodes * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dNChild, nodes * sizeof(int)));
-  CudaCheckError(CudaMalloc((void **)&dNodes, nodes * sizeof(AABB<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&dOffset, nodes * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&dNChild, nodes * sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&dNodes, nodes * sizeof(AABB<Real_t>)));
 
-  CudaCheckError(CudaCopyToDevice((void *)dOffset, (void *)fOffset, nodes * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dNChild, (void *)fNChild, nodes * sizeof(int)));
-  CudaCheckError(CudaCopyToDevice((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy((void *)dOffset, (void *)fOffset, nodes * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy((void *)dNChild, (void *)fNChild, nodes * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
+  VECGEOM_DEVICE_API_CALL(Memcpy((void *)dNodes, (void *)fNodes, nodes * sizeof(AABB<Real_t>),
+                                 VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 
   // cuda::LogicalVolume const *dvolume = CudaManager::Instance().LookupLogical(&fLV).GetPtr();
   cuda::LogicalVolume const *dvolume =
@@ -334,7 +339,7 @@ int *surfaceAreaHeuristic(const AABB<Real_t> *primitiveBoxes, int *begin, int *e
     for (int *splitObject = begin; splitObject < end; ++splitObject) {
       const auto left  = surfaceSweep[splitObject - begin].first / totSurfArea;
       const auto right = surfaceSweep[splitObject - begin].second / totSurfArea;
-      assert(left <= 1. && right <= 1.);
+      VECGEOM_ASSERT(left <= 1. && right <= 1.);
 
       const auto splitMetric = left * std::distance(begin, splitObject) + right * std::distance(splitObject, end) +
                                0.1 * abs(nObj / 2 - std::distance(begin, splitObject) / nObj); // Prefer balanced splits
@@ -402,10 +407,10 @@ void BVH<Real_t>::ComputeNodes(unsigned int id, int *first, int *last, unsigned 
   if (std::next(first) == last) return;
 
   const auto algo = static_cast<unsigned int>(constructionAlgorithm);
-  assert(algo < std::size(splittingFunction<Real_t>));
+  VECGEOM_ASSERT(algo < std::size(splittingFunction<Real_t>));
 
   int *pivot = splittingFunction<Real_t>[algo](fAABBs, first, last, fNodes[id]);
-  assert(first <= pivot && pivot <= last);
+  VECGEOM_ASSERT(first <= pivot && pivot <= last);
 
   ComputeNodes(2 * id + 1, first, pivot, nodes, constructionAlgorithm);
   ComputeNodes(2 * id + 2, pivot, last, nodes, constructionAlgorithm);

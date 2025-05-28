@@ -36,7 +36,7 @@ double DistanceToIn(RTCScene scene, double x, double y, double z, double dx, dou
 
     // we can't do a real capture but we do it via some global variables
     auto customFilter = [](const RTCFilterFunctionNArguments *args) {
-      assert(args->N == 1);
+      VECGEOM_ASSERT(args->N == 1);
       std::cerr << "CUSTOM FILTER USED " << g_x << "\n";
       int *valid = args->valid;
       valid[0]   = 0;

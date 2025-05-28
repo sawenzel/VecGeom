@@ -170,7 +170,7 @@ public:
   void AddFacet(size_t index, Facet_t *facet, size_t ifacet)
   {
     // Fill the facet normal by accessing individual SIMD lanes
-    assert(index < kVecSize);
+    VECGEOM_ASSERT(index < kVecSize);
     vecCore::Set(fNormals.x(), index, facet->fNormal.x());
     vecCore::Set(fNormals.y(), index, facet->fNormal.y());
     vecCore::Set(fNormals.z(), index, facet->fNormal.z());

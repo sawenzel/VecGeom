@@ -27,7 +27,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
   auto sphi  = polycone.GetStartPhi();
   auto dphi  = polycone.GetDeltaPhi();
   auto ephi  = polycone.GetEndPhi();
-  assert(dphi > vecgeom::kTolerance);
+  VECGEOM_ASSERT(dphi > vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
@@ -76,8 +76,8 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
     auto rmin2 = polycone.GetRmin2AtSection(i);
     auto rmax2 = polycone.GetRmax2AtSection(i);
 
-    assert(rmax1 - rmin1 > -vecgeom::kTolerance);
-    assert(rmax2 - rmin2 > -vecgeom::kTolerance);
+    VECGEOM_ASSERT(rmax1 - rmin1 > -vecgeom::kTolerance);
+    VECGEOM_ASSERT(rmax2 - rmin2 > -vecgeom::kTolerance);
 
     // if rmax == rmin then for safety it is set to rmax = rmin + ConeTolerance already in the solid model
     // For using mixed precision, the compiled tolerance must be replaced by the mixed tolerance
@@ -256,7 +256,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
       vert  = {corners[0], corners[1], corners[2], corners[3]};
       isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
-      assert(isurf >= 0);
+      VECGEOM_ASSERT(isurf >= 0);
       builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(land);
       logic.push_back(lplus); // '('
@@ -266,7 +266,7 @@ bool CreatePolyconeSurfaces(vecgeom::UnplacedPolycone const &polycone, int logic
       vert  = {corners[4], corners[5], corners[6], corners[7]};
       isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
       if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
-      assert(isurf >= 0);
+      VECGEOM_ASSERT(isurf >= 0);
       builder::GetSurface<Real_t>(isurf).fEmbedding = false;
       logic.push_back(smallerPi ? land : lor);
       logic.push_back(isurf);

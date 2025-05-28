@@ -27,7 +27,7 @@ bool CreateTorusSurfaces(vecgeom::UnplacedTorus2 const &torus, int logical_id, b
   auto dphi = torus.dphi();
   auto ephi = dphi + sphi;
 
-  assert(rtor - rmin > -vecgeom::kTolerance);
+  VECGEOM_ASSERT(rtor - rmin > -vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);

@@ -2,6 +2,7 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #include "VecGeom/management/CudaManager.h"
+#include "VecGeom/base/Assert.h"
 
 #include <stdio.h>
 
@@ -19,7 +20,7 @@ __global__ void InitDeviceCompactPlacedVolBufferPtrCudaKernel(void *gpu_ptr)
 void InitDeviceCompactPlacedVolBufferPtr(void *gpu_ptr)
 {
   InitDeviceCompactPlacedVolBufferPtrCudaKernel<<<1, 1>>>(gpu_ptr);
-  vecgeom::cxx::CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 }
 
 __global__ void InitDeviceLogicalVolumesPtrCudaKernel(void *gpu_ptr)
@@ -31,7 +32,7 @@ __global__ void InitDeviceLogicalVolumesPtrCudaKernel(void *gpu_ptr)
 void InitDeviceLogicalVolumesPtr(void *gpu_ptr)
 {
   InitDeviceLogicalVolumesPtrCudaKernel<<<1, 1>>>(gpu_ptr);
-  vecgeom::cxx::CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 }
 
 __global__ void InitDeviceNavIndexPtrCudaKernel(void *gpu_ptr, int maxdepth)
@@ -55,8 +56,8 @@ __global__ void CudaManagerPrintGeometryKernel(vecgeom::cuda::VPlacedVolume cons
 void CudaManagerPrintGeometry(vecgeom::cuda::VPlacedVolume const *const world)
 {
   CudaManagerPrintGeometryKernel<<<1, 1>>>(world);
-  cxx::CudaAssertError();
-  cudaDeviceSynchronize();
+  VECGEOM_DEVICE_API_SYMBOL(GetLastError)();
+  VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 }
-}
+} // namespace cuda
 } // End namespace vecgeom

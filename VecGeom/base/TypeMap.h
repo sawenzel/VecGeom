@@ -5,6 +5,7 @@
 #define VECGEOM_BASE_TYPEMAP_H_
 
 #include "VecGeom/base/Global.h"
+#include "VecGeom/base/Assert.h"
 
 #include <map>
 
@@ -39,7 +40,7 @@ public:
   {
     const typename std::map<TypeA, TypeB>::const_iterator i = a_to_b.find(a);
     // Crash if not found. To prevent insertion of new elements by lookup.
-    assert(i != a_to_b.end());
+    VECGEOM_ASSERT(i != a_to_b.end());
     return i->second;
   }
 
@@ -53,7 +54,7 @@ public:
   {
     const typename std::map<TypeB, TypeA>::const_iterator i = b_to_a.find(b);
     // Crash if not found. To prevent insertion of new elements by lookup.
-    assert(i != b_to_a.end());
+    VECGEOM_ASSERT(i != b_to_a.end());
     return i->second;
   }
 

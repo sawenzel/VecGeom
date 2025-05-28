@@ -48,46 +48,46 @@ bool TestGenericPolycone()
   std::cout << "Capacity : " << Simple.GetUnplacedVolume()->Capacity() << std::endl;
   std::cout << "SurfaceArea : " << Simple.GetUnplacedVolume()->SurfaceArea() << std::endl;
 
-  assert(Simple.Inside(Vec_t(2., 0., 2.5)) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(2., 0., 2.5)) == vecgeom::EInside::kInside);
   // std::cout << "Location of Inside point (2.,0.,2.5) using Contains : " << Simple.Contains(Vec_t(2., 0., 2.5))
   //        << std::endl;
-  assert(Simple.Contains(Vec_t(2., 0., 2.5)));
+  VECGEOM_ASSERT(Simple.Contains(Vec_t(2., 0., 2.5)));
 
-  assert(Simple.Inside(Vec_t(1.5, 0., 1.9999)) == vecgeom::EInside::kInside);
-  assert(Simple.Inside(Vec_t(4.5, 0., 1.9999)) == vecgeom::EInside::kInside);
-  assert(Simple.Inside(Vec_t(2.1, 0., 1.9999)) == vecgeom::EInside::kOutside);
-  assert(Simple.Inside(Vec_t(5.1, 0., 1.9999)) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(1.5, 0., 1.9999)) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(4.5, 0., 1.9999)) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(2.1, 0., 1.9999)) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(5.1, 0., 1.9999)) == vecgeom::EInside::kOutside);
 
   // std::cout << "Location using Contains : " << Simple.Contains(Vec_t(5.1, 0., 1.9999)) << std::endl;
-  assert(!Simple.Contains(Vec_t(5.1, 0., 1.9999)));
-  assert(Simple.Inside(Vec_t(2., 0., 3.)) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(Vec_t(5., 0., 2.1)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(!Simple.Contains(Vec_t(5.1, 0., 1.9999)));
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(2., 0., 3.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(5., 0., 2.1)) == vecgeom::EInside::kSurface);
 
   std::cout << "Surface Point (1.,0.,2.) : Location of point which is on edge of both Cones Sections : "
             << Simple.Inside(Vec_t(1., 0., 2.)) << std::endl;
-  assert(Simple.Inside(Vec_t(1., 0., 2.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(1., 0., 2.)) == vecgeom::EInside::kSurface);
   std::cout << "Surface Point (5.,0.,2.) : Location of point which is on edge of both Cones Sections : "
             << Simple.Inside(Vec_t(5., 0., 2.)) << std::endl;
-  assert(Simple.Inside(Vec_t(5., 0., 2.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(5., 0., 2.)) == vecgeom::EInside::kSurface);
 
   // Corner Point
-  assert(Simple.Inside(Vec_t(1., 0., 1.)) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(Vec_t(5., 0., 1.)) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(Vec_t(1., 0., 3.)) == vecgeom::EInside::kSurface);
-  assert(Simple.Inside(Vec_t(5., 0., 3.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(1., 0., 1.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(5., 0., 1.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(1., 0., 3.)) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(Vec_t(5., 0., 3.)) == vecgeom::EInside::kSurface);
 
   // DistanceToIn tests
-  assert(Simple.DistanceToIn(Vec_t(3., 0., 1.5), Vec_t(0., 0., 1.)) == 0.5);
+  VECGEOM_ASSERT(Simple.DistanceToIn(Vec_t(3., 0., 1.5), Vec_t(0., 0., 1.)) == 0.5);
 
   Vec_t outPt1(8., 0., 1.5);
   Vec_t dir(-1., 0., 0.);
   Precision Dist = Simple.DistanceToIn(outPt1, dir);
   // std::cout << std::setprecision(20) << "DistanceToIn of (8.,0.,1.5) : " << Dist << std::endl;
-  assert(Dist == 3);
-  assert(Simple.Inside(outPt1 + dir * Dist) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Dist == 3);
+  VECGEOM_ASSERT(Simple.Inside(outPt1 + dir * Dist) == vecgeom::EInside::kSurface);
 
   Vec_t outPt2(3., 0., 0.);
-  assert(Simple.Inside(outPt2) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(Simple.Inside(outPt2) == vecgeom::EInside::kOutside);
   Vec_t dir2(Vec_t(4., 0., 2) - outPt2);
   // dir /= dir.Mag();//.Normalize();
   dir2.Normalize();
@@ -99,37 +99,37 @@ bool TestGenericPolycone()
                  "Cones Sections  : "
               << Simple.Inside(outPt2 + dir2 * Dist) << std::endl;
   }
-  assert(Simple.Inside(outPt2 + dir2 * Dist) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(outPt2 + dir2 * Dist) == vecgeom::EInside::kSurface);
 
   // DistanceToIn test for Inside points
   Dist = Simple.DistanceToIn(Vec_t(2., 0., 2.5), dir2);
   if (verbose) {
     std::cout << "DistanceToIn of inside Point (2.,0.,2.5) : (SHOULD BE NEGATIVE) : " << Dist << std::endl;
   }
-  assert(Dist < 0.);
+  VECGEOM_ASSERT(Dist < 0.);
 
   Dist = Simple.DistanceToIn(Vec_t(1.5, 0., 1.99999), dir2);
   if (verbose) {
     std::cout << "DistanceToIn of inside Point (1.5,0.,1.99999) : (SHOULD BE NEGATIVE) : " << Dist << std::endl;
   }
-  assert(Dist < 0.);
+  VECGEOM_ASSERT(Dist < 0.);
 
   Vec_t outPt3(6., 0., 5.);
   Vec_t dir3(Vec_t(5., 0., 3.) - outPt3);
   dir3.Normalize();
   Dist = Simple.DistanceToIn(outPt3, dir3);
-  assert(Simple.Inside(outPt3 + dir3 * Dist) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(Simple.Inside(outPt3 + dir3 * Dist) == vecgeom::EInside::kSurface);
 
   // DistanceToOut tests
-  assert(Simple.DistanceToOut(Vec_t(3., 0., 2.5), Vec_t(0., 0., 1.)) == 0.5);
-  assert(Simple.DistanceToOut(Vec_t(3., 0., 2.5), Vec_t(0., 0., -1.)) == 0.5);
-  assert(Simple.DistanceToOut(Vec_t(5., 0., 2.5), Vec_t(1., 0., 0.)) == 0.);
-  assert(Simple.DistanceToOut(Vec_t(5., 0., 2.5), Vec_t(-1., 0., 0.)) == 4.);
-  assert(Simple.DistanceToOut(Vec_t(4.5, 0., 2.), Vec_t(0., 0., 1.)) == 1.);
-  assert(Simple.DistanceToOut(Vec_t(4.5, 0., 1.9), Vec_t(0., 0., 1.)) == 1.1);
-  assert(Simple.DistanceToOut(outPt1, Vec_t(0., 0., 1.)) < 0.);
-  assert(Simple.DistanceToOut(outPt2, Vec_t(0., 0., 1.)) < 0.);
-  assert(Simple.DistanceToOut(outPt3, Vec_t(0., 0., 1.)) < 0.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(3., 0., 2.5), Vec_t(0., 0., 1.)) == 0.5);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(3., 0., 2.5), Vec_t(0., 0., -1.)) == 0.5);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(5., 0., 2.5), Vec_t(1., 0., 0.)) == 0.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(5., 0., 2.5), Vec_t(-1., 0., 0.)) == 4.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(4.5, 0., 2.), Vec_t(0., 0., 1.)) == 1.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(4.5, 0., 1.9), Vec_t(0., 0., 1.)) == 1.1);
+  VECGEOM_ASSERT(Simple.DistanceToOut(outPt1, Vec_t(0., 0., 1.)) < 0.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(outPt2, Vec_t(0., 0., 1.)) < 0.);
+  VECGEOM_ASSERT(Simple.DistanceToOut(outPt3, Vec_t(0., 0., 1.)) < 0.);
 #if (0)
   {
     /* This block contains some test points which shows some mismatches and detected by
@@ -236,7 +236,7 @@ bool TestGenericPolycone()
 
 int main(int argc, char *argv[])
 {
-  assert(TestGenericPolycone<vecgeom::SimpleGenericPolycone>());
+  VECGEOM_ASSERT(TestGenericPolycone<vecgeom::SimpleGenericPolycone>());
   std::cout << "VecGeomGenericPolycone passed\n";
 
   return 0;

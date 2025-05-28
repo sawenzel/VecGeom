@@ -59,7 +59,7 @@ bool TestParallelepiped()
   Precision vol      = para.Capacity();
   Precision volCheck = para.GetUnplacedVolume()->EstimateCapacity(Npoints);
   std::cout << " vol = " << vol << "   mc_estimated = " << volCheck << std::endl;
-  assert(std::abs(vol - volCheck) < 0.01 * vol);
+  VECGEOM_ASSERT(std::abs(vol - volCheck) < 0.01 * vol);
 
   // Check Surface area
 
@@ -67,7 +67,7 @@ bool TestParallelepiped()
   Precision surf      = para.SurfaceArea();
   Precision surfCheck = para.GetUnplacedVolume()->EstimateSurfaceArea(Npoints);
   std::cout << " surf = " << surf << "   mc_estimated = " << surfCheck << std::endl;
-  assert(std::abs(surf - surfCheck) < 0.01 * surf);
+  VECGEOM_ASSERT(std::abs(surf - surfCheck) < 0.01 * surf);
 
   // Check Extent and cached BBox
 
@@ -86,47 +86,47 @@ bool TestParallelepiped()
   std::cout << " calculated: min = " << minExtent << " max = " << maxExtent << std::endl;
   std::cout << " estimated:  min = " << minCheck << " max = " << maxCheck << std::endl;
 
-  assert(std::abs(minExtent.x() - minCheck.x()) < 0.001 * std::abs(minExtent.x()));
-  assert(std::abs(minExtent.y() - minCheck.y()) < 0.001 * std::abs(minExtent.y()));
-  assert(minExtent.z() == minCheck.z());
-  assert(std::abs(maxExtent.x() - maxCheck.x()) < 0.001 * std::abs(maxExtent.x()));
-  assert(std::abs(maxExtent.y() - maxCheck.y()) < 0.001 * std::abs(maxExtent.y()));
-  assert(maxExtent.z() == maxCheck.z());
-  assert(ApproxEqual<Precision>(minExtent, minBBox));
-  assert(ApproxEqual<Precision>(maxExtent, maxBBox));
+  VECGEOM_ASSERT(std::abs(minExtent.x() - minCheck.x()) < 0.001 * std::abs(minExtent.x()));
+  VECGEOM_ASSERT(std::abs(minExtent.y() - minCheck.y()) < 0.001 * std::abs(minExtent.y()));
+  VECGEOM_ASSERT(minExtent.z() == minCheck.z());
+  VECGEOM_ASSERT(std::abs(maxExtent.x() - maxCheck.x()) < 0.001 * std::abs(maxExtent.x()));
+  VECGEOM_ASSERT(std::abs(maxExtent.y() - maxCheck.y()) < 0.001 * std::abs(maxExtent.y()));
+  VECGEOM_ASSERT(maxExtent.z() == maxCheck.z());
+  VECGEOM_ASSERT(ApproxEqual<Precision>(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(maxExtent, maxBBox));
 
   // Check Inside
 
   std::cout << "=== Check Inside()" << std::endl;
-  assert(para.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(para.Inside(pbigz) == vecgeom::EInside::kOutside);
-  assert(para.Inside(ponxside) == vecgeom::EInside::kSurface);
-  assert(para.Inside(ponyside) == vecgeom::EInside::kSurface);
-  assert(para.Inside(ponzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(para.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(para.Inside(pbigz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(para.Inside(ponxside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(para.Inside(ponyside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(para.Inside(ponzside) == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponzside + ponxside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponzside + ponmxside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponzside + ponyside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponzside + ponmyside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponmzside + ponxside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponmzside + ponmxside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponmzside + ponyside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   inside = para.Inside(ponmzside + ponmyside);
-  assert(inside == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);
 
   // Check Surface Normal
 
@@ -151,199 +151,199 @@ bool TestParallelepiped()
   // check facets
   ptest = Vec_t(dx, 0, 0);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == nn[0]);
+  VECGEOM_ASSERT(valid && normal == nn[0]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == nn[0]);
+  VECGEOM_ASSERT(!valid && normal == nn[0]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == nn[0]);
+  VECGEOM_ASSERT(!valid && normal == nn[0]);
 
   ptest = Vec_t(-dx, 0, 0);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == -nn[0]);
+  VECGEOM_ASSERT(valid && normal == -nn[0]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == -nn[0]);
+  VECGEOM_ASSERT(!valid && normal == -nn[0]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == -nn[0]);
+  VECGEOM_ASSERT(!valid && normal == -nn[0]);
 
   ptest = Vec_t(0, dy, 0);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == nn[1]);
+  VECGEOM_ASSERT(valid && normal == nn[1]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == nn[1]);
+  VECGEOM_ASSERT(!valid && normal == nn[1]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == nn[1]);
+  VECGEOM_ASSERT(!valid && normal == nn[1]);
 
   ptest = Vec_t(0, -dy, 0);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == -nn[1]);
+  VECGEOM_ASSERT(valid && normal == -nn[1]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == -nn[1]);
+  VECGEOM_ASSERT(!valid && normal == -nn[1]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == -nn[1]);
+  VECGEOM_ASSERT(!valid && normal == -nn[1]);
 
   ptest = Vec_t(0, 0, dz);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == nn[2]);
+  VECGEOM_ASSERT(valid && normal == nn[2]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == nn[2]);
+  VECGEOM_ASSERT(!valid && normal == nn[2]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == nn[2]);
+  VECGEOM_ASSERT(!valid && normal == nn[2]);
 
   ptest = Vec_t(0, 0, -dz);
   valid = para.Normal(ptest, normal);
-  assert(valid && normal == -nn[2]);
+  VECGEOM_ASSERT(valid && normal == -nn[2]);
   valid = para.Normal(1.1 * ptest, normal);
-  assert(!valid && normal == -nn[2]);
+  VECGEOM_ASSERT(!valid && normal == -nn[2]);
   valid = para.Normal(0.9 * ptest, normal);
-  assert(!valid && normal == -nn[2]);
+  VECGEOM_ASSERT(!valid && normal == -nn[2]);
 
   // check edges
   valid = para.Normal((pp[0] + pp[1]) / 2, normal);
-  assert(valid && normal == (-nn[2] - nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] - nn[1]).Unit());
   valid = para.Normal((pp[1] + pp[2]) / 2, normal);
-  assert(valid && normal == (-nn[2] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] + nn[0]).Unit());
   valid = para.Normal((pp[2] + pp[3]) / 2, normal);
-  assert(valid && normal == (-nn[2] + nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] + nn[1]).Unit());
   valid = para.Normal((pp[3] + pp[0]) / 2, normal);
-  assert(valid && normal == (-nn[2] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] - nn[0]).Unit());
 
   valid = para.Normal((pp[4] + pp[5]) / 2, normal);
-  assert(valid && normal == (nn[2] - nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] - nn[1]).Unit());
   valid = para.Normal((pp[5] + pp[6]) / 2, normal);
-  assert(valid && normal == (nn[2] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] + nn[0]).Unit());
   valid = para.Normal((pp[6] + pp[7]) / 2, normal);
-  assert(valid && normal == (nn[2] + nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] + nn[1]).Unit());
   valid = para.Normal((pp[7] + pp[4]) / 2, normal);
-  assert(valid && normal == (nn[2] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] - nn[0]).Unit());
 
   valid = para.Normal((pp[0] + pp[4]) / 2, normal);
-  assert(valid && normal == (-nn[0] - nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[0] - nn[1]).Unit());
   valid = para.Normal((pp[1] + pp[5]) / 2, normal);
-  assert(valid && normal == (nn[0] - nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[0] - nn[1]).Unit());
   valid = para.Normal((pp[2] + pp[6]) / 2, normal);
-  assert(valid && normal == (nn[0] + nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[0] + nn[1]).Unit());
   valid = para.Normal((pp[3] + pp[7]) / 2, normal);
-  assert(valid && normal == (-nn[0] + nn[1]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[0] + nn[1]).Unit());
 
   // check nodes
   valid = para.Normal(pp[0], normal);
-  assert(valid && normal == (-nn[2] - nn[1] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] - nn[1] - nn[0]).Unit());
   valid = para.Normal(pp[1], normal);
-  assert(valid && normal == (-nn[2] - nn[1] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] - nn[1] + nn[0]).Unit());
   valid = para.Normal(pp[2], normal);
-  assert(valid && normal == (-nn[2] + nn[1] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] + nn[1] + nn[0]).Unit());
   valid = para.Normal(pp[3], normal);
-  assert(valid && normal == (-nn[2] + nn[1] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (-nn[2] + nn[1] - nn[0]).Unit());
 
   valid = para.Normal(pp[4], normal);
-  assert(valid && normal == (nn[2] - nn[1] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] - nn[1] - nn[0]).Unit());
   valid = para.Normal(pp[5], normal);
-  assert(valid && normal == (nn[2] - nn[1] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] - nn[1] + nn[0]).Unit());
   valid = para.Normal(pp[6], normal);
-  assert(valid && normal == (nn[2] + nn[1] + nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] + nn[1] + nn[0]).Unit());
   valid = para.Normal(pp[7], normal);
-  assert(valid && normal == (nn[2] + nn[1] - nn[0]).Unit());
+  VECGEOM_ASSERT(valid && normal == (nn[2] + nn[1] - nn[0]).Unit());
 
   // Check SafetyToOut
 
   std::cout << "=== Check SafetyToOut()" << std::endl;
   Dist = para.SafetyToOut(pzero);
-  assert(Dist < dx);
+  VECGEOM_ASSERT(Dist < dx);
 
   Dist = para.SafetyToOut(ponxside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToOut(ponyside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToOut(ponzside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToOut(ponmxside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToOut(ponmyside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToOut(ponmzside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   // Check SafetyToIn
 
   std::cout << "=== Check SafetyToIn()" << std::endl;
   Dist = para.SafetyToIn(pzero);
-  assert(Dist < dx);
+  VECGEOM_ASSERT(Dist < dx);
 
   Dist = para.SafetyToIn(ponxside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToIn(ponyside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToIn(ponzside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToIn(ponmxside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToIn(ponmyside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Dist = para.SafetyToIn(ponmzside);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
-  assert(ApproxEqual<Precision>(para.SafetyToIn(pbigx), para.SafetyToIn(pbigmx)));
-  assert(ApproxEqual<Precision>(para.SafetyToIn(pbigy), para.SafetyToIn(pbigmy)));
-  assert(ApproxEqual<Precision>(para.SafetyToIn(pbigz), para.SafetyToIn(pbigmz)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(para.SafetyToIn(pbigx), para.SafetyToIn(pbigmx)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(para.SafetyToIn(pbigy), para.SafetyToIn(pbigmy)));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(para.SafetyToIn(pbigz), para.SafetyToIn(pbigmz)));
 
   // DistanceToOut(P,V)
 
   std::cout << "=== Check DistanceToOut()" << std::endl;
   Dist = para.DistanceToOut(pzero, vx);
-  assert(ApproxEqual<Precision>(Dist, dx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dx));
   Dist = para.DistanceToOut(pzero, vmx);
-  assert(ApproxEqual<Precision>(Dist, dx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dx));
   Dist = para.DistanceToOut(pzero, vy);
-  assert(ApproxEqual<Precision>(Dist, dy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dy));
   Dist = para.DistanceToOut(pzero, vmy);
-  assert(ApproxEqual<Precision>(Dist, dy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dy));
   Dist = para.DistanceToOut(pzero, vz);
-  assert(ApproxEqual<Precision>(Dist, dz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dz));
   Dist = para.DistanceToOut(pzero, vmz);
-  assert(ApproxEqual<Precision>(Dist, dz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, dz));
 
   Dist = para.DistanceToOut(ponxside, vx);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = para.DistanceToOut(ponmxside, vmx);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = para.DistanceToOut(ponyside, vy);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = para.DistanceToOut(ponmyside, vmy);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = para.DistanceToOut(ponzside, vz);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = para.DistanceToOut(ponmzside, vmz);
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
 
   // DistanceToIn(P,V)
 
   std::cout << "=== Check DistanceToIn()" << std::endl;
   Dist = para.DistanceToIn(pbigx, vmx);
-  assert(ApproxEqual<Precision>(Dist, 100 - dx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dx));
   Dist = para.DistanceToIn(pbigmx, vx);
-  assert(ApproxEqual<Precision>(Dist, 100 - dx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dx));
   Dist = para.DistanceToIn(pbigy, vmy);
-  assert(ApproxEqual<Precision>(Dist, 100 - dy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dy));
   Dist = para.DistanceToIn(pbigmy, vy);
-  assert(ApproxEqual<Precision>(Dist, 100 - dy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dy));
   Dist = para.DistanceToIn(pbigz, vmz);
-  assert(ApproxEqual<Precision>(Dist, 100 - dz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dz));
   Dist = para.DistanceToIn(pbigmz, vz);
-  assert(ApproxEqual<Precision>(Dist, 100 - dz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 100 - dz));
   Dist = para.DistanceToIn(pbigx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
   Dist = para.DistanceToIn(pbigmx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   // Check SamplePointOnSurface()
 
@@ -365,7 +365,7 @@ bool TestParallelepiped()
   int nfactor = 100, ntot = 2. * (sx + sy + sz) * nfactor;
   for (int i = 0; i < ntot; i++) {
     Vec_t p = para.GetUnplacedVolume()->SamplePointOnSurface();
-    assert(para.Inside(p) == vecgeom::kSurface);
+    VECGEOM_ASSERT(para.Inside(p) == vecgeom::kSurface);
     if (std::abs(Nx.Dot(p) - Dx) < kHalfTolerance) {
       ++nxneg;
     } else if (std::abs(Nx.Dot(p) + Dx) < kHalfTolerance) {
@@ -385,12 +385,12 @@ bool TestParallelepiped()
   std::cout << "n. of samples -/+x, -/+y, -/+z: "
             << "\t" << nxneg << ", \t" << nxpos << ", \t" << nyneg << ", \t" << nypos << ", \t" << nzneg << ", \t"
             << nzpos << std::endl;
-  assert(std::abs(nxneg - sx * nfactor) < 0.01 * sx * nfactor);
-  assert(std::abs(nxpos - sx * nfactor) < 0.01 * sx * nfactor);
-  assert(std::abs(nyneg - sy * nfactor) < 0.01 * sy * nfactor);
-  assert(std::abs(nypos - sy * nfactor) < 0.01 * sy * nfactor);
-  assert(std::abs(nzneg - sz * nfactor) < 0.01 * sz * nfactor);
-  assert(std::abs(nzpos - sz * nfactor) < 0.01 * sz * nfactor);
+  VECGEOM_ASSERT(std::abs(nxneg - sx * nfactor) < 0.01 * sx * nfactor);
+  VECGEOM_ASSERT(std::abs(nxpos - sx * nfactor) < 0.01 * sx * nfactor);
+  VECGEOM_ASSERT(std::abs(nyneg - sy * nfactor) < 0.01 * sy * nfactor);
+  VECGEOM_ASSERT(std::abs(nypos - sy * nfactor) < 0.01 * sy * nfactor);
+  VECGEOM_ASSERT(std::abs(nzneg - sz * nfactor) < 0.01 * sz * nfactor);
+  VECGEOM_ASSERT(std::abs(nzpos - sz * nfactor) < 0.01 * sz * nfactor);
 
   return true;
 }

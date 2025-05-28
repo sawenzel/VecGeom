@@ -9,7 +9,7 @@
 #include <VecGeom/base/Stopwatch.h>
 
 #include <iomanip>
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <cstdio>
 
 using namespace vecgeom;
@@ -292,7 +292,7 @@ int TestNavIndexGPU(vecgeom::cxx::VPlacedVolume const *const world, int maxdepth
   vecgeom::cxx::CudaManager::Instance().Synchronize();
 
   auto gpu_world = vecgeom::cxx::CudaManager::Instance().world_gpu();
-  assert(gpu_world && "GPU world volume is a null pointer");
+  VECGEOM_VALIDATE(gpu_world, << "GPU world volume is a null pointer");
 
   char *input_buffer = nullptr;
   checkCudaErrors(cudaMallocManaged((void **)&input_buffer, statesize));

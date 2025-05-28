@@ -249,7 +249,7 @@ public:
   //      // check if a hit in this Embree structure leads to a hit
   //      // in the real geometry
   //
-  //      assert(args->N == 1);
+  //      VECGEOM_ASSERT(args->N == 1);
   //      const auto hit = (RTCHit *)args->hit;
   //      const auto id  = hit->geomID;
   //      int *hitvalid  = args->valid;

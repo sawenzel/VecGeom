@@ -453,7 +453,7 @@ void UnplacedPolycone::CopyToGpu(std::vector<VUnplacedVolume const *> const &vol
 
   for (unsigned int i = 0; i < size; ++i) {
     UnplacedPolycone const &polycone = static_cast<UnplacedPolycone const &>(*volumes[i]);
-    assert(dynamic_cast<UnplacedPolycone const *>(volumes[i]));
+    VECGEOM_ASSERT(dynamic_cast<UnplacedPolycone const *>(volumes[i]));
 
     startPhi.push_back(polycone.fPolycone->fStartPhi);
     deltaPhi.push_back(polycone.fPolycone->fDeltaPhi);
@@ -470,8 +470,9 @@ void UnplacedPolycone::CopyToGpu(std::vector<VUnplacedVolume const *> const &vol
     size_buff += sizes_buff[i];
   }
   // Assert that it's correct to have only one offset array for all variable-length arguments
-  assert(vld.z.size() == vld.rmin.size() && vld.z.size() == vld.rmax.size() && vld.offsets.back() < vld.z.size());
-  assert(startPhi.size() == size && deltaPhi.size() == size && nZs.size() == size);
+  VECGEOM_ASSERT(vld.z.size() == vld.rmin.size() && vld.z.size() == vld.rmax.size() &&
+                 vld.offsets.back() < vld.z.size());
+  VECGEOM_ASSERT(startPhi.size() == size && deltaPhi.size() == size && nZs.size() == size);
 
   RAIIDevPtr zGPU{vld.z.size()}, rminGPU{vld.rmin.size()}, rmaxGPU{vld.rmax.size()};
   DevicePtr<char> bufferGPU;

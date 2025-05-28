@@ -319,7 +319,7 @@ void ReducedPolycone::ProcessContour(Vector<Precision> z)
   for (unsigned int i = 0; i < supVect.size(); i++)
     ConvertToUniqueVector(supVect[i]);
 
-  assert(supVect.size() == z.size() && "Inconsistent vector sizes");
+  VECGEOM_VALIDATE(supVect.size() == z.size(), << "Inconsistent vector sizes");
   Vector<Line2D> lineVect = GetLineVector();
   for (unsigned int i = 0; i < z.size() - 1; i++) {
     Vector<Line2D> sectionLine;
@@ -343,7 +343,7 @@ void ReducedPolycone::ProcessContour(Vector<Precision> z)
         }
       }
     }
-    assert(sectionLine.size() == 2 && "Got more than two lines for a section");
+    VECGEOM_VALIDATE(sectionLine.size() == 2, << "Got more than two lines for a section");
 
     fSectionVect.push_back(CreateSectionFromTwoLines(sectionLine[0], sectionLine[1]));
   }

@@ -713,7 +713,6 @@ if(VECGEOM_ENABLE_CUDA)
   set(VECGEOM_CUDA_SRCS
     source/BVHManager.cu
     source/CudaManager.cu
-    source/backend/cuda/Interface.cpp
     )
 
   # Filter file prefixes that won't be compiled for CUDA

@@ -2,9 +2,8 @@
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 #include "VecGeom/base/Transformation3D.h"
 
-#ifdef VECGEOM_CUDA_INTERFACE
-#include "VecGeom/backend/cuda/Interface.h"
-#endif
+#include "VecGeom/base/Assert.h"
+#include "VecGeom/base/Assert.h"
 
 #ifdef VECGEOM_ROOT
 #include "TGeoMatrix.h"
@@ -256,19 +255,16 @@ void Transformation3D::SetTranslation(const Precision tx, const Precision ty, co
 }
 
 VECCORE_ATT_HOST_DEVICE
-void Transformation3D::SetTranslation(Vector3D<Precision> const &vec)
-{
-  SetTranslation(vec[0], vec[1], vec[2]);
-}
+void Transformation3D::SetTranslation(Vector3D<Precision> const &vec) { SetTranslation(vec[0], vec[1], vec[2]); }
 
 VECCORE_ATT_HOST_DEVICE
 void Transformation3D::SetProperties()
 {
   fHasTranslation = (fabs(tx_) > kTolerance || fabs(ty_) > kTolerance || fabs(tz_) > kTolerance) ? true : false;
-  fHasRotation    = (fabs(rxx_ -1.) > kTolerance) || (fabs(ryx_) > kTolerance) || (fabs(rzx_) > kTolerance) ||
-                         (fabs(rxy_) > kTolerance) || (fabs(ryy_ -1.) > kTolerance) || (fabs(rzy_) > kTolerance) ||
-                         (fabs(rxz_) > kTolerance) || (fabs(ryz_) > kTolerance) || (fabs(rzz_ -1.) > kTolerance);
-  fIdentity       = !fHasTranslation && !fHasRotation;
+  fHasRotation    = (fabs(rxx_ - 1.) > kTolerance) || (fabs(ryx_) > kTolerance) || (fabs(rzx_) > kTolerance) ||
+                 (fabs(rxy_) > kTolerance) || (fabs(ryy_ - 1.) > kTolerance) || (fabs(rzy_) > kTolerance) ||
+                 (fabs(rxz_) > kTolerance) || (fabs(ryz_) > kTolerance) || (fabs(rzz_ - 1.) > kTolerance);
+  fIdentity = !fHasTranslation && !fHasRotation;
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -294,10 +290,7 @@ void Transformation3D::SetRotation(const Precision phi, const Precision theta, c
 }
 
 VECCORE_ATT_HOST_DEVICE
-void Transformation3D::SetRotation(Vector3D<Precision> const &vec)
-{
-  SetRotation(vec[0], vec[1], vec[2]);
-}
+void Transformation3D::SetRotation(Vector3D<Precision> const &vec) { SetRotation(vec[0], vec[1], vec[2]); }
 
 VECCORE_ATT_HOST_DEVICE
 void Transformation3D::SetRotation(const Precision xx, const Precision yx, const Precision zx, const Precision xy,
@@ -427,7 +420,7 @@ DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu(DevicePtr<cuda::Tr
 {
 
   gpu_ptr.Construct(tx_, ty_, tz_, rxx_, ryx_, rzx_, rxy_, ryy_, rzy_, rxz_, ryz_, rzz_);
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
   return gpu_ptr;
 }
 
@@ -448,7 +441,7 @@ DevicePtr<cuda::Transformation3D> Transformation3D::CopyToGpu() const
 void Transformation3D::CopyManyToGpu(const std::vector<Transformation3D const *> &trafos,
                                      const std::vector<DevicePtr<cuda::Transformation3D>> &gpu_ptrs)
 {
-  assert(trafos.size() == gpu_ptrs.size());
+  VECGEOM_ASSERT(trafos.size() == gpu_ptrs.size());
 
   // Memory for constructor data
   // Store it as

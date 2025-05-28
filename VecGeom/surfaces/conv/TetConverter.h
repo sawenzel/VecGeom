@@ -29,7 +29,8 @@ bool CreateTetSurfaces(vecgeom::UnplacedTet const &tet, int logical_id, bool int
   // corners represented as vectors
   auto const *corners = tetstr.fVertex;
   auto assertFace     = [](int isurf) {
-    assert(isurf >= 0 && CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == FrameType::kTriangle);
+    VECGEOM_ASSERT(isurf >= 0 &&
+                       CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == FrameType::kTriangle);
   };
 
   // surface 1:

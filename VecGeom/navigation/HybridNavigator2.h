@@ -93,7 +93,7 @@ private:
               // loop lanes at second level
               for (size_t j = 0; j < kVS; ++j) {
                 if (vecCore::MaskLaneAt(inside_d, j)) {
-                  assert(count < VECGEOM_MAXFACETS);
+                  VECGEOM_ASSERT(count < VECGEOM_MAXFACETS);
                   hitlist[count++] = nodeToDaughters[nodeindex + i][j];
                 }
               }
@@ -135,7 +135,7 @@ private:
             if (!vecCore::MaskEmpty(hit1)) {
               for (size_t j = 0 /*hit1.firstOne()*/; j < kVS; ++j) { // leaf node
                 if (vecCore::MaskLaneAt(hit1, j)) {
-                  assert(count < VECGEOM_MAXFACETS);
+                  VECGEOM_ASSERT(count < VECGEOM_MAXFACETS);
                   hitlist[count] = HybridManager2::BoxIdDistancePair_t(nodeToDaughters[nodeindex + i][j],
                                                                        vecCore::LaneAt(distance, j));
                   count++;

@@ -47,7 +47,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   Vector3 aMin, aMax;
   tube.Extent(aMin, aMax);
 
-  assert(dphi > vecgeom::kTolerance);
+  VECGEOM_ASSERT(dphi > vecgeom::kTolerance);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);
@@ -61,7 +61,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   auto thetad_bottom = bottom_normal.Theta() * vecgeom::kRadToDeg;
   auto phid_bottom   = bottom_normal.Phi() * vecgeom::kRadToDeg;
   // assert for 0 <= theta top <= 90 and 90 <= theta bottom <= 180
-  assert(top_normal[2] >= 0 && bottom_normal[2] <= 0);
+  VECGEOM_ASSERT(top_normal[2] >= 0 && bottom_normal[2] <= 0);
 
   auto &cpudata = CPUsurfData<Real_t>::Instance();
 
@@ -70,7 +70,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   // that fully contains the ellipse and making the surface logical such that the full boolean expression
   // must be evaluated to decide whether it is a hit or not.
   // As a consequence, all surfaces of this volume must be logical surfaces.
-  assert(std::abs(top_normal.z()) > vecgeom::kTolerance); // assert before division
+  VECGEOM_ASSERT(std::abs(top_normal.z()) > vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(FrameType::kWindow, WindowMask_t{tube.rmax(), tube.rmax() / top_normal.z()}),
@@ -84,7 +84,8 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   logic.push_back(land);
 
   // surface at -dz
-  assert(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta())) > vecgeom::kTolerance); // assert before division
+  VECGEOM_ASSERT(std::abs(std::cos(vecgeom::kPi - bottom_normal.Theta())) >
+                 vecgeom::kTolerance); // assert before division
   isurf = builder::CreateLocalSurface<Real_t>(
       builder::CreateUnplacedSurface<Real_t>(SurfaceType::kPlanar),
       builder::CreateFrame<Real_t>(
@@ -158,7 +159,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   vert[3].Set(rmin * csphi, rmin * ssphi, zmax1);
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
-  assert(isurf >= 0);
+  VECGEOM_ASSERT(isurf >= 0);
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
@@ -173,7 +174,7 @@ bool CreateTubeSurfaces(vecgeom::UnplacedCutTube const &tube, int logical_id, bo
   vert[3].Set(rmax * cephi, rmax * sephi, zmax2);
   isurf = builder::CreateLocalSurfaceFromVertices<Real_t>(vert, logical_id);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
-  assert(isurf >= 0);
+  VECGEOM_ASSERT(isurf >= 0);
   if (!smallerPi) builder::GetSurface<Real_t>(isurf).fEmbedding = false;
   // Make the surface "logical"
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;

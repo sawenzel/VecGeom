@@ -8,10 +8,10 @@ void CheckFrames(FrameType1 const &f1, FrameType2 const &f2, TransformationMP<Re
                  FrameIntersect expected, FrameIntersect expected_inv)
 {
   auto result = FrameChecker<Real_t, FrameType1, FrameType2>::CheckFrames(f1, f2, trans);
-  assert(result == expected);
+  VECGEOM_ASSERT(result == expected);
   // Check that the opposite stands
   result = FrameChecker<Real_t, FrameType2, FrameType1>::CheckFrames(f2, f1, trans.Inverse());
-  assert(result == expected_inv);
+  VECGEOM_ASSERT(result == expected_inv);
 }
 
 int main(int argc, char *argv[])
@@ -28,19 +28,19 @@ int main(int argc, char *argv[])
   AngleInterval<Real_t> ang4(-vecgeom::kPi / 12, -vecgeom::kPi / 4); // [-15, -45] -> [345, 675]
   AngleInterval<Real_t> ang5(-vecgeom::kPi / 4, vecgeom::kPi / 12);  // [-45, 15] -> [315, 375]
 
-  assert(ang1 == ang1);
-  assert(ang4 > ang3);
-  assert(ang4 != ang5);
-  assert(ang1.Intersect(ang2).IsNull());
-  assert(ang1.Intersect(ang3) == AngleInterval<Real_t>(vecgeom::kPi / 12, vecgeom::kPi / 4));
-  assert(ang4.Intersect(ang5) == AngleInterval<Real_t>(-vecgeom::kPi / 12, vecgeom::kPi / 12));
-  assert(ang4.Intersect(ang5) > ang3);
+  VECGEOM_ASSERT(ang1 == ang1);
+  VECGEOM_ASSERT(ang4 > ang3);
+  VECGEOM_ASSERT(ang4 != ang5);
+  VECGEOM_ASSERT(ang1.Intersect(ang2).IsNull());
+  VECGEOM_ASSERT(ang1.Intersect(ang3) == AngleInterval<Real_t>(vecgeom::kPi / 12, vecgeom::kPi / 4));
+  VECGEOM_ASSERT(ang4.Intersect(ang5) == AngleInterval<Real_t>(-vecgeom::kPi / 12, vecgeom::kPi / 12));
+  VECGEOM_ASSERT(ang4.Intersect(ang5) > ang3);
 
   // Validate segment intersection
   auto CheckIntersect = [](Segment2D<Real_t> const &seg1, Segment2D<Real_t> const &seg2, SegmentIntersect expected1,
                            SegmentIntersect expected2) {
-    assert(seg1.Intersect(seg2) == expected1);
-    assert(seg2.Intersect(seg1) == expected2);
+    VECGEOM_ASSERT(seg1.Intersect(seg2) == expected1);
+    VECGEOM_ASSERT(seg2.Intersect(seg1) == expected2);
   };
 
   Segment2D<Real_t> seg1({0., 0.}, {10., 0.});

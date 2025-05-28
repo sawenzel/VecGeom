@@ -189,8 +189,8 @@ int main()
   }
   /*** end locate in ROOT geometry ***/
 
-  assert(::gGeoManager->GetNNodes() == ntotalnodes1);
-  //    assert( ::gGeoManager->GetListOfVolumes()->GetEntries() == mlv1 );
+  VECGEOM_ASSERT(::gGeoManager->GetNNodes() == ntotalnodes1);
+  //    VECGEOM_ASSERT( ::gGeoManager->GetListOfVolumes()->GetEntries() == mlv1 );
 
   //
   RootGeoManager::Instance().Clear();
@@ -223,12 +223,12 @@ int main()
   int mlv2         = GeoManager::Instance().GetRegisteredVolumesCount();
   int ntotalnodes2 = GeoManager::Instance().GetTotalNodeCount();
 
-  assert(md2 == md1);
-  assert(mpv2 == mpv1);
-  assert(mlv2 == mlv1);
-  assert(mpv2 > 0);
-  assert(mlv2 > 0);
-  assert(ntotalnodes1 == ntotalnodes2);
+  VECGEOM_ASSERT(md2 == md1);
+  VECGEOM_ASSERT(mpv2 == mpv1);
+  VECGEOM_ASSERT(mlv2 == mlv1);
+  VECGEOM_ASSERT(mpv2 > 0);
+  VECGEOM_ASSERT(mlv2 > 0);
+  VECGEOM_ASSERT(ntotalnodes1 == ntotalnodes2);
 
   return 0;
 }

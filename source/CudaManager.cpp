@@ -3,6 +3,7 @@
 
 #include "VecGeom/management/CudaManager.h"
 
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/backend/cuda/Interface.h"
 #include "VecGeom/base/Array.h"
 #include "VecGeom/base/Stopwatch.h"
@@ -45,13 +46,13 @@ CudaManager::CudaManager() : world_gpu_(), fGPUtoCPUmapForPlacedVolumes_()
 
 VPlacedVolume const *CudaManager::world() const
 {
-  assert(world_ != nullptr);
+  VECGEOM_ASSERT(world_ != nullptr);
   return world_;
 }
 
 vecgeom::cuda::VPlacedVolume const *CudaManager::world_gpu() const
 {
-  // assert(world_gpu_ != nullptr);
+  // VECGEOM_ASSERT(world_gpu_ != nullptr);
   return world_gpu_;
 }
 
@@ -66,7 +67,7 @@ void CopyUnplacedVolumes(std::vector<vecgeom::cxx::VUnplacedVolume const *> &&vo
                          std::vector<vecgeom::cxx::DevicePtr<vecgeom::cuda::VUnplacedVolume>> &&devPtrs)
 {
   using vecgeom::cxx::VUnplacedVolume;
-  assert(volumesToCopy.size() == devPtrs.size());
+  VECGEOM_ASSERT(volumesToCopy.size() == devPtrs.size());
 
   std::unordered_map<std::type_index, std::pair<std::vector<VUnplacedVolume const *>,
                                                 std::vector<vecgeom::cxx::DevicePtr<vecgeom::cuda::VUnplacedVolume>>>>
@@ -359,19 +360,19 @@ bool CudaManager::AllocatePlacedVolumesOnCoproc()
   size_t totalSize = 0;
   // calculate total size of buffer on GPU to hold the GPU copies of the collection
   for (unsigned int i = 0; i < size; ++i) {
-    assert(&GeoManager::gCompactPlacedVolBuffer[i] != nullptr);
+    VECGEOM_ASSERT(&GeoManager::gCompactPlacedVolBuffer[i] != nullptr);
     totalSize += (&GeoManager::gCompactPlacedVolBuffer[i])->DeviceSizeOf();
   }
 
   GpuAddress gpu_address;
   gpu_address.Allocate(totalSize);
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   // store this address for later access (on the host)
   fPlacedVolumeBufferOnDevice = DevicePtr<vecgeom::cuda::VPlacedVolume>(gpu_address);
   // this address has to be made known globally to the device side
   vecgeom::cuda::InitDeviceCompactPlacedVolBufferPtr(gpu_address.GetPtr());
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   allocated_memory_.push_back(gpu_address);
 
@@ -418,20 +419,20 @@ void CudaManager::AllocateGeometry()
   }
 
   AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_);
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   // the allocation for placed volumes is a bit different (due to compact buffer treatment), so we call a specialized
   // function
   AllocatePlacedVolumesOnCoproc(); // for placed volumes
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   // allocate the navigation index table (if any) on the coprocessor
   AllocateNavIndexOnCoproc();
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   // this we should only do if not using inplace transformations
   AllocateCollectionOnCoproc("transformations", transformations_);
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   {
     if (verbose_ > 2) std::cerr << "Allocating daughter lists...";
@@ -456,7 +457,7 @@ void CudaManager::AllocateGeometry()
     if (verbose_ > 2) std::cerr << " OK\n";
   }
 
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 
   if (verbose_ > 2) {
     std::cerr << " geometry OK: #elems in alloc_mem=" << allocated_memory_.size() << ", mem_map=" << memory_map_.size()
@@ -507,7 +508,7 @@ typename CudaManager::GpuAddress CudaManager::Lookup(Type const *const key) cons
 {
   const CpuAddress cpu_address = ToCpuAddress(key);
   const auto iter              = memory_map_.find(cpu_address);
-  assert(iter != memory_map_.end());
+  VECGEOM_ASSERT(iter != memory_map_.end());
   return iter->second;
 }
 
@@ -516,7 +517,7 @@ typename CudaManager::GpuAddress CudaManager::Lookup(DevicePtr<Type> key) const
 {
   GpuAddress gpu_address(key);
   const auto iter = gpu_memory_map_.find(gpu_address);
-  assert(iter != gpu_memory_map_.end());
+  VECGEOM_ASSERT(iter != gpu_memory_map_.end());
   return iter->second;
 }
 
@@ -578,11 +579,11 @@ void CudaManager::CopyPlacedVolumes() const
 
     // check (assert) that everything is ok concerning the order of placed volume objects
     // also asserts that sizeof(vecgeom::cxx::VPlacedVolume) == sizeof(vecgeom::cuda::VPlacedVolume)
-    assert((size_t)(pvol) ==
-           (size_t)(&GeoManager::gCompactPlacedVolBuffer[0]) + sizeof(vecgeom::cxx::VPlacedVolume) * pvol->id());
+    VECGEOM_ASSERT((size_t)(pvol) == (size_t)(&GeoManager::gCompactPlacedVolBuffer[0]) +
+                                         sizeof(vecgeom::cxx::VPlacedVolume) * pvol->id());
 #ifdef VECGEOM_ENABLE_CUDA
-    assert((size_t)(LookupPlaced(pvol).GetPtr()) ==
-           (size_t)(fPlacedVolumeBufferOnDevice.GetPtr()) + sizeof(vecgeom::cxx::VPlacedVolume) * pvol->id());
+    VECGEOM_ASSERT((size_t)(LookupPlaced(pvol).GetPtr()) ==
+                   (size_t)(fPlacedVolumeBufferOnDevice.GetPtr()) + sizeof(vecgeom::cxx::VPlacedVolume) * pvol->id());
 #endif
   }
 

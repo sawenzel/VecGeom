@@ -60,17 +60,17 @@ struct Index2PVolumeConverter {
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     // checking here for NVCC_DEVICE since the global variable globaldevicegeomgata::gCompact...
     // is marked __device__ and can only be compiled within device compiler passes
-    assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
+    VECGEOM_ASSERT(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[index];
 #else
 #ifndef VECCORE_CUDA
-    assert(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
-           vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
+    VECGEOM_ASSERT(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
+                   vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
     return &vecgeom::GeoManager::gCompactPlacedVolBuffer[index];
 #else
     // this is the case when we compile with nvcc for host side
     // (failed previously due to undefined symbol vecgeom::cuda::GeoManager::gCompactPlacedVolBuffer)
-    assert(false && "reached unimplement code");
+    VECGEOM_VALIDATE(false, << "reached unimplement code");
     (void)index; // avoid unused parameter warning.
     return nullptr;
 #endif
@@ -531,7 +531,7 @@ VECCORE_ATT_HOST_DEVICE
 void NavStatePath::Push(VPlacedVolume const *v)
 {
 #ifdef DEBUG
-  assert(fCurrentLevel < GetMaxLevel());
+  VECGEOM_ASSERT(fCurrentLevel < GetMaxLevel());
 #endif
   fPath[fCurrentLevel++] = ToIndex(v);
 #ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
@@ -546,7 +546,7 @@ void NavStatePath::Push(unsigned short child)
   if (fCurrentLevel > 0) {
     auto top = ToPlacedVolume(fPath[fCurrentLevel - 1]);
 #ifdef DEBUG
-    assert(child < top->GetDaughters().size());
+    VECGEOM_ASSERT(child < top->GetDaughters().size());
 #endif
     fPath[fCurrentLevel++] = ToIndex(top->GetDaughters().operator[](child));
 #ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS
@@ -559,7 +559,7 @@ VECCORE_ATT_HOST_DEVICE
 void NavStatePath::PushIndexType(NavStateIndex_t v)
 {
 #ifdef DEBUG
-  assert(fCurrentLevel < GetMaxLevel());
+  VECGEOM_ASSERT(fCurrentLevel < GetMaxLevel());
 #endif
   fPath[fCurrentLevel++] = v;
 #ifdef VECGEOM_USE_CACHED_TRANSFORMATIONS

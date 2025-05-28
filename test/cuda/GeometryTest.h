@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <limits>
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 namespace vecgeom {
 VECGEOM_DEVICE_FORWARD_DECLARE(class VPlacedVolume;);
@@ -34,11 +34,11 @@ struct GeometryInfo {
         logicalId(vol.GetLogicalVolume()->id()), trans{*vol.GetTransformation()}
   {
     const auto unplaced = vol.GetUnplacedVolume();
-    assert(unplaced);
+    VECGEOM_ASSERT(unplaced);
 
     vecgeom::Vector3D<vecgeom::Precision> aminv, amaxv;
     unplaced->GetBBox(aminv, amaxv);
-    assert((amaxv - aminv).Mag() > 0 && "Bounding box size must be positive");
+    VECGEOM_ASSERT((amaxv - aminv).Mag() > 0 && "Bounding box size must be positive");
     for (auto i = 0; i < 3; ++i) {
       amin[i] = aminv[i];
       amax[i] = amaxv[i];

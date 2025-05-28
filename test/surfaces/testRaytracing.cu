@@ -115,7 +115,7 @@ __device__ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vect
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   if (debug) {
-    printf("CUDA PropagateRaysSolid debug ray %d:\n", i);
+    printf("Device PropagateRaysSolid debug ray %d:\n", i);
     printf("   ");
     in_states[i].Print();
   }
@@ -238,8 +238,8 @@ __device__ void PropagateRaySurf(int i, Vector3D<Precision> const *points, Vecto
 
       // Now replay to get correct distance
       distance = vgbrep::protonav::ComputeStepAndHit<Precision, Real_t>(pt, dir, true_state, out_state, crossed_surf);
-      assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
-             "Distance after relocation shouldn't be 0 or infinity");
+      VECGEOM_ASSERT(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
+                     "Distance after relocation shouldn't be 0 or infinity");
     }
     if (debug) {
       printf("     dist = %.16f  surf = %d\n", distance, crossed_surf.hit_surf.common_id);
@@ -297,8 +297,8 @@ __device__ void PropagateRaySurfBVH(int i, Vector3D<Precision> const *points, Ve
       distance =
           vgbrep::protonav::BVHSurfNavigator<Real_t>::ComputeStepAndHit(pt, dir, true_state, out_state, crossed_surf);
 
-      assert(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
-             "Distance after relocation shouldn't be 0 or infinity");
+      VECGEOM_ASSERT(distance != 0 && distance != vecgeom::InfinityLength<Precision>() &&
+                     "Distance after relocation shouldn't be 0 or infinity");
     }
     if (debug) {
       printf("     dist = %.16f  surf = %d\n", distance, crossed_surf.hit_surf.common_id);
@@ -489,17 +489,19 @@ void PropagateRaysSurfBVH(int initThreads, Vector3D<Precision> *points, Vector3D
   // This function does traversal for nrays with the BVH in a single step mode, such that each step is done in a single
   // kernel, similar to what is done in AdePT in a real simulation
   int *indices;
-  cudaMalloc(&indices, config.nrays * sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&indices, config.nrays * sizeof(int)));
   std::vector<int> host_indices(config.nrays);
   std::iota(host_indices.begin(), host_indices.end(), 0);
-  cudaMemcpy(indices, host_indices.data(), config.nrays * sizeof(int), cudaMemcpyHostToDevice);
+
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy(indices, host_indices.data(), config.nrays * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 
   int *alive_indices;
-  cudaMalloc(&alive_indices, config.nrays * sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&alive_indices, config.nrays * sizeof(int)));
 
   int *alive_count;
-  cudaMalloc(&alive_count, sizeof(int));
-  cudaMemset(alive_count, 0, sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&alive_count, sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Memset(alive_count, 0, sizeof(int)));
 
   int host_alive_count = config.nrays;
   int num_cross        = 0;
@@ -520,10 +522,11 @@ void PropagateRaysSurfBVH(int initThreads, Vector3D<Precision> *points, Vector3D
                 << " time : " << time_per_step << std::endl;
     }
 
-    cudaMemset(alive_count, 0, sizeof(int));
+    VECGEOM_DEVICE_API_CALL(Memset(alive_count, 0, sizeof(int)));
     filterAliveRays<<<initBlocks, initThreads>>>(in_states, indices, alive_indices, alive_count, host_alive_count);
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
-    cudaMemcpy(&host_alive_count, alive_count, sizeof(int), cudaMemcpyDeviceToHost);
+    VECGEOM_DEVICE_API_CALL(
+        Memcpy(&host_alive_count, alive_count, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
     // Swap pointers so that indices now points to the new alive_indices for the next iteration
@@ -532,9 +535,9 @@ void PropagateRaysSurfBVH(int initThreads, Vector3D<Precision> *points, Vector3D
     num_cross++;
   }
 
-  cudaFree(indices);
-  cudaFree(alive_indices);
-  cudaFree(alive_count);
+  VECGEOM_DEVICE_API_CALL(Free(indices));
+  VECGEOM_DEVICE_API_CALL(Free(alive_indices));
+  VECGEOM_DEVICE_API_CALL(Free(alive_count));
 }
 
 void PropagateRaysSurfBVHSplit(int initThreads, Vector3D<Precision> *points, Vector3D<Precision> *dirs,
@@ -545,23 +548,24 @@ void PropagateRaysSurfBVHSplit(int initThreads, Vector3D<Precision> *points, Vec
   // approach , such that each step is done in a single kernel, similar to what is done in AdePT in a real simulation
   int *indices;
   // Initialize initial indices
-  cudaMalloc(&indices, config.nrays * sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&indices, config.nrays * sizeof(int)));
   std::vector<int> host_indices(config.nrays);
   std::iota(host_indices.begin(), host_indices.end(), 0);
-  cudaMemcpy(indices, host_indices.data(), config.nrays * sizeof(int), cudaMemcpyHostToDevice);
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy(indices, host_indices.data(), config.nrays * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   int *alive_indices;
-  cudaMalloc(&alive_indices, config.nrays * sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&alive_indices, config.nrays * sizeof(int)));
   int *alive_count;
-  cudaMalloc(&alive_count, sizeof(int));
-  cudaMemset(alive_count, 0, sizeof(int));
+  VECGEOM_DEVICE_API_CALL(Malloc(&alive_count, sizeof(int)));
+  VECGEOM_DEVICE_API_CALL(Memset(alive_count, 0, sizeof(int)));
 
   long *hitcandidate_index;
-  cudaMalloc(&hitcandidate_index, config.nrays * sizeof(long));
-  cudaMemset(hitcandidate_index, 0, sizeof(long));
+  VECGEOM_DEVICE_API_CALL(Malloc(&hitcandidate_index, config.nrays * sizeof(long)));
+  VECGEOM_DEVICE_API_CALL(Memset(hitcandidate_index, 0, sizeof(long)));
 
   Precision *distances;
-  cudaMalloc(&distances, config.nrays * sizeof(Precision));
-  cudaMemset(distances, 0, sizeof(Precision));
+  VECGEOM_DEVICE_API_CALL(Malloc(&distances, config.nrays * sizeof(Precision)));
+  VECGEOM_DEVICE_API_CALL(Memset(distances, 0, sizeof(Precision)));
 
   int host_alive_count = config.nrays;
   int num_cross        = 0;
@@ -587,10 +591,11 @@ void PropagateRaysSurfBVHSplit(int initThreads, Vector3D<Precision> *points, Vec
                 << " time : " << time_per_step << std::endl;
     }
 
-    cudaMemset(alive_count, 0, sizeof(int));
+    VECGEOM_DEVICE_API_CALL(Memset(alive_count, 0, sizeof(int)));
     filterAliveRays<<<Blocks, initThreads>>>(in_states, indices, alive_indices, alive_count, host_alive_count);
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
-    cudaMemcpy(&host_alive_count, alive_count, sizeof(int), cudaMemcpyDeviceToHost);
+    VECGEOM_DEVICE_API_CALL(
+        Memcpy(&host_alive_count, alive_count, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
     // Swap pointers so that indices now points to the new alive_indices for the next iteration
@@ -599,11 +604,11 @@ void PropagateRaysSurfBVHSplit(int initThreads, Vector3D<Precision> *points, Vec
     num_cross++;
   }
 
-  cudaFree(indices);
-  cudaFree(alive_indices);
-  cudaFree(alive_count);
-  cudaFree(distances);
-  cudaFree(hitcandidate_index);
+  VECGEOM_DEVICE_API_CALL(Free(indices));
+  VECGEOM_DEVICE_API_CALL(Free(alive_indices));
+  VECGEOM_DEVICE_API_CALL(Free(alive_count));
+  VECGEOM_DEVICE_API_CALL(Free(distances));
+  VECGEOM_DEVICE_API_CALL(Free(hitcandidate_index));
 }
 
 //==================================================================================
@@ -622,13 +627,16 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   // Allocate/copy data on device
   Vec3D *points;
   VECGEOM_DEVICE_API_CALL(Malloc(&points, config.nrays * sizeof(Vec3D)));
-  VECGEOM_DEVICE_API_CALL(Memcpy(points, pointsh, config.nrays * sizeof(Vec3D), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy(points, pointsh, config.nrays * sizeof(Vec3D), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   Vec3D *dirs;
   VECGEOM_DEVICE_API_CALL(Malloc(&dirs, config.nrays * sizeof(Vec3D)));
-  VECGEOM_DEVICE_API_CALL(Memcpy(dirs, dirsh, config.nrays * sizeof(Vec3D), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy(dirs, dirsh, config.nrays * sizeof(Vec3D), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   Vec3D *points_NC;
   VECGEOM_DEVICE_API_CALL(Malloc(&points_NC, config.nrays * sizeof(Vec3D)));
-  VECGEOM_DEVICE_API_CALL(Memcpy(points_NC, pointsh, config.nrays * sizeof(Vec3D), cudaMemcpyHostToDevice));
+  VECGEOM_DEVICE_API_CALL(
+      Memcpy(points_NC, pointsh, config.nrays * sizeof(Vec3D), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   NavigationState *origStates;
   VECGEOM_DEVICE_API_CALL(Malloc(&origStates, config.nrays * sizeof(NavigationState)));
   NavigationState *outputStates;
@@ -708,25 +716,27 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   if (!config.only_surf) {
     // Corectness for locating points
     ValidateLocate<<<initBlocks, initThreads>>>(origStates, outputStates, num_errors_d, config);
-    VECGEOM_DEVICE_API_CALL(Memcpy(&num_errors, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+    VECGEOM_DEVICE_API_CALL(
+        Memcpy(&num_errors, num_errors_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
-    if (num_errors > 0) std::cout << "CUDA: Point locate errors: " << num_errors << "\n";
+    if (num_errors > 0) std::cout << "Device: Point locate errors: " << num_errors << "\n";
 
     // Validate BVH Locate
     if (config.test_bvh) {
       ValidateLocate<<<initBlocks, initThreads>>>(origStates, outputStatesBVH, num_errors_d, config);
-      VECGEOM_DEVICE_API_CALL(Memcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), cudaMemcpyDeviceToHost));
+      VECGEOM_DEVICE_API_CALL(
+          Memcpy(&num_errors_bvh_loc, num_errors_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
       VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
-      if (num_errors_bvh_loc > 0) std::cout << "CUDA: BVH point locate errors: " << num_errors_bvh_loc << "\n";
+      if (num_errors_bvh_loc > 0) std::cout << "Device: BVH point locate errors: " << num_errors_bvh_loc << "\n";
     }
   }
 
   if (!config.debug) {
     if (config.only_surf)
-      std::cout << "CUDA: locate_surf: " << time_locate_surf;
+      std::cout << "Device: locate_surf: " << time_locate_surf;
     else
-      std::cout << "CUDA: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
+      std::cout << "Device: locate_solids: " << time_locate_solids << "  locate_solids_BVH: " << time_locate_solids_bvh
                 << "  locate_surf: " << time_locate_surf;
     if (config.test_bvh) {
       std::cout << " locate_surf_BVH: " << time_locate_surf_bvh << "\n";
@@ -764,38 +774,45 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
     if (config.validate_results) {
       ValidateSafety<<<initBlocks, initThreads>>>(safeties, refSafeties, num_better_safety_d, num_worse_safety_d,
                                                   config);
-      VECGEOM_DEVICE_API_CALL(Memcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
-      VECGEOM_DEVICE_API_CALL(Memcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+      VECGEOM_DEVICE_API_CALL(
+          Memcpy(&num_better_safety, num_better_safety_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
+      VECGEOM_DEVICE_API_CALL(
+          Memcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
       VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
-      if (num_better_safety > 0) std::cout << "CUDA:    number of better safety values: " << num_better_safety << "\n";
-      if (num_worse_safety > 0) std::cout << "CUDA:    number of worse safety values: " << num_worse_safety << "\n";
+      if (num_better_safety > 0)
+        std::cout << "Device:    number of better safety values: " << num_better_safety << "\n";
+      if (num_worse_safety > 0) std::cout << "Device:    number of worse safety values: " << num_worse_safety << "\n";
 
       if (config.test_bvh) {
         // Init counters
         num_better_safety = num_worse_safety = 0;
-        VECGEOM_DEVICE_API_CALL(Memcpy(num_better_safety_d, &num_better_safety, sizeof(int), cudaMemcpyHostToDevice));
-        VECGEOM_DEVICE_API_CALL(Memcpy(num_worse_safety_d, &num_worse_safety, sizeof(int), cudaMemcpyHostToDevice));
+        VECGEOM_DEVICE_API_CALL(Memcpy(num_better_safety_d, &num_better_safety, sizeof(int),
+                                       VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
+        VECGEOM_DEVICE_API_CALL(
+            Memcpy(num_worse_safety_d, &num_worse_safety, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 
         ValidateSafety<<<initBlocks, initThreads>>>(bvhSafeties, refSafeties, num_better_safety_d, num_worse_safety_d,
                                                     config);
-        VECGEOM_DEVICE_API_CALL(Memcpy(&num_better_safety, num_better_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
-        VECGEOM_DEVICE_API_CALL(Memcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), cudaMemcpyDeviceToHost));
+        VECGEOM_DEVICE_API_CALL(Memcpy(&num_better_safety, num_better_safety_d, sizeof(int),
+                                       VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
+        VECGEOM_DEVICE_API_CALL(
+            Memcpy(&num_worse_safety, num_worse_safety_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
         VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
         if (num_better_safety > 0)
-          std::cout << "CUDA:    BVH number of better safety values: " << num_better_safety << "\n";
+          std::cout << "Device:    BVH number of better safety values: " << num_better_safety << "\n";
         if (num_worse_safety > 0)
-          std::cout << "CUDA:    BVH number of worse safety values: " << num_worse_safety << "\n";
+          std::cout << "Device:    BVH number of worse safety values: " << num_worse_safety << "\n";
       }
     }
   }
 
   if (!config.debug) {
     if (config.only_surf)
-      std::cout << "CUDA: safety_surf: " << time_safety_surf;
+      std::cout << "Device: safety_surf: " << time_safety_surf;
     else
-      std::cout << "CUDA: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
+      std::cout << "Device: safety_solids: " << time_safety_solids << " safety_solids_BVH: " << time_safety_solids_bvh
                 << "  safety_surf: " << time_safety_surf;
     if (config.test_bvh) {
       std::cout << "  safety_surf_bvh: " << time_safety_surf_bvh << "\n";
@@ -838,8 +855,8 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   // Traversal for the surface model with BVH in single step mode
   NavigationState *BVH_single_states;
   VECGEOM_DEVICE_API_CALL(Malloc(&BVH_single_states, config.nrays * sizeof(NavigationState)));
-  VECGEOM_DEVICE_API_CALL(
-      Memcpy(BVH_single_states, origStates, config.nrays * sizeof(NavigationState), cudaMemcpyDeviceToDevice));
+  VECGEOM_DEVICE_API_CALL(Memcpy(BVH_single_states, origStates, config.nrays * sizeof(NavigationState),
+                                 VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToDevice)));
 
   // Traversal for the surface model with BVH in a single step mode, each step is done in a separate kernel launch.
   timer.Start();
@@ -852,9 +869,10 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   timer.Start();
   if (config.bvh_split_step) {
     // reset points and in_states, as they were changed by the single step kernel above
+    VECGEOM_DEVICE_API_CALL(Memcpy(BVH_single_states, origStates, config.nrays * sizeof(NavigationState),
+                                   VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToDevice)));
     VECGEOM_DEVICE_API_CALL(
-        Memcpy(BVH_single_states, origStates, config.nrays * sizeof(NavigationState), cudaMemcpyDeviceToDevice));
-    VECGEOM_DEVICE_API_CALL(Memcpy(points_NC, pointsh, config.nrays * sizeof(Vec3D), cudaMemcpyHostToDevice));
+        Memcpy(points_NC, pointsh, config.nrays * sizeof(Vec3D), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
     PropagateRaysSurfBVHSplit(initThreads, points_NC, dirs, BVH_single_states, length_over_crossings_bvh, false,
@@ -867,26 +885,28 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
     ValidateTraversal<<<initBlocks, initThreads>>>(points, dirs, origStates, length_over_crossings,
                                                    refLength_over_crossings, num_errors_dist_d, world_dev, surfdata_D,
                                                    /*use_bvh=*/false, config);
-    VECGEOM_DEVICE_API_CALL(Memcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), cudaMemcpyDeviceToHost));
+    VECGEOM_DEVICE_API_CALL(
+        Memcpy(&num_errors_dist, num_errors_dist_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
     if (config.test_bvh)
       ValidateTraversal<<<initBlocks, initThreads>>>(points, dirs, origStates, length_over_crossings_bvh,
                                                      refLength_over_crossings, num_errors_dist_bvh_d, world_dev,
                                                      surfdata_D, /*use_bvh=*/true, config);
-    VECGEOM_DEVICE_API_CALL(Memcpy(&num_errors_dist_bvh, num_errors_dist_bvh_d, sizeof(int), cudaMemcpyDeviceToHost));
+    VECGEOM_DEVICE_API_CALL(Memcpy(&num_errors_dist_bvh, num_errors_dist_bvh_d, sizeof(int),
+                                   VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
     VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
     if (num_errors_dist > 0 || num_errors_dist_bvh > 0)
-      std::cout << "CUDA: traversal errors looper: " << num_errors_dist
+      std::cout << "Device: traversal errors looper: " << num_errors_dist
                 << " traversal errors BVH: " << num_errors_dist_bvh << "\n";
   }
 
   if (!config.debug) {
     if (config.only_surf)
-      std::cout << "CUDA: traverse_surf: " << time_traverse_surf;
+      std::cout << "Device: traverse_surf: " << time_traverse_surf;
     else
-      std::cout << "CUDA: traverse_solids: " << time_traverse_solids
+      std::cout << "Device: traverse_solids: " << time_traverse_solids
                 << " traverse_solids_bvh: " << time_traverse_solids_bvh << "  traverse_surf: " << time_traverse_surf;
     if (config.test_bvh) std::cout << "  traverse_surf BVH: " << time_traverse_surf_bvh;
     if (config.bvh_single_step) std::cout << "  traverse_surf BVH single steps: " << time_traverse_surf_bvh_single;
@@ -900,7 +920,7 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   delete[] dirsh;
   if (!config.only_surf) {
     num_errors += num_errors_dist + num_errors_dist_bvh;
-    if (num_errors > 0) printf("CUDA: num_erros = %d / %d\n", num_errors, config.nrays);
+    if (num_errors > 0) printf("Device: num_erros = %d / %d\n", num_errors, config.nrays);
     VECGEOM_DEVICE_API_CALL(Free(num_errors_d));
     VECGEOM_DEVICE_API_CALL(Free(num_better_safety_d));
     VECGEOM_DEVICE_API_CALL(Free(num_worse_safety_d));

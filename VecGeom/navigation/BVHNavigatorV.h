@@ -214,7 +214,7 @@ public:
                                          NavigationState &path, bool top, VPlacedVolume const *exclude = nullptr) const
   {
     if (top) {
-      assert(vol != nullptr);
+      VECGEOM_ASSERT(vol != nullptr);
       if (!vol->UnplacedContains(point)) return nullptr;
     }
 
@@ -266,7 +266,7 @@ public:
     long vol_id     = -1;
 
     if (top) {
-      assert(vol != nullptr);
+      VECGEOM_ASSERT(vol != nullptr);
       candvolume = (vol->UnplacedContains(point)) ? vol : nullptr;
     }
     if (candvolume) {

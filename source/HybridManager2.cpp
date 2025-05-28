@@ -46,8 +46,8 @@ void HybridManager2::BuildStructure_v(LogicalVolume const *vol)
   auto boxes                  = ABBoxManager<Precision>::Instance().GetABBoxes(vol, nDaughters);
   auto structure              = BuildStructure(boxes, nDaughters);
   fStructureHolder[vol->id()] = structure;
-  assert((int)vol->GetDaughters().size() == nDaughters);
-  assert(structure == nullptr || structure->fNumberOfOriginalBoxes != 0);
+  VECGEOM_ASSERT((int)vol->GetDaughters().size() == nDaughters);
+  VECGEOM_ASSERT(structure == nullptr || structure->fNumberOfOriginalBoxes != 0);
 }
 
 /**
@@ -144,7 +144,7 @@ void HybridManager2::AssignVolumesToClusters(std::vector<std::vector<int>> &clus
                                              SOA3D<Precision> const &allvolumecenters)
 {
 
-  assert(centers.size() == clusters.size());
+  VECGEOM_ASSERT(centers.size() == clusters.size());
   int numberOfDaughers = allvolumecenters.size();
   int numberOfClusters = clusters.size();
 
@@ -171,7 +171,7 @@ void HybridManager2::AssignVolumesToClusters(std::vector<std::vector<int>> &clus
 void HybridManager2::RecalculateCentres(SOA3D<Precision> &centers, SOA3D<Precision> const &allvolumecenters,
                                         std::vector<std::vector<int>> const &clusters)
 {
-  assert(centers.size() == clusters.size());
+  VECGEOM_ASSERT(centers.size() == clusters.size());
   auto numberOfClusters = centers.size();
   for (size_t c = 0; c < numberOfClusters; ++c) {
     Vector3D<Precision> newCenter(0);

@@ -41,7 +41,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
-  assert(isurf >= 0);
+  VECGEOM_ASSERT(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(isurf);
   logic.push_back(land);
@@ -55,7 +55,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
-  assert(isurf >= 0);
+  VECGEOM_ASSERT(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(isurf);
   logic.push_back(land);
@@ -76,7 +76,7 @@ bool CreateEllipticalTubeSurfaces(vecgeom::UnplacedEllipticalTube const &tube, i
   builder::AddSurfaceToShell<Real_t>(logical_id, isurf);
   if (intersection) builder::GetSurface<Real_t>(isurf).fSkipConvexity = true;
   // Make the surface "logical"
-  assert(isurf >= 0);
+  VECGEOM_ASSERT(isurf >= 0);
   cpudata.fLocalSurfaces[isurf].fLogicId = isurf;
   logic.push_back(isurf);
 

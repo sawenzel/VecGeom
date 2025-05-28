@@ -38,7 +38,7 @@ Precision PlacedRootVolume::Capacity()
 void PlacedRootVolume::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
 {
   TGeoBBox const *b = dynamic_cast<TGeoBBox const *>(GetRootShape());
-  assert(b != nullptr);
+  VECGEOM_ASSERT(b != nullptr);
   auto lx = b->GetDX();
   auto ly = b->GetDY();
   auto lz = b->GetDZ();
@@ -49,7 +49,7 @@ void PlacedRootVolume::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aM
 
 VPlacedVolume const *PlacedRootVolume::ConvertToUnspecialized() const
 {
-  assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+  VECGEOM_VALIDATE(0, << "Attempted to perform conversion on unsupported ROOT volume.");
   return NULL;
 }
 
@@ -58,14 +58,14 @@ DevicePtr<cuda::VPlacedVolume> PlacedRootVolume::CopyToGpu(DevicePtr<cuda::Logic
                                                            DevicePtr<cuda::Transformation3D> const /* transform */,
                                                            DevicePtr<cuda::VPlacedVolume> const /* in_gpu_ptr */) const
 {
-  assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy unsupported ROOT volume to GPU.");
   return DevicePtr<cuda::VPlacedVolume>(nullptr);
 }
 DevicePtr<cuda::VPlacedVolume> PlacedRootVolume::CopyToGpu(
     DevicePtr<cuda::LogicalVolume> const /*logical_volume*/,
     DevicePtr<cuda::Transformation3D> const /* transform */) const
 {
-  assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy unsupported ROOT volume to GPU.");
   return DevicePtr<cuda::VPlacedVolume>(nullptr);
 }
 #endif

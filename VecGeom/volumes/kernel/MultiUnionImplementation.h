@@ -153,7 +153,7 @@ struct MultiUnionImplementation {
       munion.fVolumes[component]->GetTransformation()->Transform(pnew, local);
       munion.fVolumes[component]->GetTransformation()->TransformDirection(direction, ldir);
       dstep = munion.fVolumes[component]->DistanceToOut(local, ldir, stepMax);
-      assert(dstep < kInfLength);
+      VECGEOM_ASSERT(dstep < kInfLength);
       distance += dstep + eps;
       // If no neighbours, exit
       if (!munion.fNneighbours[component]) return;
@@ -217,7 +217,7 @@ struct MultiUnionImplementation {
     // Compute safety to exit current component
     Vector3D<Real_v> const local = munion.fVolumes[comp]->GetTransformation()->Transform(point);
     safety                       = munion.fVolumes[comp]->SafetyToOut(local);
-    assert(safety > -kTolerance);
+    VECGEOM_ASSERT(safety > -kTolerance);
     // Loop cluster of neighbours
     size_t *cluster = munion.fNeighbours[comp];
     size_t ncluster = munion.fNneighbours[comp];

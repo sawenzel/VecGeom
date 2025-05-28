@@ -44,14 +44,15 @@ public:
   static VECGEOM_FORCE_INLINE Daughter GetPlacedVolume(int aLVIndex, int index)
   {
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
-    assert(vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes != nullptr && "Logical volumes not copied to device");
+    VECGEOM_VALIDATE(vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes != nullptr,
+                     << "Logical volumes not copied to device");
     return vecgeom::globaldevicegeomdata::gDeviceLogicalVolumes[aLVIndex].GetDaughters()[index];
 #else
 #ifndef VECCORE_CUDA
     return vecgeom::GeoManager::Instance().GetLogicalVolume(aLVIndex)->GetDaughters()[index];
 #else
     // this is the case when we compile with nvcc for host side
-    assert(false && "reached unimplement code");
+    VECGEOM_VALIDATE(false, << "reached unimplement code");
     (void)index; // avoid unused parameter warning.
     (void)aLVIndex;
     return nullptr;
@@ -67,14 +68,15 @@ public:
   static VECGEOM_FORCE_INLINE vecgeom::VPlacedVolume *GetPlacedVolume(int global_index)
   {
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
-    assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr && "Placed volumes not copied to device");
+    VECGEOM_VALIDATE(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr,
+                     << "Placed volumes not copied to device");
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[global_index];
 #else
 #ifndef VECCORE_CUDA
     return vecgeom::GeoManager::Instance().GetPlacedVolume(global_index);
 #else
     // this is the case when we compile with nvcc for host side
-    assert(false && "reached unimplement code");
+    VECGEOM_VALIDATE(false, << "reached unimplement code");
     (void)global_index; // avoid unused parameter warning.
     return nullptr;
 #endif
@@ -204,7 +206,7 @@ public:
   {
     if (top) {
       // Must check the provided volume
-      assert(vol != nullptr);
+      VECGEOM_ASSERT(vol != nullptr);
       auto inside = vol->Inside(point);
       if (inside == kOutside) return nullptr;
       // Set the boundary state to the path
@@ -450,7 +452,7 @@ public:
         while (out_state.Top()->IsAssembly() || out_state.HasSamePathAsOther(in_state)) {
           out_state.Pop();
         }
-        assert(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+        VECGEOM_ASSERT(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
       }
     }
 
@@ -570,7 +572,7 @@ public:
       while (state.Top()->IsAssembly()) {
         state.Pop();
       }
-      assert(!state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+      VECGEOM_ASSERT(!state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
     }
   }
 };

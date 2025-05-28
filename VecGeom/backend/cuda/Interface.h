@@ -6,6 +6,7 @@
 
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Global.h"
+#include <driver_types.h>
 
 #ifdef VECGEOM_ENABLE_CUDA
 
@@ -50,7 +51,7 @@ __global__ void ConstructArrayOnGpu(DataClass *gpu_ptr, size_t nElements, ArgsTy
  * \param params    Array(s) of constructor parameters for each object.
  */
 template <typename DataClass, typename... ArgsTypes>
-__global__ void ConstructManyOnGpu_kernel(size_t nElements, DataClass **gpu_ptrs, const ArgsTypes *... params)
+__global__ void ConstructManyOnGpu_kernel(size_t nElements, DataClass **gpu_ptrs, const ArgsTypes *...params)
 {
   const size_t tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -70,23 +71,6 @@ __global__ void CopyBBoxesToGpu(size_t nElements, DataClass **raw_ptrs, Precisio
   }
 }
 
-template <typename DataClass, typename... ArgsTypes>
-void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params)
-{
-  ConstructOnGpu<<<1, 1>>>(gpu_ptr, params...);
-}
-
-} // namespace cuda
-
-#else
-
-namespace cuda {
-
-template <typename Type>
-Type *AllocateOnDevice();
-template <typename DataClass, typename... ArgsTypes>
-void Generic_CopyToGpu(DataClass *const gpu_ptr, ArgsTypes... params);
-
 } // namespace cuda
 
 #endif
@@ -97,41 +81,11 @@ namespace cxx {
 inline namespace cxx {
 #endif
 
-cudaError_t CudaCheckError(const cudaError_t err);
-
-cudaError_t CudaCheckError();
-
-void CudaAssertError(const cudaError_t err);
-
-void CudaAssertError();
-
-cudaError_t CudaMalloc(void **ptr, unsigned size);
-
-cudaError_t CudaCopyToDevice(void *tgt, void const *src, unsigned size);
-
-cudaError_t CudaCopyFromDevice(void *tgt, void const *src, unsigned size);
-
-cudaError_t CudaCopyFromDeviceAsync(void *tgt, void const * src, unsigned size, cudaStream_t stream);
-
-cudaError_t CudaFree(void *ptr);
-
-cudaError_t CudaDeviceSetStackLimit(unsigned size);
-
-cudaError_t CudaDeviceSetHeapLimit(unsigned size);
-
-template <typename Type>
-Type *AllocateOnDevice()
-{
-  Type *ptr;
-  vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void **)&ptr, sizeof(Type)));
-  return ptr;
-}
-
 template <typename Type>
 Type *AllocateOnGpu(const unsigned int size)
 {
-  Type *ptr;
-  vecgeom::cxx::CudaAssertError(CudaMalloc((void **)&ptr, size));
+  Type *ptr = nullptr;
+  VECGEOM_DEVICE_API_CALL(Malloc((void **)&ptr, size));
   return ptr;
 }
 
@@ -144,13 +98,13 @@ Type *AllocateOnGpu()
 template <typename Type>
 void FreeFromGpu(Type *const ptr)
 {
-  vecgeom::cxx::CudaAssertError(CudaFree(ptr));
+  VECGEOM_DEVICE_API_CALL(Free(ptr));
 }
 
 template <typename Type>
 void CopyToGpu(Type const *const src, Type *const tgt, const unsigned size)
 {
-  vecgeom::cxx::CudaAssertError(CudaCopyToDevice(tgt, src, size));
+  VECGEOM_DEVICE_API_CALL(Memcpy(tgt, src, size, VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 }
 
 template <typename Type>
@@ -159,10 +113,9 @@ void CopyToGpu(Type const *const src, Type *const tgt)
   CopyToGpu<Type>(src, tgt, sizeof(Type));
 }
 
-template <typename Type>
-void CopyFromGpu(Type const *const src, Type *const tgt, const unsigned size)
+inline void CopyFromGpu(void const *const src, void *const tgt, const unsigned size)
 {
-  vecgeom::cxx::CudaAssertError(CudaCopyFromDevice(tgt, src, size));
+  VECGEOM_DEVICE_API_CALL(Memcpy(tgt, src, size, VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));
 }
 
 class DevicePtrBase {
@@ -194,12 +147,12 @@ protected:
 
   void MemcpyToDevice(const void *what, unsigned long nbytes)
   {
-    if (nbytes) vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaCopyToDevice(fPtr, what, nbytes));
+    VECGEOM_DEVICE_API_CALL(Memcpy(fPtr, what, nbytes, VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   }
 
   void MemcpyToHostAsync(void *where, unsigned long nbytes, cudaStream_t stream)
   {
-    vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaCopyFromDeviceAsync(where, fPtr, nbytes, stream));
+    VECGEOM_DEVICE_API_CALL(MemcpyAsync(where, fPtr, nbytes, VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost), stream));
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -207,7 +160,7 @@ protected:
 
   void Free()
   {
-    vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaFree((void *)fPtr));
+    VECGEOM_DEVICE_API_CALL(Free((void *)fPtr));
 #ifdef DEBUG_DEVICEPTR
     fAllocatedSize = 0;
 #endif
@@ -240,13 +193,11 @@ public:
   {
   }
 
-  ~DevicePtrBase()
-  { /* does not own content per se */
-  }
+  ~DevicePtrBase() { /* does not own content per se */ }
 
   void Malloc(unsigned long size)
   {
-    vecgeom::cxx::CudaAssertError(vecgeom::cxx::CudaMalloc((void **)&fPtr, size));
+    VECGEOM_DEVICE_API_CALL(Malloc((void **)&fPtr, size));
 #ifdef DEBUG_DEVICEPTR
     fAllocatedSize = size;
 #endif
@@ -259,7 +210,7 @@ class DevicePtr;
 template <typename Type, typename Derived = DevicePtr<Type>>
 class DevicePtrImpl : public DevicePtrBase {
 protected:
-  DevicePtrImpl(const DevicePtrImpl & /* orig */) = default;
+  DevicePtrImpl(const DevicePtrImpl & /* orig */)          = default;
   DevicePtrImpl &operator=(const DevicePtrImpl & /*orig*/) = default;
   DevicePtrImpl()                                          = default;
   explicit DevicePtrImpl(void *input) : DevicePtrBase(input) {}
@@ -301,7 +252,7 @@ public:
     return tmp;
   }
 
-  Derived operator+(const size_t& rhs)
+  Derived operator+(const size_t &rhs)
   {
     Derived tmp(*(Derived *)this);
     tmp.Increment(rhs);
@@ -318,8 +269,8 @@ public:
 template <typename Type>
 class DevicePtr : public DevicePtrImpl<Type> {
 public:
-  DevicePtr()                  = default;
-  DevicePtr(const DevicePtr &) = default;
+  DevicePtr()                                 = default;
+  DevicePtr(const DevicePtr &)                = default;
   DevicePtr &operator=(const DevicePtr &orig) = default;
 
   // should be taking a DevicePtr<void*>
@@ -378,8 +329,8 @@ public:
 template <typename Type>
 class DevicePtr<const Type> : private DevicePtrImpl<const Type> {
 public:
-  DevicePtr()                  = default;
-  DevicePtr(const DevicePtr &) = default;
+  DevicePtr()                                 = default;
+  DevicePtr(const DevicePtr &)                = default;
   DevicePtr &operator=(const DevicePtr &orig) = default;
 
   // should be taking a DevicePtr<void*>
@@ -451,7 +402,7 @@ namespace CudaInterfaceHelpers {
  */
 template <typename Arg_t, typename... Args_t>
 void allocateAndCopyToGpu(std::unordered_map<const void *, void *> &cpuToGpuMapping, std::size_t nElement,
-                          const Arg_t *toCopy, const Args_t *... restToCopy)
+                          const Arg_t *toCopy, const Args_t *...restToCopy)
 {
   const auto nByte         = sizeof(toCopy[0]) * nElement;
   const void *hostMem      = toCopy;
@@ -475,7 +426,7 @@ void allocateAndCopyToGpu(std::unordered_map<const void *, void *> &cpuToGpuMapp
  * \param  params   Array(s) of constructor parameters with one entry for each object.
  */
 template <class DataClass, class DevPtr_t, typename... Args_t>
-void ConstructManyOnGpu(std::size_t nElement, const DevPtr_t *gpu_ptrs, const Args_t *... params)
+void ConstructManyOnGpu(std::size_t nElement, const DevPtr_t *gpu_ptrs, const Args_t *...params)
 #ifdef VECCORE_CUDA
 {
   using namespace CudaInterfaceHelpers;
@@ -486,14 +437,14 @@ void ConstructManyOnGpu(std::size_t nElement, const DevPtr_t *gpu_ptrs, const Ar
   allocateAndCopyToGpu(cpuToGpuMem, nElement, raw_gpu_ptrs.data(), params...);
 
   ConstructManyOnGpu_kernel<<<128, 32>>>(raw_gpu_ptrs.size(),
-                                  static_cast<decltype(raw_gpu_ptrs.data())>(cpuToGpuMem[raw_gpu_ptrs.data()]),
-                                  static_cast<decltype(params)>(cpuToGpuMem[params])...);
+                                         static_cast<decltype(raw_gpu_ptrs.data())>(cpuToGpuMem[raw_gpu_ptrs.data()]),
+                                         static_cast<decltype(params)>(cpuToGpuMem[params])...);
 
   for (const auto &memCpu_memGpu : cpuToGpuMem) {
     FreeFromGpu(memCpu_memGpu.second);
   }
 
-  CudaCheckError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
 }
 #else
     ;
@@ -515,7 +466,7 @@ void CopyBBoxesToGpuImpl(std::size_t nElement, const DevPtr_t *gpu_ptrs, Precisi
 
   CopyToGpu(boxes_data, boxes_data_gpu, nByteBoxes);
   CopyToGpu(raw_gpu_ptrs.data(), raw_gpu_ptrs_gpu, nByteVolumes);
-  cudaDeviceSynchronize();
+  VECGEOM_DEVICE_API_CALL(DeviceSynchronize());
 
   CopyBBoxesToGpu<DataClass><<<128, 32>>>(raw_gpu_ptrs.size(), raw_gpu_ptrs_gpu, boxes_data_gpu);
 

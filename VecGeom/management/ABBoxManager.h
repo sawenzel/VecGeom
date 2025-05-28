@@ -275,8 +275,8 @@ public:
       vectorboxes[index++] = lower;
       vectorboxes[index++] = upper;
     }
-    assert(index == size);
-    assert(assignedscalarvectors == 2 * ndaughters);
+    VECGEOM_ASSERT(index == size);
+    VECGEOM_ASSERT(assignedscalarvectors == 2 * ndaughters);
     (void)assignedscalarvectors; // silence compiler warnings
   }
 

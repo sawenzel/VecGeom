@@ -25,7 +25,7 @@ bool TestParaboloid()
 {
   Paraboloid_t p1("testPara", 6., 9., 10.);
   // std::cout<< p1.GetK1() << std::endl;
-  // assert(false);
+  // VECGEOM_ASSERT(false);
 
   std::cout << std::setprecision(15);
   Vec_t norm(0., 0., 0.);
@@ -38,101 +38,101 @@ bool TestParaboloid()
   Vec_t zSurfPt(0., 0., 10.), mzSurfPt(0., 0., -10.);
 
   // Inside
-  assert(p1.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(p1.Inside(pbigx) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(pbigmx) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(pbigy) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(pbigmy) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(pbigz) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(pbigmz) == vecgeom::EInside::kOutside);
-  assert(p1.Inside(zSurfPt) == vecgeom::EInside::kSurface);
-  assert(p1.Inside(mzSurfPt) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(p1.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(p1.Inside(pbigx) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pbigmx) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pbigy) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pbigmy) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pbigz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pbigmz) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(zSurfPt) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(p1.Inside(mzSurfPt) == vecgeom::EInside::kSurface);
 
   Vec_t pInsideZ(0., 0., 10. - 2 * vecgeom::kTolerance);
-  assert(p1.Inside(pInsideZ) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(p1.Inside(pInsideZ) == vecgeom::EInside::kInside);
   Vec_t pOutsideZ(0., 0., 10. + 2 * vecgeom::kTolerance);
-  assert(p1.Inside(pOutsideZ) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(p1.Inside(pOutsideZ) == vecgeom::EInside::kOutside);
   Vec_t pWithinZTolerance(0., 0., 10. + 0.25 * vecgeom::kTolerance);
-  assert(p1.Inside(pWithinZTolerance) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(p1.Inside(pWithinZTolerance) == vecgeom::EInside::kSurface);
 
   Dist = p1.DistanceToOut(pzero, dirz);
-  assert(Dist == 10.);
+  VECGEOM_ASSERT(Dist == 10.);
   Dist = p1.DistanceToOut(pzero, dirmz);
-  assert(Dist == 10.);
+  VECGEOM_ASSERT(Dist == 10.);
   Dist = p1.DistanceToOut(zSurfPt, dirz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
   Dist = p1.DistanceToOut(mzSurfPt, dirmz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
   Dist = p1.DistanceToIn(pbigz, dirmz);
-  assert(Dist == 90.);
+  VECGEOM_ASSERT(Dist == 90.);
   Dist = p1.DistanceToIn(pbigmz, dirz);
-  assert(Dist == 90.);
+  VECGEOM_ASSERT(Dist == 90.);
   Dist = p1.DistanceToIn(zSurfPt, dirmz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
   Dist = p1.DistanceToIn(mzSurfPt, dirz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Paraboloid_t p2("testPara", 0., 8., 10.);
   Dist = p2.DistanceToOut(Vec_t(0., 0., -10), dirmz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
   Dist = p2.DistanceToOut(Vec_t(0., 0., -10), dirz);
-  assert(Dist == 20.);
+  VECGEOM_ASSERT(Dist == 20.);
   Dist = p2.DistanceToIn(Vec_t(0., 0., -10), dirz);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Vec_t tmpDir = Vec_t(1., 2., 2.).Unit();
   Dist         = p2.DistanceToOut(pzero, tmpDir);
   Vec_t tmpPt  = pzero + Dist * tmpDir;
   Dist         = p2.DistanceToOut(tmpPt, tmpDir);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
   Dist = p2.DistanceToIn(tmpPt, -tmpDir);
-  assert(Dist == 0.);
+  VECGEOM_ASSERT(Dist == 0.);
 
   Vec_t normal(0., 0., 0.);
   Vec_t pTopZ(0., 0., 10), pBottomZ(0., 0., -10.);
   bool valid = p1.Normal(pTopZ, normal);
-  assert(valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
+  VECGEOM_ASSERT(valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
   valid = p1.Normal(pBottomZ, normal);
-  assert(valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
+  VECGEOM_ASSERT(valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
   pTopZ.Set(3., 4, 10.);
   valid = p1.Normal(pTopZ, normal);
-  assert(valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
+  VECGEOM_ASSERT(valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
   pBottomZ.Set(3., 4, -10.);
   valid = p1.Normal(pBottomZ, normal);
-  assert(valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
+  VECGEOM_ASSERT(valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
   pTopZ.Set(9., 0., 10.);
   valid = p1.Normal(pTopZ, normal);
-  assert(valid);
+  VECGEOM_ASSERT(valid);
 
   // Testing noraml for outside point,
   // Logic to calculate normal for this case is not yet written.
   // This test is just to check the "valid", which should be false
   pTopZ.Set(9., 0., 5.);
   valid = p1.Normal(pTopZ, normal);
-  assert(!valid);
+  VECGEOM_ASSERT(!valid);
 
   Vec_t pOutZ(0., 0., 11.);
   valid = p1.Normal(pOutZ, normal);
-  assert(!valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
+  VECGEOM_ASSERT(!valid && ApproxEqual(normal, Vec_t(0, 0, 1.)));
 
   pOutZ.Set(0., 0., -11.);
   valid = p1.Normal(pOutZ, normal);
-  assert(!valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
+  VECGEOM_ASSERT(!valid && ApproxEqual(normal, Vec_t(0, 0, -1.)));
 
   // Check Extent and cached BBox
   Vec_t minExtent, maxExtent;
   Vec_t minBBox, maxBBox;
   p1.Extent(minExtent, maxExtent);
   p1.GetUnplacedVolume()->GetBBox(minBBox, maxBBox);
-  assert(ApproxEqual(minExtent, minBBox));
-  assert(ApproxEqual(maxExtent, maxBBox));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, maxBBox));
 
   return true;
 }
 
 int main(int argc, char *argv[])
 {
-  assert(TestParaboloid<vecgeom::SimpleParaboloid>());
+  VECGEOM_ASSERT(TestParaboloid<vecgeom::SimpleParaboloid>());
   std::cout << "VecGeomParaboloid passed\n";
 
   return 0;

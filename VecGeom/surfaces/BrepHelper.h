@@ -1,7 +1,7 @@
 #ifndef VECGEOM_SURFACE_BREPHELPER_H_
 #define VECGEOM_SURFACE_BREPHELPER_H_
 
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <functional>
 #include <map>
 #include <VecGeom/surfaces/Model.h>

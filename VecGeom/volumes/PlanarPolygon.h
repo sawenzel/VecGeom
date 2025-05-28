@@ -72,7 +72,7 @@ public:
     const auto numberOfVectorChunks = (nvertices / kVS + nvertices % kVS);
     // actual buffersize
     const auto bs = numberOfVectorChunks * kVS;
-    assert(bs > 0);
+    VECGEOM_ASSERT(bs > 0);
     fNVertices = nvertices;
     fVertices.reserve(bs);
     fVertices.resize(nvertices);
@@ -280,7 +280,7 @@ public:
   template <typename Real_v, typename Inside_v = int /*vecCore::Index_v<Real_v>*/>
   VECCORE_ATT_HOST_DEVICE inline Inside_v InsideConvex(Vector3D<Real_v> const &point) const
   {
-    assert(fIsConvex);
+    VECGEOM_ASSERT(fIsConvex);
     const size_t S  = fVertices.size();
     Inside_v result = Inside_v(vecgeom::kOutside);
     Real_v distance = -InfinityLength<Real_v>();
@@ -297,7 +297,7 @@ public:
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v SafetyConvex(Vector3D<Real_v> const &point, bool inside) const
   {
-    assert(fIsConvex);
+    VECGEOM_ASSERT(fIsConvex);
     const size_t S  = fVertices.size();
     Real_v distance = -InfinityLength<Real_v>();
     for (size_t i = 0; i < S; ++i) {
@@ -504,7 +504,7 @@ template <>
 VECCORE_ATT_HOST_DEVICE inline Inside_t PlanarPolygon::InsideConvex(Vector3D<Precision> const &point) const
 {
   const size_t S = fVertices.size();
-  assert(fIsConvex);
+  VECGEOM_ASSERT(fIsConvex);
   Precision distance = -InfinityLength<Precision>();
   for (size_t i = 0; i < S; ++i) {
     Precision dseg = -(fA[i] * point.x() + fB[i] * point.y() + fD[i]);
@@ -521,7 +521,7 @@ VECCORE_ATT_HOST_DEVICE inline Precision PlanarPolygon::SafetyConvex(Vector3D<Pr
                                                                      bool inside) const
 {
   const size_t S = fVertices.size();
-  assert(fIsConvex);
+  VECGEOM_ASSERT(fIsConvex);
   Precision distance = -InfinityLength<Precision>();
   for (size_t i = 0; i < S; ++i) {
     Precision dseg = -(fA[i] * point.x() + fB[i] * point.y() + fD[i]);

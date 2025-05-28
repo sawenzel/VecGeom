@@ -8,7 +8,7 @@
 #include "VecGeom/volumes/PlacedVolImplHelper.h"
 #include "VecGeom/volumes/SpecializedPlacedVolImplHelper.h"
 #include "VecGeom/volumes/kernel/ImplAsImplementation.h"
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <type_traits>
 
 namespace vecgeom {
@@ -21,7 +21,7 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 // implemented in terms of another **existing** implementing volume ImplementingUnplaced.
 template <typename UnplacedBase, typename ImplementingUnplaced>
 class SUnplacedImplAs : public UnplacedBase {
-  // static assert(make sure UnplacedBase is an UnplacedVolume
+  // static VECGEOM_ASSERT(make sure UnplacedBase is an UnplacedVolume
 
 public:
   using UnplacedStruct_t = typename ImplementingUnplaced::UnplacedStruct_t;

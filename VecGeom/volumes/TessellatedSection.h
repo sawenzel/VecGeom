@@ -63,9 +63,9 @@ protected:
     // list of all vertices (including duplications) and the extent is re-adjusted.
     if (fSameZ) {
       Vector3D<T> const &normal = facet->GetNormal();
-      assert(normal.Perp() < kTolerance);
+      VECGEOM_ASSERT(normal.Perp() < kTolerance);
       if (fUpNorm == 0.) fUpNorm = vecCore::math::CopySign(T(1.), normal.z());
-      assert(fUpNorm * normal.z() > 0);
+      VECGEOM_ASSERT(fUpNorm * normal.z() > 0);
     }
     fFacets.push_back(facet);
     // Adjust extent
@@ -87,7 +87,7 @@ protected:
     fMaxExtent[2] = fZ + fDz;
     // Check if we can create a Tessellated cluster
     size_t nfacets = fFacets.size();
-    assert(nfacets <= fNfacets && "Cannot add extra facets to section");
+    VECGEOM_VALIDATE(nfacets <= fNfacets, << "Cannot add extra facets to section");
     if (nfacets % kVecSize == 0 || nfacets == fNfacets) {
       size_t istart      = nfacets - (nfacets - 1) % kVecSize - 1;
       size_t i           = 0;
@@ -101,7 +101,7 @@ protected:
       fClusters.push_back(cluster);
     }
     if (nfacets == fNfacets) {
-      assert(CalculateConvexity() == true);
+      VECGEOM_ASSERT(CalculateConvexity() == true);
     }
   }
 
@@ -137,7 +137,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   TessellatedSection(int nfacets, T zmin, T zmax) : fNfacets(nfacets), fZ(0.5 * (zmin + zmax)), fDz(0.5 * (zmax - zmin))
   {
-    assert(zmax >= zmin && "zmin is greater than zmax");
+    VECGEOM_VALIDATE(zmax >= zmin, << "zmin is greater than zmax");
     if (fDz < kTolerance) {
       fSameZ = true;
       fDz    = 0.;

@@ -30,8 +30,8 @@ private:
   // convert index to physical daugher
   VPlacedVolume const *LookupDaughter(LogicalVolume const *lvol, int id) const
   {
-    assert(id >= 0 && "access with negative index");
-    assert(size_t(id) < lvol->GetDaughtersp()->size() && "access beyond size of daughterlist ");
+    VECGEOM_VALIDATE(id >= 0, << "access with negative index");
+    VECGEOM_VALIDATE(size_t(id) < lvol->GetDaughtersp()->size(), << "access beyond size of daughterlist ");
     return lvol->GetDaughtersp()->operator[](id);
   }
 
@@ -76,7 +76,7 @@ private:
         // consider putting a firstOne into vecCore or in VecGeom
         for (size_t i = 0; i < kVS; ++i) {
           if (vecCore::MaskLaneAt(hit, i)) {
-            assert(hitcount < VECGEOM_MAXDAUGHTERS);
+            VECGEOM_ASSERT(hitcount < VECGEOM_MAXDAUGHTERS);
             hitlist[hitcount] =
                 (ABBoxManager<Precision>::BoxIdDistancePair_t(box * kVS + i, vecCore::LaneAt(distance, i)));
             hitcount++;

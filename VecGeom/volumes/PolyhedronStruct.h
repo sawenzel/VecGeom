@@ -213,7 +213,7 @@ struct PolyhedronStruct {
         if (z[k] > zmin + kTolerance && z[k] < zmax - kTolerance) {
           // Project the vertex on current segment to get a new vertex
           Precision rp = r[i0] + (r[i1] - r[i0]) * (z[k] - z[i0]) / dz;
-          assert(rp >= 0);
+          VECGEOM_ASSERT(rp >= 0);
           // We need to insert point (rp, z[k]) after i1
           rnew[verticesCount1]   = rp;
           znew[verticesCount1++] = z[k];
@@ -246,12 +246,12 @@ struct PolyhedronStruct {
       // Current vertex index going always ccw from (rmin,zmin)
       int j    = (i0 + verticesCount1 + inc * i) % verticesCount1;
       int jsim = (i0 + verticesCount1 + inc * (verticesCount1 - 1 - i)) % verticesCount1;
-      assert(znew[j] == znew[jsim]);
+      VECGEOM_ASSERT(znew[j] == znew[jsim]);
       zArg[i] = znew[j];
       rMax[i] = rnew[j] * cosHalfDeltaPhi;
       rMin[i] = rnew[jsim] * cosHalfDeltaPhi;
-      assert(rMax[i] >= rMin[i] &&
-             "UnplPolycone ERROR: r[] provided has problems of the Rmax < Rmin type, please check!\n");
+      VECGEOM_ASSERT(rMax[i] >= rMin[i] &&
+                     "UnplPolycone ERROR: r[] provided has problems of the Rmax < Rmin type, please check!\n");
     }
 
     // Allocate arrays
@@ -286,7 +286,7 @@ struct PolyhedronStruct {
     // fZsegments content
     for (int i = 0; i < zPlaneCount - 1; ++i) {
       // Z-planes must be monotonically increasing
-      assert(zPlanes[i] <= zPlanes[i + 1]);
+      VECGEOM_ASSERT(zPlanes[i] <= zPlanes[i + 1]);
       bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
       int multiplier      = (ApproxEqual(zPlanes[i], zPlanes[i + 1]) && ApproxEqual(rMax[i], rMax[i + 1])) ? 0 : 1;
       aligned_size += Quadrilaterals::aligned_sizeof_data(sideCount * multiplier);
@@ -413,8 +413,8 @@ struct PolyhedronStruct {
     typedef Vector3D<Precision> Vec_t;
 
     // Sanity check of input parameters
-    assert(zPlaneCount > 1);
-    assert(fSideCount > 0);
+    VECGEOM_ASSERT(zPlaneCount > 1);
+    VECGEOM_ASSERT(fSideCount > 0);
     fSize = PolyhedronStruct<T>::aligned_sizeof_data(phiStart, phiDelta, sideCount, zPlaneCount, zPlanes, rMin, rMax);
 
     for (auto i = 0; i < zPlaneCount; ++i) {
@@ -442,7 +442,7 @@ struct PolyhedronStruct {
     // rmin jumps at some z and rmax remains continouus
     for (int i = 0; i < zPlaneCount - 1; ++i) {
       // Z-planes must be monotonically increasing
-      assert(zPlanes[i] <= zPlanes[i + 1]);
+      VECGEOM_ASSERT(zPlanes[i] <= zPlanes[i + 1]);
 
       bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
 
@@ -494,7 +494,7 @@ struct PolyhedronStruct {
     for (int i = 0; i < zPlaneCount; ++i) {
       // Use distance to side for minimizing inner radius of bounding tube
       if (rMin[i] < innerRadius) innerRadius = rMin[i];
-      assert(rMin[i] >= 0 && rMax[i] >= 0);
+      VECGEOM_ASSERT(rMin[i] >= 0 && rMax[i] >= 0);
       // Use distance to corner for minimizing outer radius of bounding tube
       if (rMax[i] > outerRadius) outerRadius = rMax[i];
     }
@@ -583,8 +583,8 @@ struct PolyhedronStruct {
     typedef Vector3D<Precision> Vec_t;
 
     // Sanity check of input parameters
-    assert(zPlaneCount > 1);
-    assert(fSideCount > 0);
+    VECGEOM_ASSERT(zPlaneCount > 1);
+    VECGEOM_ASSERT(fSideCount > 0);
 
     for (auto i = 0; i < zPlaneCount; ++i) {
       fZPlanes[i] = 0.;
@@ -611,7 +611,7 @@ struct PolyhedronStruct {
     // rmin jumps at some z and rmax remains continouus
     for (int i = 0; i < zPlaneCount - 1; ++i) {
       // Z-planes must be monotonically increasing
-      assert(zPlanes[i] <= zPlanes[i + 1]);
+      VECGEOM_ASSERT(zPlanes[i] <= zPlanes[i + 1]);
 
       bool hasInnerRadius = rMin[i] > kTolerance || rMin[i + 1] > kTolerance;
       bool convex         = phiDelta <= kPi;
@@ -663,7 +663,7 @@ struct PolyhedronStruct {
     for (int i = 0; i < zPlaneCount; ++i) {
       // Use distance to side for minimizing inner radius of bounding tube
       if (rMin[i] < innerRadius) innerRadius = rMin[i];
-      assert(rMin[i] >= 0 && rMax[i] >= 0);
+      VECGEOM_ASSERT(rMin[i] >= 0 && rMax[i] >= 0);
       // Use distance to corner for minimizing outer radius of bounding tube
       if (rMax[i] > outerRadius) outerRadius = rMax[i];
     }

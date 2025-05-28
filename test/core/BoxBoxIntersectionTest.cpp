@@ -5,7 +5,7 @@
 #include "VecGeom/volumes/Box.h"
 #include "VecGeomTest/Visualizer.h"
 #undef NDEBUG
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 using namespace vecgeom;
 
@@ -18,8 +18,8 @@ int main()
     Vector3D<Precision> upper1(1., 1., 1.);
     Vector3D<Precision> lower2(0.5, 0.5, 0.5);
     Vector3D<Precision> upper2(0.6, 0.6, 0.6);
-    assert(volumeUtilities::IntersectionExist(lower1, upper1, lower2, upper2));
-    assert(volumeUtilities::IntersectionExist(lower2, upper2, lower1, upper1));
+    VECGEOM_ASSERT(volumeUtilities::IntersectionExist(lower1, upper1, lower2, upper2));
+    VECGEOM_ASSERT(volumeUtilities::IntersectionExist(lower2, upper2, lower1, upper1));
   }
 
   Transformation3D transform1(-1, 0, 0, 0, 0, -45);
