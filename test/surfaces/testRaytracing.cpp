@@ -76,10 +76,35 @@ int LoadOnGPU(bool only_surf)
   return 0;
 }
 
+/// @brief Function computing the normal on the global point traversing a surface
+/// @tparam Real_t Precision type
+/// @param pos Global position
+/// @param prevState State before crossing
+/// @param nextState State after crossing
+/// @param valid Returned validity of the returned normal
+/// @param exiting Returned exiting
+/// @return Normalized normal on the given point
+template <typename Real_t>
+Vector3D<Real_t> ComputeNormal(Vector3D<Real_t> const &pos, NavigationState const &prevState,
+                               NavigationState const &nextState, bool &valid, bool &exiting)
+{
+  Vector3D<Real_t> local_normal;
+  Transformation3D trans;
+  exiting           = prevState.IsDescendent(nextState.GetState());
+  auto const &state = exiting ? prevState : nextState;
+  state.TopMatrix(trans);
+  valid              = state.Top()->GetUnplacedVolume()->Normal(/*localpoint=*/trans.Transform(pos), local_normal);
+  auto global_normal = trans.InverseTransformDirection(local_normal);
+  return global_normal;
+}
+
 //==================================================================================
-void LocateSolids(Vector3D<Precision> const *points, NavigationState *in_states, TestConfig const &config)
+void LocateSolids(Vector3D<Precision> const *points, Vector3D<Precision> const *directions, NavigationState *in_states,
+                  TestConfig const &config)
 {
   const char *matching[3] = {"does not match", "matches input", "matches next"};
+  const char *svalid[2]   = {"invalid", "valid"};
+  const char *sexiting[2] = {"entering", "exiting"};
   if (config.input_state > 0) {
     // User state defined
     in_states[0] = NavigationState(config.input_state);
@@ -96,7 +121,16 @@ void LocateSolids(Vector3D<Precision> const *points, NavigationState *in_states,
     VECGEOM_LOG(info) << "Provided input state: " << in_states[0].GetNavIndex();
     VECGEOM_LOG(info) << "Located  input state: " << state_located.GetNavIndex() << " " << matching[match];
     in_states[0].Top()->GetUnplacedVolume()->Print();
-    printf("\n");
+    if (config.compute_normal && config.next_state > 0 && config.on_boundary) {
+      NavigationState state_next(config.input_state);
+      Vector3D<Precision> normal;
+      bool valid_normal = true;
+      bool exiting      = false;
+      normal            = ComputeNormal(points[0], in_states[0], state_next, valid_normal, exiting);
+      std::cout << "| " << sexiting[exiting] << "| " << svalid[valid_normal] << " normal ";
+      if (valid_normal) std::cout << "| n.dot.dir = " << normal.Dot(directions[0]);
+      printf("\n");
+    }
     return;
   }
 
@@ -271,6 +305,8 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
                         TestConfig const &config)
 {
   constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
+  const char *svalid[2]          = {"invalid", "valid"};
+  const char *sexiting[2]        = {"entering", "exiting"};
   int ilast                      = config.nrays;
   int istart                     = 0;
   if (idebug >= 0) {
@@ -312,37 +348,19 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
       if (idebug >= 0 && (idebug_step < 0 || num_cross == idebug_step + 1)) {
         std::cout << std::setprecision(16) << "     dist = " << distance;
         if (!crossed) {
-          std::cout << " limited step ";
+          std::cout << " | limited step ";
           if (same_vol)
-            std::cout << "same volume ";
+            std::cout << "| same volume ";
           else
-            std::cout << "different volume !!! ";
+            std::cout << "| different volume !!! ";
         } else {
-          Vector3D<Precision> normal;
-          bool valid_normal  = true;
-          auto ComputeNormal = [](vecgeom::NavigationState const &navState, vecgeom::Vector3D<Real_t> const &pos,
-                                  bool &valid) {
-            vecgeom::Vector3D<Real_t> local_normal;
-            vecgeom::Transformation3D trans;
-            navState.TopMatrix(trans);
-            valid = navState.Top()->GetUnplacedVolume()->Normal(/*localpoint=*/trans.Transform(pos), local_normal);
-            auto global_normal = trans.InverseTransformDirection(local_normal);
-            return global_normal;
-          };
-          if (start_state.IsDescendent(out_state.GetState())) {
-            // Exiting volume case
-            normal = ComputeNormal(start_state, pt + distance * dir, valid_normal);
-            if (valid_normal)
-              std::cout << " n.dot.dir = " << normal.Dot(dir) << " exiting ";
-            else
-              std::cout << " invalid normal !!! exiting ";
-          } else {
-            // Entering child volume case
-            normal = ComputeNormal(out_state, pt + distance * dir, valid_normal);
-            if (valid_normal)
-              std::cout << " n.dot.dir = " << normal.Dot(dir) << " entering ";
-            else
-              std::cout << " invalid normal !!! entering ";
+          if (config.compute_normal) {
+            Vector3D<Precision> normal;
+            bool valid_normal = true;
+            bool exiting      = false;
+            normal            = ComputeNormal(pt + distance * dir, start_state, out_state, valid_normal, exiting);
+            std::cout << "| " << sexiting[exiting] << " | " << svalid[valid_normal] << " normal ";
+            if (valid_normal) std::cout << "| n.dot.dir = " << normal.Dot(dir);
           }
         }
         std::cout << "\n   " << num_cross << " : ";
@@ -563,7 +581,7 @@ int testRaytracingHost(Vector3D<Precision> *points, Vector3D<Precision> *dirs, T
   Stopwatch timer;
   // Locating the global points
   timer.Start();
-  LocateSolids(points, origStates, config);
+  LocateSolids(points, dirs, origStates, config);
   auto time_locate_solids = timer.Stop();
 
   timer.Start();
@@ -780,9 +798,9 @@ int main(int argc, char *argv[])
   config.mmunit = mmunit;
   OPTION_DOUBLE(safety_ratio, 0);
   config.safety_ratio = safety_ratio;
-  OPTION_INT(input_state, 0);
+  OPTION_ULONG(input_state, 0);
   config.input_state = input_state;
-  OPTION_INT(next_state, 0);
+  OPTION_ULONG(next_state, 0);
   config.next_state = next_state;
   OPTION_BOOL(compute_normal, false);
   config.compute_normal = compute_normal;

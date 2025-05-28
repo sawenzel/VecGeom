@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cstdint>
 
 double getDoubleOpt(char **begin, char **end, const std::string &option, double defaultval)
 {
@@ -21,6 +22,18 @@ int getIntOpt(char **begin, char **end, const std::string &option, int defaultva
   if (itr != end && ++itr != end) {
     int ret;
     sscanf(*itr, "%d", &ret);
+    return ret;
+  }
+  std::cout << "INFO: using default " << defaultval << " for option " << option << "\n";
+  return defaultval;
+}
+
+uint64_t getULongOpt(char **begin, char **end, const std::string &option, uint64_t defaultval)
+{
+  char **itr = std::find(begin, end, option);
+  if (itr != end && ++itr != end) {
+    uint64_t ret;
+    sscanf(*itr, "%ld", &ret);
     return ret;
   }
   std::cout << "INFO: using default " << defaultval << " for option " << option << "\n";
@@ -85,8 +98,9 @@ std::vector<double> getVectorOpt(char **begin, char **end, const std::string &op
   return defaultval;
 }
 
-#define OPTION_INT(name, defaultval) int name = getIntOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_DOUBLE(name, defaultval) double name = getDoubleOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_BOOL(name, defaultval) bool name = getBoolOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_STRING(name, defaultval) std::string name = getStringOpt(argv, argc + argv, "-" #name, defaultval)
-#define OPTION_VECTOR(name, defaultval) std::vector<double> name = getVectorOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_INT(name, defaultval) auto name = getIntOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_ULONG(name, defaultval) auto name = getULongOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_DOUBLE(name, defaultval) auto name = getDoubleOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_BOOL(name, defaultval) auto name = getBoolOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_STRING(name, defaultval) auto name = getStringOpt(argv, argc + argv, "-" #name, defaultval)
+#define OPTION_VECTOR(name, defaultval) auto name = getVectorOpt(argv, argc + argv, "-" #name, defaultval)
