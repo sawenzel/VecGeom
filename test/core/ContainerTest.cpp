@@ -12,20 +12,20 @@ template <typename T, template <typename> class ContainerType>
 void SizeTest()
 {
   ContainerType<T> container(0);
-  assert(container.size() == 0);
-  assert(container.capacity() == 0);
+  VECGEOM_ASSERT(container.size() == 0);
+  VECGEOM_ASSERT(container.capacity() == 0);
   container.reserve(8);
-  assert(container.size() == 0);
-  assert(container.capacity() == 8);
+  VECGEOM_ASSERT(container.size() == 0);
+  VECGEOM_ASSERT(container.capacity() == 8);
   container.resize(6);
-  assert(container.size() == 6);
-  assert(container.capacity() == 8);
+  VECGEOM_ASSERT(container.size() == 6);
+  VECGEOM_ASSERT(container.capacity() == 8);
   container.set(3, Vector3D<T>(1, 2, 3));
   container.set(2, 3, 2, 1);
-  assert(container[3] == Vector3D<T>(1, 2, 3));
-  assert(container[2] == Vector3D<T>(3, 2, 1));
-  assert(container.z(3) == 3);
-  assert(container.x(2) == 3);
+  VECGEOM_ASSERT(container[3] == Vector3D<T>(1, 2, 3));
+  VECGEOM_ASSERT(container[2] == Vector3D<T>(3, 2, 1));
+  VECGEOM_ASSERT(container.z(3) == 3);
+  VECGEOM_ASSERT(container.x(2) == 3);
 }
 
 void VectorTest()
@@ -34,60 +34,60 @@ void VectorTest()
     return (v1.x() == v2.x() && v1.y() == v2.y() && v1.z() == v2.z());
   };
   Vector<Vector3D<double>> container(0); // {}
-  assert(container.size() == 0);
-  assert(container.capacity() == 0);
+  VECGEOM_ASSERT(container.size() == 0);
+  VECGEOM_ASSERT(container.capacity() == 0);
   container.reserve(8); // { {}, {}, {}, {}, {}, {}, {}, {} }
-  assert(container.size() == 0);
-  assert(container.capacity() == 8);
+  VECGEOM_ASSERT(container.size() == 0);
+  VECGEOM_ASSERT(container.capacity() == 8);
   container.resize(2, {}); // { {0}, {0}, {}, {}, {}, {}, {}, {} }
-  assert(container.size() == 2);
-  assert(container.capacity() == 8);
+  VECGEOM_ASSERT(container.size() == 2);
+  VECGEOM_ASSERT(container.capacity() == 8);
   container.push_back({1., 2., 3.}); // { {0}, {0}, {1,2,3}, {}, {}, {}, {}, {} }
-  assert(equal_vect(container[0], {}));
-  assert(equal_vect(container[2], {1., 2., 3.}));
+  VECGEOM_ASSERT(equal_vect(container[0], {}));
+  VECGEOM_ASSERT(equal_vect(container[2], {1., 2., 3.}));
 
   // Assignment operator
   Vector<Vector3D<double>> container1;
   container1 = container; // { {0}, {0}, {1,2,3} }
-  assert(container1.size() == 3);
-  assert(container1.capacity() == 3);
-  assert(equal_vect(container1[2], {1., 2., 3.}));
+  VECGEOM_ASSERT(container1.size() == 3);
+  VECGEOM_ASSERT(container1.capacity() == 3);
+  VECGEOM_ASSERT(equal_vect(container1[2], {1., 2., 3.}));
   container1.reserve(4); // { {0}, {0}, {1,2,3}, {} }
-  assert(container1.size() == 3);
-  assert(container1.capacity() == 4);
-  assert(equal_vect(container1[2], {1., 2., 3.}));
+  VECGEOM_ASSERT(container1.size() == 3);
+  VECGEOM_ASSERT(container1.capacity() == 4);
+  VECGEOM_ASSERT(equal_vect(container1[2], {1., 2., 3.}));
   container1.push_back({1., 2., 3.}); // { {0}, {0}, {1,2,3}, {1,2,3} }
-  assert(container1.size() == 4);
+  VECGEOM_ASSERT(container1.size() == 4);
   container1.push_back({3., 2., 1.}); // { {0}, {0}, {1,2,3}, {1,2,3}, {3,2,1}, {}, {}, {} }
-  assert(container1.size() == 5);
-  assert(container1.capacity() == 8);
+  VECGEOM_ASSERT(container1.size() == 5);
+  VECGEOM_ASSERT(container1.capacity() == 8);
 
   // initializer list, assignment
   Vector<Vector3D<double>> container2 = {{}, {}, {1., 2., 3.}, {3., 2., 1.}};
-  assert(container2.size() == 4);
-  assert(container2.capacity() == 4);
-  assert(equal_vect(container2[3], {3., 2., 1.}));
+  VECGEOM_ASSERT(container2.size() == 4);
+  VECGEOM_ASSERT(container2.capacity() == 4);
+  VECGEOM_ASSERT(equal_vect(container2[3], {3., 2., 1.}));
   container1 = container2;
-  assert(container1.size() == 4);
-  assert(container1.capacity() == 8);
-  assert(equal_vect(container1[3], {3., 2., 1.}));
+  VECGEOM_ASSERT(container1.size() == 4);
+  VECGEOM_ASSERT(container1.capacity() == 8);
+  VECGEOM_ASSERT(equal_vect(container1[3], {3., 2., 1.}));
 
   // Fixed size
   Vector3D<double> arr[3] = {{}, {1., 2., 3.}, {3., 2., 1.}};
   Vector<Vector3D<double>> container3(arr, 3);
-  assert(container3.size() == 3);
-  assert(container3.capacity() == 3);
-  assert(!container3.is_allocated());
-  assert(equal_vect(container3[2], {3., 2., 1.}));
+  VECGEOM_ASSERT(container3.size() == 3);
+  VECGEOM_ASSERT(container3.capacity() == 3);
+  VECGEOM_ASSERT(!container3.is_allocated());
+  VECGEOM_ASSERT(equal_vect(container3[2], {3., 2., 1.}));
   container1.erase(container1.end() - 1);
   container3 = container1; //-> this will fire an assert without the erase before
-  assert(equal_vect(container3[2], {1., 2., 3.}));
+  VECGEOM_ASSERT(equal_vect(container3[2], {1., 2., 3.}));
 
   // Copy constructor
   Vector<Vector3D<double>> container4(container3);
-  assert(container4.size() == 3);
-  assert(container4.capacity() == 3);
-  assert(equal_vect(container4[2], {1., 2., 3.}));
+  VECGEOM_ASSERT(container4.size() == 3);
+  VECGEOM_ASSERT(container4.capacity() == 3);
+  VECGEOM_ASSERT(equal_vect(container4[2], {1., 2., 3.}));
 }
 
 template <typename T, template <typename> class ContainerType>
@@ -128,7 +128,7 @@ void AllocationTest()
          (void *)((size_t)a1.address + a1.sz), a1.sz);
   std::vector<double> z_values, rmin_values, rmax_values;
   pc1->ReconstructSectionArrays(z_values, rmin_values, rmax_values);
-  assert(z_values.size() == nz);
+  VECGEOM_ASSERT(z_values.size() == nz);
 
   auto pc2 = a1.aligned_alloc<PolyconeStruct<Precision>>(
       1, 0, pc1->fEqualRmax, pc1->fContinuityOverAll, pc1->fConvexityPossible, pc1->fStartPhi, pc1->fDeltaPhi,

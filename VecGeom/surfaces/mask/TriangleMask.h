@@ -27,7 +27,7 @@ struct TriangleMask {
       auto k      = (i + 2) % 3;
       auto seg_ij = p_[j] - p_[i];
       auto seg_ik = p_[k] - p_[i];
-      assert(seg_ij.Mag2() > vecgeom::kToleranceSquared);
+      VECGEOM_ASSERT(seg_ij.Mag2() > vecgeom::kToleranceSquared);
       // normal in XY plane
       n_[i].Set(seg_ij.y(), -seg_ij.x());
       // flip the normal so point k is 'backwards'

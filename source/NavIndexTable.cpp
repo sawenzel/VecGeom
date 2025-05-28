@@ -137,7 +137,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   auto content_hasr          = content_level + 3;
 
   NavIndex_t index_trans = fCurrent + record_count_before_trans + unsigned{padTransformationData};
-  assert((index_trans * sizeof(NavIndex_t)) % sizeof(Precision) == 0);
+  VECGEOM_ASSERT((index_trans * sizeof(NavIndex_t)) % sizeof(Precision) == 0);
   auto content_translation = (Precision *)(&fNavInd[index_trans]);
   auto content_rotation    = content_translation + 3 * unsigned{has_trans};
 
@@ -198,7 +198,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   // Increment table counter
   fCurrent += current_size / sizeof(NavIndex_t);
-  assert((fCurrent - record) * sizeof(NavIndex_t) == current_size);
+  VECGEOM_ASSERT((fCurrent - record) * sizeof(NavIndex_t) == current_size);
 
   // Return if this is a scene and the volume info is already processed
   if (index_scene > 0) return record;
@@ -253,8 +253,8 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   if (fDoCount) {
     fTableSize += current_size;
-    assert(fTableSize % sizeof(::Precision) == 0 &&
-           "NavigationIndexTable size until now must be a multiple of sizeof(Precision)");
+    VECGEOM_ASSERT(fTableSize % sizeof(::Precision) == 0 &&
+                   "NavigationIndexTable size until now must be a multiple of sizeof(Precision)");
     return 0;
   }
 
@@ -280,7 +280,8 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   // Write current level in next byte
   auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 5]);
-  assert(level < std::numeric_limits<unsigned char>::max() && "fatal: geometry deph more than 255 not supported");
+  VECGEOM_VALIDATE(level < std::numeric_limits<unsigned char>::max(),
+                   << "unsupported geometry depth: " << level << " > 255");
   *content_ddt = (unsigned char)level;
 
   // Write number of daughters in next 2 bytes
@@ -307,11 +308,11 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   // insert padding before transformation elements to align them
   if (padTransformationData) fCurrent++;
-  assert((fCurrent * sizeof(NavIndex_t)) % sizeof(Precision) == 0);
+  VECGEOM_ASSERT((fCurrent * sizeof(NavIndex_t)) % sizeof(Precision) == 0);
 
   // Write the transformation elements
   auto content_mat = (Precision *)(&fNavInd[fCurrent]);
-  assert(reinterpret_cast<uintptr_t>(content_mat) % sizeof(Precision) == 0);
+  VECGEOM_ASSERT(reinterpret_cast<uintptr_t>(content_mat) % sizeof(Precision) == 0);
   for (auto i = 0; i < 3; ++i)
     content_mat[i] = mat.Translation(i);
   for (auto i = 0; i < 9; ++i)
@@ -319,7 +320,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   // Set new value for fCurrent
   fCurrent += 12 * sizeof(Precision) / sizeof(NavIndex_t);
-  assert((fCurrent - new_mother) * sizeof(NavIndex_t) == current_size);
+  VECGEOM_ASSERT((fCurrent - new_mother) * sizeof(NavIndex_t) == current_size);
   return new_mother;
 }
 
@@ -332,8 +333,8 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
   auto &vol_selected = fSelectedVolumes;
   // This is the total number of registered volume, larger than the number of volumes in the hierarchy
   int ntot = GeoManager::Instance().GetRegisteredVolumesCount();
-  assert(vol_selected.size() >= size_t(ntot) &&
-         "the selected volume container size must not be less than the registered volume count");
+  VECGEOM_ASSERT(vol_selected.size() >= size_t(ntot) &&
+                 "the selected volume container size must not be less than the registered volume count");
   std::fill(vol_selected.begin(), vol_selected.end(), 0);
   std::vector<int> nrep(ntot, 0), nleaves(ntot, 0), levels(ntot, 0), score(ntot, 0), scenes(ntot, 0);
   std::vector<bool> vol_visited(ntot, false);
@@ -426,7 +427,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
         }
       }
     }
-    assert(count_nodes == nrep[ivol] * nleaves[ivol]);
+    VECGEOM_ASSERT(count_nodes == nrep[ivol] * nleaves[ivol]);
   };
 #endif
 
@@ -459,13 +460,13 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
           if (iparent == ivol) {
             // Avoid integer overflow
             double newvalue = double(reps.second) * nrep[ivol] / nrep_old;
-            assert(std::floor(newvalue) == newvalue);
+            VECGEOM_ASSERT(std::floor(newvalue) == newvalue);
             reps.second = int(newvalue);
             // reps.second = reps.second * nrep[ivol] / nrep_old;
           }
           nrep[idaughter] += reps.second;
         }
-        assert(nrep_daughter_old == nrep_ref);
+        VECGEOM_ASSERT(nrep_daughter_old == nrep_ref);
         // recompute daughter score
         score[idaughter] = nleaves[idaughter] * (nrep[idaughter] - 1);
         // propagate to children
@@ -486,7 +487,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
     // reduce the score of volume ivol
     int old_nnodes = nleaves[ivol];
     int reduction  = old_nnodes - new_nnodes;
-    assert(reduction > 0);
+    VECGEOM_ASSERT(reduction > 0);
     nleaves[ivol]     = new_nnodes;
     score[ivol]       = (nrep[ivol] - 1) * new_nnodes;
     auto &vec_parents = nrep_parent[ivol];
@@ -495,7 +496,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
       if (vol_selected[iparent]) continue;
       int nreduced = reduction * (reps.second / nrep[iparent]);
       int nparent  = nleaves[iparent] - nreduced;
-      assert(nparent >= 0);
+      VECGEOM_ASSERT(nparent >= 0);
       // Propagate to parents
       compressAndRecomputeParentScores(iparent, nparent);
     }
@@ -529,7 +530,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
       scenes[ivol] = count_scene_level;
       scene_sum += count_scene_level;
       if (!vol_selected[ivol]) {
-        assert(nleaves[ivol] == count_daughters);
+        VECGEOM_ASSERT(nleaves[ivol] == count_daughters);
         // nleaves[ivol] = count_daughters;
         count += count_daughters;
       } else {

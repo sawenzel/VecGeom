@@ -146,7 +146,7 @@ void remove_range(LogicExpressionCPU &logic, size_t istart, size_t iend)
 
 void remove_parentheses(LogicExpressionCPU &logic, size_t start, size_t end)
 {
-  assert(logic[start] == lplus && logic[end] == lminus);
+  VECGEOM_ASSERT(logic[start] == lplus && logic[end] == lminus);
   for (size_t i = start + 1; i < end; ++i)
     logic[i - 1] = logic[i]; // shift left
   for (size_t i = end + 1; i < logic.size(); ++i)
@@ -174,7 +174,7 @@ void insert_jumps(LogicExpressionCPU &logic)
     else if (logic[i] == land || logic[i] == lor) {
       auto d = depth;
       auto j = i + 1;
-      assert(j + 1 < logic.size() && "cannot end expression with an operator");
+      VECGEOM_VALIDATE(j + 1 < logic.size(), << "cannot end expression with an operator");
       // scan for next operator at the same depth or end parenthesis
       while (++j < logic.size()) {
         if (logic[j] == lplus) {
@@ -203,13 +203,13 @@ bool is_negated(int isurf, LogicExpressionCPU &logic)
 size_t find_matching_parenthesis(LogicExpressionCPU &logic, size_t start)
 {
   // logic[start] must be lplus
-  assert(logic[start] == lplus);
+  VECGEOM_ASSERT(logic[start] == lplus);
   int ldepth = 0;
   for (size_t i = start; i < logic.size(); ++i) {
     switch (logic[i]) {
     case lminus:
       ldepth--;
-      assert(ldepth >= 0);
+      VECGEOM_ASSERT(ldepth >= 0);
       if (ldepth == 0) return i;
       break;
     case lplus:
@@ -532,7 +532,8 @@ void LogicExpressionConstruct::GivePrecedenceToAnd()
     for (size_t i = iand; i <= iand_last; ++i) {
       fOperands[iand] &= fOperands[i + 1];
     }
-    assert(!fOperands[iand].fNegated); // this should be the case, if not we need to push negation to logic expression
+    VECGEOM_ASSERT(
+        !fOperands[iand].fNegated); // this should be the case, if not we need to push negation to logic expression
     fOperands[iand].fHasScope = true;
     fOperands.erase(fOperands.begin() + iand + 1, fOperands.begin() + iand_last + 2);
     fOperators.erase(fOperators.begin() + iand, fOperators.begin() + iand_last + 1);
@@ -705,7 +706,7 @@ bool evaluate_logic(LogicExpressionCPU const &logic, const bool *values, int &nu
         reset_bit(stack, depth);
     }
   }
-  assert(depth == 0);
+  VECGEOM_ASSERT(depth == 0);
   return (stack & 1) > 0;
 }
 

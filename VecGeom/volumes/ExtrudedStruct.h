@@ -111,14 +111,14 @@ public:
   void Initialize(int nvertices, XtruVertex2 const *vertices, int nsections, XtruSection const *sections)
   {
     if (fInitialized) return;
-    assert(nsections > 1 && nvertices > 2);
+    VECGEOM_ASSERT(nsections > 1 && nvertices > 2);
     fZPlanes         = new Precision[nsections];
     fZPlanes[0]      = sections[0].fOrigin.z();
     bool degenerated = false;
     for (size_t i = 1; i < (size_t)nsections; ++i) {
       fZPlanes[i] = sections[i].fOrigin.z();
       // Make sure sections are defined in increasing order
-      assert(fZPlanes[i] >= fZPlanes[i - 1] && "Extruded sections not defined in increasing Z order");
+      VECGEOM_VALIDATE(fZPlanes[i] >= fZPlanes[i - 1], << "Extruded sections not defined in increasing Z order");
       if (fZPlanes[i] - fZPlanes[i - 1] < kTolerance) degenerated = true;
     }
 #ifndef VECGEOM_ENABLE_CUDA
@@ -205,7 +205,7 @@ public:
         i2++;
         i3 = (i3 + 1) % vtx.size();
         counter++;
-        assert(counter < nvertices && "Triangulation failed");
+        VECGEOM_VALIDATE(counter < nvertices, << "Triangulation failed");
         (void)counter; // silence unused variable warnings in release builds
       }
       bool good = true;

@@ -41,7 +41,7 @@ namespace volumeUtilities {
 VECGEOM_FORCE_INLINE
 bool IsHittingVolume(Vector3D<Precision> const &point, Vector3D<Precision> const &dir, VPlacedVolume const &volume)
 {
-  assert(!volume.Contains(point));
+  VECGEOM_ASSERT(!volume.Contains(point));
   return volume.DistanceToIn(point, dir, vecgeom::kInfLength) < vecgeom::kInfLength;
 }
 
@@ -49,7 +49,7 @@ VECGEOM_FORCE_INLINE
 bool IsHittingLogicalVolume(Vector3D<Precision> const &point, Vector3D<Precision> const &dir,
                             LogicalVolume const &volume)
 {
-  assert(!volume.GetUnplacedVolume()->Contains(point));
+  VECGEOM_ASSERT(!volume.GetUnplacedVolume()->Contains(point));
   return volume.GetUnplacedVolume()->DistanceToIn(point, dir, vecgeom::kInfLength) < vecgeom::kInfLength;
 }
 
@@ -180,7 +180,7 @@ template <typename TrackContainer>
 VECGEOM_FORCE_INLINE void FillBiasedDirections(VPlacedVolume const &volume, TrackContainer const &points,
                                                Precision bias, TrackContainer &dirs, const bool motherOnly = false)
 {
-  assert(bias >= 0. && bias <= 1.);
+  VECGEOM_ASSERT(bias >= 0. && bias <= 1.);
 
   if (bias > 0. && !motherOnly && volume.GetDaughters().size() == 0) {
     VECGEOM_LOG(error) << "nFillBiasedDirections: bias=" << bias << " requested, but no daughter volumes found";
@@ -256,7 +256,7 @@ VECGEOM_FORCE_INLINE void FillBiasedDirections(VPlacedVolume const &volume, Trac
                                   : IsHittingAnyDaughter(points[track], dirs[track], *volume.GetLogicalVolume());
       if (isHitting) crosscheckhits++;
     }
-    assert(crosscheckhits == n_hits && "problem with hit count == 0");
+    VECGEOM_VALIDATE(crosscheckhits == n_hits, << "problem with hit count == 0");
     (void)crosscheckhits; // silence set but not unused warnings when asserts are disabled
   }
 
@@ -329,7 +329,7 @@ VECGEOM_FORCE_INLINE void FillBiasedDirections(VPlacedVolume const &volume, Trac
                                   : IsHittingAnyDaughter(points[p], dirs[p], *volume.GetLogicalVolume());
       if (isHitting) crosscheckhits++;
     }
-    assert(crosscheckhits == n_hits && "problem with hit count");
+    VECGEOM_VALIDATE(crosscheckhits == n_hits, << "problem with hit count");
     (void)crosscheckhits; // silence set but not unused warnings when asserts are disabled
   }
 
@@ -901,7 +901,7 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
 
     // generate points which are in lvol but not in its daughters
     bool good = FillUncontainedPoints(*pvol, localpoints);
-    // assert(good);
+    // VECGEOM_ASSERT(good);
     if (!good) {
       std::cerr << "FATAL ERROR> FillUncontainedPoints failed for volume " << pvol->GetName() << std::endl;
       exit(1);
@@ -930,13 +930,13 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
         s1->Clear();
         s2->Clear();
         GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), globalpoints[placedcount], *s1, true);
-        assert(s1->Top()->GetLogicalVolume() == lvol);
+        VECGEOM_ASSERT(s1->Top()->GetLogicalVolume() == lvol);
         Precision step = vecgeom::kInfLength;
         auto nav       = s1->Top()->GetLogicalVolume()->GetNavigator();
         nav->FindNextBoundaryAndStep(globalpoints[placedcount], directions[placedcount], *s1, *s2, vecgeom::kInfLength,
                                      step);
 #ifdef DEBUG
-        if (!hitsdaughter) assert(s1->Distance(*s2) > s2->GetCurrentLevel() - s1->GetCurrentLevel());
+        if (!hitsdaughter) VECGEOM_ASSERT(s1->Distance(*s2) > s2->GetCurrentLevel() - s1->GetCurrentLevel());
 #endif
         if (hitsdaughter)
           if (s1->Distance(*s2) == s2->GetCurrentLevel() - s1->GetCurrentLevel()) {
@@ -1016,7 +1016,7 @@ inline void FillGlobalPointsForLogicalVolume(LogicalVolume const *lvol, TrackCon
     } else {
       // generate points which are in lvol but not in its daughters
       bool good = FillUncontainedPoints(*pvol, localpoints);
-      // assert(good);
+      // VECGEOM_ASSERT(good);
       if (!good) {
         std::cerr << "FATAL ERROR> FillUncontainedPoints failed for volume " << pvol->GetName() << std::endl;
         exit(1);

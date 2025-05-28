@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include "VecCore/VecCore"
+#include "VecGeom/base/Assert.h"
 
 using namespace vecCore;
 
@@ -23,15 +24,15 @@ void TestType(const char *type)
 
   // returns false for vsize-1
   if (!EarlyReturnMaxLength(flagReal_v, vsize - 1))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 
   // returns true for vsize
   if (EarlyReturnMaxLength(flagReal_v, vsize))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 }
 
 int main()
@@ -39,37 +40,37 @@ int main()
 #ifdef VECGEOM_NVCC
   // always false for CUDA
   std::cout << "Testing early returns for CUDA=ON...\n";
-  assert(!EarlyReturnAllowed());
+  VECGEOM_ASSERT(!EarlyReturnAllowed());
   double flagDouble;
-  assert(!EarlyReturnMaxLength(, 1);
+  VECGEOM_ASSERT(!EarlyReturnMaxLength(, 1);
 #else
   std::cout << "Testing early returns for CUDA=OFF...\n";
 
   // always true for non-CUDA
-  assert(EarlyReturnAllowed());
+  VECGEOM_ASSERT(EarlyReturnAllowed());
 
   // always returns true for floats or floats
   std::cout << "Testing early returns for float...\n";
   float flagFloat;
   if (EarlyReturnMaxLength(flagFloat, 1))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
   if (EarlyReturnMaxLength(flagFloat, 2))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 
   std::cout << "Testing early returns for double...\n";
   double flagDouble;
   if (EarlyReturnMaxLength(flagDouble, 1))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
   if (EarlyReturnMaxLength(flagDouble, 2))
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 
 #ifdef VECGEOM_ENABLE_VC
   // tests for Float_v
@@ -79,13 +80,13 @@ int main()
             << " bits..., VectorSize=" << VectorSize<Float_v>() << "\n";
   constexpr size_t vsize1 = VectorSize<Float_v>();
   if (!EarlyReturnMaxLength(flagFloat_v, vsize1 - 1)
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
   if (EarlyReturnMaxLength(flagFloat_v, vsize1)
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 
   // tests for Double_v
   using Double_v = backend::VcVector::Double_v;
@@ -94,13 +95,13 @@ int main()
             << " bits..., VectorSize=" << VectorSize<Double_v>() << "\n";
   constexpr size_t vsize2 = VectorSize<Double_v>();
   if (!EarlyReturnMaxLength(flagDouble_v, vsize2 - 1)
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
   if (EarlyReturnMaxLength(flagDouble_v, vsize2)
-    assert(true);
+    VECGEOM_ASSERT(true);
   else
-    assert(false);
+    VECGEOM_ASSERT(false);
 #endif
 
   TestType<backend::Scalar>("Scalar");

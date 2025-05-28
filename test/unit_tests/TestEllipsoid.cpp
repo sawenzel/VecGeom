@@ -59,42 +59,42 @@ bool TestEllipsoid()
   Precision a, b, c, zbottom, ztop;
 
   Ellipsoid_t solid("Test_Ellipsoid", a = 3., b = 4., c = 5., zbottom = -4.5, ztop = 3.5);
-  assert(solid.GetDx() == a);
-  assert(solid.GetDy() == b);
-  assert(solid.GetDz() == c);
-  assert(solid.GetZBottomCut() == zbottom);
-  assert(solid.GetZTopCut() == ztop);
+  VECGEOM_ASSERT(solid.GetDx() == a);
+  VECGEOM_ASSERT(solid.GetDy() == b);
+  VECGEOM_ASSERT(solid.GetDz() == c);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == zbottom);
+  VECGEOM_ASSERT(solid.GetZTopCut() == ztop);
 
   solid.SetZCuts(-c - 1., c + 1);
-  assert(solid.GetZBottomCut() == -c);
-  assert(solid.GetZTopCut() == c);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == -c);
+  VECGEOM_ASSERT(solid.GetZTopCut() == c);
 
   solid.SetZCuts(-4., 2);
-  assert(solid.GetZBottomCut() == -4.);
-  assert(solid.GetZTopCut() == 2.);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == -4.);
+  VECGEOM_ASSERT(solid.GetZTopCut() == 2.);
 
   solid.SetZCuts(0., 0.);
-  assert(solid.GetZBottomCut() == -c);
-  assert(solid.GetZTopCut() == c);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == -c);
+  VECGEOM_ASSERT(solid.GetZTopCut() == c);
 
   solid.SetZCuts(zbottom, ztop);
-  assert(solid.GetZBottomCut() == zbottom);
-  assert(solid.GetZTopCut() == ztop);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == zbottom);
+  VECGEOM_ASSERT(solid.GetZTopCut() == ztop);
 
   solid.SetSemiAxes(2., 3., 4.);
-  assert(solid.GetDx() == 2.);
-  assert(solid.GetDy() == 3.);
-  assert(solid.GetDz() == 4.);
-  assert(solid.GetZBottomCut() == -4.);
-  assert(solid.GetZTopCut() == 3.5);
+  VECGEOM_ASSERT(solid.GetDx() == 2.);
+  VECGEOM_ASSERT(solid.GetDy() == 3.);
+  VECGEOM_ASSERT(solid.GetDz() == 4.);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == -4.);
+  VECGEOM_ASSERT(solid.GetZTopCut() == 3.5);
 
   solid.SetSemiAxes(a, b, c);
   solid.SetZCuts(zbottom, ztop);
-  assert(solid.GetDx() == a);
-  assert(solid.GetDy() == b);
-  assert(solid.GetDz() == c);
-  assert(solid.GetZBottomCut() == zbottom);
-  assert(solid.GetZTopCut() == ztop);
+  VECGEOM_ASSERT(solid.GetDx() == a);
+  VECGEOM_ASSERT(solid.GetDy() == b);
+  VECGEOM_ASSERT(solid.GetDz() == c);
+  VECGEOM_ASSERT(solid.GetZBottomCut() == zbottom);
+  VECGEOM_ASSERT(solid.GetZTopCut() == ztop);
 
   std::cout << "=== Check Print()" << std::endl;
   solid.Print();
@@ -112,7 +112,7 @@ bool TestEllipsoid()
   Precision areaCheck = solid.GetUnplacedVolume()->EstimateSurfaceArea(Npoints);
   std::cout << " sphere(5) = " << area << "   exact = " << areaMath << "   mc_estimated = " << areaCheck << " ("
             << Npoints / 1000000. << " million points)" << std::endl;
-  assert(std::abs(area - areaMath) < 0.01 * area);
+  VECGEOM_ASSERT(std::abs(area - areaMath) < 0.01 * area);
 
   // check prolate spheroid
   solid.SetSemiAxes(3., 3., 5.);
@@ -123,7 +123,7 @@ bool TestEllipsoid()
   areaCheck   = solid.GetUnplacedVolume()->EstimateSurfaceArea(Npoints);
   std::cout << " spheroid(3,3,5) = " << area << "   exact = " << areaMath << "   mc_estimated = " << areaCheck << " ("
             << Npoints / 1000000. << " million points)" << std::endl;
-  assert(std::abs(area - areaMath) < 0.01 * area);
+  VECGEOM_ASSERT(std::abs(area - areaMath) < 0.01 * area);
 
   // check oblate spheroid
   solid.SetSemiAxes(5., 5., 3.);
@@ -133,7 +133,7 @@ bool TestEllipsoid()
   areaCheck = solid.GetUnplacedVolume()->EstimateSurfaceArea(Npoints);
   std::cout << " spheroid(5,5,3) = " << area << "   exact = " << areaMath << "   mc_estimated = " << areaCheck << " ("
             << Npoints / 1000000. << " million points)" << std::endl;
-  assert(std::abs(area - areaMath) < 0.01 * area);
+  VECGEOM_ASSERT(std::abs(area - areaMath) < 0.01 * area);
 
   // check ellipsoid under test
   solid.SetSemiAxes(a, b, c);
@@ -142,7 +142,7 @@ bool TestEllipsoid()
   areaCheck = solid.GetUnplacedVolume()->EstimateSurfaceArea(Npoints);
   std::cout << " ellipsoid(3,4,5, -4.5,3.5) = " << area << "   mc_estimated = " << areaCheck << " ("
             << Npoints / 1000000. << " million points)" << std::endl;
-  assert(std::abs(area - areaCheck) < 0.01 * area);
+  VECGEOM_ASSERT(std::abs(area - areaCheck) < 0.01 * area);
 
   // Check Cubic volume
   std::cout << "=== Check Capacity()" << std::endl;
@@ -152,7 +152,7 @@ bool TestEllipsoid()
   Precision volCheck = solid.GetUnplacedVolume()->EstimateCapacity(Npoints);
   std::cout << " volume = " << vol << "   mc_estimated = " << volCheck << " (" << Npoints / 1000000.
             << " million points)" << std::endl;
-  assert(std::abs(vol - volCheck) < 0.01 * vol);
+  VECGEOM_ASSERT(std::abs(vol - volCheck) < 0.01 * vol);
 
   // Check Extent
   std::cout << "=== Check Extent()" << std::endl;
@@ -169,12 +169,12 @@ bool TestEllipsoid()
   std::cout << " mc_estimated:  min = " << minCheck << " max = " << maxCheck << " (" << Npoints / 1000000.
             << " million points)" << std::endl;
 
-  assert(std::abs(minExtent.x() - minCheck.x()) < 0.001 * std::abs(minExtent.x()));
-  assert(std::abs(minExtent.y() - minCheck.y()) < 0.001 * std::abs(minExtent.y()));
-  assert(minExtent.z() == minCheck.z());
-  assert(std::abs(maxExtent.x() - maxCheck.x()) < 0.001 * std::abs(maxExtent.x()));
-  assert(std::abs(maxExtent.y() - maxCheck.y()) < 0.001 * std::abs(maxExtent.y()));
-  assert(maxExtent.z() == maxCheck.z());
+  VECGEOM_ASSERT(std::abs(minExtent.x() - minCheck.x()) < 0.001 * std::abs(minExtent.x()));
+  VECGEOM_ASSERT(std::abs(minExtent.y() - minCheck.y()) < 0.001 * std::abs(minExtent.y()));
+  VECGEOM_ASSERT(minExtent.z() == minCheck.z());
+  VECGEOM_ASSERT(std::abs(maxExtent.x() - maxCheck.x()) < 0.001 * std::abs(maxExtent.x()));
+  VECGEOM_ASSERT(std::abs(maxExtent.y() - maxCheck.y()) < 0.001 * std::abs(maxExtent.y()));
+  VECGEOM_ASSERT(maxExtent.z() == maxCheck.z());
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -199,26 +199,26 @@ bool TestEllipsoid()
       if (z < zbottom) pz = zbottom;
       if (z > ztop) pz = ztop;
       Vec_t p(px, py, pz);
-      assert(solid.Inside(p) == vecgeom::kSurface);
-      assert(solid.Inside(p * 0.999) == vecgeom::kInside);
-      assert(solid.Inside(p * 1.001) == vecgeom::kOutside);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(solid.Inside(p * 0.999) == vecgeom::kInside);
+      VECGEOM_ASSERT(solid.Inside(p * 1.001) == vecgeom::kOutside);
     }
   }
-  assert(solid.Inside(Vec_t(0., 0., zbottom)) == vecgeom::kSurface);
-  assert(solid.Inside(Vec_t(0., 0., zbottom - kTolerance)) == vecgeom::kOutside);
-  assert(solid.Inside(Vec_t(0., 0., zbottom + kTolerance)) == vecgeom::kInside);
-  assert(solid.Inside(Vec_t(0., 0., ztop)) == vecgeom::kSurface);
-  assert(solid.Inside(Vec_t(0., 0., ztop - kTolerance)) == vecgeom::kInside);
-  assert(solid.Inside(Vec_t(0., 0., ztop + kTolerance)) == vecgeom::kOutside);
-  assert(solid.Inside(Vec_t(0., 0., 0.)) == vecgeom::kInside);
-  assert(solid.Inside(Vec_t(0., 0., -c)) == vecgeom::kOutside);
-  assert(solid.Inside(Vec_t(0., 0., +c)) == vecgeom::kOutside);
-  assert(solid.Inside(Vec_t(-a, 0., 0.)) == vecgeom::kSurface);
-  assert(solid.Inside(Vec_t(-a - kTolerance, 0., 0.)) == vecgeom::kOutside);
-  assert(solid.Inside(Vec_t(-a + kTolerance, 0., 0.)) == vecgeom::kInside);
-  assert(solid.Inside(Vec_t(0., b, 0.)) == vecgeom::kSurface);
-  assert(solid.Inside(Vec_t(0., b - kTolerance, 0.)) == vecgeom::kInside);
-  assert(solid.Inside(Vec_t(0., b + kTolerance, 0.)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., zbottom)) == vecgeom::kSurface);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., zbottom - kTolerance)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., zbottom + kTolerance)) == vecgeom::kInside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., ztop)) == vecgeom::kSurface);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., ztop - kTolerance)) == vecgeom::kInside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., ztop + kTolerance)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., 0.)) == vecgeom::kInside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., -c)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., 0., +c)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(-a, 0., 0.)) == vecgeom::kSurface);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(-a - kTolerance, 0., 0.)) == vecgeom::kOutside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(-a + kTolerance, 0., 0.)) == vecgeom::kInside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., b, 0.)) == vecgeom::kSurface);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., b - kTolerance, 0.)) == vecgeom::kInside);
+  VECGEOM_ASSERT(solid.Inside(Vec_t(0., b + kTolerance, 0.)) == vecgeom::kOutside);
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -245,8 +245,8 @@ bool TestEllipsoid()
       Precision py  = rho * std::sin(phi) * b + eps;
       Precision pz  = z + eps;
       valid         = solid.Normal(Vec_t(px, py, pz), normal);
-      assert(valid);
-      assert(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
+      VECGEOM_ASSERT(valid);
+      VECGEOM_ASSERT(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
     }
   }
 
@@ -259,8 +259,8 @@ bool TestEllipsoid()
     Precision py  = rho * std::sin(phi) * b + eps;
     Precision pz  = zbottom + eps;
     valid         = solid.Normal(Vec_t(px, py, pz), normal);
-    assert(valid);
-    assert(ApproxEqual(normal, (EstimateNormal(a, b, c, pz, phi) + Vec_t(0., 0., -1.)).Unit()));
+    VECGEOM_ASSERT(valid);
+    VECGEOM_ASSERT(ApproxEqual(normal, (EstimateNormal(a, b, c, pz, phi) + Vec_t(0., 0., -1.)).Unit()));
   }
 
   // Check normals at ztop edge
@@ -272,47 +272,47 @@ bool TestEllipsoid()
     Precision py  = rho * std::sin(phi) * b + eps;
     Precision pz  = ztop + eps;
     valid         = solid.Normal(Vec_t(px, py, pz), normal);
-    assert(valid);
-    assert(ApproxEqual(normal, (EstimateNormal(a, b, c, pz, phi) + Vec_t(0., 0., 1.)).Unit()));
+    VECGEOM_ASSERT(valid);
+    VECGEOM_ASSERT(ApproxEqual(normal, (EstimateNormal(a, b, c, pz, phi) + Vec_t(0., 0., 1.)).Unit()));
   }
 
   // Check normals on zbottom cut
-  assert(solid.Normal(Vec_t(0., 0., zbottom), normal));
-  assert(normal == Vec_t(0., 0., -1.));
-  assert(solid.Normal(Vec_t(0.5, 0., zbottom), normal));
-  assert(normal == Vec_t(0., 0., -1.));
-  assert(solid.Normal(Vec_t(0, -0.5, zbottom), normal));
-  assert(normal == Vec_t(0., 0., -1.));
-  assert(solid.Normal(Vec_t(-0.5, 0.5, zbottom), normal));
-  assert(normal == Vec_t(0., 0., -1.));
-  assert(solid.Normal(Vec_t(-0.6, -0.6, zbottom), normal));
-  assert(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0., 0., zbottom), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0.5, 0., zbottom), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0, -0.5, zbottom), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(-0.5, 0.5, zbottom), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(-0.6, -0.6, zbottom), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
 
   // Check normals on ztop cut
-  assert(solid.Normal(Vec_t(0., 0., ztop), normal));
-  assert(normal == Vec_t(0., 0., 1.));
-  assert(solid.Normal(Vec_t(0.5, 0., ztop), normal));
-  assert(normal == Vec_t(0., 0., 1.));
-  assert(solid.Normal(Vec_t(0, -0.5, ztop), normal));
-  assert(normal == Vec_t(0., 0., 1.));
-  assert(solid.Normal(Vec_t(-0.5, 0.5, ztop), normal));
-  assert(normal == Vec_t(0., 0., 1.));
-  assert(solid.Normal(Vec_t(-0.6, -0.6, ztop), normal));
-  assert(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0., 0., ztop), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0.5, 0., ztop), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(0, -0.5, ztop), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(-0.5, 0.5, ztop), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(solid.Normal(Vec_t(-0.6, -0.6, ztop), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
 
   // Check points not on surface
-  assert(!solid.Normal(Vec_t(0., 0., 0.), normal));
-  assert(normal.Mag() == 1.);
+  VECGEOM_ASSERT(!solid.Normal(Vec_t(0., 0., 0.), normal));
+  VECGEOM_ASSERT(normal.Mag() == 1.);
 
-  assert(!solid.Normal(Vec_t(0., 0., zbottom + 1.), normal));
-  assert(normal == Vec_t(0., 0., -1.));
-  assert(!solid.Normal(Vec_t(0.1, 0.1, zbottom + 1.), normal));
-  assert(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(!solid.Normal(Vec_t(0., 0., zbottom + 1.), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
+  VECGEOM_ASSERT(!solid.Normal(Vec_t(0.1, 0.1, zbottom + 1.), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., -1.));
 
-  assert(!solid.Normal(Vec_t(0., 0., ztop - 1.), normal));
-  assert(normal == Vec_t(0., 0., 1.));
-  assert(!solid.Normal(Vec_t(-0.2, -0.3, ztop - 1.), normal));
-  assert(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(!solid.Normal(Vec_t(0., 0., ztop - 1.), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
+  VECGEOM_ASSERT(!solid.Normal(Vec_t(-0.2, -0.3, ztop - 1.), normal));
+  VECGEOM_ASSERT(normal == Vec_t(0., 0., 1.));
 
   for (int iz = 1; iz < NZ - 1; ++iz) {
     Precision z = zbottom + iz * DZ;
@@ -324,11 +324,11 @@ bool TestEllipsoid()
       Precision py  = rho * std::sin(phi) * b + eps;
       Precision pz  = z + eps;
       valid         = solid.Normal(Vec_t(px, py, pz) * 1.2, normal);
-      assert(!valid);
-      assert(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
+      VECGEOM_ASSERT(!valid);
+      VECGEOM_ASSERT(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
       valid = solid.Normal(Vec_t(px, py, pz) * 0.8, normal);
-      assert(!valid);
-      assert(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
+      VECGEOM_ASSERT(!valid);
+      VECGEOM_ASSERT(ApproxEqual(normal, EstimateNormal(a, b, c, pz, phi)));
     }
   }
 
@@ -357,26 +357,26 @@ bool TestEllipsoid()
       if (z < zbottom) pz = zbottom;
       if (z > ztop) pz = ztop;
       Vec_t p(px, py, pz);
-      assert(solid.Inside(p) == vecgeom::kSurface);
-      assert(solid.SafetyToIn(p) == 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(solid.SafetyToIn(p) == 0.);
       p = Vec_t(px, py, pz) * 2.;
-      assert(solid.Inside(p) == vecgeom::kOutside);
-      assert(solid.SafetyToIn(p) > 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kOutside);
+      VECGEOM_ASSERT(solid.SafetyToIn(p) > 0.);
       p = Vec_t(px, py, pz) * 0.5;
-      assert(solid.Inside(p) == vecgeom::kInside);
-      assert(solid.SafetyToIn(p) < 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kInside);
+      VECGEOM_ASSERT(solid.SafetyToIn(p) < 0.);
     }
   }
 
   // Check particular points to verify that the algorithm works as expected
-  assert(solid.SafetyToIn(Vec_t(+10, 0, 0)) == 10. - a);
-  assert(solid.SafetyToIn(Vec_t(-10, 0, 0)) == 10. - a);
-  assert(solid.SafetyToIn(Vec_t(0, +10, 0)) == 10. - b);
-  assert(solid.SafetyToIn(Vec_t(0, -10, 0)) == 10. - b);
-  assert(solid.SafetyToIn(Vec_t(0, 0, +10)) == 10. - ztop);
-  assert(solid.SafetyToIn(Vec_t(0, 0, -10)) == 10. + zbottom);
-  assert(solid.SafetyToIn(Vec_t(a, b, ztop)) > 0.);
-  assert(ApproxEqual<Precision>(solid.SafetyToIn(Vec_t(a, b, c)), (std::sqrt(3.) - 1.) * a));
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(+10, 0, 0)) == 10. - a);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(-10, 0, 0)) == 10. - a);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(0, +10, 0)) == 10. - b);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(0, -10, 0)) == 10. - b);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(0, 0, +10)) == 10. - ztop);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(0, 0, -10)) == 10. + zbottom);
+  VECGEOM_ASSERT(solid.SafetyToIn(Vec_t(a, b, ztop)) > 0.);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(solid.SafetyToIn(Vec_t(a, b, c)), (std::sqrt(3.) - 1.) * a));
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -403,20 +403,20 @@ bool TestEllipsoid()
       if (z < zbottom) pz = zbottom;
       if (z > ztop) pz = ztop;
       Vec_t p(px, py, pz);
-      assert(solid.Inside(p) == vecgeom::kSurface);
-      assert(solid.SafetyToOut(p) == 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kSurface);
+      VECGEOM_ASSERT(solid.SafetyToOut(p) == 0.);
       p = Vec_t(px, py, pz) * 2.;
-      assert(solid.Inside(p) == vecgeom::kOutside);
-      assert(solid.SafetyToOut(p) < 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kOutside);
+      VECGEOM_ASSERT(solid.SafetyToOut(p) < 0.);
       p = Vec_t(px, py, pz) * 0.5;
-      assert(solid.Inside(p) == vecgeom::kInside);
-      assert(solid.SafetyToOut(p) > 0.);
+      VECGEOM_ASSERT(solid.Inside(p) == vecgeom::kInside);
+      VECGEOM_ASSERT(solid.SafetyToOut(p) > 0.);
     }
   }
 
   // Check particular points to verify that the algorithm works as expected
-  assert(solid.SafetyToOut(Vec_t(0, 0, 0)) == a);
-  assert(solid.SafetyToOut(Vec_t(0, 0, 2.5)) == ztop - 2.5);
+  VECGEOM_ASSERT(solid.SafetyToOut(Vec_t(0, 0, 0)) == a);
+  VECGEOM_ASSERT(solid.SafetyToOut(Vec_t(0, 0, 2.5)) == ztop - 2.5);
 
   ///////////////////////////////////////////////////////////////////////////////
   //
@@ -443,25 +443,25 @@ bool TestEllipsoid()
         Vec_t p(xxx[ix], yyy[iy], zzz[iz]);
         Precision dist = solid.DistanceToIn(p, Vec_t(0, 0, 1));
         // Check inside points ("wrong" side)
-        if (solid.Inside(p) == vecgeom::kInside) assert(dist < 0);
+        if (solid.Inside(p) == vecgeom::kInside) VECGEOM_ASSERT(dist < 0);
         // Check points on surface
         if (solid.Inside(p) == vecgeom::kSurface) {
           if (p.z() > zbottom + 1) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
-            assert(ApproxEqual<Precision>(dist, zbottom - p.z()));
+            VECGEOM_ASSERT(ApproxEqual<Precision>(dist, zbottom - p.z()));
           }
         }
         // Check outside points
         if (solid.Inside(p) == vecgeom::kOutside) {
           if (p.z() >= 0 || (p.x() * p.x() / (a * a) + p.y() * p.y() / (b * b)) >= 1.) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
             if (p.x() * p.x() / (a * a * scbot * scbot) + p.y() * p.y() / (b * b * scbot * scbot) <= 1.) {
-              assert(ApproxEqual<Precision>(dist, zbottom - p.z()));
+              VECGEOM_ASSERT(ApproxEqual<Precision>(dist, zbottom - p.z()));
             } else {
               Precision z = c * std::sqrt(1. - p.x() * p.x() / (a * a) - p.y() * p.y() / (b * b));
-              assert(ApproxEqual<Precision>(dist, -z - p.z()));
+              VECGEOM_ASSERT(ApproxEqual<Precision>(dist, -z - p.z()));
             }
           }
         }
@@ -476,25 +476,25 @@ bool TestEllipsoid()
         Vec_t p(xxx[ix], yyy[iy], zzz[iz]);
         Precision dist = solid.DistanceToIn(p, Vec_t(0, 0, -1));
         // Check inside points ("wrong" side)
-        if (solid.Inside(p) == vecgeom::kInside) assert(dist < 0);
+        if (solid.Inside(p) == vecgeom::kInside) VECGEOM_ASSERT(dist < 0);
         // Check points on surface
         if (solid.Inside(p) == vecgeom::kSurface) {
           if (p.z() < ztop - 1) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
-            assert(ApproxEqual<Precision>(dist, p.z() - ztop));
+            VECGEOM_ASSERT(ApproxEqual<Precision>(dist, p.z() - ztop));
           }
         }
         // Check outside points
         if (solid.Inside(p) == vecgeom::kOutside) {
           if (p.z() <= 0 || (p.x() * p.x() / (a * a) + p.y() * p.y() / (b * b)) >= 1.) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
             if (p.x() * p.x() / (a * a * sctop * sctop) + p.y() * p.y() / (b * b * sctop * sctop) <= 1.) {
-              assert(ApproxEqual<Precision>(dist, p.z() - ztop));
+              VECGEOM_ASSERT(ApproxEqual<Precision>(dist, p.z() - ztop));
             } else {
               Precision z = c * std::sqrt(1. - p.x() * p.x() / (a * a) - p.y() * p.y() / (b * b));
-              assert(ApproxEqual<Precision>(dist, p.z() - z));
+              VECGEOM_ASSERT(ApproxEqual<Precision>(dist, p.z() - z));
             }
           }
         }
@@ -509,14 +509,14 @@ bool TestEllipsoid()
         Vec_t p(xxx[ix], yyy[iy], zzz[iz]);
         Precision dist = solid.DistanceToIn(p, Vec_t(0, 1, 0));
         if (solid.Inside(p) == vecgeom::kInside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if (p.y() >= 0 || p.z() < zbottom + kHalfTolerance || p.z() > ztop - kHalfTolerance ||
               (p.x() * p.x() / (a * a) + p.z() * p.z() / (c * c)) >= 1.) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
             Precision y = b * std::sqrt(1. - p.x() * p.x() / (a * a) - p.z() * p.z() / (c * c));
-            assert(ApproxEqual<Precision>(dist, -y - p.y()));
+            VECGEOM_ASSERT(ApproxEqual<Precision>(dist, -y - p.y()));
           }
         }
       }
@@ -530,14 +530,14 @@ bool TestEllipsoid()
         Vec_t p(xxx[ix], yyy[iy], zzz[iz]);
         Precision dist = solid.DistanceToIn(p, Vec_t(-1, 0, 0));
         if (solid.Inside(p) == vecgeom::kInside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if (p.x() <= 0 || p.z() < zbottom + kHalfTolerance || p.z() > ztop - kHalfTolerance ||
               (p.y() * p.y() / (b * b) + p.z() * p.z() / (c * c)) >= 1.) {
-            assert(dist == kInfLength);
+            VECGEOM_ASSERT(dist == kInfLength);
           } else {
             Precision x = a * std::sqrt(1. - p.y() * p.y() / (b * b) - p.z() * p.z() / (c * c));
-            assert(ApproxEqual<Precision>(dist, p.x() - x));
+            VECGEOM_ASSERT(ApproxEqual<Precision>(dist, p.x() - x));
           }
         }
       }
@@ -571,7 +571,7 @@ bool TestEllipsoid()
       Vec_t p(x, y, z);
       Vec_t v        = -p.Unit();
       Precision dist = solid.DistanceToIn(Kfar * p, v);
-      assert(std::abs(dist - (Kfar - 1.) * p.Mag()) < kHalfTolerance);
+      VECGEOM_ASSERT(std::abs(dist - (Kfar - 1.) * p.Mag()) < kHalfTolerance);
     }
   }
 
@@ -591,15 +591,15 @@ bool TestEllipsoid()
         Precision dist = solid.DistanceToOut(p, Vec_t(0, 0, 1));
         // Check if point is outside ("wrong" side)
         if (solid.Inside(p) == vecgeom::kOutside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if ((p.x() * p.x() / (a * a) + p.y() * p.y() / (b * b)) >= 1.) {
-            assert(dist == 0.);
+            VECGEOM_ASSERT(dist == 0.);
           } else if (solid.Inside(Vec_t(p.x(), p.y(), ztop)) == vecgeom::kSurface) {
-            assert(std::abs(dist - (ztop - p.z())) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (ztop - p.z())) < 0.01 * kHalfTolerance);
           } else {
             Precision z = c * std::sqrt(1. - p.x() * p.x() / (a * a) - p.y() * p.y() / (b * b));
-            assert(std::abs(dist - (z - p.z())) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (z - p.z())) < 0.01 * kHalfTolerance);
           }
         }
       }
@@ -614,15 +614,15 @@ bool TestEllipsoid()
         Precision dist = solid.DistanceToOut(p, Vec_t(0, 0, -1));
         // Check if point is outside ("wrong" side)
         if (solid.Inside(p) == vecgeom::kOutside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if ((p.x() * p.x() / (a * a) + p.y() * p.y() / (b * b)) >= 1.) {
-            assert(dist == 0.);
+            VECGEOM_ASSERT(dist == 0.);
           } else if (solid.Inside(Vec_t(p.x(), p.y(), zbottom)) == vecgeom::kSurface) {
-            assert(std::abs(dist - (p.z() - zbottom)) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (p.z() - zbottom)) < 0.01 * kHalfTolerance);
           } else {
             Precision z = c * std::sqrt(1. - p.x() * p.x() / (a * a) - p.y() * p.y() / (b * b));
-            assert(std::abs(dist - (p.z() + z)) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (p.z() + z)) < 0.01 * kHalfTolerance);
           }
         }
       }
@@ -637,13 +637,13 @@ bool TestEllipsoid()
         Precision dist = solid.DistanceToOut(p, Vec_t(0, -1, 0));
         // Check if point is outside ("wrong" side)
         if (solid.Inside(p) == vecgeom::kOutside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if ((p.x() * p.x() / (a * a) + p.z() * p.z() / (c * c)) >= 1.) {
-            assert(dist == 0.);
+            VECGEOM_ASSERT(dist == 0.);
           } else {
             Precision y = b * std::sqrt(1. - p.x() * p.x() / (a * a) - p.z() * p.z() / (c * c));
-            assert(std::abs(dist - (p.y() + y)) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (p.y() + y)) < 0.01 * kHalfTolerance);
           }
         }
       }
@@ -658,13 +658,13 @@ bool TestEllipsoid()
         Precision dist = solid.DistanceToOut(p, Vec_t(1, 0, 0));
         // Check if point is outside ("wrong" side)
         if (solid.Inside(p) == vecgeom::kOutside) {
-          assert(dist < 0);
+          VECGEOM_ASSERT(dist < 0);
         } else {
           if ((p.y() * p.y() / (b * b) + p.z() * p.z() / (c * c)) >= 1.) {
-            assert(dist == 0.);
+            VECGEOM_ASSERT(dist == 0.);
           } else {
             Precision x = a * std::sqrt(1. - p.y() * p.y() / (b * b) - p.z() * p.z() / (c * c));
-            assert(std::abs(dist - (x - p.x())) < 0.01 * kHalfTolerance);
+            VECGEOM_ASSERT(std::abs(dist - (x - p.x())) < 0.01 * kHalfTolerance);
           }
         }
       }
@@ -690,7 +690,7 @@ bool TestEllipsoid()
   int nzneg = 0, nzpos = 0, nside = 0, nfactor = 100000, ntot = area * nfactor;
   for (int i = 0; i < ntot; i++) {
     Vec_t rndPoint = solid.GetUnplacedVolume()->SamplePointOnSurface();
-    assert(solid.Inside(rndPoint) == vecgeom::kSurface);
+    VECGEOM_ASSERT(solid.Inside(rndPoint) == vecgeom::kSurface);
     if (rndPoint.z() == zbottom)
       ++nzneg;
     else if (rndPoint.z() == ztop)
@@ -701,9 +701,9 @@ bool TestEllipsoid()
   timer.Stop();
   std::cout << "szneg,sside,szpos = " << szneg << ", \t" << sside << ", \t" << szpos << std::endl;
   std::cout << "nzneg,nside,nzpos = " << nzneg << ", \t" << nside << ", \t" << nzpos << std::endl;
-  assert(std::abs(nzneg - szneg * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
-  assert(std::abs(nzpos - szpos * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzneg - szneg * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nside - sside * nfactor) < 2. * std::sqrt(ntot));
+  VECGEOM_ASSERT(std::abs(nzpos - szpos * nfactor) < 2. * std::sqrt(ntot));
   std::cout << "Time : " << timer.Elapsed() << " sec   " << ntot / 1000000. << " million points" << std::endl;
   std::cout << "Time per million points : " << timer.Elapsed() * 1000000. / ntot << " sec" << std::endl;
 
@@ -712,7 +712,7 @@ bool TestEllipsoid()
 
 int main(int argc, char *argv[])
 {
-  assert(TestEllipsoid<vecgeom::SimpleEllipsoid>());
+  VECGEOM_ASSERT(TestEllipsoid<vecgeom::SimpleEllipsoid>());
   std::cout << "VecGeom Ellipsoid passed\n";
 
   return 0;

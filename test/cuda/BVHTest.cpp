@@ -4,6 +4,7 @@
 #include "Frontend.h" // VecGeom/gdml/Frontend.h
 #endif
 
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/management/BVHManager.h"
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/CudaManager.h"
@@ -36,7 +37,7 @@ int main(int argc, char **argv)
   if (!filename || !vgdml::Frontend::Load(filename, validate, mm_unit, verbose))
     errx(EBADF, "Cannot open file '%s'", filename);
 
-  CudaAssertError(CudaDeviceSetStackLimit(8192));
+  VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitStackSize), 8192));
   auto &geoManager  = GeoManager::Instance();
   auto &cudaManager = CudaManager::Instance();
 

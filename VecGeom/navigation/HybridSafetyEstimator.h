@@ -32,8 +32,8 @@ private:
   // convert index to physical daugher
   VPlacedVolume const *LookupDaughter(LogicalVolume const *lvol, int id) const
   {
-    assert(id >= 0 && "access with negative index");
-    assert(size_t(id) < lvol->GetDaughtersp()->size() && "access beyond size of daughterlist ");
+    VECGEOM_VALIDATE(id >= 0, << "access with negative index");
+    VECGEOM_VALIDATE(size_t(id) < lvol->GetDaughtersp()->size(), << "access beyond size of daughterlist ");
     return lvol->GetDaughtersp()->operator[](id);
   }
 
@@ -78,7 +78,7 @@ public:
             if (!vecCore::MaskEmpty(closer1)) {
               for (size_t j = 0 /*closer.firstOne()*/; j < kVS; ++j) { // leaf node
                 if (vecCore::MaskLaneAt(closer1, j)) {
-                  assert(count < VECGEOM_MAXFACETS);
+                  VECGEOM_ASSERT(count < VECGEOM_MAXFACETS);
                   boxsafetypairs[count] = HybridManager2::BoxIdDistancePair_t(nodeToDaughters[nodeindex + i][j],
                                                                               vecCore::LaneAt(safetytoboxsqr, j));
                   count++;
@@ -143,7 +143,7 @@ public:
               // loop bounding boxes in the cluster
               for (size_t j = 0; j < kVS; ++j) {
                 if (vecCore::MaskLaneAt(hit1, j)) {
-                  assert(count < VECGEOM_MAXFACETS);
+                  VECGEOM_ASSERT(count < VECGEOM_MAXFACETS);
                   hitlist[count]         = HybridManager2::BoxIdDistancePair_t(nodeToDaughters[nodeindex + i][j],
                                                                                vecCore::LaneAt(safetytoboxsqr, j));
                   Precision distmaxsqr_s = vecCore::LaneAt(distmaxsqr, j);

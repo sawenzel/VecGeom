@@ -53,7 +53,7 @@ void EmbreeManager::BuildStructure(LogicalVolume const *vol)
     auto boxes                  = ABBoxManager<Precision>::Instance().GetABBoxes(vol, nDaughters);
     auto structure              = BuildStructureFromBoundingBoxes(boxes, nDaughters);
     fStructureHolder[vol->id()] = structure;
-    assert((int)vol->GetDaughters().size() == nDaughters);
+    VECGEOM_ASSERT((int)vol->GetDaughters().size() == nDaughters);
   } else if (fBuildMode == EmbreeBuildMode::kBBox) {
     auto structure              = BuildStructureFromBoundingBoxes(vol);
     fStructureHolder[vol->id()] = structure;
@@ -322,7 +322,7 @@ void EmbreeManager::AddBoxGeometryToScene(EmbreeAccelerationStructure &structure
   for (int i = 0; i < 12; ++i) {
     // std::cerr << "normal " << i << " " << calcNormal(i) << "\n";
     structure.fNormals[meshID * 12 + i] = calcNormal(i);
-    assert(structure.fNormals[meshID * 12 + i].Mag2() > 0.);
+    VECGEOM_ASSERT(structure.fNormals[meshID * 12 + i].Mag2() > 0.);
   }
 
   rtcCommitGeometry(geom_0);
@@ -488,7 +488,7 @@ void EmbreeManager::AddBoxGeometryToScene(EmbreeAccelerationStructure &structure
   for (int i = 0; i < 6; ++i) {
     // std::cerr << "normal " << i << " " << calcNormal(i) << "\n";
     structure.fNormals[meshID * 6 + i] = calcNormal(i);
-    assert(structure.fNormals[meshID * 6 + i].Mag2() > 0.);
+    VECGEOM_ASSERT(structure.fNormals[meshID * 6 + i].Mag2() > 0.);
   }
 
   rtcCommitGeometry(geom_0);

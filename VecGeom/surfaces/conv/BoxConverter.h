@@ -28,7 +28,8 @@ bool CreateBoxSurfaces(vecgeom::UnplacedBox const &box, int logical_id, bool int
   std::vector<Vector3> corners = {{-dx, -dy, -dz}, {dx, -dy, -dz}, {dx, dy, -dz}, {-dx, dy, -dz},
                                   {-dx, -dy, dz},  {dx, -dy, dz},  {dx, dy, dz},  {-dx, dy, dz}};
   auto assertWindow            = [](int isurf) {
-    assert(isurf >= 0 && CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == FrameType::kWindow);
+    VECGEOM_ASSERT(isurf >= 0 &&
+                              CPUsurfData<Real_t>::Instance().fLocalSurfaces[isurf].fFrame.type == FrameType::kWindow);
   };
   std::vector<Vector3> vert;
   // surface at -dx:

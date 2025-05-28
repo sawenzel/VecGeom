@@ -159,7 +159,7 @@ struct GenericPolyconeStruct {
   VECCORE_ATT_HOST_DEVICE
   Precision GetZAtPlane(unsigned int index) const
   {
-    assert(index <= fSections.size());
+    VECGEOM_ASSERT(index <= fSections.size());
     return fZs[index];
   }
 };

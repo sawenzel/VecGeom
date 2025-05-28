@@ -66,7 +66,7 @@ struct NavTuple {
   VECCORE_ATT_HOST_DEVICE
   NavIndex_t operator[](uint i) const
   {
-    assert(i < MAX_DEPTH && "NavTuple::operator[] out of range");
+    VECGEOM_VALIDATE(i < MAX_DEPTH, << "NavTuple::operator[] out of range");
     return (i < MAX_DEPTH) ? fNavInd[i] : 0;
   }
 
@@ -129,7 +129,7 @@ struct NavTuple {
   void Push(NavIndex_t value)
   {
     if (!IsOutside()) fLevel++;
-    assert(fLevel < MAX_DEPTH && "NavTuple::Push out of range");
+    VECGEOM_VALIDATE(fLevel < MAX_DEPTH, << "NavTuple::Push out of range");
     if (fLevel < MAX_DEPTH) fNavInd[fLevel] = value;
   }
 
@@ -137,7 +137,7 @@ struct NavTuple {
   VECCORE_ATT_HOST_DEVICE
   void Set(NavIndex_t value)
   {
-    assert(fLevel < MAX_DEPTH && "NavTuple::Set out of range");
+    VECGEOM_VALIDATE(fLevel < MAX_DEPTH, << "NavTuple::Set out of range");
     if (fLevel < MAX_DEPTH) fNavInd[fLevel] = value;
   }
 
@@ -145,7 +145,7 @@ struct NavTuple {
   VECCORE_ATT_HOST_DEVICE
   NavIndex_t Top() const
   {
-    assert(fLevel < MAX_DEPTH && "NavTuple::Top out of range");
+    VECGEOM_VALIDATE(fLevel < MAX_DEPTH, << "NavTuple::Top out of range");
     return (fLevel < MAX_DEPTH) ? fNavInd[fLevel] : 0;
   }
 };
@@ -269,10 +269,10 @@ public:
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     // checking here for NVCC_DEVICE since the global variable globaldevicegeomgata::gCompact...
     // is marked __device__ and can only be compiled within device compiler passes
-    assert(vecgeom::globaldevicegeomdata::gNavIndex != nullptr);
+    VECGEOM_ASSERT(vecgeom::globaldevicegeomdata::gNavIndex != nullptr);
     return &vecgeom::globaldevicegeomdata::gNavIndex[nav_ind];
 #else
-    assert(vecgeom::GeoManager::gNavIndex != nullptr);
+    VECGEOM_ASSERT(vecgeom::GeoManager::gNavIndex != nullptr);
     return &vecgeom::GeoManager::gNavIndex[nav_ind];
 #endif
   }
@@ -291,11 +291,11 @@ public:
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     // checking here for NVCC_DEVICE since the global variable globaldevicegeomgata::gCompact...
     // is marked __device__ and can only be compiled within device compiler passes
-    assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
+    VECGEOM_ASSERT(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[index];
 #else
-    assert(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
-           vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
+    VECGEOM_ASSERT(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
+                   vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
     return &vecgeom::GeoManager::gCompactPlacedVolBuffer[index];
 #endif
   }
@@ -438,7 +438,7 @@ public:
   {
     int level_max = GetLevelImpl(nav_tuple);
     int up        = level_max - level;
-    assert(up >= 0 && "called GetNavIndexImpl for level larger than current level");
+    VECGEOM_VALIDATE(up >= 0, << "called GetNavIndexImpl for level larger than current level");
     NavIndex_t mother = nav_tuple.Top();
     while (up--) {
       mother = NavInd(mother);
@@ -509,7 +509,7 @@ public:
       bool on_newscene = NavInd(child) == 0;
       if (on_newscene) {
         nav_tuple.fLevel++;
-        assert(nav_tuple.fLevel < NavTuple_t::GetMaxDepth());
+        VECGEOM_ASSERT(nav_tuple.fLevel < NavTuple_t::GetMaxDepth());
       }
       nav_tuple.Set(child);
     } else {
@@ -523,12 +523,12 @@ public:
   {
     auto top = nav_tuple.Top();
     if (top) {
-      assert(idaughter >= 0 && idaughter < int(GetNdaughtersImpl(top)));
+      VECGEOM_ASSERT(idaughter >= 0 && idaughter < int(GetNdaughtersImpl(top)));
       auto child       = NavInd(NavInd(top + 4) + 2 + idaughter);
       bool on_newscene = NavInd(child) == 0;
       if (on_newscene) {
         nav_tuple.fLevel++;
-        assert(nav_tuple.fLevel < NavTuple_t::GetMaxDepth());
+        VECGEOM_ASSERT(nav_tuple.fLevel < NavTuple_t::GetMaxDepth());
       }
       nav_tuple.Set(child);
     } else {
@@ -564,7 +564,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   static void ReadTransformation(NavIndex_t nav_ind, Transformation3D &trans)
   {
-    assert(trans.IsIdentity() && "ReadTransformation: destination must be an identity");
+    VECGEOM_VALIDATE(trans.IsIdentity(), << "ReadTransformation: destination must be an identity");
     auto record       = NavIndAddr(nav_ind);
     auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 6);
     bool has_trans    = *(content_lhtr + 2) > 0;
@@ -572,8 +572,8 @@ public:
     if (!(has_trans | has_rot)) return; // identity
     auto offset  = *(content_lhtr + 1);
     auto address = reinterpret_cast<const Precision *>(record + offset);
-    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0 &&
-           "ReadTransformation: transformation storage not aligned");
+    VECGEOM_ASSERT(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0 &&
+                   "ReadTransformation: transformation storage not aligned");
     trans.Set(address, address + int{has_trans} * 3, has_trans, has_rot);
   }
 
@@ -582,7 +582,7 @@ public:
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ReadTransformation(NavIndex_t nav_ind,
                                                                               Transformation3DMP<Real_t> &trans)
   {
-    assert(trans.IsIdentity() && "ReadTransformation: destination must be an identity");
+    VECGEOM_VALIDATE(trans.IsIdentity(), << "ReadTransformation: destination must be an identity");
     auto record       = NavIndAddr(nav_ind);
     auto content_lhtr = reinterpret_cast<const unsigned char *>(record + 6);
     bool has_trans    = *(content_lhtr + 2) > 0;
@@ -590,8 +590,8 @@ public:
     if (!(has_trans | has_rot)) return; // identity
     auto offset  = *(content_lhtr + 1);
     auto address = reinterpret_cast<const Precision *>(record + offset);
-    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0 &&
-           "ReadTransformation: transformation storage not aligned");
+    VECGEOM_ASSERT(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0 &&
+                   "ReadTransformation: transformation storage not aligned");
     trans.Set(address, address + int{has_trans} * 3, has_trans, has_rot);
   }
 

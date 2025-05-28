@@ -21,14 +21,14 @@ __global__ void kernel_visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *v
   while (stackp > volumeStack) {
     auto const current = *(--stackp);
 
-    assert(g_volumesVisited < nGeoData);
+    VECGEOM_ASSERT(g_volumesVisited < nGeoData);
     geoData[g_volumesVisited++] = GeometryInfo{current.depth, *current.vol};
 
     // We push backwards in order to visit the first daughter first
     for (int i = current.vol->GetDaughters().size() - 1; i >= 0; --i) {
       auto daughter = current.vol->GetDaughters()[i];
       *stackp++ = VolumeData{daughter, current.depth + 1};
-      assert(stackp - volumeStack < sizeof(volumeStack)/sizeof(VolumeData) && "Volume stack size exhausted");
+      VECGEOM_ASSERT(stackp - volumeStack < sizeof(volumeStack) / sizeof(VolumeData) && "Volume stack size exhausted");
     }
   }
 }

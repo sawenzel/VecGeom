@@ -9,6 +9,7 @@
 #ifndef VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 #define VECGEOM_VOLUMES_UNPLACEDVOLUME_H_
 
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Transformation3D.h"
@@ -249,7 +250,7 @@ public:
   {
     DevicePtr<CudaType_t<Derived>> gpu_ptr(in_gpu_ptr);
     gpu_ptr.Construct(params...);
-    CudaAssertError();
+    VECGEOM_DEVICE_API_CALL(GetLastError());
     // Need to go via the void* because the regular c++ compilation
     // does not actually see the declaration for the cuda version
     // (and thus can not determine the inheritance).

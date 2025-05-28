@@ -32,12 +32,12 @@ VPlacedVolume *UnplacedRootVolume::SpecializedVolume(LogicalVolume const *const 
 #ifdef VECGEOM_CUDA_INTERFACE
 DevicePtr<cuda::VUnplacedVolume> UnplacedRootVolume::CopyToGpu() const
 {
-  assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy unsupported ROOT volume to GPU.");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 }
 DevicePtr<cuda::VUnplacedVolume> UnplacedRootVolume::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> /* gpu_ptr */) const
 {
-  assert(0 && "Attempted to copy unsupported ROOT volume to GPU.");
+  VECGEOM_VALIDATE(0, << "Attempted to copy unsupported ROOT volume to GPU.");
   return DevicePtr<cuda::VUnplacedVolume>(nullptr);
 }
 #endif

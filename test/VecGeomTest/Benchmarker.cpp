@@ -3,6 +3,7 @@
 
 #include "Benchmarker.h"
 
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/base/Stopwatch.h"
 #include "VecGeom/base/Transformation3D.h"
@@ -66,7 +67,7 @@ void Benchmarker::SetWorld(VPlacedVolume const *const world)
 
 void Benchmarker::SetPoolMultiplier(const unsigned poolMultiplier)
 {
-  assert(poolMultiplier >= 1 && "Pool multiplier for benchmarker must be >= 1.");
+  VECGEOM_VALIDATE(poolMultiplier >= 1, << "Pool multiplier for benchmarker must be >= 1.");
   fPoolMultiplier = poolMultiplier;
 }
 
@@ -81,7 +82,7 @@ void Benchmarker::GenerateVolumePointers(VPlacedVolume const *const vol)
 {
   if (fBenchmarkTop) {
     fVolumes.emplace_back(vol);
-    assert(fVolumes.size() == 1);
+    VECGEOM_ASSERT(fVolumes.size() == 1);
     return;
   }
   for (auto i = vol->GetDaughters().begin(), iEnd = vol->GetDaughters().end(); i != iEnd; ++i) {
@@ -521,7 +522,7 @@ int Benchmarker::CheckSafetiesOnBoundary(SOA3D<Precision> *points, SOA3D<Precisi
 
 int Benchmarker::RunBenchmark()
 {
-  assert(fWorld != nullptr);
+  VECGEOM_ASSERT(fWorld != nullptr);
   int errorcode = 0;
   errorcode += RunInsideBenchmark();
   errorcode += RunToInBenchmark();
@@ -535,7 +536,7 @@ int Benchmarker::RunInsideBenchmark()
   int mismatches       = 0;
   int insidemismatches = 0;
 
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running Contains and Inside benchmark for %i points for "
@@ -741,7 +742,7 @@ int Benchmarker::CompareMetaInformation() const
 
 int Benchmarker::RunToInBenchmark()
 {
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToIn and SafetyToIn benchmark for %i points for "
@@ -896,7 +897,7 @@ void Benchmarker::InitInsideCaches()
 int Benchmarker::RunToOutBenchmark()
 {
 
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToOut and SafetyToOut benchmark for %i points for "
@@ -1035,7 +1036,7 @@ int Benchmarker::RunToOutBenchmark()
 int Benchmarker::RunToOutFromBoundaryBenchmark()
 {
 
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToOutFromBoundary and SafetyToOutOnBoundary "
@@ -1075,12 +1076,12 @@ int Benchmarker::RunToOutFromBoundaryBenchmark()
     auto currentpoint = fPointPool->operator[](track);
     // make sure the generated points are in the (unplaced) reference frame of
     // targetvolume
-    assert(targetvolume->UnplacedContains(currentpoint));
+    VECGEOM_ASSERT(targetvolume->UnplacedContains(currentpoint));
 
     auto dir           = fDirectionPool->operator[](track);
     auto boundarypoint = currentpoint + dir * targetvolume->DistanceToOut(currentpoint, dir);
     // make sure that new generated point is on the boundary of targetvolume
-    // assert(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
+    // VECGEOM_ASSERT(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
     fPointPool->set(track, boundarypoint);
     fDirectionPool->set(track, -dir);
   }
@@ -1199,7 +1200,7 @@ int Benchmarker::RunToOutFromBoundaryBenchmark()
 int Benchmarker::RunToOutFromBoundaryExitingBenchmark()
 {
 
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToOutFromBoundaryExiting and SafetyToOutOnBoundary "
@@ -1239,12 +1240,12 @@ int Benchmarker::RunToOutFromBoundaryExitingBenchmark()
     auto currentpoint = fPointPool->operator[](track);
     // make sure the generated points are in the (unplaced) reference frame of
     // targetvolume
-    assert(targetvolume->UnplacedContains(currentpoint));
+    VECGEOM_ASSERT(targetvolume->UnplacedContains(currentpoint));
 
     auto dir           = fDirectionPool->operator[](track);
     auto boundarypoint = currentpoint + dir * targetvolume->DistanceToOut(currentpoint, dir);
     // make sure that new generated point is on the boundary of targetvolume
-    // assert(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
+    // VECGEOM_ASSERT(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
     fPointPool->set(track, boundarypoint);
   }
 
@@ -1347,7 +1348,7 @@ int Benchmarker::RunToOutFromBoundaryExitingBenchmark()
 int Benchmarker::RunToInFromBoundaryBenchmark()
 {
 
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToInFromBoundary and SafetyToInFromBoundary "
@@ -1383,12 +1384,12 @@ int Benchmarker::RunToInFromBoundaryBenchmark()
     auto currentpoint = fPointPool->operator[](track);
     // make sure the generated points are in the (unplaced) reference frame of
     // targetvolume
-    assert(targetvolume->UnplacedContains(currentpoint));
+    VECGEOM_ASSERT(targetvolume->UnplacedContains(currentpoint));
 
     auto dir           = fDirectionPool->operator[](track);
     auto boundarypoint = currentpoint + dir * targetvolume->DistanceToOut(currentpoint, dir);
     // make sure that new generated point is on the boundary of targetvolume
-    // assert(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
+    // VECGEOM_ASSERT(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
     fPointPool->set(track, boundarypoint);
     fDirectionPool->set(track, -dir);
   }
@@ -1492,7 +1493,7 @@ int Benchmarker::RunToInFromBoundaryBenchmark()
 
 int Benchmarker::RunToInFromBoundaryExitingBenchmark()
 {
-  assert(fWorld);
+  VECGEOM_ASSERT(fWorld);
 
   if (fVerbosity > 0) {
     printf("Running DistanceToInExitingFromBoundary and SafetyToInExitingFromBoundary "
@@ -1531,12 +1532,12 @@ int Benchmarker::RunToInFromBoundaryExitingBenchmark()
     auto currentpoint = fPointPool->operator[](track);
     // make sure the generated points are in the (unplaced) reference frame of
     // targetvolume
-    assert(targetvolume->UnplacedContains(currentpoint));
+    VECGEOM_ASSERT(targetvolume->UnplacedContains(currentpoint));
 
     auto dir           = fDirectionPool->operator[](track);
     auto boundarypoint = currentpoint + dir * targetvolume->DistanceToOut(currentpoint, dir);
     // make sure that new generated point is on the boundary of targetvolume
-    // assert(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
+    // VECGEOM_ASSERT(targetvolume->UnplacedInside(boundarypoint) == vecgeom::kSurface);
     fPointPool->set(track, boundarypoint);
 
     // do not change directions !
@@ -2136,7 +2137,7 @@ void Benchmarker::FreeAligned(Type *const distance)
 #ifdef VECGEOM_CUDA_INTERFACE
 void Benchmarker::GetVolumePointers(std::list<DevicePtr<cuda::VPlacedVolume>> &volumesGpu)
 {
-  CudaAssertError(CudaDeviceSetStackLimit(8192));
+  VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitStackSize), 8192));
   CudaManager::Instance().LoadGeometry(GetWorld());
   CudaManager::Instance().Synchronize();
   for (std::list<VolumePointers>::const_iterator v = fVolumes.begin(); v != fVolumes.end(); ++v) {

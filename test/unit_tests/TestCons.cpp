@@ -158,22 +158,22 @@ bool TestCons()
   Vec_t norm;
 
   // Check name
-  // assert(c1.GetName()=="c1 Hollow Full Tube");
+  // VECGEOM_ASSERT(c1.GetName()=="c1 Hollow Full Tube");
 
   // Check Cubic volume
   Precision vol, volCheck;
   vol      = c1.Capacity();
   volCheck = 2 * VECGEOM_NAMESPACE::kPi * 50 * (100 * 100 - 50 * 50);
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   vol      = c6.Capacity();
   volCheck = 2 * VECGEOM_NAMESPACE::kPi * 50 * (150 * 150);
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   // Check Surface area
   vol      = c1.SurfaceArea();
   volCheck = 2 * VECGEOM_NAMESPACE::kPi * (50 * 2 * 50 + 100 * 2 * 50 + 100 * 100 - 50 * 50);
-  assert(ApproxEqual<Precision>(vol, volCheck));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(vol, volCheck));
 
   // Check Inside
   vecgeom::EnumInside in;
@@ -182,43 +182,43 @@ bool TestCons()
 
   in = ctest10.Inside(pct10e1);
   // std::cout << "ctest10.Inside(pct10e1) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   in = ctest10.Inside(pct10e2);
   // std::cout << "ctest10.Inside(pct10e2) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kInside);
 
   in = ctest10.Inside(pct10e3);
   // std::cout << "ctest10.Inside(pct10e3) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kInside);
 
   in = ctest10.Inside(pct10e4);
   // std::cout << "ctest10.Inside(pct10e4) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   in = ctest10.Inside(pct10e5);
   // std::cout << "ctest10.Inside(pct10e5) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   in = ctest10.Inside(pct10e6);
   // std::cout << "ctest10.Inside(pct10e6) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   in = ctest10.Inside(pct10mx);
   // std::cout << "ctest10.Inside(pct10mx) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kSurface);
 
   in = ctest10.Inside(pt10s1);
   // std::cout << "ctest10.Inside(pt10s1) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kSurface);
 
   in = ctest10.Inside(pt10s2);
   // std::cout << "ctest10.Inside(pt10s2) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kSurface);
 
   in = ctest10.Inside(pt10s3);
   // std::cout << "ctest10.Inside(pt10s3) = " <<in<< std::endl;
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   vecgeom::Inside_t aux;
   if ((aux = c1.Inside(pzero)) != vecgeom::EInside::kOutside)
@@ -278,42 +278,42 @@ bool TestCons()
   if (OutRange(norm, Vec_t(p2, p2, 0)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(0, 50, 0) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(p2, p2, 0.)) && valid);
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(p2, p2, 0.)) && valid);
   valid = cn1.Normal(Vec_t(0., 45., 0.), norm);
   if (OutRange(norm, Vec_t(p2, -p2, 0)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(0, 45, 0) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(p2, -p2, 0.)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(p2, -p2, 0.)));
   valid = cn1.Normal(Vec_t(0., 45., 50.), norm);
   if (OutRange(norm, Vec_t(p3, -p3, p3)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(0, 45, 50) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(p3, -p3, p3)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(p3, -p3, p3)));
   valid = cn1.Normal(Vec_t(0., 45., -50.), norm);
   if (OutRange(norm, Vec_t(p3, -p3, -p3)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(0, 45, -50) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(p3, -p3, -p3)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(p3, -p3, -p3)));
   valid = cn1.Normal(Vec_t(-50., 0., -50.), norm);
   if (OutRange(norm, Vec_t(-p3, -p3, -p3)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(-50, 0, -50) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(-p3, -p3, -p3)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(-p3, -p3, -p3)));
   valid = cn1.Normal(Vec_t(-50., 0., 0.), norm);
   if (OutRange(norm, Vec_t(-p2, -p2, 0)))
     std::cout << "cn1.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(-50, 0, 0) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(-p2, -p2, 0.)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(-p2, -p2, 0.)));
   valid = cn2.Normal(Vec_t(50., 0., 0.), norm);
   if (OutRange(norm, Vec_t(p2, p2, 0)))
     std::cout << "cn2.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(50, 0, 0) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(p2, p2, 0.)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(p2, p2, 0.)));
   valid = c6.Normal(Vec_t(0., 0., 50.), norm);
   if (OutRange(norm, Vec_t(0, 0, 1)))
     std::cout << "c6.Normal() mismatch: Line " << __LINE__ << ", p=" << Vec_t(0, 0, 50) << ", valid=" << valid
               << ", normal=" << norm << "\n";
-  assert(ApproxEqual(norm, Vec_t(0., 0., 1.)));
+  VECGEOM_ASSERT(ApproxEqual(norm, Vec_t(0., 0., 1.)));
 
   valid = c1.Normal(ponplz, norm);
   if (OutRange(norm, Vec_t(0, 0, 1)))
@@ -956,7 +956,7 @@ bool TestCons()
 
   in = ctest10.Inside(alex1P);
   // std::cout <<"Inside() mismatch: Line "<< __LINE__ <<", ctest10.Inside(alex1P) = " <<in<<"\n";
-  // assert(in == vecgeom::EInside::kSurface);
+  // VECGEOM_ASSERT(in == vecgeom::EInside::kSurface);
 
   dist = ctest10.DistanceToIn(alex1P, alex1V);
   if (OutRange(dist, kInfLength))
@@ -972,7 +972,7 @@ bool TestCons()
 
   in = ctest10.Inside(alex2P);
   // std::cout <<"Inside() mismatch: Line "<< __LINE__ <<", ctest10.Inside(alex2P) = " <<in<<"\n";
-  assert(in == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(in == vecgeom::EInside::kOutside);
 
   dist = ctest10.DistanceToIn(alex2P, alex2V);
   if (OutRange(dist, kInfLength))
@@ -990,9 +990,9 @@ bool TestCons()
   Vec_t newp = point + dist * dir;
   // std::cout<<"CMS problem: DistOut has to be small="<<testc.DistanceToOut(point,dir,norm,convex)<<"\n";
   // std::cout<<"CMS problem: DistInNew has to be kInfLength="<<testc.DistanceToIn(newp,dir)<<"\n";
-  assert(dist < 0.05);
+  VECGEOM_ASSERT(dist < 0.05);
   dist = testc.DistanceToIn(newp, dir);
-  //  assert(ApproxEqual<Precision>(dist,kInfLength));
+  //  VECGEOM_ASSERT(ApproxEqual<Precision>(dist,kInfLength));
 
   // Second test for Cons derived from testG4Cons1.cc
   pbigx = Vec_t(100, 0, 0);
@@ -1010,89 +1010,89 @@ bool TestCons()
                  300. * VECGEOM_NAMESPACE::kPi / 180.);
 
   // Check Inside
-  assert(t1.Inside(pzero) == vecgeom::EInside::kInside);
-  assert(t1.Inside(pbigx) == vecgeom::EInside::kOutside);
+  VECGEOM_ASSERT(t1.Inside(pzero) == vecgeom::EInside::kInside);
+  VECGEOM_ASSERT(t1.Inside(pbigx) == vecgeom::EInside::kOutside);
 
   // Check Surface Normal
 
   valid = t1.Normal(ponxside, norm);
-  assert(ApproxEqual(norm, vx));
+  VECGEOM_ASSERT(ApproxEqual(norm, vx));
 
   // SafetyToOut(P)
   Dist = t1.SafetyToOut(pzero);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
 
   // DistanceToOut(P,V)
   Dist  = t1.DistanceToOut(pzero, vx);
   valid = t1.Normal(pzero + Dist * vx, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vx));
   Dist  = t1.DistanceToOut(pzero, vmx);
   valid = t1.Normal(pzero + Dist * vmx, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmx));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmx));
   Dist  = t1.DistanceToOut(pzero, vy);
   valid = t1.Normal(pzero + Dist * vy, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vy));
   Dist  = t1.DistanceToOut(pzero, vmy);
   valid = t1.Normal(pzero + Dist * vmy, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmy));
   Dist  = t1.DistanceToOut(pzero, vz);
   valid = t1.Normal(pzero + Dist * vz, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vz));
   Dist  = t1.DistanceToOut(pzero, vmz);
   valid = t1.Normal(pzero + Dist * vmz, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmz));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vmz));
   Dist  = t1.DistanceToOut(pzero, vxy);
   valid = t1.Normal(pzero + Dist * vxy, norm);
-  assert(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vxy));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50) && ApproxEqual(norm, vxy));
 
   // SafetyToIn(P)
   Dist = t1.SafetyToIn(pbigx);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.SafetyToIn(pbigmx);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.SafetyToIn(pbigy);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.SafetyToIn(pbigmy);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.SafetyToIn(pbigz);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.SafetyToIn(pbigmz);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
 
   // DistanceToIn(P,V)
   Dist = t1.DistanceToIn(pbigx, vmx);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigmx, vx);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigy, vmy);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigmy, vy);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigz, vmz);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigmz, vz);
-  assert(ApproxEqual<Precision>(Dist, 50));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 50));
   Dist = t1.DistanceToIn(pbigx, vxy);
-  assert(ApproxEqual<Precision>(Dist, kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   // point is on (Rmin,z=-100) but travels away from the volume and will never get inside it
   Dist = test10.DistanceToIn(Vec_t(19.218716967888, 5.5354239324172, -100.0),
                              Vec_t(-0.25644483536346, -0.073799216676426, 0.96373737191901));
   std::cout << "D2I() mismatch: Line " << __LINE__ << ", test10::DistToIn =" << Dist << "\n";
-  // assert(ApproxEqual<Precision>(Dist, kInfLength));
+  // VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, kInfLength));
 
   Dist = test10.DistanceToOut(Vec_t(19.218716967888, 5.5354239324172, -100.0),
                               Vec_t(-0.25644483536346, -0.073799216676426, 0.96373737191901));
   // std::cout<<"D2O() mismatch: Line "<< __LINE__ <<", test10::DistToOut ="<<Dist<<"\n";
-  assert(ApproxEqual<Precision>(Dist, 0));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
 
   // CalculateExtent
   Vec_t minExtent, maxExtent;
   t1.Extent(minExtent, maxExtent);
-  assert(ApproxEqual(minExtent, Vec_t(-50, -50, -50)));
-  assert(ApproxEqual(maxExtent, Vec_t(50, 50, 50)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-50, -50, -50)));
+  VECGEOM_ASSERT(ApproxEqual(maxExtent, Vec_t(50, 50, 50)));
   ctest10.Extent(minExtent, maxExtent);
-  assert(ApproxEqual(minExtent, Vec_t(-140, -140, -100)));
+  VECGEOM_ASSERT(ApproxEqual(minExtent, Vec_t(-140, -140, -100)));
 
 #ifndef VECGEOM_NO_SPECIALIZATION
   // Tests for Specialized Cones
@@ -1129,11 +1129,11 @@ bool TestCons()
                                vecgeom::cxx::SUnplacedTube<vecgeom::cxx::TubeTypes::HollowTubeWithBiggerThanPiSector>>;
 
   // Checking type of TubeLikeCone, it should return true with pointer of TubeLikeCone
-  assert(dynamic_cast<NonHollowTubeLikeCone *>(nonHollowTubeLikeCone));
-  assert(dynamic_cast<HollowTubeLikeCone *>(hollowTubeLikeCone));
-  assert(dynamic_cast<HollowTubeLikeConeWithPiSector *>(hollowTubeLikeConeWithPiSector));
-  assert(dynamic_cast<HollowTubeLikeConeWithSmallerThanPiSector *>(hollowTubeLikeConeWithSmallerThanPiSector));
-  assert(dynamic_cast<HollowTubeLikeConeWithBiggerThanPiSector *>(hollowTubeLikeConeWithBiggerThanPiSector));
+  VECGEOM_ASSERT(dynamic_cast<NonHollowTubeLikeCone *>(nonHollowTubeLikeCone));
+  VECGEOM_ASSERT(dynamic_cast<HollowTubeLikeCone *>(hollowTubeLikeCone));
+  VECGEOM_ASSERT(dynamic_cast<HollowTubeLikeConeWithPiSector *>(hollowTubeLikeConeWithPiSector));
+  VECGEOM_ASSERT(dynamic_cast<HollowTubeLikeConeWithSmallerThanPiSector *>(hollowTubeLikeConeWithSmallerThanPiSector));
+  VECGEOM_ASSERT(dynamic_cast<HollowTubeLikeConeWithBiggerThanPiSector *>(hollowTubeLikeConeWithBiggerThanPiSector));
 
 #endif
 

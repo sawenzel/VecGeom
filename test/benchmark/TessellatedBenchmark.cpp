@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
   // testing tesselated with Embree
   // retrieve tessels first of all
-  assert(nfacets == tsl.GetNFacets());
+  VECGEOM_ASSERT(nfacets == tsl.GetNFacets());
 
   Benchmarker tester(GeoManager::Instance().GetWorld());
   tester.SetVerbosity(1);

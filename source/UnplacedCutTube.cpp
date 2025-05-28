@@ -89,7 +89,7 @@ Vector3D<Precision> UnplacedCutTube::SamplePointOnSurface() const
     phiVal = rng.uniform(sphi(), sphi() + dphi());
     zmin   = ZlimitBottom(rVal, phiVal);
     zmax   = ZlimitTop(rVal, phiVal);
-    // assert(zmax-zmin > 0);
+    // VECGEOM_ASSERT(zmax-zmin > 0);
     zVal = zmin + (zmax - zmin) * rng.uniform();
     break;
   case 3: // inner
@@ -97,7 +97,7 @@ Vector3D<Precision> UnplacedCutTube::SamplePointOnSurface() const
     phiVal = rng.uniform(sphi(), sphi() + dphi());
     zmin   = ZlimitBottom(rVal, phiVal);
     zmax   = ZlimitTop(rVal, phiVal);
-    // assert(zmax-zmin > 0);
+    // VECGEOM_ASSERT(zmax-zmin > 0);
     zVal = rng.uniform(zmin, zmax);
     break;
   case 4: // phi
@@ -105,7 +105,7 @@ Vector3D<Precision> UnplacedCutTube::SamplePointOnSurface() const
     phiVal = sphi();
     zmin   = ZlimitBottom(rVal, phiVal);
     zmax   = ZlimitTop(rVal, phiVal);
-    // assert(zmax-zmin > 0);
+    // VECGEOM_ASSERT(zmax-zmin > 0);
     zVal = rng.uniform(zmin, zmax);
     break;
   case 5: // phi + dphi
@@ -113,7 +113,7 @@ Vector3D<Precision> UnplacedCutTube::SamplePointOnSurface() const
     phiVal = sphi() + dphi();
     zmin   = ZlimitBottom(rVal, phiVal);
     zmax   = ZlimitTop(rVal, phiVal);
-    // assert(zmax-zmin > 0);
+    // VECGEOM_ASSERT(zmax-zmin > 0);
     zVal = rng.uniform(zmin, zmax);
     break;
   }

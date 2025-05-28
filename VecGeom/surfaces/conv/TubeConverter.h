@@ -26,12 +26,12 @@ bool CreateTubeSurfaces(vecgeom::UnplacedTube const &tube, int logical_id, bool 
   auto dphi = tube.dphi();
   auto ephi = tube.sphi() + tube.dphi();
 
-  assert(dphi > vecgeom::kTolerance);
+  VECGEOM_ASSERT(dphi > vecgeom::kTolerance);
 
   auto Rmean = (tube.rmin() + tube.rmax()) / 2;
   auto Rdiff = (tube.rmax() - tube.rmin()) / 2;
 
-  assert(Rdiff > 0);
+  VECGEOM_ASSERT(Rdiff > 0);
 
   bool fullCirc  = ApproxEqual(dphi, vecgeom::kTwoPi);
   bool smallerPi = dphi < (vecgeom::kPi - vecgeom::kTolerance);

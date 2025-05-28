@@ -4,8 +4,8 @@
 #ifndef VECGEOM_VARIABLESIZEOBJ_H
 #define VECGEOM_VARIABLESIZEOBJ_H
 
-// This file will eventually move in VecCore.
 #include "VecGeom/base/Global.h"
+#include "VecGeom/base/Assert.h"
 
 // For memset and memcpy
 #include <string.h>
@@ -94,7 +94,7 @@ public:
     size_t needed = SizeOf(nvalues);
     char *ptr     = new char[needed];
     if (!ptr) return 0;
-    assert((((unsigned long long)ptr) % alignof(Cont)) == 0 && "alignment error");
+    VECGEOM_VALIDATE((((unsigned long long)ptr) % alignof(Cont)) == 0, << "alignment error");
     Cont *obj                         = new (ptr) Cont(nvalues, params...);
     obj->GetVariableData().fSelfAlloc = true;
     return obj;
@@ -110,7 +110,7 @@ public:
     if (!addr) {
       return MakeInstance(nvalues, params...);
     } else {
-      assert((((unsigned long long)addr) % alignof(Cont)) == 0 && "addr does not satisfy alignment");
+      VECGEOM_VALIDATE((((unsigned long long)addr) % alignof(Cont)) == 0, << "addr does not satisfy alignment");
       Cont *obj                         = new (addr) Cont(nvalues, params...);
       obj->GetVariableData().fSelfAlloc = false;
       return obj;

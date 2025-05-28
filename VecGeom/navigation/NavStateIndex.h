@@ -129,10 +129,10 @@ public:
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     // checking here for NVCC_DEVICE since the global variable globaldevicegeomgata::gCompact...
     // is marked __device__ and can only be compiled within device compiler passes
-    assert(vecgeom::globaldevicegeomdata::gNavIndex != nullptr);
+    VECGEOM_ASSERT(vecgeom::globaldevicegeomdata::gNavIndex != nullptr);
     return &vecgeom::globaldevicegeomdata::gNavIndex[nav_ind];
 #else
-    assert(vecgeom::GeoManager::gNavIndex != nullptr);
+    VECGEOM_ASSERT(vecgeom::GeoManager::gNavIndex != nullptr);
     return &vecgeom::GeoManager::gNavIndex[nav_ind];
 #endif
   }
@@ -148,11 +148,11 @@ public:
 #ifdef VECCORE_CUDA_DEVICE_COMPILATION
     // checking here for NVCC_DEVICE since the global variable globaldevicegeomgata::gCompact...
     // is marked __device__ and can only be compiled within device compiler passes
-    assert(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
+    VECGEOM_ASSERT(vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer != nullptr);
     return &vecgeom::globaldevicegeomdata::gCompactPlacedVolBuffer[index];
 #else
-    assert(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
-           vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
+    VECGEOM_ASSERT(vecgeom::GeoManager::gCompactPlacedVolBuffer == nullptr ||
+                   vecgeom::GeoManager::gCompactPlacedVolBuffer[index].id() == index);
     return &vecgeom::GeoManager::gCompactPlacedVolBuffer[index];
 #endif
   }
@@ -318,7 +318,7 @@ public:
     transformationDataIndex += unsigned{padTransformationData};
 
     const auto address = reinterpret_cast<const Precision *>(NavIndAddr(transformationDataIndex));
-    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0);
+    VECGEOM_ASSERT(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0);
 
     Transformation3DMP<Real_t> t;
     t.Set(address, address + 3, has_trans, has_rot);
@@ -352,7 +352,7 @@ public:
     transformationDataIndex += unsigned{padTransformationData};
 
     const auto address = reinterpret_cast<const Precision *>(NavIndAddr(transformationDataIndex));
-    assert(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0);
+    VECGEOM_ASSERT(reinterpret_cast<uintptr_t>(address) % sizeof(Precision) == 0);
 
     Transformation3D t;
     t.Set(address, address + 3, has_trans, has_rot);

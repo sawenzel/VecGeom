@@ -5,6 +5,7 @@
 #define VECGEOM_BACKEND_SCALARBACKEND_H_
 
 #include "VecGeom/base/Global.h"
+#include "VecGeom/base/Assert.h"
 
 #include <algorithm>
 #include <cstring>
@@ -205,10 +206,10 @@ struct AlignedAllocator {
         T *new_obj = new (address_old + i) T(std::forward<Args>(args)...);
         if (i == 0) result = new_obj;
       }
-      assert(((unsigned long)result % alignment == 0));
+      VECGEOM_ASSERT(((unsigned long)result % alignment == 0));
       return result;
     }
-    assert(0 && "No space left to allocate in buffer");
+    VECGEOM_VALIDATE(0, << "No space left to allocate in buffer");
     return nullptr;
   }
 };
@@ -220,8 +221,9 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Type *AlignedAllocate(size_t size)
   return static_cast<Type *>(vecCore::AlignedAlloc(kAlignmentBoundary, sizeof(Type) * size));
 #else
   Type *ptr = new Type[size];
-  assert(ptr != nullptr && "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU with "
-                           "CudaDeviceSetHeapLimit(new_size)");
+  VECGEOM_VALIDATE(
+      ptr != nullptr, << "Error: Memory allocation failed! If on GPU, consider increasing the heap size on GPU with "
+                         "CudaDeviceSetHeapLimit(new_size)");
   return ptr;
 #endif
 }

@@ -174,7 +174,7 @@ void BrepHelper<Real_t>::SortSides(int common_id)
       }
     }
     side.fNumParents = num_parents;
-    assert(num_parents > 0);
+    VECGEOM_ASSERT(num_parents > 0);
   };
 
   sortFrames(fCPUdata.fCommonSurfaces[common_id].fLeftSide);
@@ -190,7 +190,7 @@ void BrepHelper<Real_t>::ComputeDefaultStates(int common_id)
   // Computes the default states for each side of a common surface
   Side &left  = fCPUdata.fCommonSurfaces[common_id].fLeftSide;
   Side &right = fCPUdata.fCommonSurfaces[common_id].fRightSide;
-  assert(left.fNsurf > 0 || right.fNsurf > 0);
+  VECGEOM_ASSERT(left.fNsurf > 0 || right.fNsurf > 0);
 
   NavIndex_t default_ind = 0;
 
@@ -278,7 +278,7 @@ WindowMask<double> BrepHelper<Real_t>::GetPlanarFrameExtent(
     break;
   }
   default:
-    assert(0 && "Not implemented");
+    VECGEOM_VALIDATE(0, << "Not implemented");
   }
 
   // This part updates extent
@@ -355,7 +355,7 @@ int BrepHelper<Real_t>::ComputeCylinderDivision(Side &side, ZPhiMask<double> ext
   // loop through all extents on a side:
   for (int i = 0; i < side.fNsurf; ++i) {
     auto &framed_surf = fCPUdata.fFramedSurf[side.fSurfaces[i]];
-    assert(framed_surf.fFrame.type == FrameType::kZPhi);
+    VECGEOM_ASSERT(framed_surf.fFrame.type == FrameType::kZPhi);
 
     Vector3D<double> local;
     double zmin{vecgeom::InfinityLength<Real_t>()}, zmax{-vecgeom::InfinityLength<Real_t>()};
@@ -741,7 +741,7 @@ void BrepHelper<Real_t>::CreateCandidateLists()
       NavIndex_t parent_state = 0;
       framedsurf.GetParentState(parent_state);
       if (framedsurf.fParent < 0) {
-        assert(parent_state == surf.fDefaultState);
+        VECGEOM_ASSERT(parent_state == surf.fDefaultState);
         continue;
       }
 
@@ -754,7 +754,7 @@ void BrepHelper<Real_t>::CreateCandidateLists()
       // directly (not through the parent) and must be added to the entering candidates
       if (framedsurf.fEmbedded && !framedsurf.fVirtualParent) continue;
       // The frame is not embedded in the parent, so add the surface as candidate to the parent state
-      // assert(parent_state != surf.fDefaultState);
+      // VECGEOM_ASSERT(parent_state != surf.fDefaultState);
       vecgeom::NavigationState state(parent_state);
       auto state_id            = state.GetId();
       auto &candidatesEntering = fCPUdata.GetCandidatesEntering(surf.GetSceneId(), state_id);
@@ -1125,7 +1125,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
       framed_surf.fLogicId   = lsurf.fLogicId;
       framed_surf.fSurfIndex = lsurf.fSurfIndex;
       framed_surf.fEmbedding = (lsurf.fLogicId == 0) ? lsurf.fEmbedding : false;
-      assert(lsurf.fSurfIndex < nsurf_local);
+      VECGEOM_ASSERT(lsurf.fSurfIndex < nsurf_local);
 
       char iside = 0;
       int iframe = 0;
@@ -1155,7 +1155,7 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
           // This assert was to ensure that the first surface of a new volume must be on the left side
           // For booleans, this is not strictly true, so we remove this as a consequence of !1075
           // constexpr char kLside                  = 0x01;
-          // assert(iside == kLside);
+          // VECGEOM_ASSERT(iside == kLside);
 
           // Add the CS pointer to the frame in the parent scene. So if a track enters the frame it is relocated in
           // this frame, it checks the info on the scene CS
@@ -1429,7 +1429,7 @@ template <typename Real_t>
 void BrepHelper<Real_t>::DumpBVH(uint ivol)
 {
   auto lvol = vecgeom::GeoManager::Instance().GetLogicalVolume(ivol);
-  assert(lvol->id() == ivol);
+  VECGEOM_ASSERT(lvol->id() == ivol);
   int bvh_index = fSurfData->fShells[ivol].fBVH;
   auto fname    = std::string(lvol->GetName()) + ".bin";
   bvh::DumpBVH(fSurfData->fBVH[bvh_index], fname.c_str());
@@ -1530,7 +1530,7 @@ void BrepHelper<Real_t>::InitBVHData()
   vecgeom::GeoManager::Instance().GetAllLogicalVolumes(lvols);
 
   TransformationMP<vecgeom::Precision> identity;
-  assert(fCPUdata.fPVolTrans.size() == 0);
+  VECGEOM_ASSERT(fCPUdata.fPVolTrans.size() == 0);
   fCPUdata.fPVolTrans.push_back(identity);
 
   for (auto lvol : lvols) {

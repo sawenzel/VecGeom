@@ -73,7 +73,7 @@ size_t FindIndexWithinMother(VPlacedVolume const *mother, VPlacedVolume const *d
   for (size_t d = 0; d < mother->GetDaughters().size(); ++d) {
     if (mother->GetDaughters()[d] == daughter) return d;
   }
-  assert(false && "did not find index of a daughter volume within mother");
+  VECGEOM_VALIDATE(false, << "did not find index of a daughter volume within mother");
   return static_cast<uint>(-1);
 }
 

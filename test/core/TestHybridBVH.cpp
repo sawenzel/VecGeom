@@ -3,7 +3,7 @@
 #include "VecGeom/management/ABBoxManager.h"
 #include <memory>
 #undef NDEBUG
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 using namespace vecgeom;
 
@@ -60,7 +60,7 @@ void QueryStructure(BVHStructure const &s)
     checkhitsum = 0;
     // intersect ray with the BVH structure and use hook
     instance->BVHSortedIntersectionsLooper(s, pos, dir, 1E20, userhook);
-    assert(c == checkhitsum); // checks that all boxes have been hit
+    VECGEOM_ASSERT(c == checkhitsum); // checks that all boxes have been hit
   }
 
   { // for a ray passing all boxes right to left
@@ -71,7 +71,7 @@ void QueryStructure(BVHStructure const &s)
     checkhitsum = 0;
     // intersect ray with the BVH structure and use hook
     instance->BVHSortedIntersectionsLooper(s, pos, dir, 1E20, userhook);
-    assert(c == checkhitsum); // checks that all boxes have been hit
+    VECGEOM_ASSERT(c == checkhitsum); // checks that all boxes have been hit
   }
 
   {
@@ -83,7 +83,7 @@ void QueryStructure(BVHStructure const &s)
     checkhitsum = 0;
     // intersect ray with the BVH structure and use hook
     instance->BVHSortedIntersectionsLooper(s, pos, dir, 1E20, userhook);
-    assert(0 == checkhitsum);
+    VECGEOM_ASSERT(0 == checkhitsum);
   }
 
   {
@@ -94,7 +94,7 @@ void QueryStructure(BVHStructure const &s)
 
     // intersect ray with the BVH structure and use hook
     instance->BVHSortedIntersectionsLooper(s, pos, dir, 1E20, userhook);
-    assert(1 == checkhitsum); // should hit exactly the first box (index 0 + 1)
+    VECGEOM_ASSERT(1 == checkhitsum); // should hit exactly the first box (index 0 + 1)
   }
 }
 

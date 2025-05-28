@@ -30,8 +30,8 @@ private:
   // convert index to physical daugher
   VPlacedVolume const *LookupDaughter(LogicalVolume const *lvol, int id) const
   {
-    assert(id >= 0 && "access with negative index");
-    assert(size_t(id) < lvol->GetDaughtersp()->size() && "access beyond size of daughterlist");
+    VECGEOM_VALIDATE(id >= 0, << "access with negative index");
+    VECGEOM_VALIDATE(size_t(id) < lvol->GetDaughtersp()->size(), << "access beyond size of daughterlist");
     return lvol->GetDaughtersp()->operator[](id);
   }
 

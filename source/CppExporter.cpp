@@ -372,10 +372,10 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
       shape->GetStruct().ReconstructSectionArrays(z, rmin, rmax);
 #ifndef NDEBUG
       for (auto element : rmin) {
-        assert(element >= 0.);
+        VECGEOM_ASSERT(element >= 0.);
       }
       for (auto element : rmax) {
-        assert(element >= 0.);
+        VECGEOM_ASSERT(element >= 0.);
       }
 #endif
       if (shape->GetNz() != z.size()) {

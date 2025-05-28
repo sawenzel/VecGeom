@@ -94,7 +94,7 @@ void Quadrilaterals::Set(int index, Vector3D<Precision> const &corner0, Vector3D
   // (ax + by + cz + d) / sqrt(a^2 + b^2 + c^2) = 0 =>
   // n0*x + n1*x + n2*x + p = 0
 
-  // assert( a+b+c != 0 ); // this happens in extremely degenerate cases and would lead to ill defined planes
+  // VECGEOM_ASSERT( a+b+c != 0 ); // this happens in extremely degenerate cases and would lead to ill defined planes
   Precision inverseLength = 1. / normal.Length();
   normal *= inverseLength;
   d *= inverseLength;

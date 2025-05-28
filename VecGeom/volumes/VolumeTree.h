@@ -77,7 +77,7 @@ struct PlacedId {
 
   void Place(LogicalId &parent)
   {
-    assert(parent.fChildren && "Parent volume has no children space allocated");
+    VECGEOM_VALIDATE(parent.fChildren, << "Parent volume has no children space allocated");
     parent.fChildren[parent.fNplaced++] = *this;
   }
 

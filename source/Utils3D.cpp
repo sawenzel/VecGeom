@@ -50,14 +50,14 @@ VECCORE_ATT_HOST_DEVICE
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, bool convex)
     : fN(n), fConvex(convex), fNorm(), fVert(&vertices), fInd(n), fSides(n)
 {
-  assert(fN > 2);
+  VECGEOM_ASSERT(fN > 2);
 }
 
 VECCORE_ATT_HOST_DEVICE
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, Vec_t const &normal)
     : fN(n), fConvex(true), fHasNorm(true), fNorm(normal), fVert(&vertices), fInd(n), fSides(n)
 {
-  assert(fN > 2 && fNorm.IsNormalized());
+  VECGEOM_ASSERT(fN > 2 && fNorm.IsNormalized());
 }
 
 Polygon::Polygon(size_t n, vector_t<Vec_t> &vertices, vector_t<size_t> const &indices, bool convex)
@@ -633,16 +633,16 @@ void Polygon::Init()
   // Compute sides
   for (size_t i = 0; i < fN - 1; ++i) {
     fSides[i] = GetVertex(i + 1) - GetVertex(i);
-    assert(fSides[i].Mag2() > kTolerance);
+    VECGEOM_ASSERT(fSides[i].Mag2() > kTolerance);
   }
   fSides[fN - 1] = GetVertex(0) - GetVertex(fN - 1);
-  assert(fSides[fN - 1].Mag2() > kTolerance);
+  VECGEOM_ASSERT(fSides[fN - 1].Mag2() > kTolerance);
   // Compute normal if not already set
   if (!fHasNorm) {
     fNorm = fSides[0].Cross(fSides[1]);
     fNorm.Normalize();
   }
-  assert((fSides[0].Cross(fSides[1])).Dot(fNorm) > 0);
+  VECGEOM_ASSERT((fSides[0].Cross(fSides[1])).Dot(fNorm) > 0);
   // Compute convexity if not supplied
   if (!fConvex) {
     fConvex = true;
@@ -818,7 +818,7 @@ EBodyXing_t PolygonXing(Polygon const &poly1, Polygon const &poly2, Line *line)
   if (line != nullptr) {
     double dmin = Max(smin1, smin2);
     double dmax = Min(smax1, smax2);
-    assert(dmax - dmin > -kTolerance);
+    VECGEOM_ASSERT(dmax - dmin > -kTolerance);
     line->fPts[0] = point + direction * CopySign<double>(Sqrt(Abs(dmin)), dmin);
     line->fPts[1] = point + direction * CopySign<double>(Sqrt(Abs(dmax)), dmax);
   }

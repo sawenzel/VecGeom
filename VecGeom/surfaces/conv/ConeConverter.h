@@ -31,9 +31,9 @@ bool CreateConeSurfaces(vecgeom::UnplacedCone const &cone, int logical_id, bool 
   auto dphi  = cone.GetDPhi();
   auto ephi  = dphi + sphi;
 
-  assert(dphi > vecgeom::kTolerance);
-  assert(rmax1 - rmin1 > -vecgeom::kTolerance);
-  assert(rmax2 - rmin2 > -vecgeom::kTolerance);
+  VECGEOM_ASSERT(dphi > vecgeom::kTolerance);
+  VECGEOM_ASSERT(rmax1 - rmin1 > -vecgeom::kTolerance);
+  VECGEOM_ASSERT(rmax2 - rmin2 > -vecgeom::kTolerance);
 
   // if rmax == rmin then for safety it is set to rmax = rmin + ConeTolerance already in the solid model
   // For using mixed precision, the compiled tolerance must be replaced by the mixed tolerance

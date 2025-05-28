@@ -81,7 +81,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   bool Contains(Vector3D<Precision> const &point) const override
   {
-    assert(fLogicalVolume);
+    VECGEOM_ASSERT(fLogicalVolume);
     // check bound box first
     bool inBoundingBox;
     ABBoxImplementation::ABBoxContainsKernel(fLowerCorner, fUpperCorner, point, inBoundingBox);
@@ -108,7 +108,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   bool Contains(Vector3D<Precision> const &point, Vector3D<Precision> &daughterlocalpoint, NavigationState &state) const
   {
-    assert(fLogicalVolume);
+    VECGEOM_ASSERT(fLogicalVolume);
     // check bound box first
     bool inBoundingBox;
     ABBoxImplementation::ABBoxContainsKernel(fLowerCorner, fUpperCorner, point, inBoundingBox);

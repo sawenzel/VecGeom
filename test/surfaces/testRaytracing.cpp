@@ -61,9 +61,9 @@ int LoadOnGPU(bool only_surf)
   auto world = GeoManager::Instance().GetWorld();
   if (!world) return 3;
   // Set higher stack limit to allow depper CSG for the solids model
-  CudaAssertError(CudaDeviceSetStackLimit(8192));
+  VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitStackSize), 8192));
   // set higher heap limit to allow solid model to dynamically allocate on GPU during init for large geometries
-  CudaAssertError(CudaDeviceSetHeapLimit(512 * 1024 * 1024));
+  VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitMallocHeapSize), 512 * 1024 * 1024));
   auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
   if (only_surf) {
     cudaManager.SynchronizeNavigationTable();
@@ -800,8 +800,8 @@ int main(int argc, char *argv[])
   std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
                                            -vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(min_world, default_min_world);
-  assert(point.size() == 3 && direction.size() == 3);
-  assert(min_world.size() == 3 && default_min_world.size() == 3);
+  VECGEOM_ASSERT(point.size() == 3 && direction.size() == 3);
+  VECGEOM_ASSERT(min_world.size() == 3 && default_min_world.size() == 3);
 
   // transform to Vec3D for further handling
   Vec3D point_3D     = {point[0], point[1], point[2]};
@@ -835,7 +835,7 @@ int main(int argc, char *argv[])
 
   if (use_provided_point) {
     // check if direction is normalized
-    assert(direction_3D.IsNormalized());
+    VECGEOM_ASSERT(direction_3D.IsNormalized());
     config.nrays = 1;
   }
 

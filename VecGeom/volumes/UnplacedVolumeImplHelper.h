@@ -47,7 +47,7 @@ public:
                                   Precision step_max = kInfLength) const override
   {
 #ifndef VECCORE_CUDA
-    assert(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
+    VECGEOM_VALIDATE(d.IsNormalized(), << " direction not normalized in call to  DistanceToOut ");
 #endif
     Precision output = kInfLength;
     Implementation::template DistanceToOut<>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max,
@@ -55,7 +55,7 @@ public:
 
 // detect -inf responses which are often an indication for a real bug
 #ifndef VECCORE_CUDA
-    assert(!((output < 0.) && std::isinf((Precision)output)));
+    VECGEOM_ASSERT(!((output < 0.) && std::isinf((Precision)output)));
 #endif
     return output;
   }
@@ -83,7 +83,7 @@ public:
                                  const Precision step_max = kInfLength) const override
   {
 #ifndef VECCORE_CUDA
-    assert(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
+    VECGEOM_VALIDATE(d.IsNormalized(), << " direction not normalized in call to  DistanceToOut ");
 #endif
     Precision output(kInfLength);
     Implementation::DistanceToIn(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max, output);

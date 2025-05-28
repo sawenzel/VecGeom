@@ -11,7 +11,11 @@
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/navigation/NavigationState.h"
+#include "VecGeom/management/Logger.h"
+#include <stdexcept>
+
 #ifdef VECGEOM_ENABLE_CUDA
 #include "VecGeom/management/CudaManager.h"
 #endif
@@ -46,26 +50,25 @@ VECCORE_ATT_HOST_DEVICE
 VECCORE_FORCE_INLINE
 NavigationState *GetNavigationState(int i, char *buffer, int depth)
 {
-  return reinterpret_cast<NavigationState*>(buffer + NavigationState::SizeOfInstanceAlignAware(depth) * i);
+  return reinterpret_cast<NavigationState *>(buffer + NavigationState::SizeOfInstanceAlignAware(depth) * i);
 }
 
 class NavStatePoolView {
 public:
-
   VECCORE_ATT_HOST_DEVICE
   NavStatePoolView(char *buffer, int depth, int capacity) : fCapacity(capacity), fDepth(depth), fBuffer(buffer) {}
 
   VECCORE_ATT_HOST_DEVICE
   NavigationState *operator[](int i)
   {
-    assert(i < fCapacity);
+    VECGEOM_ASSERT(i < fCapacity);
     return GetNavigationState(i, fBuffer, fDepth);
   }
 
   VECCORE_ATT_HOST_DEVICE
   NavigationState const *operator[](int i) const
   {
-    assert(i < fCapacity);
+    VECGEOM_ASSERT(i < fCapacity);
     return GetNavigationState(i, fBuffer, fDepth);
   }
 
@@ -79,9 +82,9 @@ public:
   int IsValid() const { return fBuffer && fCapacity > 0 && fDepth > 0; }
 
 private:         // members
-  int   fCapacity; // Allocated size of the container.
-  int   fDepth;    // depth of the navigation objects to cover
-  char *fBuffer;   // the memory buffer in which we place states
+  int fCapacity; // Allocated size of the container.
+  int fDepth;    // depth of the navigation objects to cover
+  char *fBuffer; // the memory buffer in which we place states
 }; // end class
 
 class NavStatePool {
@@ -92,8 +95,8 @@ public:
         fGPUPointer(NULL)
   {
 
-#if !defined(VECCORE_CUDA) && defined(VECGEOM_ENABLE_CUDA)
-    vecgeom::CudaMalloc(&fGPUPointer, NavigationState::SizeOfInstanceAlignAware(depth) * size);
+#ifdef VECGEOM_CUDA_INTERFACE
+    VECGEOM_DEVICE_API_CALL(Malloc(&fGPUPointer, NavigationState::SizeOfInstanceAlignAware(depth) * size));
 #endif
     // now create the states
     for (int i = 0; i < (int)fCapacity; ++i) {
@@ -103,9 +106,13 @@ public:
 
   ~NavStatePool()
   {
-  #ifdef VECGEOM_CUDA_INTERFACE
-    CudaAssertError(CudaFree(fGPUPointer));
-  #endif
+#ifdef VECGEOM_CUDA_INTERFACE
+    try {
+      VECGEOM_DEVICE_API_CALL(Free(fGPUPointer));
+    } catch (std::runtime_error const &e) {
+      VECGEOM_LOG(error) << e.what();
+    }
+#endif
     delete[] fBuffer;
   }
 #if !defined(VECCORE_CUDA) && defined(VECGEOM_ENABLE_CUDA)
@@ -156,16 +163,10 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  NavigationState *operator[](int i)
-  {
-     return GetNavigationState(i, fBuffer, fDepth);
-  }
+  NavigationState *operator[](int i) { return GetNavigationState(i, fBuffer, fDepth); }
 
   VECCORE_ATT_HOST_DEVICE
-  NavigationState const *operator[](int i) const
-  {
-     return GetNavigationState(i, fBuffer, fDepth);
-  }
+  NavigationState const *operator[](int i) const { return GetNavigationState(i, fBuffer, fDepth); }
 
   // convert/init this to a plain NavigationState** array
   // so that array[0] points to the first state in the NavStatePool, etc
@@ -202,7 +203,7 @@ public:
 
 private: // protected methods
 #ifdef VECGEOM_ENABLE_CUDA
-  // This constructor used to build NavStatePool at the GPU.  BufferGPU
+         // This constructor used to build NavStatePool at the GPU.  BufferGPU
   VECCORE_ATT_DEVICE
   NavStatePool(int size, int depth, char *fBufferGPU)
       : fCapacity(size), fDepth(depth), fBuffer(fBufferGPU), fGPUPointer(NULL)
@@ -238,7 +239,7 @@ inline void NavStatePool::CopyToGpu()
   // copy
   vecgeom::CopyToGpu((void *)fBuffer, fGPUPointer, fCapacity * NavigationState::SizeOfInstanceAlignAware(fDepth));
   // CudaAssertError( cudaMemcpy(fGPUPointer, (void*)fBuffer, fCapacity*NavigationState::SizeOf(fDepth),
-  // cudaMemcpyHostToDevice) );
+  // VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)) );
 
   // modify back pointers
   for (int i = 0; i < fCapacity; ++i) {

@@ -68,7 +68,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(U
 {
 
   using namespace ::vecgeom::ConeTypes;
-  // assert(SectorType<ShapeType>::value != kNoAngle && "ShapeType without a
+  // VECGEOM_VALIDATE(SectorType<ShapeType>::value != kNoAngle, << "ShapeType without a
   // sector passed to PointInCyclicalSector");
 
   // typedef Real_v Real_v;

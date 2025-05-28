@@ -96,7 +96,7 @@ template <typename Real_t>
 FramedSurface<Real_t, TransformationMP<Real_t>> &GetSurface(int isurf)
 {
   auto &cpudata = CPUsurfData<Real_t>::Instance();
-  assert(size_t(isurf) < cpudata.fLocalSurfaces.size());
+  VECGEOM_ASSERT(size_t(isurf) < cpudata.fLocalSurfaces.size());
   return cpudata.fLocalSurfaces[isurf];
 }
 
@@ -108,7 +108,7 @@ int AddSurfaceToShell(int logical_id, int isurf)
     std::cout << "BrepHelper::AddSurfaceToShell: need to call SetNvolumes first\n";
     return -1;
   }
-  assert(logical_id < (int)cpudata.fShells.size() && "surface shell id exceeding number of volumes");
+  VECGEOM_VALIDATE(logical_id < (int)cpudata.fShells.size(), << "surface shell id exceeding number of volumes");
   int id = cpudata.fShells[logical_id].fSurfaces.size();
   cpudata.fShells[logical_id].fSurfaces.push_back(isurf);
   cpudata.fSceneShells[logical_id].fSurfaces.push_back(isurf);
@@ -168,7 +168,7 @@ vecgeom::Transformation3DMP<Real_t> TransformationFromPlanarPoints(Container &po
   using Vector3 = vecgeom::Vector3D<Real_t>;
 
   int npoints = points.size();
-  assert(npoints > 2 && "TransformationFromPlanarPoints takes at least three points");
+  VECGEOM_VALIDATE(npoints > 2, << "TransformationFromPlanarPoints takes at least three points");
   int istart            = 0;
   Real_t cross_mag2_max = 0.;
   Vector3 normal;
@@ -185,8 +185,8 @@ vecgeom::Transformation3DMP<Real_t> TransformationFromPlanarPoints(Container &po
       cross_mag2_max = cross_mag2;
     }
   }
-  assert(cross_mag2_max > vecgeom::kToleranceDistSquared<Real_t> &&
-         "TransformationFromPlanarPoints: degenerated polygon");
+  VECGEOM_ASSERT(cross_mag2_max > vecgeom::kToleranceDistSquared<Real_t> &&
+                 "TransformationFromPlanarPoints: degenerated polygon");
   center *= 1. / npoints;
 
   Vector3 zref = normal;

@@ -75,7 +75,7 @@ void test1()
   Vector3D<Precision> p1(0, 9 * 10 / 10., 0);
 
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
+  VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
   std::cerr << "test1 passed"
             << "\n";
 }
@@ -90,14 +90,14 @@ void test2()
   // point should be in box3
   Vector3D<Precision> p1(-5., 0., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(state->Top())->GetName(), "b3l_0") == 0);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b3l_0") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(state->Top())->GetName(), "b3l_0") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b3l_0") == 0);
 
   // point should also be in box3
   Vector3D<Precision> p2(5., 0., 0.);
   state->Clear();
   vol = GlobalLocator::LocateGlobalPoint(world, p2, *state, true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b3l_0") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b3l_0") == 0);
   std::cerr << "test2 passed"
             << "\n";
 }
@@ -111,7 +111,7 @@ void test3()
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(-9 / 10., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_0") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_0") == 0);
   std::cerr << "test3 passed"
             << "\n";
 }
@@ -124,7 +124,7 @@ void test3_2()
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(9 / 10., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_1") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_1") == 0);
   std::cerr << "test3_2 passed"
             << "\n";
 }
@@ -137,7 +137,7 @@ void test4()
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(5., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b2l_0") == 0);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b2l_0") == 0);
   std::cerr << "test4 passed"
             << "\n";
 }
@@ -151,10 +151,10 @@ void test5()
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(-20, 0., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
-  assert(vol == 0);
+  VECGEOM_ASSERT(vol == 0);
 
-  assert(state->Top() == 0);
-  assert(state->IsOutside() == true);
+  VECGEOM_ASSERT(state->Top() == 0);
+  VECGEOM_ASSERT(state->IsOutside() == true);
   std::cerr << "test5 passed" << std::endl;
 }
 
@@ -177,7 +177,7 @@ void test6()
     VPlacedVolume const *vol =
         GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), Vector3D<Precision>(x, y, z), *state, true);
 
-    assert(RootGeoManager::Instance().tgeonode(vol) == node);
+    VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == node);
   }
   std::cerr << "test6 (statistical location) passed"
             << "\n";
@@ -232,7 +232,7 @@ void test7()
 
     VPlacedVolume const *vol3 = GlobalLocator::RelocatePointFromPath(localp, *state);
     //      std::cerr << vol1 << " " << vol2 << " " << vol3 << "\n";
-    assert(vol3 == vol2);
+    VECGEOM_ASSERT(vol3 == vol2);
   }
   std::cerr << "test7 (statistical relocation) passed"
             << "\n";
@@ -261,13 +261,13 @@ void testnavsimple()
   Vector3D<Precision> p1(-1, 9, 0);
 
   const int maxdepth = GeoManager::Instance().getMaxDepth();
-  assert(maxdepth == 4);
+  VECGEOM_ASSERT(maxdepth == 4);
 
   NavigationState *currentstate = NavigationState::MakeInstance(maxdepth);
 
   VPlacedVolume const *vol =
       GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), p1, *currentstate, true);
-  assert(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
+  VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
 
   NavigationState *newstate = NavigationState::MakeInstance(maxdepth);
 
@@ -275,23 +275,23 @@ void testnavsimple()
   Precision step = 0.0, tolerance = 1.0e-4;
   auto nav = NewSimpleNavigator<>::Instance();
   nav->FindNextBoundaryAndStep(p1, d, *currentstate, *newstate, vecgeom::kInfLength, step);
-  assert(std::abs(step - 4.0) < tolerance);
-  assert(newstate->IsOnBoundary() == true);
-  assert(std::strcmp(RootGeoManager::Instance().tgeonode(newstate->Top())->GetName(), "b2l_0"));
+  VECGEOM_ASSERT(std::abs(step - 4.0) < tolerance);
+  VECGEOM_ASSERT(newstate->IsOnBoundary() == true);
+  VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(newstate->Top())->GetName(), "b2l_0"));
 
   newstate->Clear();
   nav->FindNextBoundaryAndStep(p1, d, *currentstate, *newstate, 0.02, step);
-  assert(std::abs(step - 0.02) < tolerance);
-  assert(newstate->Top() == currentstate->Top());
-  assert(newstate->IsOnBoundary() == false);
-  assert(newstate->IsOutside() == false);
+  VECGEOM_ASSERT(std::abs(step - 0.02) < tolerance);
+  VECGEOM_ASSERT(newstate->Top() == currentstate->Top());
+  VECGEOM_ASSERT(newstate->IsOnBoundary() == false);
+  VECGEOM_ASSERT(newstate->IsOutside() == false);
 
   newstate->Clear();
   nav->FindNextBoundaryAndStep(p1, d2, *currentstate, *newstate, vecgeom::kInfLength, step);
-  assert(std::abs(step - 1.0) < tolerance);
-  assert(newstate->IsOnBoundary() == true);
-  assert(newstate->Top() == NULL);
-  assert(newstate->IsOutside() == true);
+  VECGEOM_ASSERT(std::abs(step - 1.0) < tolerance);
+  VECGEOM_ASSERT(newstate->IsOnBoundary() == true);
+  VECGEOM_ASSERT(newstate->Top() == NULL);
+  VECGEOM_ASSERT(newstate->IsOutside() == true);
 }
 
 // test navigation interface without relocation
@@ -333,18 +333,18 @@ void test9(double pstep = 1E30)
     Precision safety = 0.;
     Precision step2  = 0.;
     step2            = n->ComputeStepAndSafety(p, d, pstep, *state2, true, safety);
-    assert(!(safety > step2 && step != pstep));
-    assert(step2 == step);
+    VECGEOM_ASSERT(!(safety > step2 && step != pstep));
+    VECGEOM_ASSERT(step2 == step);
 
     TGeoNavigator *rootnav = ::gGeoManager->GetCurrentNavigator();
     TGeoNode *node         = rootnav->FindNode(x, y, z);
-    assert(rootnav->GetCurrentNode() == RootGeoManager::Instance().tgeonode(state->Top()));
+    VECGEOM_ASSERT(rootnav->GetCurrentNode() == RootGeoManager::Instance().tgeonode(state->Top()));
 
     rootnav->SetCurrentPoint(x, y, z);
     rootnav->SetCurrentDirection(d[0], d[1], d[2]);
     rootnav->FindNextBoundary(pstep);
 
-    assert(std::fabs(step - rootnav->GetStep()) < 1E-6);
+    VECGEOM_ASSERT(std::fabs(step - rootnav->GetStep()) < 1E-6);
     if (!(std::fabs(step - rootnav->GetStep()) < 1E-6)) {
       std::cerr << step << " vs " << rootnav->GetStep() << "\n";
     }
@@ -364,7 +364,7 @@ void test9(double pstep = 1E30)
       }
     }
   }
-  assert(!error);
+  VECGEOM_ASSERT(!error);
   std::cerr << "test9 (statistical navigation without relocation) passed"
             << "\n";
 }
@@ -392,7 +392,7 @@ void test_safety()
     rootnav->SetCurrentPoint(x, y, z);
     double safetyRoot = rootnav->Safety();
 
-    assert(fabs(safetyRoot - safety) < 1E-9);
+    VECGEOM_ASSERT(fabs(safetyRoot - safety) < 1E-9);
   }
   std::cerr << "statistical safetytest from navigation passed"
             << "\n";
@@ -439,7 +439,7 @@ void test_NavigationStateToTGeoBranchArrayConversion()
         // nav.InspectEnvironmentForPointAndDirection(p, d, *state);
       }
     }
-    assert(state->Top() != newstate->Top());
+    VECGEOM_ASSERT(state->Top() != newstate->Top());
     delete path;
   }
   std::cerr << "test  (init TGeoBranchArray from NavigationState) passed"
@@ -452,12 +452,12 @@ void test_geoapi()
   std::vector<LogicalVolume *> v2;
 
   GeoManager::Instance().GetAllLogicalVolumes(v2);
-  assert(v2.size() == 4);
+  VECGEOM_ASSERT(v2.size() == 4);
 
   GeoManager::Instance().getAllPlacedVolumes(v1);
-  assert(v1.size() == 7);
+  VECGEOM_ASSERT(v1.size() == 7);
 
-  assert(GeoManager::Instance().getMaxDepth() == 4);
+  VECGEOM_ASSERT(GeoManager::Instance().getMaxDepth() == 4);
 
   std::cerr << "test of geomanager query API passed"
             << "\n";
@@ -466,15 +466,15 @@ void test_geoapi()
 void test_aos3d()
 {
   SOA3D<Precision> container1(1024);
-  // assert(container1.size() == 0); // this fails, size is also set to 1024 by constructor
+  // VECGEOM_ASSERT(container1.size() == 0); // this fails, size is also set to 1024 by constructor
   container1.push_back(Vector3D<Precision>(1, 0, 1));
-  //   assert(container1.size() == 1);
+  //   VECGEOM_ASSERT(container1.size() == 1);
   std::cerr << "test10: soa3d size tests disabled (would fail)." << std::endl;
 
   AOS3D<Precision> container2(1024);
-  //   assert(container2.size() == 0);
+  //   VECGEOM_ASSERT(container2.size() == 0);
   container2.push_back(Vector3D<Precision>(1, 0, 1));
-  //   assert(container2.size() == 1);
+  //   VECGEOM_ASSERT(container2.size() == 1);
   std::cerr << "test10: aos3d size tests disabled (would fail)." << std::endl;
 }
 
@@ -493,9 +493,9 @@ void test_pointgenerationperlogicalvolume()
 
   volumeUtilities::FillGlobalPointsAndDirectionsForLogicalVolume("b1l", localpoints, globalpoints, directions, 0.5, np);
 
-  assert((int)localpoints.size() == np);
-  assert((int)globalpoints.size() == np);
-  assert((int)directions.size() == np);
+  VECGEOM_ASSERT((int)localpoints.size() == np);
+  VECGEOM_ASSERT((int)globalpoints.size() == np);
+  VECGEOM_ASSERT((int)directions.size() == np);
 
   // test that points are really inside b1l; test also that they have to be in two different placed volumes
   std::set<VPlacedVolume const *> pvolumeset;
@@ -503,11 +503,11 @@ void test_pointgenerationperlogicalvolume()
   for (int i = 0; i < np; ++i) {
     state->Clear();
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), globalpoints[i], *state, true);
-    assert(std::strcmp(state->Top()->GetLogicalVolume()->GetLabel().c_str(), "b1l") == 0);
+    VECGEOM_ASSERT(std::strcmp(state->Top()->GetLogicalVolume()->GetLabel().c_str(), "b1l") == 0);
     pvolumeset.insert(state->Top());
   }
   // b1l should be placed two times
-  assert(pvolumeset.size() == 2);
+  VECGEOM_ASSERT(pvolumeset.size() == 2);
   NavigationState::ReleaseInstance(state);
   std::cout << "test pointgenerationperlogicalvolume passed\n";
 }
@@ -518,11 +518,11 @@ void test_alignedboundingboxcalculation()
   Vector3D<Precision> lower;
   Vector3D<Precision> upper;
   ABBoxManager<Precision>::ComputeABBox(GeoManager::Instance().GetWorld(), &lower, &upper);
-  assert(lower.x() <= -10);
-  assert(lower.y() <= -10);
+  VECGEOM_ASSERT(lower.x() <= -10);
+  VECGEOM_ASSERT(lower.y() <= -10);
 
-  assert(upper.x() >= 10);
-  assert(upper.y() >= 10);
+  VECGEOM_ASSERT(upper.x() >= 10);
+  VECGEOM_ASSERT(upper.y() >= 10);
 
   double dx = 4, dy = 2, dz = 3;
   UnplacedBox box1 = UnplacedBox(dx, dy, dz);
@@ -534,26 +534,26 @@ void test_alignedboundingboxcalculation()
 
   // when no rotation:
   ABBoxManager<Precision>::ComputeABBox(pvol1, &lower, &upper);
-  assert(lower.x() <= -dx + tx);
-  assert(lower.y() <= -dy + ty);
-  assert(lower.z() <= -dz + tz);
+  VECGEOM_ASSERT(lower.x() <= -dx + tx);
+  VECGEOM_ASSERT(lower.y() <= -dy + ty);
+  VECGEOM_ASSERT(lower.z() <= -dz + tz);
 
-  assert(upper.x() >= dx + tx);
-  assert(upper.y() >= dy + ty);
-  assert(upper.z() >= dz + tz);
+  VECGEOM_ASSERT(upper.x() >= dx + tx);
+  VECGEOM_ASSERT(upper.y() >= dy + ty);
+  VECGEOM_ASSERT(upper.z() >= dz + tz);
 
   // case with a rotation : it should increase the extent
   Transformation3D placement2 = Transformation3D(tx, ty, tz, 5, 5, 5);
   VPlacedVolume const *pvol2  = lbox.Place(&placement2);
 
   ABBoxManager<Precision>::ComputeABBox(pvol2, &lower, &upper);
-  assert(lower.x() <= -dx + tx);
-  assert(lower.y() <= -dy + ty);
-  assert(lower.z() <= -dz + tz);
+  VECGEOM_ASSERT(lower.x() <= -dx + tx);
+  VECGEOM_ASSERT(lower.y() <= -dy + ty);
+  VECGEOM_ASSERT(lower.z() <= -dz + tz);
 
-  assert(upper.x() >= dx + tx);
-  assert(upper.y() >= dy + ty);
-  assert(upper.z() >= dz + tz);
+  VECGEOM_ASSERT(upper.x() >= dx + tx);
+  VECGEOM_ASSERT(upper.y() >= dy + ty);
+  VECGEOM_ASSERT(upper.z() >= dz + tz);
 
   std::cout << lower << "\n";
   std::cout << upper << "\n";

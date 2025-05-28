@@ -1,3 +1,5 @@
+
+#include "VecGeom/base/Assert.h"
 #include <VecGeom/management/GeoManager.h>
 #include <VecGeom/management/BVHManager.h>
 #include <VecGeom/navigation/NewSimpleNavigator.h>
@@ -124,7 +126,7 @@ int main(int argc, char *argv[])
   OPTION_VECTOR(pos, zero);
   OPTION_VECTOR(dir, zero);
   OPTION_STRING(gdml_name, "");
-  assert(pos.size() == 3 && dir.size() == 3);
+  VECGEOM_ASSERT(pos.size() == 3 && dir.size() == 3);
   // transform to Vec3D for further handling
   Vec3D vpos = {pos[0], pos[1], pos[2]};
   Vec3D vdir = {dir[0], dir[1], dir[2]};
@@ -143,7 +145,7 @@ int main(int argc, char *argv[])
   TestHost(vpos, vdir);
 
   // Transfer geometry, needed to get the NavStateIndices...
-  CudaAssertError(CudaDeviceSetStackLimit(8192));
+  VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitStackSize), 8192));
   auto &cudaManager = vecgeom::CudaManager::Instance();
   cudaManager.LoadGeometry(GeoManager::Instance().GetWorld());
   cudaManager.Synchronize();

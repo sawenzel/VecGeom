@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------//
 #include "VecGeom/management/Environment.h"
 
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <cstdlib>
 #include <mutex>
 #include <iostream>
@@ -71,10 +71,10 @@ auto Environment::load_from_getenv(key_type const &key) -> mapped_type const &
   // Insert value and ordering. Note that since the elements are never
   // erased, pointers to the keys are guaranteed to always be valid.
   auto [iter, inserted] = vars_.emplace(key, std::move(value));
-  assert(inserted);
+  VECGEOM_ASSERT(inserted);
   ordered_.push_back(std::ref(*iter));
 
-  assert(ordered_.size() == vars_.size());
+  VECGEOM_ASSERT(ordered_.size() == vars_.size());
   return iter->second;
 }
 
@@ -90,7 +90,7 @@ void Environment::insert(value_type const &value)
   if (inserted) {
     ordered_.push_back(std::ref(*iter));
   }
-  assert(ordered_.size() == vars_.size());
+  VECGEOM_ASSERT(ordered_.size() == vars_.size());
 }
 
 //---------------------------------------------------------------------------//

@@ -364,7 +364,7 @@ VECCORE_ATT_HOST_DEVICE int LocatePointIn(int iplaced, vecgeom::Vector3D<Real_i>
   vecgeom::Vector3D<Real_t> point(point_i);
 
   if (top) {
-    assert(iplaced >= 0);
+    VECGEOM_ASSERT(iplaced >= 0);
     auto ivol   = NavigationState::ToPlacedId(iplaced).fVolume.fId;
     auto inside = LogicInsideLocal(point, ivol, surfdata);
     if (!inside) return -1;
@@ -539,7 +539,8 @@ VECCORE_ATT_HOST_DEVICE int ReLocatePointIn(vecgeom::NavigationState &starting_p
   // }
 
   currentvolume = path.TopId();
-  assert(currentvolume >= 0 && " currentvolume is nullptr in overlap detection! Most likely due to incorrect path!");
+  VECGEOM_VALIDATE(
+      currentvolume >= 0, << " currentvolume is nullptr in overlap detection! Most likely due to incorrect path!");
   is_boolean = placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean;
 
   if (!is_boolean) {
@@ -554,8 +555,9 @@ VECCORE_ATT_HOST_DEVICE int ReLocatePointIn(vecgeom::NavigationState &starting_p
   }
 
   currentvolume = path.TopId();
-  assert(currentvolume >= 0 && " currentvolume is nullptr in overlap detection! This might due to incorrect path "
-                               "or due to a surface previously being falsely flagged as overlapping!");
+  VECGEOM_VALIDATE(
+      currentvolume >= 0, << " currentvolume is nullptr in overlap detection! This might due to incorrect path "
+                             "or due to a surface previously being falsely flagged as overlapping!");
   is_boolean = placedId(currentvolume).fVolume.fSolidType == ESolidType::boolean;
 
   // check whether the point is in the parent volume, otherwise go higher until it is found
@@ -592,7 +594,7 @@ VECCORE_ATT_HOST_DEVICE int ReLocatePointIn(vecgeom::NavigationState &starting_p
       prev_volume = currentvolume;
       path.Pop();
       currentvolume = path.TopId();
-      assert(
+      VECGEOM_ASSERT(
           currentvolume >= 0 &&
           " currentvolume is nullptr in overlap detection! That means some inside call failed or was falsely excluded");
       gohigher = true;
@@ -683,13 +685,13 @@ VECCORE_ATT_HOST_DEVICE bool EnterCS(FSlocator &hit_frame, Vector3D<Real_t> cons
       if (traversal > -1)
         printf("Error on CS=%d leftside=%d frame=%d transition=%d   -> no hit\n", hit_frame.GetCSindex(),
                hit_frame.IsLeftSide(), hit_frame.GetFSindex(), traversal);
-      assert(traversal <= -1);
+      VECGEOM_ASSERT(traversal <= -1);
     }
     if ((traversal == -1 && iframe > -1) || (traversal > -1 && iframe != traversal)) {
       printf("Error on CS=%d leftside=%d frame=%d transition=%d   ->   CS=%d leftside=%d found frame %d\n",
              hit_frame.GetCSindex(), !hit_frame.IsLeftSide(), hit_frame.GetFSindex(), traversal, out_frame.GetCSindex(),
              out_frame.IsLeftSide(), iframe);
-      assert((traversal == -1 && iframe == -1) || (traversal > -1 && iframe == traversal));
+      VECGEOM_ASSERT((traversal == -1 && iframe == -1) || (traversal > -1 && iframe == traversal));
     }
   }
 #endif

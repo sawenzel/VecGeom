@@ -6,7 +6,7 @@
 #ifdef NDEBUG
 #undef NDEBUG
 #endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 #include <iostream>
 
 // global constants defining the arrangement
@@ -55,8 +55,8 @@ TGeoVolume *MakeTopAssembly(int modulesperrow, double worldL)
       counter++;
     }
   }
-  assert(std::abs(cx + BoxL + Delta - worldL) < 1E-6);
-  assert(std::abs(cy + BoxL + Delta - worldL) < 1E-6);
+  VECGEOM_ASSERT(std::abs(cx + BoxL + Delta - worldL) < 1E-6);
+  VECGEOM_ASSERT(std::abs(cy + BoxL + Delta - worldL) < 1E-6);
 
   return ass;
 }

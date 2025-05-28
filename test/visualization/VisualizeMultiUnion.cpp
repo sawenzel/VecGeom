@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
       distance = multiunion.DistanceToIn(point, direction);
       if (distance < vecgeom::kInfLength) {
         point += distance * direction;
-        assert(multiunion.Inside(point) != vecgeom::EInside::kOutside);
+        VECGEOM_ASSERT(multiunion.Inside(point) != vecgeom::EInside::kOutside);
         pm.SetNextPoint(point[0], point[1], point[2]);
       }
       break;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
       distance = multiunion.DistanceToOut(point, direction);
       if (distance > 0 && distance < vecgeom::kInfLength) {
         point += distance * direction;
-        assert(!multiunion.Contains(point));
+        VECGEOM_ASSERT(!multiunion.Contains(point));
         pm.SetNextPoint(point[0], point[1], point[2]);
       }
       break;

@@ -181,7 +181,7 @@ int UnplacedTrd::ChooseSurface() const
   while (rand > S[choice])
     rand -= S[choice], choice++;
 
-  assert(choice < 12);
+  VECGEOM_ASSERT(choice < 12);
   return choice;
 }
 

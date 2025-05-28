@@ -77,7 +77,7 @@ VECCORE_ATT_HOST_DEVICE bool EvaluateInside(vecgeom::Vector3D<Real_t> const &plo
         reset_bit(stack, depth);
     }
   }
-  assert(depth == 0);
+  VECGEOM_ASSERT(depth == 0);
   return (stack & 1) > 0;
 }
 
@@ -121,7 +121,7 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
         operator=(other);
         return;
       }
-      assert(crt_op != 0);
+      VECGEOM_ASSERT(crt_op != 0);
 
       if ((crt_op > 0) ^ (safety > other.safety)) {
         // swap current safety with other one
@@ -189,7 +189,7 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
     } else if (item == lminus) {
       // decrease depth: check if cached safety is valid
       depth--;
-      assert(depth >= 0);
+      VECGEOM_ASSERT(depth >= 0);
       crt_safety.op = cached_safety[depth].op;
       crt_safety.SwapReduction(cached_safety[depth]);
     } else if (item == lnot) {
@@ -205,7 +205,7 @@ VECCORE_ATT_HOST_DEVICE Real_t EvaluateSafety(vecgeom::Vector3D<Real_t> const &p
       crt_safety.SwapReduction(new_safety);
     }
   }
-  assert(depth == 0);
+  VECGEOM_ASSERT(depth == 0);
   if (exiting) crt_safety.safety = -crt_safety.safety;
   // If needed, compute safety to the frame
   if (crt_safety.safety > 0. && crt_safety.safety <= safe_max) safetyFrame(crt_safety);

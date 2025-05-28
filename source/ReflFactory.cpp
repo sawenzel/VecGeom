@@ -53,7 +53,7 @@ bool ReflFactory::Place(Transformation3D const &pureTransform3D, Vector3 const &
   //
   //  reflection IS present in transform3D. Only (1,1,-1) currently supported
   //
-  // assert((scale - Vector3(1, 1, -1)).Mag() < 1.e-8);
+  // VECGEOM_ASSERT((scale - Vector3(1, 1, -1)).Mag() < 1.e-8);
 
   auto pv1 = ReflectLV(LV, scale)->Place(name_refl.c_str(), &pureTransform3D);
   pv1->SetCopyNo(copyNo);
@@ -142,7 +142,7 @@ vecgeom::LogicalVolume *ReflFactory::CreateReflectedLV(vecgeom::LogicalVolume *L
 
   // consistency check
   //
-  assert(fReflectedLVMap.find(LV) == fReflectedLVMap.end());
+  VECGEOM_ASSERT(fReflectedLVMap.find(LV) == fReflectedLVMap.end());
   vecgeom::UnplacedScaledShape *refSolid =
       new vecgeom::UnplacedScaledShape(LV->GetUnplacedVolume(), scale[0], scale[1], scale[2]);
 

@@ -120,7 +120,7 @@ public:
                                           Vector3D<Precision> const & /*localdir*/, VPlacedVolume const * /*blocked*/,
                                           Precision & /*step*/, VPlacedVolume const *& /*hitcandidate*/) const
   {
-    assert(false); // Not implemented --- notify of failure !!
+    VECGEOM_ASSERT(false); // Not implemented --- notify of failure !!
     return false;
   }
 
@@ -210,7 +210,7 @@ protected:
                                                                               Vector3D<T> const &localdir, T step_limit)
   {
     T step;
-    assert(pvol != nullptr && "currentvolume is null in navigation");
+    VECGEOM_VALIDATE(pvol != nullptr, << "currentvolume is null in navigation");
     step = pvol->DistanceToOut(localpoint, localdir, step_limit);
     vecCore::MaskedAssign(step, step < T(0.), T(0.));
     return step;
@@ -274,7 +274,7 @@ public:
     step = Impl::PrepareOutState(in_state, out_state, step, step_limit, hitcandidate, done);
     if (done) {
       if (out_state.Top() != nullptr) {
-        assert(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+        VECGEOM_ASSERT(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
       }
       return step;
     }
@@ -288,7 +288,7 @@ public:
       while (out_state.Top()->IsAssembly()) {
         out_state.Pop();
       }
-      assert(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+      VECGEOM_ASSERT(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
     }
     return step;
   }
@@ -321,7 +321,7 @@ public:
     step = Impl::PrepareOutState(in_state, out_state, step, step_limit, hitcandidate, done);
     if (done) {
       if (out_state.Top() != nullptr) {
-        assert(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+        VECGEOM_ASSERT(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
       }
       return step;
     }
@@ -433,7 +433,7 @@ protected:
     if (out_state.Top() == in_state.Top()) {
       GlobalLocator::RelocatePointFromPathForceDifferent(pointafterboundary, out_state);
 #ifdef CHECK_RELOCATION_ERRORS
-      assert(in_state.Distance(out_state) != 0 && " error relocating when leaving ");
+      VECGEOM_VALIDATE(in_state.Distance(out_state) != 0, << " error relocating when leaving ");
 #endif
     } else {
       // continue directly further down ( next volume should have been stored in out_state already )
@@ -442,7 +442,7 @@ protected:
       GlobalLocator::LocateGlobalPoint(nextvol, nextvol->GetTransformation()->Transform(pointafterboundary), out_state,
                                        false);
 #ifdef CHECK_RELOCATION_ERRORS
-      assert(in_state.Distance(out_state) != 0 && " error relocating when entering ");
+      VECGEOM_VALIDATE(in_state.Distance(out_state) != 0, << " error relocating when entering ");
 #endif
       return;
     }

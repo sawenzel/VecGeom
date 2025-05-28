@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
   timer.Start();
   if (on_gpu) {
 #ifdef VECGEOM_ENABLE_CUDA
-    CudaAssertError(CudaDeviceSetStackLimit(8192));
+    VECGEOM_DEVICE_API_CALL(DeviceSetLimit(VECGEOM_DEVICE_API_SYMBOL(LimitStackSize), 8192));
     ierr = TestNavIndexGPU(GeoManager::Instance().GetWorld(), maxdepth);
 #else
     std::cout << "=== Cannot run the test on GPU since VecGeom CUDA support not compiled.\n";

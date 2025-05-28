@@ -107,9 +107,9 @@ public:
 
     // 2D transformation should only be created for 2D rotations, so rzx, rxz, rzy, ryz should be 0 and ryy should be
     // +-1
-    assert(Abs(rotation[2]) < vecgeom::kTolerance && Abs(rotation[5]) < vecgeom::kTolerance &&
-           Abs(rotation[6]) < vecgeom::kTolerance && Abs(rotation[7]) < vecgeom::kTolerance &&
-           Abs(rotation[8]) - 1. < vecgeom::kTolerance);
+    VECGEOM_ASSERT(Abs(rotation[2]) < vecgeom::kTolerance && Abs(rotation[5]) < vecgeom::kTolerance &&
+                   Abs(rotation[6]) < vecgeom::kTolerance && Abs(rotation[7]) < vecgeom::kTolerance &&
+                   Abs(rotation[8]) - 1. < vecgeom::kTolerance);
 
     rxx_ = static_cast<Real_s>(rotation[0]);
     ryx_ = static_cast<Real_s>(rotation[1]);

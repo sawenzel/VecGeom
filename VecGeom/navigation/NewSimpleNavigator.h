@@ -118,7 +118,7 @@ public:
       }
 #endif
     }
-    // assert(false); --- Was not implemented before
+    // VECGEOM_ASSERT(false); --- Was not implemented before
     return false;
   }
 

@@ -937,7 +937,7 @@ void NavigationSpecializer::AnalysePaths(std::list<NavigationState *> const &pat
         path->TopMatrix(m);
         size_t index = PathToIndex(path);
         if (index >= paths.size()) std::cerr << "SCHEISSE " << index << " \n";
-        assert(index < paths.size());
+        VECGEOM_ASSERT(index < paths.size());
         values[index] = m.Translation(i);
         fGlobalTransData.SetTransCoef(i, index, m.Translation(i));
       }
@@ -1466,7 +1466,7 @@ void NavigationSpecializer::DumpStaticTreatDistanceToMotherFunction(std::ostream
                "Vector3D<T> const "
                "&localpoint, Vector3D<T> const &localdir, T step_limit) {\n";
   outstream << "T step;\n";
-  outstream << "assert(pvol != nullptr && \"currentvolume is null in navigation\");\n";
+  outstream << "VECGEOM_ASSERT(pvol != nullptr && \"currentvolume is null in navigation\");\n";
   outstream << "step = ((" << shapetype << "*)pvol)->" << shapetype
             << "::DistanceToOut(localpoint, localdir, step_limit);\n";
   outstream << "vecCore::MaskedAssign(step, step < T(0.0), InfinityLength<T>());\n";
@@ -1530,9 +1530,9 @@ void NavigationSpecializer::DumpTransformationAsserts(std::ostream &outstream)
   outstream << "Transformation3D checkmatrix;\n";
   outstream << "state.TopMatrix(checkmatrix);\n";
   outstream << "Vector3D<Precision> crosschecklocalpoint = checkmatrix.Transform(globalpoint);\n";
-  outstream << "assert( std::abs(crosschecklocalpoint[0] - local[0]) < 1E-9 && \"error in transformation\");\n";
-  outstream << "assert( std::abs(crosschecklocalpoint[1] - local[1]) < 1E-9 && \"error in transformation\");\n";
-  outstream << "assert( std::abs(crosschecklocalpoint[2] - local[2]) < 1E-9 && \"error in transformation\");\n";
+  outstream << "VECGEOM_ASSERT( std::abs(crosschecklocalpoint[0] - local[0]) < 1E-9 && \"error in transformation\");\n";
+  outstream << "VECGEOM_ASSERT( std::abs(crosschecklocalpoint[1] - local[1]) < 1E-9 && \"error in transformation\");\n";
+  outstream << "VECGEOM_ASSERT( std::abs(crosschecklocalpoint[2] - local[2]) < 1E-9 && \"error in transformation\");\n";
   outstream << "#endif\n";
   outstream << "\n";
 }
@@ -1759,7 +1759,7 @@ void NavigationSpecializer::DumpRelocateMethod(std::ostream &outstream) const
       outstream << "GlobalLocator::LocateGlobalPoint(nextvol, "
                    "nextvol->GetTransformation()->Transform(pointafterboundary), out_state, false);\n";
 
-      outstream << "assert(in_state.Distance(out_state) != 0 && \" error relocating when entering \")\n";
+      outstream << "VECGEOM_ASSERT(in_state.Distance(out_state) != 0 && \" error relocating when entering \")\n";
       outstream << "}\n";
     }
   }
@@ -1784,7 +1784,7 @@ void NavigationSpecializer::DumpLocalHitDetectionFunction(std::ostream &outstrea
                  "in_state, out_state);\n";
   } else {
     // put specialized local hit detection ( probably only useful for small number of daughters )
-    outstream << " assert(false && \"reached unimplemented point\");\n";
+    outstream << " VECGEOM_ASSERT(false && \"reached unimplemented point\");\n";
     outstream << " return -1;\n";
   }
 

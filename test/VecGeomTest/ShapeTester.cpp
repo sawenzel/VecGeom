@@ -2162,7 +2162,7 @@ int ShapeTester<ImplT>::Run(ImplT const *testVolume)
   if (fDebug) {
     const vecgeom::VPlacedVolume *vgvol = dynamic_cast<vecgeom::VPlacedVolume const *>(testVolume);
     if (!vgvol) {
-      assert(false);
+      VECGEOM_ASSERT(false);
       std::cout << "\n\n==========================================================\n";
       std::cout << "***** ShapeTester WARNING: debug mode does not work with a non-VecGeom shape!!\n";
       std::cout << "      Try to use shapeDebug binary to visualize this shape.\n";

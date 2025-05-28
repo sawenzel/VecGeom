@@ -85,14 +85,14 @@ public:
 #ifdef VECGEOM_ROOT
   virtual TGeoShape const *ConvertToRoot() const override
   {
-    assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+    VECGEOM_VALIDATE(0, << "Attempted to perform conversion on unsupported ROOT volume.");
     return nullptr;
   }
 #endif
 #ifdef VECGEOM_GEANT4
   virtual G4VSolid const *ConvertToGeant4() const override
   {
-    assert(0 && "Attempted to perform conversion on unsupported ROOT volume.");
+    VECGEOM_VALIDATE(0, << "Attempted to perform conversion on unsupported ROOT volume.");
     return nullptr;
   }
 #endif

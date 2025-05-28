@@ -188,7 +188,7 @@ public:
    */
   int getMaxDepth() const
   {
-    assert(fIsClosed == true);
+    VECGEOM_ASSERT(fIsClosed == true);
     return fMaxDepth;
   }
 

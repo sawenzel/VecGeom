@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
   std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
                                            -vecgeom::InfinityLength<Precision>()};
   OPTION_VECTOR(min_world, default_min_world);
-  assert(point.size() == 3 && direction.size() == 3);
-  assert(min_world.size() == 3 && default_min_world.size() == 3);
+  VECGEOM_ASSERT(point.size() == 3 && direction.size() == 3);
+  VECGEOM_ASSERT(min_world.size() == 3 && default_min_world.size() == 3);
 
   // transform to Vec3D for further handling
   Vec3D point_3D     = {point[0], point[1], point[2]};
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
   bool use_provided_point = (direction_3D.Mag2() != 0) || (point_3D.Mag2() < vecgeom::InfinityLength<Precision>());
   if (use_provided_point) {
     // check if direction is normalized
-    assert(direction_3D.IsNormalized());
+    VECGEOM_ASSERT(direction_3D.IsNormalized());
     nrays = 1;
     if (debug)
       std::cout << "Tracking single ray with point " << point_3D << " and direction " << direction_3D << std::endl;

@@ -245,7 +245,7 @@ public:
         if (selected) {
           scene_state = NavStatePath::MakeInstance(GeoManager::Instance().getMaxDepth());
           scene_state->Push(GeoManager::Instance().GetWorld());
-          assert(visitor->IsVisited(ivol));
+          VECGEOM_ASSERT(visitor->IsVisited(ivol));
           id    = 1; // index 0 not used
           level = 0;
         }

@@ -41,7 +41,7 @@ G4VSolid const *PlacedMultiUnion::ConvertToGeant4() const
   const UnplacedMultiUnion *unplaced = GetUnplacedVolume();
   for (size_t i = 0; i < unplaced->GetNumberOfSolids(); ++i) {
     G4VSolid *g4solid = (G4VSolid *)unplaced->GetNode(i)->ConvertToGeant4();
-    assert(g4solid && "Cannot convert component to Geant4 solid");
+    VECGEOM_VALIDATE(g4solid, << "Cannot convert component to Geant4 solid");
     auto trans = unplaced->GetNode(i)->GetTransformation();
     // Vector3D<double> point(1, 1, 1);
     // Vector3D<double> pnew = trans->Transform(point);

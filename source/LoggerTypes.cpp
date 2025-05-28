@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------//
 #include "VecGeom/management/LoggerTypes.h"
 
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 namespace vecgeom {
 
@@ -20,7 +20,7 @@ char const *to_cstring(LogLevel lev)
   static const char *const data[] = {
       "debug", "diagnostic", "status", "info", "warning", "error", "critical",
   };
-  assert((unsigned long)lev * sizeof(const char *) < sizeof(data));
+  VECGEOM_ASSERT((unsigned long)lev * sizeof(const char *) < sizeof(data));
   return data[static_cast<int>(lev)];
 }
 

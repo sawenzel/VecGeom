@@ -10,6 +10,7 @@
 #ifdef VECGEOM_ENABLE_CUDA
 #include "VecGeom/backend/cuda/Interface.h"
 #endif
+#include "VecGeom/base/Assert.h"
 #include "VecGeom/base/Array.h"
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/base/Vector.h"
@@ -45,8 +46,7 @@ VECCORE_ATT_DEVICE
 VNavigator *gSimpleNavigator = nullptr;
 
 template <>
-VECCORE_ATT_DEVICE
-VNavigator *NewSimpleNavigator<false>::Instance()
+VECCORE_ATT_DEVICE VNavigator *NewSimpleNavigator<false>::Instance()
 {
   if (gSimpleNavigator == nullptr) gSimpleNavigator = new NewSimpleNavigator();
   return gSimpleNavigator;
@@ -57,8 +57,9 @@ int LogicalVolume::gIdCount = 0;
 
 #ifndef VECCORE_CUDA
 LogicalVolume::LogicalVolume(char const *const label, VUnplacedVolume const *const unplaced_volume)
-    : fUnplacedVolume(unplaced_volume), fId(0), fLabel(nullptr), fLevelLocator(SimpleAssemblyLevelLocator::GetInstance()),
-      fSafetyEstimator(SimpleSafetyEstimator::Instance()), fNavigator(NewSimpleNavigator<>::Instance()), fDaughters()
+    : fUnplacedVolume(unplaced_volume), fId(0), fLabel(nullptr),
+      fLevelLocator(SimpleAssemblyLevelLocator::GetInstance()), fSafetyEstimator(SimpleSafetyEstimator::Instance()),
+      fNavigator(NewSimpleNavigator<>::Instance()), fDaughters()
 {
   fId = gIdCount++;
   GeoManager::Instance().RegisterLogicalVolume(this);
@@ -75,8 +76,7 @@ LogicalVolume::LogicalVolume(char const *const label, VUnplacedVolume const *con
 
 #else
 VECCORE_ATT_DEVICE
-LogicalVolume::LogicalVolume(VUnplacedVolume const *const unplaced_vol,
-                             unsigned int id, Vector<Daughter> *GetDaughter)
+LogicalVolume::LogicalVolume(VUnplacedVolume const *const unplaced_vol, unsigned int id, Vector<Daughter> *GetDaughter)
     // Id for logical volumes is not needed on the device for CUDA
     : fUnplacedVolume(unplaced_vol), fId(id), fLabel(nullptr), fDaughters(GetDaughter),
       fLevelLocator(new SimpleAssemblyLevelLocator()), fSafetyEstimator(SimpleSafetyEstimator::Instance()),
@@ -115,10 +115,7 @@ VPlacedVolume *LogicalVolume::Place(char const *const label) const
   return Place(label, &Transformation3D::kIdentity);
 }
 
-VPlacedVolume *LogicalVolume::Place() const
-{
-  return Place(fLabel->c_str());
-}
+VPlacedVolume *LogicalVolume::Place() const { return Place(fLabel->c_str()); }
 
 VPlacedVolume const *LogicalVolume::PlaceDaughter(char const *const label, LogicalVolume *const volume,
                                                   Transformation3D const *const transformation)
@@ -140,8 +137,9 @@ VPlacedVolume const *LogicalVolume::PlaceDaughter(LogicalVolume *const volume,
 void LogicalVolume::PlaceDaughter(VPlacedVolume *const placed)
 {
   int ichild = fDaughters->size();
-  assert(placed->GetChildId() < 0 &&
-         "===FFF=== LogicalVolume::PlaceDaughter: Not allowed to add the same placed volume twice - make a copy first");
+  VECGEOM_ASSERT(
+      placed->GetChildId() < 0 &&
+      "===FFF=== LogicalVolume::PlaceDaughter: Not allowed to add the same placed volume twice - make a copy first");
   placed->SetChildId(ichild);
   fDaughters->push_back(placed);
 
@@ -238,7 +236,7 @@ DevicePtr<cuda::LogicalVolume> LogicalVolume::CopyToGpu(DevicePtr<cuda::VUnplace
                                                         DevicePtr<cuda::LogicalVolume> const gpu_ptr) const
 {
   gpu_ptr.Construct(unplaced_vol, id, GetDaughter);
-  CudaAssertError();
+  VECGEOM_DEVICE_API_CALL(GetLastError());
   return gpu_ptr;
 }
 

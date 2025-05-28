@@ -33,7 +33,7 @@ public:
                                 bool top, Daughter exclude = nullptr)
   {
     if (top) {
-      assert(vol != nullptr);
+      VECGEOM_ASSERT(vol != nullptr);
       auto inside = vol->Inside(point);
       if (inside == kOutside) return nullptr;
       // Set the boundary state to the path
@@ -232,7 +232,7 @@ public:
         while (out_state.Top()->IsAssembly() || out_state.HasSamePathAsOther(in_state)) {
           out_state.Pop();
         }
-        assert(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+        VECGEOM_ASSERT(!out_state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
       }
     }
 
@@ -329,7 +329,7 @@ public:
       while (state.Top()->IsAssembly()) {
         state.Pop();
       }
-      assert(!state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
+      VECGEOM_ASSERT(!state.Top()->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly());
     }
   }
 };

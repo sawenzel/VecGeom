@@ -5,6 +5,7 @@
 #include "VecGeom/base/SOA3D.h"
 
 #include <algorithm>
+#include "VecGeom/base/Assert.h"
 
 #ifdef VECGEOM_DISTANCE_DEBUG
 #include "VecGeom/volumes/utilities/ResultComparator.h"
@@ -114,7 +115,7 @@ public:
                                  const Precision stepMax = kInfLength) const override
   {
 #ifndef VECCORE_CUDA
-    assert(direction.IsNormalized() && " direction not normalized in call to DistanceToIn ");
+    VECGEOM_VALIDATE(direction.IsNormalized(), << " direction not normalized in call to DistanceToIn ");
 #endif
     Precision output(kInfLength);
     Transformation3D const *tr = this->GetTransformation();
@@ -131,12 +132,12 @@ public:
                                         const Precision stepMax = kInfLength) const override
   {
 #ifndef VECCORE_CUDA
-    assert(direction.IsNormalized() && " direction not normalized in call to PlacedDistanceToOut ");
+    VECGEOM_VALIDATE(direction.IsNormalized(), << " direction not normalized in call to PlacedDistanceToOut ");
 #endif
     Transformation3D const *tr = this->GetTransformation();
     Precision output(-1.);
     Specialization::template DistanceToOut<>(*this->GetUnplacedStruct(), tr->Transform(point),
-                                           tr->TransformDirection(direction), stepMax, output);
+                                             tr->TransformDirection(direction), stepMax, output);
 
 #ifdef VECGEOM_DISTANCE_DEBUG
     DistanceComparator::CompareDistanceToOut(this, output, this->GetTransformation()->Transform(point),
@@ -164,7 +165,7 @@ public:
   {
     DevicePtr<CudaType_t<ThisClass_t>> gpu_ptr(in_gpu_ptr);
     gpu_ptr.Construct(logical_volume, transform, this->id(), this->GetCopyNo(), this->GetChildId());
-    CudaAssertError();
+    VECGEOM_DEVICE_API_CALL(GetLastError());
     // Need to go via the void* because the regular c++ compilation
     // does not actually see the declaration for the cuda version
     // (and thus can not determine the inheritance).
@@ -193,9 +194,9 @@ public:
                      std::vector<DevicePtr<cuda::Transformation3D>> const &transforms,
                      std::vector<DevicePtr<cuda::VPlacedVolume>> const &in_gpu_ptrs) const override
   {
-    assert(host_volumes.size() == logical_volumes.size());
-    assert(host_volumes.size() == transforms.size());
-    assert(host_volumes.size() == in_gpu_ptrs.size());
+    VECGEOM_ASSERT(host_volumes.size() == logical_volumes.size());
+    VECGEOM_ASSERT(host_volumes.size() == transforms.size());
+    VECGEOM_ASSERT(host_volumes.size() == in_gpu_ptrs.size());
 
     std::vector<decltype(std::declval<ThisClass_t>().id())> ids;
     std::vector<decltype(std::declval<ThisClass_t>().GetCopyNo())> copyNos;
