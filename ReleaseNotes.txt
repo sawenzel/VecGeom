@@ -1,3 +1,124 @@
+Version 2.0.0-rc4        27th May 2025
+======================================
+Surface model:
+- The 'frames' surface model (framework for accelerated modeling of
+  embedded surfaces) was introduced. It provides a GPU-friendly
+  implementation of Geant-like hierarchical 3D solid modeling based
+  on bounded half-spaces. The model can be constructed transparently
+  on the host based on an in-memory VecGeom solid model and deployed
+  to the GPU via simple API.
+- 'frames' provides header-only stateless navigation API on the GPU,
+  similar to the interfaces used for navigating within the VecGeom
+  solid model.
+- The model supports a set of primitive half-space types, such as planar,
+  cylindrical or conical, and a set of frame types to create bounded
+  regions   on the half-space surfaces, such as window or ring. Introduces
+  FramedSurface objects that store the intersection of solids with
+  surfaces, enabling efficient navigation and reducing computational
+  complexity.
+- GPU-Friendly Design: Eliminates recursive calls and virtual functions,
+  reducing register and stack usage, and enhancing occupancy on GPUs.
+  This design addresses divergence issues inherent in the solid model.
+- Mixed-Precision Support: Supports both double and mixed-precision
+  computations, allowing for flexibility in balancing accuracy and
+  performance based on simulation requirements.
+- Utilizes BVH acceleration structures to expedite collision detection
+  and ray tracing, achieving significant speedups.
+- Demonstrates controlled memory footprints and conversion times across
+  various detector geometries, ensuring scalability for complex
+  simulations.
+- Replaced the GPU solids hierarchy with an indexed LogicId/PlacedId
+  schema for better performance and memory usage (surface model w/o solids)
+- Ongoing Development: While already merged into the master branch, the
+  surface model continues to evolve, with efforts focused on expanding
+  support for additional solid types and further optimizing performance.
+
+Portability macros
+- New GPU portability macros added, used for setting up GPU and exception
+  handling.
+- VECGEOM_DEVICE_API_CALL portability macro (CUDA/HIP, only CUDA in use 
+  for now) for calling and checking API functions.
+- VECGEOM_DEVICE_API_SYMBOL to have portable symbols
+- VECGEOM_ASSERT 
+- VECGEOM_VALIDATE for always-on runtime error checking and throwing
+  std::runtime_error if it fails
+
+Shapes
+- Contains: improved Contains() functions for all shapes to correctly
+  handle points on surfaces and eliminate boundary artifacts.
+- Generic Polycone: fixed construction logic to ensure valid geometry in
+  all configurations.
+- Polygon & Box: added a small tolerance in edge and face tests to prevent
+  crashes during geometry relocation.
+- Sphere: corrected the DistanceToIn() implementation for robust ray
+  entry calculations.
+- Polyhedron: introduced a well‐behaved Z‐plane index finder and repaired
+  several issues in PolyhedronStruct.
+- Tube: fixed a typo in the Y‐component of the normal vector for
+  phi‐plane intersections.
+- Boolean Solids: properly compensate internal pushes in subtraction
+  operations to restore correct shape boundaries.
+- Buffer-based allocation for all containers (Vector, SOA3D, AOS3D) and
+  for several data structures (Quadrilaterals, Planes). Allocation-free
+  creation of polycones and polyhedra on GPU based on this feature.
+- UnplacedVolume::Normal became a usable interface
+
+Navigation
+- Enhanced global navigation robustness, including stability fixes for
+  grazing rays for most solids. Added ShapeTester test for grazing rays.
+- Fixed NavStatePath::GetLastExited to guard against out-of-range indices.
+- Resolved invalid reference checks in TestBVHNavigator to prevent
+  intermittent crashes.
+
+Configuration
+- Refactored CMake options and definitions; fixed the version‐string logic
+  and added automatic versioning based on the current Git branch.
+- Ensured the final VecGeom library is retained when using “as‐needed”
+  linker flags.
+- Updated CI Docker image location and expanded tested configurations for
+  consistency across platforms.
+- Corrected build failures under CUDA 11.5 with VecCore 0.8.2; addressed
+  -Wmissing-template-arg-list-after-template-kw in Clang 19, linker/Clang 16
+  warnings, and various GCC 14 diagnostics.
+
+CUDA & GPU
+- Integrated CudaRdcUtils v12: synchronized with upstream
+  CudaRdcUtils.cmake, migrated VecGeom into a VecGeomCUDA project, and
+  forward-ported RDC settings and libraries.
+- Propagated CUDA include paths to the host compiler for seamless builds.
+- Enabled single-precision support in the solid BVH; updated CudaManager
+  to accept a null “world” pointer on the device.
+- Switched device code to use VecCore math routines instead of std for
+  consistency and performance
+
+Logging & Diagnostics
+- Adopted the unified logger for important messages in core modules and
+  VGDML; updated documentation accordingly.
+- Reduced spurious “calling host from host/device” warnings and refined
+  middleware log levels for cleaner diagnostics.
+
+Memory Safety
+- Prevented reads of destructed memory (closed VECGEOM-624) by strengthening
+  object lifetimes.
+- Fixed several uninitialized constructors to eliminate undefined behavior.
+
+Device API
+- BVH Manager: added device‐pointer access APIs and introduced the
+  VECGEOM_BVHMANAGER_DEVICE feature macro for downstream consumers.
+- Defined a set of device‐portable API calls and assertion macros to ensure
+  consistent behavior across CPU and GPU builds.
+
+Persistency & VGDML
+- VGDML conversion now uses a map lookup instead of linear search for
+  registered volumes, greatly improving conversion performance.
+
+Miscellaneous
+- Removed the deprecated implementation namespace from GeoManager to
+streamline the public API.
+- Adopted a singleton pattern for XercesC initialization, including a proper
+  destructor for clean shutdown.
+- Fixed compilation warnings on macOS and resolved errors under GCC 15.
+
 Version 2.0.0-rc3         3rd Oct 2024
 ======================================
 Shapes:
