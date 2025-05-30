@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <cstdint>
 
 double getDoubleOpt(char **begin, char **end, const std::string &option, double defaultval)
 {
@@ -28,11 +27,11 @@ int getIntOpt(char **begin, char **end, const std::string &option, int defaultva
   return defaultval;
 }
 
-uint64_t getULongOpt(char **begin, char **end, const std::string &option, uint64_t defaultval)
+unsigned long getULongOpt(char **begin, char **end, const std::string &option, unsigned long defaultval)
 {
   char **itr = std::find(begin, end, option);
   if (itr != end && ++itr != end) {
-    uint64_t ret;
+    unsigned long ret;
     sscanf(*itr, "%ld", &ret);
     return ret;
   }
