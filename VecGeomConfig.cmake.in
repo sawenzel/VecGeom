@@ -148,16 +148,18 @@ include("${CMAKE_CURRENT_LIST_DIR}/VecGeomTargets.cmake")
 # Setup VECGEOM_LIBRARIES so that it should "work" for consumers
 # _not_ implementing their own kernels/device code.
 set(VECGEOM_LIBRARIES VecGeom::vecgeom)
-if(TARGET VecGeom::vecgeomcuda)
-  list(APPEND VECGEOM_LIBRARIES VecGeom::vecgeomcuda)
-  set(VECGEOM_CUDA_STATIC_LIBRARY VecGeom::vecgeomcuda_static)
-else()
-  # For backward compatibility
-  add_library(VecGeom::vecgeomcuda ALIAS VecGeom::vecgeom)
-  if(TARGET VecGeom::vecgeom_static)
-    add_library(VecGeom::vecgeomcuda_static ALIAS VecGeom::vecgeom_static)
+if(VecGeom_CUDA_FOUND)
+  if(TARGET VecGeom::vecgeomcuda)
+    list(APPEND VECGEOM_LIBRARIES VecGeom::vecgeomcuda)
+    set(VECGEOM_CUDA_STATIC_LIBRARY VecGeom::vecgeomcuda_static)
   else()
-    add_library(VecGeom::vecgeomcuda_static ALIAS VecGeom::vecgeom)
+    # For backward compatibility
+    add_library(VecGeom::vecgeomcuda ALIAS VecGeom::vecgeom)
+    if(TARGET VecGeom::vecgeom_static)
+      add_library(VecGeom::vecgeomcuda_static ALIAS VecGeom::vecgeom_static)
+    else()
+      add_library(VecGeom::vecgeomcuda_static ALIAS VecGeom::vecgeom)
+    endif()
   endif()
 endif()
 
