@@ -224,7 +224,11 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
   }
 
   ReducedPolycone p(rzVect);
-  p.GetPolyconeParameters(rMinVect, rMaxVect, zVect);
+  bool check = p.GetPolyconeParameters(rMinVect, rMaxVect, zVect);
+  if (!check) {
+    VECGEOM_LOG(critical) << "RZ polycone does not pass contour check";
+    return;
+  }
   fPolycone->fNz  = zVect.size();
   Precision *rmin = new Precision[rMinVect.size()];
   Precision *rmax = new Precision[rMaxVect.size()];
