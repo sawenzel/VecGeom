@@ -13,10 +13,7 @@
 namespace vecgeom {
 
 VECCORE_ATT_HOST_DEVICE
-ReducedPolycone::ReducedPolycone(Vector<Vector2D<Precision>> rzVect)
-{
-  SetRZ(rzVect);
-}
+ReducedPolycone::ReducedPolycone(Vector<Vector2D<Precision>> const &rzVect) { SetRZ(rzVect); }
 
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::SetRMax()
@@ -29,12 +26,11 @@ void ReducedPolycone::SetRMax()
 }
 
 VECCORE_ATT_HOST_DEVICE
-void ReducedPolycone::SetRZ(Vector<Vector2D<Precision>> rzVect)
+void ReducedPolycone::SetRZ(Vector<Vector2D<Precision>> const &rzVect)
 {
   fRZVect.clear();
-  for (unsigned int i = 0; i < rzVect.size(); i++) {
+  for (unsigned int i = 0; i < rzVect.size(); i++)
     fRZVect.push_back(rzVect[i]);
-  }
   SetRMax();
 }
 
@@ -74,14 +70,13 @@ void ReducedPolycone::ConvertToUniqueVector(Vector<Precision> &vect)
 }
 
 VECCORE_ATT_HOST_DEVICE
-Vector<Precision> ReducedPolycone::GetUniqueZVector()
+void ReducedPolycone::GetUniqueZVector(Vector<Precision> &z)
 {
-  Vector<Precision> z;
+  z.clear();
   for (unsigned int i = 0; i < fRZVect.size(); i++) {
     z.push_back(fRZVect[i].y());
   }
   ConvertToUniqueVector(z);
-  return z;
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -89,18 +84,18 @@ bool ReducedPolycone::GetLineIntersection(Precision p0_x, Precision p0_y, Precis
                                           Precision p2_x, Precision p2_y, Precision p3_x, Precision p3_y,
                                           Precision *i_x, Precision *i_y)
 {
-
+  using vecCore::math::Abs;
   Precision s1_x, s1_y, s2_x, s2_y;
   s1_x = p1_x - p0_x;
   s1_y = p1_y - p0_y;
   s2_x = p3_x - p2_x;
   s2_y = p3_y - p2_y;
 
-  if (s1_y == 0. && s2_y == 0.) return false;
+  if (Abs(s1_y) < kTolerance && Abs(s2_y) < kTolerance) return false;
 
   Precision s, t;
   Precision deno = (-s2_x * s1_y + s1_x * s2_y);
-  if (deno == 0.) return false;
+  if (Abs(deno) < kTolerance) return false;
   s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / deno;
   t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / (-s2_x * s1_y + s1_x * s2_y);
 
@@ -119,27 +114,23 @@ bool ReducedPolycone::GetLineIntersection(Precision p0_x, Precision p0_y, Precis
   return false; // No collision
 }
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::GetLineIntersection(Line2D l1, Line2D l2)
+bool ReducedPolycone::GetLineIntersection(Line2D const &l1, Line2D const &l2)
 {
   Vector2D<Precision> poi(0., 0.);
   return GetLineIntersection(l1.p1.x(), l1.p1.y(), l1.p2.x(), l1.p2.y(), l2.p1.x(), l2.p1.y(), l2.p2.x(), l2.p2.y(),
                              &poi.x(), &poi.y());
 }
 VECCORE_ATT_HOST_DEVICE
-Vector<Line2D> ReducedPolycone::GetLineVector()
+void ReducedPolycone::GetLineVector(Vector<Line2D> &lineVect)
 {
-  Vector<Line2D> lineVect;
-  for (unsigned int i = 0; i < fRZVect.size(); i++) {
-    if (i == (fRZVect.size() - 1))
-      lineVect.push_back(Line2D(fRZVect[i], fRZVect[0]));
-    else
-      lineVect.push_back(Line2D(fRZVect[i], fRZVect[i + 1]));
-  }
-  return lineVect;
+  lineVect.clear();
+  const auto size = fRZVect.size();
+  for (unsigned int i = 0; i < size; i++)
+    lineVect.push_back(Line2D(fRZVect[i], fRZVect[(i + 1) % size]));
 }
 
 VECCORE_ATT_HOST_DEVICE
-void ReducedPolycone::CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poiVect, Vector<Precision> z)
+void ReducedPolycone::CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poiVect, Vector<Precision> const &z)
 {
 
   for (unsigned int i = 0; i < fRZVect.size(); i++) {
@@ -160,21 +151,22 @@ void ReducedPolycone::CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poi
   }
 }
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::Contour(Vector<Precision> z)
+bool ReducedPolycone::Contour(Vector<Precision> const &z)
 {
   bool contour = ContourCheck(z);
   if (!contour) {
 #ifndef VECCORE_CUDA
     std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
               << "@@@@ Polycone CAN'T handle contours of specified type @@@@ \n"
-              << "@@@@        Kindly use GenericPolycone                @@@@\n"
+              << "@@@@        Use GenericPolycone instead               @@@@\n"
               << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
 #endif
     return contour;
   }
 
   // Getting vector of all the line
-  Vector<Line2D> lineVect = GetLineVector();
+  Vector<Line2D> lineVect(fRZVect.size());
+  GetLineVector(lineVect);
 
   for (int unsigned i = 2; i < lineVect.size(); i++) {
     for (unsigned int j = 0; j <= (i - 2); j++) {
@@ -195,11 +187,12 @@ bool ReducedPolycone::Contour(Vector<Precision> z)
 }
 
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::ContourCheck(Vector<Precision> z)
+bool ReducedPolycone::ContourCheck(Vector<Precision> const &z)
 {
 
   // Getting vector of all the line
-  Vector<Line2D> lineVect = GetLineVector();
+  Vector<Line2D> lineVect(fRZVect.size());
+  GetLineVector(lineVect);
 
   // Creating vector of checkerLines
   Vector<Line2D> checkerLineVect;
@@ -223,18 +216,13 @@ bool ReducedPolycone::ContourCheck(Vector<Precision> z)
       }
     }
     check &= (poiVect.size() == 2);
-    if (!check) {
-#ifndef VECCORE_CUDA
-      //    std::cerr << "Not proper contour detected by checkerLine index : " << i << std::endl;
-#endif
-      break;
-    }
+    if (!check) break;
   }
   return check;
 }
 
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::PointExist(Vector2D<Precision> pt)
+bool ReducedPolycone::PointExist(Vector2D<Precision> const &pt)
 {
   bool exist = false;
   for (unsigned int i = 0; i < fRZVect.size(); i++) {
@@ -247,14 +235,16 @@ bool ReducedPolycone::PointExist(Vector2D<Precision> pt)
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::CreateNewContour()
 {
+  // Sort all z coordinates and remove duplicates
   Vector<Precision> z;
   for (unsigned int i = 0; i < fRZVect.size(); i++) {
     z.push_back(fRZVect[i].y());
   }
   ConvertToUniqueVector(z);
+  Vector<Line2D> lineVect(fRZVect.size());
   int numOfIterationsForContourModification = z.size();
   for (int i = 0; i < numOfIterationsForContourModification; i++) {
-    Vector<Line2D> lineVect = GetLineVector();
+    GetLineVector(lineVect);
     Vector<Vector2D<Precision>> modifiedRZ;
     Vector<Vector2D<Precision>> poiVect;
     for (unsigned int j = 0; j < lineVect.size(); j++) {
@@ -283,19 +273,19 @@ void ReducedPolycone::CreateNewContour()
 }
 
 VECCORE_ATT_HOST_DEVICE
-Vector<Vector<Precision>> ReducedPolycone::GetRandZVectorAtDiffZ(Vector<Vector2D<Precision>> poiVect,
-                                                                 Vector<Precision> &dz)
+void ReducedPolycone::GetRandZVectorAtDiffZ(Vector<Vector2D<Precision>> const &poiVect, Vector<Precision> &dz,
+                                            Vector<Vector<Precision>> &supVect)
 {
 
   Vector<Precision> zVect;
   Vector<Precision> rVect;
+  supVect.clear();
   for (unsigned int i = 0; i < poiVect.size(); i++) {
     rVect.push_back(poiVect[i].x());
     zVect.push_back(poiVect[i].y());
   }
   ConvertToUniqueVector(zVect);
 
-  Vector<Vector<Precision>> supVect;
   for (unsigned int i = 0; i < zVect.size(); i++) {
     Vector<Precision> rVect;
     for (unsigned int j = 0; j < poiVect.size(); j++) {
@@ -304,23 +294,25 @@ Vector<Vector<Precision>> ReducedPolycone::GetRandZVectorAtDiffZ(Vector<Vector2D
     supVect.push_back(rVect);
     dz.push_back(zVect[i]);
   }
-  return supVect;
 }
 
 VECCORE_ATT_HOST_DEVICE
-void ReducedPolycone::ProcessContour(Vector<Precision> z)
+void ReducedPolycone::ProcessContour(Vector<Precision> const &z)
 {
 
   Vector<Precision> zV;
   Vector<Vector2D<Precision>> poiVect;
   CalcPoIVectorFor2DPolygon(poiVect, z);
-  Vector<Vector<Precision>> supVect = GetRandZVectorAtDiffZ(poiVect, zV);
+  Vector<Vector<Precision>> supVect;
+  GetRandZVectorAtDiffZ(poiVect, zV, supVect);
   // Make Unique R vector at different Z
   for (unsigned int i = 0; i < supVect.size(); i++)
     ConvertToUniqueVector(supVect[i]);
 
   VECGEOM_VALIDATE(supVect.size() == z.size(), << "Inconsistent vector sizes");
-  Vector<Line2D> lineVect = GetLineVector();
+
+  Vector<Line2D> lineVect(fRZVect.size());
+  GetLineVector(lineVect);
   for (unsigned int i = 0; i < z.size() - 1; i++) {
     Vector<Line2D> sectionLine;
     for (unsigned int j = 0; j < supVect[i].size(); j++) {
@@ -350,7 +342,7 @@ void ReducedPolycone::ProcessContour(Vector<Precision> z)
 }
 
 VECCORE_ATT_HOST_DEVICE
-Section ReducedPolycone::CreateSectionFromTwoLines(Line2D l1, Line2D l2)
+Section ReducedPolycone::CreateSectionFromTwoLines(Line2D const &l1, Line2D const &l2)
 {
   Precision rmin1 = 0., rmin2 = 0., rmax1 = 0., rmax2 = 0., z1 = 0., z2 = 0.;
 
@@ -391,8 +383,9 @@ VECCORE_ATT_HOST_DEVICE
 bool ReducedPolycone::Check()
 {
   CreateNewContour();
-  Vector<Precision> zVect = GetUniqueZVector();
-  bool contour            = Contour(zVect);
+  Vector<Precision> zVect;
+  GetUniqueZVector(zVect);
+  bool contour = Contour(zVect);
   if (contour) {
     ProcessContour(zVect);
   }
@@ -420,21 +413,13 @@ bool ReducedPolycone::GetPolyconeParameters(Vector<Precision> &rmin, Vector<Prec
 // New Functions explicitly for GenericPolycone
 
 VECCORE_ATT_HOST_DEVICE
-bool ReducedPolycone::ContourGeneric(Vector<Precision> z)
+bool ReducedPolycone::ContourGeneric(Vector<Precision> const &z)
 {
   bool contour = true;
 
   // Getting vector of all the line
-  Vector<Line2D> lineVect = GetLineVector();
-
-#if (0)
-  {
-    // Printing Just for debugging
-    for (unsigned int i = 0; i < lineVect.size(); i++) {
-      lineVect[i].Print();
-    }
-  }
-#endif
+  Vector<Line2D> lineVect(fRZVect.size());
+  GetLineVector(lineVect);
 
   for (int unsigned i = 2; i < lineVect.size(); i++) {
     for (unsigned int j = 0; j <= (i - 2); j++) {
@@ -455,7 +440,7 @@ bool ReducedPolycone::ContourGeneric(Vector<Precision> z)
 }
 
 VECCORE_ATT_HOST_DEVICE
-void ReducedPolycone::ProcessGenericContour(Vector<Precision> z)
+void ReducedPolycone::ProcessGenericContour(Vector<Precision> const &z)
 {
   unsigned int numOfSections = z.size() - 1;
   for (unsigned int i = 0; i < numOfSections; i++) {
@@ -476,16 +461,17 @@ VECCORE_ATT_HOST_DEVICE
 bool ReducedPolycone::CheckGeneric()
 {
   CreateNewContour();
-  Vector<Precision> zVect = GetUniqueZVector();
-  bool contour            = ContourGeneric(zVect);
+  Vector<Precision> zVect;
+  GetUniqueZVector(zVect);
+  bool contour = ContourGeneric(zVect);
   if (contour) {
     ProcessGenericContour(zVect);
   } else {
 #ifndef VECCORE_CUDA
-    std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              << "@@@@@@         Not a VALID Contour....             @@@@@@@ \n"
-              << "@@@@@@     Kindly check Contour Parameters         @@@@@@@\n"
-              << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
+    std::cerr << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+              << "@@@@@@         Not a VALID Contour....    @@@@@@@ \n"
+              << "@@@@@@     Check Contour Parameters       @@@@@@@\n"
+              << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n";
     exit(1);
 #endif
   }
@@ -495,10 +481,11 @@ bool ReducedPolycone::CheckGeneric()
 VECCORE_ATT_HOST_DEVICE
 Vector<Line2D> ReducedPolycone::FindLinesInASection(unsigned int secIndex)
 {
-  Vector<Line2D> lineVect = GetLineVector();
-  Vector<Precision> zVect = GetUniqueZVector();
+  Vector<Line2D> lineVect(fRZVect.size());
+  GetLineVector(lineVect);
+  Vector<Precision> zVect;
+  GetUniqueZVector(zVect);
   Vector<Line2D> secLineVect;
-  // for(unsigned int i = 0 ; i <= secIndex) ; i++){
   for (unsigned int j = 0; j < lineVect.size(); j++) {
     Line2D line = lineVect[j];
     if ((line.p1.y() == zVect[secIndex] && line.p2.y() == zVect[secIndex + 1]) ||
@@ -506,20 +493,6 @@ Vector<Line2D> ReducedPolycone::FindLinesInASection(unsigned int secIndex)
       secLineVect.push_back(line);
     }
   }
-  //}
-  //============== Printing only for DEBUGGING, Must be removed later ===============
-#if (0)
-  {
-    std::cerr << "============ Printing lines in section : " << secIndex << " ===========" << std::endl;
-    for (unsigned int i = 0; i < secLineVect.size(); i++) {
-      secLineVect[i].Print();
-      double midVal = (zVect[secIndex] + zVect[secIndex + 1]) * 0.5;
-      std::cerr << "Distance of Line num : " << i << " : " << secLineVect[i].GetHorizontalDistance(midVal) << std::endl;
-    }
-    std::cerr << "=======================================================================" << std::endl;
-  }
-#endif
-  //=================================================================================
 
   return secLineVect;
 }
@@ -527,7 +500,8 @@ Vector<Line2D> ReducedPolycone::FindLinesInASection(unsigned int secIndex)
 VECCORE_ATT_HOST_DEVICE
 Vector<Line2D> ReducedPolycone::GetVectorOfSortedLinesByHorizontalDistance(unsigned int secIndex)
 {
-  Vector<Precision> zVect = GetUniqueZVector();
+  Vector<Precision> zVect;
+  GetUniqueZVector(zVect);
   Vector<IndexStruct> indexStructVect;
   Vector<Line2D> secLineVect = FindLinesInASection(secIndex);
   double midVal              = (zVect[secIndex] + zVect[secIndex + 1]) * 0.5;
@@ -549,67 +523,8 @@ Vector<Line2D> ReducedPolycone::GetVectorOfSortedLinesByHorizontalDistance(unsig
     finalSecLineVect.push_back(secLineVect[indexStructVect[i].index]);
   }
 
-  //=========Print only for DEBUGGING, Must be remove later========
-#if (0)
-  {
-    std::cerr << "============= Printing Sorted Lines ==============" << std::endl;
-    for (unsigned int i = 0; i < indexStructVect.size(); i++) {
-
-      secLineVect[indexStructVect[i].index].Print();
-    }
-    std::cerr << "==================================================" << std::endl;
-  }
-#endif
-  //===============================================================
-
   return finalSecLineVect;
 }
-#if (0)
-VECCORE_ATT_HOST_DEVICE
-void ReducedPolycone::GetPolyconeParameters(Vector<Vector<ConeParam>> &sectionsParamVector, Vector<Precision> &zS,
-                                            Vector3D<Precision> &aMin, Vector3D<Precision> &aMax)
-{
-  bool contour = CheckGeneric();
-  if (contour) {
-
-    // Simplest way to calculate extent, but need to be improved later on
-    zS                      = GetUniqueZVector();
-    Vector<Line2D> lineVect = GetLineVector();
-    Precision tempMax       = 0.;
-    for (unsigned int j = 0; j < lineVect.size(); j++) {
-      if (lineVect[j].p1.x() > tempMax) {
-        tempMax = lineVect[j].p1.x();
-      }
-    }
-    aMin.Set(-tempMax, -tempMax, zS[0]);
-    aMax.Set(tempMax, tempMax, zS[zS.size() - 1]);
-
-    for (unsigned int i = 0; i < fCoaxialConesSectionVect.size(); i++) {
-      Vector<ConeParam> coaxialCones;
-      // std::cerr << "===================== Section : " << i <<" ====================" << std::endl;
-      for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
-        Section sec = fCoaxialConesSectionVect[i][j];
-        coaxialCones.push_back(
-            ConeParam(sec.rMin1, sec.rMax1, sec.rMin2, sec.rMax2, (sec.z2 - sec.z1) * 0.5, 0., 2 * kPi));
-      }
-      sectionsParamVector.push_back(coaxialCones);
-    }
-
-    //=========Print only for DEBUGGING, Must be remove later========
-#if (0)
-    {
-      for (unsigned int i = 0; i < fCoaxialConesSectionVect.size(); i++) {
-        std::cerr << "===================== Section : " << i << " ====================" << std::endl;
-        for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
-          fCoaxialConesSectionVect[i][j].Print();
-        }
-      }
-    }
-#endif
-    //===============================================================
-  }
-}
-#endif
 
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::GetPolyconeParameters(Vector<Vector<Precision>> &vectOfRmin1Vect,
@@ -623,9 +538,10 @@ void ReducedPolycone::GetPolyconeParameters(Vector<Vector<Precision>> &vectOfRmi
   if (contour) {
 
     // Simplest way to calculate extent, but needs to be improved later on
-    zS                      = GetUniqueZVector();
-    Vector<Line2D> lineVect = GetLineVector();
-    Precision tempMax       = 0.;
+    GetUniqueZVector(zS);
+    Vector<Line2D> lineVect(fRZVect.size());
+    GetLineVector(lineVect);
+    Precision tempMax = 0.;
     for (unsigned int j = 0; j < lineVect.size(); j++) {
       if (lineVect[j].p1.x() > tempMax) {
         tempMax = lineVect[j].p1.x();
@@ -641,7 +557,6 @@ void ReducedPolycone::GetPolyconeParameters(Vector<Vector<Precision>> &vectOfRmi
       Vector<Precision> rmin2Vect;
       Vector<Precision> rmax2Vect;
 
-      // std::cerr << "===================== Section : " << i <<" ====================" << std::endl;
       for (unsigned int j = 0; j < fCoaxialConesSectionVect[i].size(); j++) {
         Section sec = fCoaxialConesSectionVect[i][j];
         rmin1Vect.push_back(sec.rMin1);

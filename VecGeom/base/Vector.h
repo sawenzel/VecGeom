@@ -144,7 +144,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   ~VectorBase()
   {
-    if (fAllocated) Internal::AllocTrait<Type>::Deallocate(fData);
+    if (fAllocated) {
+      Internal::AllocTrait<Type>::Deallocate(fData);
+      fAllocated = false;
+    }
   }
 
   VECCORE_ATT_HOST_DEVICE

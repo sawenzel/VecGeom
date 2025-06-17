@@ -120,41 +120,40 @@ class ReducedPolycone {
 
 public:
   VECCORE_ATT_HOST_DEVICE
-  ReducedPolycone(Vector<Vector2D<Precision>> rzVect);
+  ReducedPolycone(Vector<Vector2D<Precision>> const &rzVect);
   VECCORE_ATT_HOST_DEVICE
   ~ReducedPolycone();
   VECCORE_ATT_HOST_DEVICE
-  void SetRZ(Vector<Vector2D<Precision>>);
+  void SetRZ(Vector<Vector2D<Precision>> const &rzVect);
   VECCORE_ATT_HOST_DEVICE
   void SetRMax();
   VECCORE_ATT_HOST_DEVICE
   void ConvertToUniqueVector(Vector<Precision> &vect);
   VECCORE_ATT_HOST_DEVICE
-  Vector<Precision> GetUniqueZVector();
+  void GetUniqueZVector(Vector<Precision> &z);
   VECCORE_ATT_HOST_DEVICE
-  void PrintVector(Vector<Precision> vect);
+  void GetLineVector(Vector<Line2D> &lineVect);
   VECCORE_ATT_HOST_DEVICE
-  Vector<Line2D> GetLineVector();
+  void CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poiVect, Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  void CalcPoIVectorFor2DPolygon(Vector<Vector2D<Precision>> &poiVect, Vector<Precision> z);
+  bool ContourCheck(Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  bool ContourCheck(Vector<Precision> z);
+  bool Contour(Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  bool Contour(Vector<Precision> z);
+  bool ContourGeneric(Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  bool ContourGeneric(Vector<Precision> z);
-  VECCORE_ATT_HOST_DEVICE
-  bool PointExist(Vector2D<Precision> pt);
+  bool PointExist(Vector2D<Precision> const &pt);
   VECCORE_ATT_HOST_DEVICE
   void CreateNewContour();
   VECCORE_ATT_HOST_DEVICE
-  void ProcessContour(Vector<Precision> z);
+  void ProcessContour(Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  void ProcessGenericContour(Vector<Precision> z);
+  void ProcessGenericContour(Vector<Precision> const &z);
   VECCORE_ATT_HOST_DEVICE
-  Vector<Vector<Precision>> GetRandZVectorAtDiffZ(Vector<Vector2D<Precision>> poiVect, Vector<Precision> &dz);
+  void GetRandZVectorAtDiffZ(Vector<Vector2D<Precision>> const &poiVect, Vector<Precision> &dz,
+                             Vector<Vector<Precision>> &supVect);
   VECCORE_ATT_HOST_DEVICE
-  Section CreateSectionFromTwoLines(Line2D l1, Line2D l2);
+  Section CreateSectionFromTwoLines(Line2D const &l1, Line2D const &l2);
   VECCORE_ATT_HOST_DEVICE
   void Swap(Precision &a, Precision &b);
   VECCORE_ATT_HOST_DEVICE
@@ -169,10 +168,10 @@ public:
                            Precision p2_y, Precision p3_x, Precision p3_y, Precision *i_x, Precision *i_y);
 
   VECCORE_ATT_HOST_DEVICE
-  bool GetLineIntersection(Line2D l1, Line2D l2);
+  bool GetLineIntersection(Line2D const &l1, Line2D const &l2);
 
   VECCORE_ATT_HOST_DEVICE
-  bool GetLineIntersection(Line2D l1, Line2D l2, Vector2D<Precision> &poi)
+  bool GetLineIntersection(Line2D const &l1, Line2D const &l2, Vector2D<Precision> &poi)
   {
     // Vector2D<Precision>  poi(0.,0.);
     if (l1.p2.x() == l2.p1.x() && l1.p2.y() == l2.p1.y()) {
