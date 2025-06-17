@@ -193,7 +193,8 @@ public:
             // Only compensate with the approach distance if the distance is positive (i.e. not a wrong-side error)
             dist += (dist > 0.) * static_cast<Real_i>(approach);
             /* If distance to current child is smaller than current step, update step and hitcandidate */
-            if (dist < step && dist > -vecgeom::kToleranceDist<Real_i>) {
+            if (dist < step) {
+              dist               = vecCore::Max(dist, 0.);
               step               = dist;
               bstep              = static_cast<Real_t>(dist);
               hitcandidate_index = prim;

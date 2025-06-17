@@ -38,33 +38,11 @@ public:
     for (decltype(ndaughters) d = 0; d < ndaughters; ++d) {
       auto daughter = daughters->operator[](d);
       if (in_state && in_state->GetLastExited() == daughter) continue;
-//    previous distance becomes step estimate, distance to daughter returned in workspace
-// SW: this makes the navigation more robust and it appears that I have to
-// put this at the moment since not all shapes respond yet with a negative distance if
-// the point is actually inside the daughter
-#ifdef CHECKCONTAINS
-      bool contains = daughter->Contains(localpoint);
-      if (!contains) {
-#endif
-        Precision ddistance = daughter->DistanceToIn(localpoint, localdir, step);
-
-        // if distance is negative; we are inside that daughter and should relocate
-        // unless distance is minus infinity
-        const bool valid = (ddistance < step && !IsInf(ddistance) && ddistance > -kTolerance);
-        hitcandidate     = valid ? daughter : hitcandidate;
-        step             = valid ? ddistance : step;
-#ifdef CHECKCONTAINS
-      } else {
-        std::cerr << " INDA "
-                  << " contained in daughter " << daughter << " - inside = " << daughter->Inside(localpoint)
-                  << " , distToIn(p,v,s) = " << daughter->DistanceToIn(localpoint, localdir, step) << " \n";
-
-        std::cerr << " INDA ";
-        step         = -1.;
-        hitcandidate = daughter;
-        break;
-      }
-#endif
+      Precision ddistance = daughter->DistanceToIn(localpoint, localdir, step);
+      ddistance           = vecCore::math::Max(ddistance, 0.);
+      const bool valid    = ddistance < step;
+      hitcandidate        = valid ? daughter : hitcandidate;
+      step                = valid ? ddistance : step;
     }
     return false;
   }
@@ -91,34 +69,13 @@ public:
     auto ndaughters = daughters->size();
     for (decltype(ndaughters) d = 0; d < ndaughters; ++d) {
       auto daughter = daughters->operator[](d);
-//    previous distance becomes step estimate, distance to daughter returned in workspace
-// SW: this makes the navigation more robust and it appears that I have to
-// put this at the moment since not all shapes respond yet with a negative distance if
-// the point is actually inside the daughter
-#ifdef CHECKCONTAINS
-      bool contains = daughter->Contains(localpoint);
-      if (!contains) {
-#endif
-        if (daughter != excludedVol) {
-          Precision ddistance = daughter->DistanceToIn(localpoint, localdir, step);
-
-          // if distance is negative; we are inside that daughter and should relocate
-          // unless distance is minus infinity
-          const bool valid = (ddistance < step && !IsInf(ddistance));
-          hitcandidate     = valid ? daughter : hitcandidate;
-          step             = valid ? ddistance : step;
-        }
-#ifdef CHECKCONTAINS
-      } else {
-        std::cerr << " INDA: contained in daughter " << daughter << " - inside = " << daughter->Inside(localpoint)
-                  << " , distToIn(p,v,s) = " << daughter->DistanceToIn(localpoint, localdir, step) << " \n";
-        step         = -1.;
-        hitcandidate = daughter;
-        break;
+      if (daughter != excludedVol) {
+        Precision ddistance = daughter->DistanceToIn(localpoint, localdir, step);
+        const bool valid    = ddistance < step;
+        hitcandidate        = valid ? daughter : hitcandidate;
+        step                = valid ? ddistance : step;
       }
-#endif
     }
-    // VECGEOM_ASSERT(false); --- Was not implemented before
     return false;
   }
 
