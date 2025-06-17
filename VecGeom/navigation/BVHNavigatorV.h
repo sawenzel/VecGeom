@@ -215,7 +215,10 @@ public:
   {
     if (top) {
       VECGEOM_ASSERT(vol != nullptr);
-      if (!vol->UnplacedContains(point)) return nullptr;
+      auto inside = vol->Inside(point);
+      if (inside == kOutside) return nullptr;
+      // Set the boundary state to the path
+      if (inside == kSurface) path.SetBoundaryState(true);
     }
 
     path.Push(vol);
@@ -260,14 +263,17 @@ public:
                                                    Vector3D<Precision> const &point, NavigationState &path,
                                                    bool top) const
   {
-    VPlacedVolume const *candvolume = vol;
+    auto const *candvolume = vol;
     Vector3D<Precision> currentpoint(point);
     long exclvol_id = -1;
     long vol_id     = -1;
 
     if (top) {
       VECGEOM_ASSERT(vol != nullptr);
-      candvolume = (vol->UnplacedContains(point)) ? vol : nullptr;
+      auto inside = vol->Inside(point);
+      if (inside == kOutside) return nullptr;
+      // Set the boundary state to the path
+      if (inside == kSurface) path.SetBoundaryState(true);
     }
     if (candvolume) {
       path.Push(candvolume);
@@ -313,7 +319,7 @@ public:
       Vector3D<Precision> tmp = localpoint;
       while (currentmother) {
         if (currentmother == entryvol || currentmother->GetLogicalVolume()->GetUnplacedVolume()->IsAssembly() ||
-            !currentmother->UnplacedContains(tmp)) {
+            currentmother->GetUnplacedVolume()->Inside(tmp) != kInside) {
           path.Pop();
           Vector3D<Precision> pointhigherup = currentmother->GetTransformation()->InverseTransform(tmp);
           tmp                               = pointhigherup;

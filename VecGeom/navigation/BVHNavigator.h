@@ -508,13 +508,13 @@ public:
         Vector3D<Precision> transformed             = localpoint;
         // Push the point inside the next volume.
         transformed += (step + kBoundaryPush) * localdir;
-
         do {
           out_state.SetLastExited();
           out_state.Pop();
           transformed   = currentmother->GetTransformation()->InverseTransform(transformed);
           currentmother = out_state.Top();
-        } while (currentmother && (currentmother->IsAssembly() || !currentmother->UnplacedContains(transformed)));
+        } while (currentmother &&
+                 (currentmother->IsAssembly() || currentmother->GetUnplacedVolume()->Inside(transformed) != kInside));
       } else {
         out_state.Push(hitcandidate);
       }

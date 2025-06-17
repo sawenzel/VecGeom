@@ -37,7 +37,7 @@ public:
       auto inside = vol->Inside(point);
       if (inside == kOutside) return nullptr;
       // Set the boundary state to the path
-      if (inside == kSurface) path.SetBoundaryState(inside == kSurface);
+      if (inside == kSurface) path.SetBoundaryState(true);
     }
 
     Daughter currentvolume = vol;
@@ -120,8 +120,8 @@ private:
 
     for (auto *daughter : pvol->GetDaughters()) {
       double ddistance = daughter->DistanceToIn(localpoint, localdir, step);
-
-      const bool valid = ddistance < step && ddistance > -kTolerance && !vecgeom::IsInf(ddistance);
+      ddistance        = vecCore::math::Max(ddistance, 0.);
+      const bool valid = ddistance < step;
       hitcandidate     = valid ? daughter : hitcandidate;
       step             = valid ? ddistance : step;
     }
@@ -289,11 +289,13 @@ public:
         // Push the point inside the next volume.
         transformed += (step + kBoundaryPush) * localdir;
         do {
+          // move to deepest parent still containing the point (not on boundary)
           out_state.SetLastExited();
           out_state.Pop();
           transformed   = currentmother->GetTransformation()->InverseTransform(transformed);
           currentmother = out_state.Top();
-        } while (currentmother && (currentmother->IsAssembly() || !currentmother->UnplacedContains(transformed)));
+        } while (currentmother &&
+                 (currentmother->IsAssembly() || currentmother->GetUnplacedVolume()->Inside(transformed) != kInside));
       } else {
         out_state.Push(hitcandidate);
       }

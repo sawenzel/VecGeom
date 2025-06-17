@@ -212,21 +212,21 @@ public:
     if (lvol->GetDaughtersp()->size() == 0) return false;
     auto &accstructure = *fAccelerationManager.GetAccStructure(lvol);
 
-    float maxstep = static_cast<float>(step);
-    BVHSortedIntersectionsLooper(
-        accstructure, localpoint, localdir, maxstep, [&](HybridManager2::BoxIdDistancePair_t hitbox) {
-          // only consider those hitboxes which are within potential reach of this step
-          if (!(step < hitbox.second)) {
-            VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
-            if (in_state && in_state->GetLastExited() == candidate) return false;
-            Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
-            const auto valid    = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
-            hitcandidate        = valid ? candidate : hitcandidate;
-            step                = valid ? ddistance : step;
-            return false; // not yet done; need to continue in looper
-          }
-          return true; // mark done in this case
-        });
+    float maxstep             = static_cast<float>(step);
+    auto CheckHitboxCandidate = [&](HybridManager2::BoxIdDistancePair_t hitbox) {
+      // only consider those hitboxes which are within potential reach of this step
+      if (!(step < hitbox.second)) {
+        VPlacedVolume const *candidate = LookupDaughter(lvol, hitbox.first);
+        if (in_state && in_state->GetLastExited() == candidate) return false;
+        Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
+        const auto valid    = ddistance < step;
+        hitcandidate        = valid ? candidate : hitcandidate;
+        step                = valid ? ddistance : step;
+        return false; // not yet done; need to continue in looper
+      }
+      return true; // mark done in this case
+    };
+    BVHSortedIntersectionsLooper(accstructure, localpoint, localdir, maxstep, CheckHitboxCandidate);
     return false;
   }
 
@@ -259,29 +259,6 @@ public:
             const auto valid          = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
             hitcandidate              = valid ? candidate : hitcandidate;
             step                      = valid ? ddistance : step;
-#if 0 // enable for debugging
-        if ( ddistance<=0 ) {
-           std::cerr << "HybridNav2> negative distance found for " << candidate->GetName() << "\n"; 
-           auto inside = candidate->Inside(localpoint);
-           static std::string InsideCode[4] = { "N/A", "Inside", "Surface", "Outside" } ;
-           std::cerr << InsideCode[inside];
-           const auto transf = candidate->GetTransformation();
-           const auto unpl = candidate->GetUnplacedVolume();
-           Vector3D<Precision> normalDg;
-           const auto testdaughterlocal = transf->Transform(localpoint);      
-           auto valid = unpl->Normal(testdaughterlocal, normalDg);
-           
-           const auto directiondaughterlocal = transf->TransformDirection(localdir);
-           const auto dot = normalDg.Dot(directiondaughterlocal);
-           std::cerr << " normal.dir = " << dot;
-           if (dot >= 0) {
-             std::cerr << " exiting " << valid << "\n";
-           }
-           else {
-             std::cerr << " entering " << valid << "\n";
-           }
-        }
-#endif
             return false; // not yet done; need to continue in looper
           }
           return true; // mark done in this case

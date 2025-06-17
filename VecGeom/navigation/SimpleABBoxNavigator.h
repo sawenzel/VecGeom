@@ -137,7 +137,7 @@ public:
 #ifdef VERBOSE
         std::cerr << "distance to " << candidate->GetLabel() << " is " << ddistance << "\n";
 #endif
-        const auto valid = !IsInf(ddistance) && ddistance < step && ddistance > -kTolerance;
+        const auto valid = ddistance < step;
         hitcandidate     = valid ? candidate : hitcandidate;
         step             = valid ? ddistance : step;
       } else {
@@ -172,36 +172,9 @@ public:
 
       // only consider those hitboxes which are within potential reach of this step
       if (hitbox.second <= step) { // !(step < hitbox.second)) {
-#ifdef VERBOSE
-        std::cerr << "SimpleABBoxNavigator: checking id " << hitbox.first << " at box distance " << hitbox.second
-                  << "\n";
-#endif
-        //           if( hitbox.second < 0 ){
-        //            //   std::cerr << "hit dist < 0. \n";
-        //              bool checkindaughter = candidate->Contains( localpoint );
-        //              if( checkindaughter == true ){
-        //                  std::cerr << " -- unexpected : in daughter vol \n";
-        //
-        //                  // need to relocate
-        //                  step = 0;
-        //                  hitcandidate = candidate;
-        //                  // THE ALTERNATIVE WOULD BE TO PUSH THE CURRENT STATE AND RETURN DIRECTLY
-        //                  break;
-        //              }
-        //          }
         Precision ddistance = candidate->DistanceToIn(localpoint, localdir, step);
         Vector3D<Precision> normal; // To reuse in printing below - else move it into 'if'
-#ifdef VERBOSE
-        std::cerr << " . Distance to " << candidate->GetLabel() << " is " << ddistance;
-#endif
-        if (ddistance <= 0. /* && candidate == blocked */) {
-          candidate->Normal(localpoint, normal);
-#ifdef VERBOSE
-          std::cerr << "  SimpleABBoxNavigator:  Negative daughter dist = " << ddistance
-                    << (blocked == candidate ? " Is " : " Not ") << "Blocked. "
-                    << " normal= " << normal << "  normal.dir= " << normal.Dot(localdir) << "\n";
-#endif
-        }
+        if (ddistance <= 0.) candidate->Normal(localpoint, normal);
         const auto valid = !IsInf(ddistance) && ddistance < step &&
                            !((ddistance <= 0.) && (blocked == candidate || normal.Dot(localdir) > 0.0));
 
