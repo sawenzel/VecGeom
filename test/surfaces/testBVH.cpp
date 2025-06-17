@@ -56,13 +56,13 @@ int main(int argc, char *argv[])
   OPTION_DOUBLE(mmunit, 1);
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
-  OPTION_VECTOR(point, default_point);
+  OPTION_VECTOR(double, point, default_point);
   std::vector<double> default_direction = {0., 0., 0.};
-  OPTION_VECTOR(direction, default_direction);
-  OPTION_VECTOR(max_world, default_point);
+  OPTION_VECTOR(double, direction, default_direction);
+  OPTION_VECTOR(double, max_world, default_point);
   std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
                                            -vecgeom::InfinityLength<Precision>()};
-  OPTION_VECTOR(min_world, default_min_world);
+  OPTION_VECTOR(double, min_world, default_min_world);
   VECGEOM_ASSERT(point.size() == 3 && direction.size() == 3);
   VECGEOM_ASSERT(min_world.size() == 3 && default_min_world.size() == 3);
 

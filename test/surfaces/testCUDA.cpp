@@ -123,8 +123,8 @@ void TestCUDA(const SurfData &surfData, Precision px, Precision py, Precision pz
 int main(int argc, char *argv[])
 {
   std::vector<double> zero = {1, 1, 1};
-  OPTION_VECTOR(pos, zero);
-  OPTION_VECTOR(dir, zero);
+  OPTION_VECTOR(double, pos, zero);
+  OPTION_VECTOR(double, dir, zero);
   OPTION_STRING(gdml_name, "");
   VECGEOM_ASSERT(pos.size() == 3 && dir.size() == 3);
   // transform to Vec3D for further handling

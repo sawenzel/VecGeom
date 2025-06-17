@@ -691,6 +691,7 @@ bool NavIndexTable::CreateTable(VPlacedVolume const *top, int maxdepth, int dept
 #ifdef VECGEOM_USE_NAVTUPLE
   visitor.NodeReduction(min_per_scene);
   int scene_id = 0;
+  VECGEOM_LOG(info) << "=== creating navigation table with min_per_scene " << min_per_scene;
   visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
   visitor.ResetVisited();
 #else
@@ -730,7 +731,7 @@ bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
   int scene_id = 0;
   int ierr     = visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
 #else
-  int ierr       = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  int ierr = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
 #endif
   NavStatePath::ReleaseInstance(state);
   if (ierr > 0) return false;
