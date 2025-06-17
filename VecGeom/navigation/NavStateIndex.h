@@ -42,6 +42,13 @@ public:
   VECCORE_ATT_HOST_DEVICE
   NavStateIndex(NavIndex_t nav_ind = 0) { fNavInd = nav_ind; }
 
+  template <typename Container>
+  VECCORE_ATT_HOST_DEVICE NavStateIndex(Container const *cont)
+  {
+    VECGEOM_ASSERT(cont->size() == 1);
+    fNavInd = (*cont)[0];
+  }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   static unsigned char GetMaxLevel()
@@ -288,6 +295,10 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  static VPlacedVolume const *World() { return ToPlacedVolume(NavInd(3)); }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   static int TopIdImpl(NavIndex_t const &nav_ind) { return (nav_ind > 0) ? int(NavInd(nav_ind + 2)) : -1; }
 
   template <typename Real_t>
@@ -408,11 +419,19 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  NavIndex_t GetLastExitedState() const { return fLastExited; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   int GetLastIdExited() const { return TopIdImpl(fLastExited); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void SetLastExited() { fLastExited = fNavInd; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void SetLastExited(NavIndex_t const &navind) { fLastExited = navind; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -646,7 +665,9 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  void Print() const;
+  static void PrintRecord(NavIndex_t nav_ind);
+
+  VECCORE_ATT_HOST_DEVICE void Print(bool print_names = false) const;
 
   VECCORE_ATT_HOST_DEVICE
   static void PrintTopImpl(NavIndex_t nav_ind) { NavStateIndex(nav_ind).Print(); }

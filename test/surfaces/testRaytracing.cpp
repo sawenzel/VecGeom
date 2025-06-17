@@ -105,30 +105,39 @@ void LocateSolids(Vector3D<Precision> const *points, Vector3D<Precision> const *
   const char *matching[3] = {"does not match", "matches input", "matches next"};
   const char *svalid[2]   = {"invalid", "valid"};
   const char *sexiting[2] = {"entering", "exiting"};
-  if (config.input_state > 0) {
+  if (config.input_state.GetNavIndex() > 0) {
     // User state defined
-    in_states[0] = NavigationState(config.input_state);
+    in_states[0] = config.input_state;
     in_states[0].SetBoundaryState(config.on_boundary);
     NavigationState state_located = in_states[0];
     state_located.Pop();
-    // Now in the parent of the user state
     Transformation3D trans;
     state_located.TopMatrix(trans);
+    // Now in the parent of the user state
     // Locate starting from the parent, validating the user state
     auto vol = LoopNavigator::LocatePointIn(in_states[0].Top(), trans.Transform(points[0]), state_located, true);
+    // auto vol = LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[0], state_located, true);
     if (!vol) VECGEOM_LOG(info) << "Provided input state top volume does NOT contain the point";
-    int match = (vol != nullptr) && (state_located.GetNavIndex() == config.input_state);
-    VECGEOM_LOG(info) << "Provided input state: " << in_states[0].GetNavIndex();
+    int match = (vol != nullptr) && (state_located.HasSamePathAsOther(config.input_state));
+    VECGEOM_LOG(info) << "Provided input state: " << config.input_state.GetNavIndex();
+    config.input_state.Print();
     VECGEOM_LOG(info) << "Located  input state: " << state_located.GetNavIndex() << " " << matching[match];
-    in_states[0].Top()->GetUnplacedVolume()->Print();
-    if (config.compute_normal && config.next_state > 0 && config.on_boundary) {
-      NavigationState state_next(config.input_state);
+    state_located.Print();
+    config.input_state.Top()->GetUnplacedVolume()->Print();
+    if (config.test_relocate && config.on_boundary) {
+      NavigationState state_relocated = config.input_state;
+      LoopNavigator::RelocateToNextVolume(points[0], directions[0], state_relocated);
+      VECGEOM_LOG(info) << "State relocated:" << state_relocated.GetNavIndex();
+      state_relocated.Print();
+    }
+    if (config.compute_normal && config.next_state.GetNavIndex() > 0 && config.on_boundary) {
       Vector3D<Precision> normal;
       bool valid_normal = true;
       bool exiting      = false;
-      normal            = ComputeNormal(points[0], in_states[0], state_next, valid_normal, exiting);
+      normal            = ComputeNormal(points[0], in_states[0], config.next_state, valid_normal, exiting);
       std::cout << "| " << sexiting[exiting] << "| " << svalid[valid_normal] << " normal ";
-      if (valid_normal) std::cout << "| n.dot.dir = " << normal.Dot(directions[0]);
+      if (valid_normal)
+        std::cout << "| normal " << std::setprecision(17) << normal << " | n.dot.dir = " << normal.Dot(directions[0]);
       printf("\n");
     }
     return;
@@ -202,7 +211,7 @@ void ComputeSafetiesSolid(Vector3D<Precision> const *points, Vector3D<Precision>
   for (auto i = 0; i < config.nrays; ++i) {
     double safety = LoopNavigator::ComputeSafety(points[i], in_states[i]);
     if (config.validate_results) ref_safeties[i] = safety;
-    if (config.input_state > 0) {
+    if (config.input_state.GetNavIndex() > 0) {
       VECGEOM_LOG(info) << "Safety = " << safety;
     }
   }
@@ -309,6 +318,8 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
   const char *sexiting[2]        = {"entering", "exiting"};
   int ilast                      = config.nrays;
   int istart                     = 0;
+  int max_cross                  = 0;
+  int max_cross_ray              = -1;
   if (idebug >= 0) {
     std::cout << std::setprecision(16) << "PropagateRaysSolid debug ray " << idebug << " : p{" << points[idebug]
               << "} d{" << dirs[idebug] << "}\n   start :";
@@ -329,14 +340,17 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
         start_state.Print();
       }
       auto step_limit = kInfLength;
-      if (config.input_state > 0 && num_cross == 0) step_limit = config.step_limit;
+      if (config.input_state.GetNavIndex() > 0 && num_cross == 0) step_limit = config.step_limit;
       // Use the ComputeStep + Relocate interface as in the MC
       auto distance = Navigator::ComputeStepAndNextVolume(pt, dir, step_limit, start_state, out_state, kPushDistance);
       bool crossed  = out_state.IsOnBoundary();
       bool same_vol = true;
-      if (crossed)
+      if (crossed) {
         Navigator::RelocateToNextVolume(pt + distance * dir, dir, out_state);
-      else {
+        if (idebug >= 0 && config.validate_results) {
+          VECGEOM_ASSERT(NavigationState::IsValid(out_state.GetState(), 0));
+        }
+      } else {
         vecgeom::Transformation3D trans;
         start_state.TopMatrix(trans);
         same_vol = start_state.Top()->GetUnplacedVolume()->Inside(trans.Transform(pt)) != vecgeom::kOutside;
@@ -360,7 +374,8 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
             bool exiting      = false;
             normal            = ComputeNormal(pt + distance * dir, start_state, out_state, valid_normal, exiting);
             std::cout << "| " << sexiting[exiting] << " | " << svalid[valid_normal] << " normal ";
-            if (valid_normal) std::cout << "| n.dot.dir = " << normal.Dot(dir);
+            if (valid_normal)
+              std::cout << "| normal " << std::setprecision(17) << normal << " | n.dot.dir = " << normal.Dot(dir);
           }
         }
         std::cout << "\n   " << num_cross << " : ";
@@ -370,7 +385,14 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
       pt += distance * dir;
       start_state = out_state;
     } while (!out_state.IsOutside() && num_cross < config.max_cross);
+    if (num_cross > max_cross) {
+      max_cross     = num_cross;
+      max_cross_ray = i;
+    }
   }
+  if (max_cross_ray >= 0)
+    VECGEOM_LOG(info) << "Ray " << max_cross_ray << std::setprecision(17) << " : p{" << points[max_cross_ray] << "} d{"
+                      << dirs[max_cross_ray] << "} crossed " << max_cross << " boundaries";
 }
 //==================================================================================
 void PropagateRaysSurf(Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
@@ -503,7 +525,7 @@ void PropagateRaysSurf(Vector3D<Precision> const *points, Vector3D<Precision> co
       }
       pt += distance * dir;
       start_state = out_state;
-    } while (!out_state.IsOutside() && num_cross < config.max_cross + 1);
+    } while (!out_state.IsOutside() && num_cross < config.max_cross);
   }
 }
 //==================================================================================
@@ -798,12 +820,16 @@ int main(int argc, char *argv[])
   config.mmunit = mmunit;
   OPTION_DOUBLE(safety_ratio, 0);
   config.safety_ratio = safety_ratio;
-  OPTION_ULONG(input_state, 0);
-  config.input_state = input_state;
-  OPTION_ULONG(next_state, 0);
-  config.next_state = next_state;
+  OPTION_VECTOR(NavIndex_t, input_state, {0});
+  config.input_state = vecgeom::NavigationState(&input_state);
+  OPTION_VECTOR(NavIndex_t, last_exited, {0});
+  config.input_state.SetLastExited(vecgeom::NavigationState(&last_exited).GetState());
+  OPTION_VECTOR(NavIndex_t, next_state, {0});
+  config.next_state = vecgeom::NavigationState(&next_state);
   OPTION_BOOL(compute_normal, false);
   config.compute_normal = compute_normal;
+  OPTION_BOOL(test_relocate, false);
+  config.test_relocate = test_relocate;
   OPTION_DOUBLE(step_limit, vecgeom::kInfLength);
   config.step_limit = step_limit;
   OPTION_BOOL(on_boundary, false);
@@ -811,15 +837,15 @@ int main(int argc, char *argv[])
 
   std::vector<double> default_point = {vecgeom::InfinityLength<Precision>(), vecgeom::InfinityLength<Precision>(),
                                        vecgeom::InfinityLength<Precision>()};
-  OPTION_VECTOR(point, default_point);
-  std::vector<double> default_direction = {0., 0., 1.};
-  OPTION_VECTOR(direction, default_direction);
-  OPTION_VECTOR(max_world, default_point);
+  OPTION_VECTOR(double, point, default_point);
+  std::vector<double> default_direction = {1., 0., 0.};
+  OPTION_VECTOR(double, direction, default_direction);
   std::vector<double> default_min_world = {-vecgeom::InfinityLength<Precision>(), -vecgeom::InfinityLength<Precision>(),
                                            -vecgeom::InfinityLength<Precision>()};
-  OPTION_VECTOR(min_world, default_min_world);
+  OPTION_VECTOR(double, max_world, default_point);
+  OPTION_VECTOR(double, min_world, default_min_world);
   VECGEOM_ASSERT(point.size() == 3 && direction.size() == 3);
-  VECGEOM_ASSERT(min_world.size() == 3 && default_min_world.size() == 3);
+  VECGEOM_ASSERT(min_world.size() == 3);
 
   // transform to Vec3D for further handling
   Vec3D point_3D     = {point[0], point[1], point[2]};
@@ -830,13 +856,7 @@ int main(int argc, char *argv[])
 
   vecgeom::logger().level(vecgeom::LogLevel::info);
   bool use_provided_point = point_3D.Mag2() < vecgeom::InfinityLength<Precision>();
-#ifndef VECGEOM_USE_NAVINDEX
-  if (config.input_state > 0) {
-    VECGEOM_LOG(critical) << "You need  VECGEOM_NAV=index to force input state";
-    return 1;
-  }
-#endif
-  if (config.input_state > 0) {
+  if (config.input_state.GetNavIndex() > 0) {
     if (!use_provided_point) {
       VECGEOM_LOG(critical) << "Cannot force input state without providing an input point";
       return 1;
@@ -865,12 +885,14 @@ int main(int argc, char *argv[])
   auto time_load = timer.Stop();
   std::cout << "Geometry loading: " << time_load << " [s]\n";
 
-#ifdef VECGEOM_USE_NAVINDEX
-  if (config.input_state > 0 && !NavigationState::IsValid(config.input_state, 20)) {
-    VECGEOM_LOG(critical) << "Forced input state is invalid";
-    return 1;
+  if (config.input_state.GetNavIndex() > 0) {
+    NavigationState::PrintRecord(config.input_state.GetNavIndex());
+    if (!NavigationState::IsValid(config.input_state.GetState(), 0)) {
+      VECGEOM_LOG(critical) << "Forced input state is invalid";
+      return 1;
+    }
+    config.input_state.Print();
   }
-#endif
 
   if (config.use_surf) {
     BrepHelper::Instance().SetVerbosity(config.verbosity);

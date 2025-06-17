@@ -37,6 +37,15 @@ struct NavTuple {
   VECCORE_ATT_HOST_DEVICE
   NavTuple(NavIndex_t ind) { fNavInd[0] = ind; }
 
+  template <typename Container>
+  VECCORE_ATT_HOST_DEVICE NavTuple(Container const *cont)
+  {
+    VECGEOM_ASSERT(cont->size() <= MAX_DEPTH);
+    for (NavIndex_t navind : *cont)
+      fNavInd[fLevel++] = navind;
+    if (fLevel > 0) fLevel--;
+  }
+
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   static constexpr uint GetMaxDepth() { return MAX_DEPTH; }
@@ -177,6 +186,11 @@ private:
 public:
   VECCORE_ATT_HOST_DEVICE
   NavStateTuple(NavTuple_t nav_tpl = 0) : fNavTuple(nav_tpl) {}
+
+  template <typename Container>
+  VECCORE_ATT_HOST_DEVICE NavStateTuple(Container const *cont) : fNavTuple(cont)
+  {
+  }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -342,6 +356,11 @@ public:
   VECGEOM_FORCE_INLINE
   static int GetChildIdImpl(NavTuple_t const &nav_tuple) { return GetChildIdImpl(nav_tuple.Top()); }
 
+  /// @brief Implementation for getting the number of daughters for a given navigation index
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  static unsigned int GetNdaughtersImpl(NavIndex_t const &nav_index) { return NavInd(NavInd(nav_index + 4) + 1); }
+
   /// @brief Implementation for getting the number of daughters for a given navigation tuple
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -482,6 +501,40 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  static NavIndex_t GetChildNavInd(NavIndex_t nav_ind, int ichild)
+  {
+    return (nav_ind > 0) ? NavInd(NavInd(nav_ind + 4) + 2 + ichild) : 0;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsValid(NavTuple_t const &nav_tuple, int nprint = 0)
+  {
+    bool valid = true;
+    if (nav_tuple.fLevel == 0 && nav_tuple.Top() <= 1) return valid;
+    for (unsigned i = 0; i <= nav_tuple.fLevel; ++i) {
+      auto nav_ind = nav_tuple[i];
+      if (nav_ind == 0) return false;
+      if (nav_ind == 1) continue;
+      auto parent = NavInd(nav_ind);
+      if (parent > 0) {
+        // Check the pointer to nav_ind in parent record
+        auto ichild        = GetChildIdImpl(nav_ind);
+        auto nav_ind_child = GetChildNavInd(parent, ichild);
+        valid &= nav_ind_child == nav_ind;
+      } else {
+        // Check the pointers of daughters
+        int nd = GetNdaughtersImpl(nav_ind);
+        for (auto i = 0; i < nd; ++i) {
+          auto nav_ind_child = GetChildNavInd(nav_ind, i);
+          valid &= NavInd(nav_ind_child) == nav_ind;
+        }
+      }
+    }
+    return valid;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   static void PopImpl(NavTuple_t &nav_tuple)
   {
     auto top = nav_tuple.Top();
@@ -551,6 +604,10 @@ public:
     auto top = nav_tuple.Top();
     return (top > 0) ? ToPlacedVolume(NavInd(top + 1)) : nullptr;
   }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  static VPlacedVolume const *World() { return ToPlacedVolume(NavInd(2)); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -700,11 +757,19 @@ public:
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
+  NavTuple_t GetLastExitedState() const { return fLastExited; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
   int GetLastIdExited() const { return TopIdImpl(fLastExited); }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void SetLastExited() { fLastExited = fNavTuple; }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  void SetLastExited(NavTuple_t const &nav_tuple) { fLastExited = nav_tuple; }
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
@@ -1078,7 +1143,31 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  void Print() const
+  static void PrintRecord(NavIndex_t nav_ind)
+  {
+    if (nav_ind == 0) return;
+    auto parent       = NavInd(nav_ind);
+    auto placed_id    = NavInd(nav_ind + 1);
+    auto child_id     = NavInd(nav_ind + 2);
+    auto id           = NavInd(nav_ind + 3);
+    auto logical_addr = NavInd(nav_ind + 4);
+    auto logical_id   = NavInd(logical_addr);
+    auto scenes       = reinterpret_cast<const unsigned short *>(NavIndAddr(nav_ind + 5));
+    auto scene_id     = scenes[0];
+    auto newscene_id  = scenes[1];
+    auto level        = GetLevelImpl(nav_ind);
+    auto nd           = NavInd(logical_addr + 1);
+    printf("| navind %u |+0| parent %u |+1| placed_id %u |+2| child_id %u |+3| id %u |+4| logical_addr %u |+5| scene "
+           "%hu | "
+           "new_scene %hu |+6| level %u | ... |%u| logical_id %u |+1| nd %u ",
+           nav_ind, parent, placed_id, child_id, id, logical_addr, scene_id, newscene_id, level, logical_addr,
+           logical_id, nd);
+    if (nd > 0) printf("|+2| d0 %u | ...", NavInd(logical_addr + 2));
+    printf("\n");
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  void Print(bool print_names = false) const
   {
     if (fNavTuple.Top() == 0 && fNavTuple.fLevel == 0) {
       printf("navInd=0, id=0, path=outside\n");
@@ -1094,6 +1183,11 @@ public:
       printf("s%u:%u", scene_id, fNavTuple[i]);
       if (i < fNavTuple.fLevel) printf(" | ");
     }
+    printf(" lastExited=");
+    for (unsigned i = 0; i <= fLastExited.fLevel; ++i) {
+      printf("%u", fLastExited[i]);
+      if (i < fLastExited.fLevel) printf(" | ");
+    }
     printf(", id=%u, level=%u/%u,  onBoundary=%s, path=<", GetId(), level, GetMaxLevel(),
            (fOnBoundary ? "true" : "false"));
     int last_scene = 0;
@@ -1107,11 +1201,12 @@ public:
         last_scene = scene_id;
       }
 #ifndef VECCORE_CUDA
-      auto vol = At(i);
-      printf("/%s", vol ? vol->GetLabel().c_str() : "TOP_SCENE");
-#else
-      printf("/%u", nav_tuple.Top());
+      if (print_names) {
+        auto vol = At(i);
+        printf("/%s", vol ? vol->GetLabel().c_str() : "TOP_SCENE");
+      } else
 #endif
+        printf("/%u", nav_tuple.Top());
     }
     printf(">\n");
   }

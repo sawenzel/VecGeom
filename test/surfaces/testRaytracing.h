@@ -26,12 +26,12 @@ struct TestConfig {
   bool use_surf{true};
   bool use_TB_gun{false};
   bool on_boundary{false};
+  bool test_relocate{false};
   double mmunit{1.};
   double safety_ratio{0.};
   double step_limit{vecgeom::kInfLength};
-  uint64_t input_state{
-      0}; ///< Force input state to an index (only works with indexed navigation, when a point is provided)
-  uint64_t next_state{0}; ///< Triggers computation of normal for the input state
+  vecgeom::NavigationState input_state; ///< Force input state (only works when a point is provided)
+  vecgeom::NavigationState next_state;  ///< Triggers computation of normal for the input state
   int compute_normal{0};
 };
 

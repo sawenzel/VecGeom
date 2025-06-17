@@ -63,7 +63,24 @@ void NavStateIndex::GetPathAsListOfIndices(std::list<uint> &indices) const
 }
 
 VECCORE_ATT_HOST_DEVICE
-void NavStateIndex::Print() const
+void NavStateIndex::PrintRecord(NavIndex_t nav_ind)
+{
+  if (nav_ind == 0) return;
+  auto parent     = NavInd(nav_ind);
+  auto placed_id  = NavInd(nav_ind + 2);
+  auto child_id   = NavInd(nav_ind + 3);
+  auto id         = NavInd(nav_ind + 1);
+  auto logical_id = NavInd(nav_ind + 4);
+  auto level      = GetLevelImpl(nav_ind);
+  auto nd         = GetNdaughtersImpl(nav_ind);
+  printf("| navind %u |+0| parent %u |+1| id %u |+2| placed_id %u |+3| child_id %u |+4| logical_id %u "
+         "| level %u | nd %u ",
+         nav_ind, parent, id, placed_id, child_id, logical_id, level, nd);
+  printf("\n");
+}
+
+VECCORE_ATT_HOST_DEVICE
+void NavStateIndex::Print(bool print_names) const
 {
   if (IsOutside()) {
     printf("navInd=%u, id=%u, path=outside\n", fNavInd, GetId());
@@ -74,11 +91,16 @@ void NavStateIndex::Print() const
          (fOnBoundary ? "true" : "false"));
   for (int i = 0; i < level + 1; ++i) {
 #ifndef VECCORE_CUDA
-    auto vol = At(i);
-    printf("/%s", vol ? vol->GetLabel().c_str() : "NULL");
+    if (print_names) {
+      auto vol = At(i);
+      printf("/%s", vol ? vol->GetLabel().c_str() : "NULL");
+    } else {
+      auto nav_ind = GetNavIndexImpl(fNavInd, i);
+      printf("/%u", nav_ind);
+    }
 #else
     auto nav_ind = GetNavIndexImpl(fNavInd, i);
-    printf("/%u", nav_ind);
+    printf("/%u", fNavInd);
 #endif
   }
   printf(">\n");
