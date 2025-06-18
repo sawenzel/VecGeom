@@ -191,8 +191,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   bool Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const override;
 
+  VECCORE_ATT_HOST_DEVICE
+  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const final;
+
 #if !defined(VECCORE_CUDA)
-  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override;
 
   Vector3D<Precision> SamplePointOnSurface() const override;
 

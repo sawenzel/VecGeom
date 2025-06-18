@@ -253,6 +253,10 @@ public:
   Precision Capacity() const override;
 
   Precision SurfaceArea() const override;
+
+  VECCORE_ATT_HOST_DEVICE
+  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override;
+
 #ifndef VECCORE_CUDA
   Precision DistanceSquarePointToSegment(Vector3D<Precision> &v1, Vector3D<Precision> &v2,
                                          const Vector3D<Precision> &p) const;
@@ -264,8 +268,6 @@ public:
   // seems to have such a function, too )
   Vector3D<Precision> GetPointOnTriangle(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
                                          Vector3D<Precision> const &v3) const;
-
-  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override;
 
   Vector3D<Precision> SamplePointOnSurface() const override;
 
