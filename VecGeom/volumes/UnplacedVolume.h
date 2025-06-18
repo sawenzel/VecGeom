@@ -174,7 +174,7 @@ public:
    * @param aMax point of bounding box corner with maximum coordinates
    */
   VECCORE_ATT_HOST_DEVICE
-  virtual void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const /* = 0 */;
+  virtual void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const = 0;
 
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE

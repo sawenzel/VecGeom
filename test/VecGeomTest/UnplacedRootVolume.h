@@ -9,6 +9,7 @@
 
 #include "VecGeom/volumes/UnplacedVolume.h"
 #include <TGeoShape.h>
+#include <TGeoBBox.h>
 
 namespace vecgeom {
 
@@ -27,6 +28,14 @@ public:
 
   VECGEOM_FORCE_INLINE
   TGeoShape const *GetRootShape() const { return fRootShape; }
+
+  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const final
+  {
+    auto const box    = (TGeoBBox *)fRootShape;
+    auto const origin = box->GetOrigin();
+    aMin.Set(origin[0] - box->GetDX(), origin[1] - box->GetDY(), origin[2] - box->GetDZ());
+    aMin.Set(origin[0] + box->GetDX(), origin[1] + box->GetDY(), origin[2] + box->GetDZ());
+  }
 
   bool Contains(Vector3D<Precision> const &p) const override { return fRootShape->Contains(&Vector3D<double>(p)[0]); }
 

@@ -30,13 +30,13 @@ Vector3D<Precision> VUnplacedVolume::SamplePointOnSurface() const
 // (since we are moving to these interfaces only gradually)
 
 // ----------------- Extent --------------------------------------------------------------------
-VECCORE_ATT_HOST_DEVICE
-void VUnplacedVolume::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
-{
-#ifndef VECCORE_CUDA
-  throw std::runtime_error("unimplemented function called");
-#endif
-}
+// VECCORE_ATT_HOST_DEVICE
+// void VUnplacedVolume::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
+// {
+// #ifndef VECCORE_CUDA
+//   throw std::runtime_error("unimplemented function called");
+// #endif
+// }
 
 // estimating the surface area by sampling
 // based on the six-point method of G4

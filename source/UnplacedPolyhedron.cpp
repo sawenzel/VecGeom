@@ -282,7 +282,7 @@ Precision UnplacedPolyhedron::SurfaceArea() const
   return fPoly->fAreaStruct->area;
 }
 
-#ifndef VECCORE_CUDA
+VECCORE_ATT_HOST_DEVICE
 void UnplacedPolyhedron::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
 {
   aMin               = kInfLength;
@@ -316,6 +316,7 @@ void UnplacedPolyhedron::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &
   }
 }
 
+#ifndef VECCORE_CUDA
 VECCORE_ATT_HOST_DEVICE
 Precision UnplacedPolyhedron::DistanceSquarePointToSegment(Vector3D<Precision> &v1, Vector3D<Precision> &v2,
                                                            const Vector3D<Precision> &p) const
