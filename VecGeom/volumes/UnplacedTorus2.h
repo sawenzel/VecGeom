@@ -27,13 +27,9 @@ class UnplacedTorus2 : public UnplacedVolumeImplHelper<TorusImplementation2>, pu
 private:
   // tube defining parameters
   TorusStruct2<Precision> fTorus;
-  Wedge fPhiWedge; // the Phi bounding of the torus (not the cutout)
 
   // cached values
-  Precision fRmin2, fRmax2, fRtor2, fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
-  Precision fTolIrmin2, fTolOrmin2, fTolIrmax2, fTolOrmax2;
-  // bounding tube
-  GenericUnplacedTube fBoundingTube;
+  Precision fAlongPhi1x, fAlongPhi1y, fAlongPhi2x, fAlongPhi2y;
 
   VECCORE_ATT_HOST_DEVICE
   static void GetAlongVectorToPhiSector(Precision phi, Precision &x, Precision &y)
@@ -45,15 +41,9 @@ private:
   VECCORE_ATT_HOST_DEVICE
   void calculateCached()
   {
-    fRmin2 = fTorus.fRmin * fTorus.fRmin;
-    fRmax2 = fTorus.fRmax * fTorus.fRmax;
-    fRtor2 = fTorus.fRtor * fTorus.fRtor;
-
-    fTolOrmin2 = (fTorus.fRmin - kTolerance) * (fTorus.fRmin - kTolerance);
-    fTolIrmin2 = (fTorus.fRmin + kTolerance) * (fTorus.fRmin + kTolerance);
-
-    fTolOrmax2 = (fTorus.fRmax + kTolerance) * (fTorus.fRmax + kTolerance);
-    fTolIrmax2 = (fTorus.fRmax - kTolerance) * (fTorus.fRmax - kTolerance);
+    fTorus.fRmin2 = fTorus.fRmin * fTorus.fRmin;
+    fTorus.fRmax2 = fTorus.fRmax * fTorus.fRmax;
+    fTorus.fRtor2 = fTorus.fRtor * fTorus.fRtor;
 
     GetAlongVectorToPhiSector(fTorus.fSphi, fAlongPhi1x, fAlongPhi1y);
     GetAlongVectorToPhiSector(fTorus.fSphi + fTorus.fDphi, fAlongPhi2x, fAlongPhi2y);
@@ -63,12 +53,9 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedTorus2(Precision const &_rmin, Precision const &_rmax, Precision const &_rtor, Precision const &_sphi,
                  Precision const &_dphi)
-      : fTorus(_rmin, _rmax, _rtor, _sphi, _dphi), fPhiWedge(_dphi, _sphi), fBoundingTube(0, 1, 1, 0, _dphi)
+      : fTorus(_rmin, _rmax, _rtor, _sphi, _dphi)
   {
     calculateCached();
-
-    fBoundingTube = GenericUnplacedTube(fTorus.fRtor - fTorus.fRmax - kTolerance,
-                                        fTorus.fRtor + fTorus.fRmax + kTolerance, fTorus.fRmax, _sphi, _dphi);
 
     DetectConvexity();
     ComputeBBox();
@@ -106,19 +93,19 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision rmin2() const { return fRmin2; }
+  Precision rmin2() const { return fTorus.fRmin2; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision rmax2() const { return fRmax2; }
+  Precision rmax2() const { return fTorus.fRmax2; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision rtor2() const { return fRtor2; }
+  Precision rtor2() const { return fTorus.fRtor2; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Wedge const &GetWedge() const { return fPhiWedge; }
+  evolution::Wedge const &GetWedge() const { return fTorus.fPhiWedge; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -135,22 +122,6 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Precision alongPhi2y() const { return fAlongPhi2y; }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Precision tolOrmin2() const { return fTolOrmin2; }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Precision tolIrmin2() const { return fTolIrmin2; }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Precision tolOrmax2() const { return fTolOrmax2; }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Precision tolIrmax2() const { return fTolIrmax2; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -207,7 +178,7 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  GenericUnplacedTube const &GetBoundingTube() const { return fBoundingTube; }
+  GenericUnplacedTube const &GetBoundingTube() const { return fTorus.fBoundingTube; }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
