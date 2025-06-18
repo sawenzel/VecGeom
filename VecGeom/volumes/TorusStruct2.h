@@ -37,9 +37,9 @@ struct TorusStruct2 {
   VECCORE_ATT_HOST_DEVICE
   TorusStruct2(const T rmin, const T rmax, const T rtor, const T sphi, const T dphi)
       : fRmin(rmin), fRmax(rmax), fRtor(rtor), fSphi(sphi), fDphi(dphi), fRmin2(rmin * rmin), fRmax2(rmax * rmax),
-        fRtor2(rtor * rtor), fPhiWedge(dphi, sphi), fBoundingTube(0, 1, 1, 0, dphi)
+        fRtor2(rtor * rtor), fPhiWedge(dphi, sphi),
+        fBoundingTube(rtor - rmax - kTolerance, rtor + rmax + kTolerance, rmax, sphi, dphi)
   {
-    fBoundingTube = GenericUnplacedTube(fRtor - fRmax - kTolerance, fRtor + fRmax + kTolerance, fRmax, sphi, dphi);
   }
 
   VECCORE_ATT_HOST_DEVICE
