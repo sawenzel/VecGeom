@@ -192,7 +192,7 @@ public:
   bool Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const override;
 
   VECCORE_ATT_HOST_DEVICE
-  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const final;
+  void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override;
 
 #if !defined(VECCORE_CUDA)
 
