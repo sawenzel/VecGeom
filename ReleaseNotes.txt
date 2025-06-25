@@ -1,3 +1,52 @@
+Version 2.0.0-rc5        25th June 2025
+======================================
+Base:
+- The Vector destructor has been fixed for the composition case, where
+  the same object may be deleted multiple times
+
+Shapes:
+- RZ polycones fixed. Fix for ReducedPolycone utility for segment 
+  checks. Additional cleanup was done concerning passing vectors by
+  value. A test was added for the polycone RZ constructor, which was
+  failing in CMS.
+- Fixed normal computation for scaled shapes and trapezoids
+- Cleaning of the torus: some data structures were both in the
+  UnplacedTorus2 class and in the torus struct.Initialization of the
+  bounding tube was fixed.
+- Exposed VUnplacedVolume::Extent as pure virtual interface
+
+Navigation:
+- Global navigation cleanups, tweaks and fixes:
+  - Negative distance to daughters can be due to a push, and was 
+  previously ignoring the respective daughter - now the point is
+  considered inside, preventing an extra relocation step and even
+  errors in case of field propagation.
+  - If the distance to exiting is shorter, navigation needs to find
+  the deepest mother containing the point. Before, UnplacedContains
+  was used, so if the point was on surface it was considered inside,
+  then the relocator wrongly located to that parent, while the track
+  was exiting.
+  - Synchronized older navigators with these changes and removed
+  some dead code for debugging.
+- Additions to NavStateIndex/Tuple:
+  - World() - getter for the world placed volume
+  - Constructor taking a container with state indices (tuple
+  case)
+  - GetLastExitedState() returning the last exited state as
+  navigation index, or tuple
+  - SetLastExited(state) where state is NavIndex_t or NavTuple_t
+  - IsValid(state) adding a check for validity of the provided
+  NavIndex/Tuple
+  - Print takes an argument print_names printing names in the path
+  on the host (default false)
+
+Miscellaneous:
+- Improvement of ArgParser: support for arbitrary scalar and vector
+types via OPTION_SCALAR and OPTION_VECTOR.
+- Added option to read navigation tuples and last exited state in
+taytracing
+- Fix configuring against latest VecGeom with CUDA disabled
+
 Version 2.0.0-rc4        27th May 2025
 ======================================
 Surface model:
