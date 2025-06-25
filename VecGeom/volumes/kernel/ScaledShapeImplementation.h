@@ -177,7 +177,7 @@ template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE void ScaledShapeImplementation::NormalKernel(UnplacedStruct_t const &unplaced,
                                                                      Vector3D<Real_v> const &point,
                                                                      Vector3D<Real_v> &normal,
-                                                                     vecCore::Mask_v<Real_v> & /* valid */)
+                                                                     vecCore::Mask_v<Real_v> &valid)
 {
 
   // Transform point to unscaled shape frame
@@ -186,11 +186,11 @@ VECCORE_ATT_HOST_DEVICE void ScaledShapeImplementation::NormalKernel(UnplacedStr
 
   // Compute normal in unscaled frame
   Vector3D<Real_v> ulocalNorm;
-  unplaced.fPlaced->Normal(ulocalPoint, ulocalNorm /*, valid*/);
+  valid = unplaced.fPlaced->Normal(ulocalPoint, ulocalNorm);
 
   // Convert normal to scaled frame
   unplaced.fScale.InverseTransformNormal(ulocalNorm, normal);
-  normal.Normalize();
+  normal.Normalize(); // <- Is this actually needed? PlacedVolume::Normal is supposed to return normalized normal
 }
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

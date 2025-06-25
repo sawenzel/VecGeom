@@ -306,43 +306,41 @@ public:
     return closest;
   }
 
-  /// \return a *non-normalized* vector normal to the plane containing (or really close) to point.
-  /// In most cases the resulting normal is either (0,0,0) when point is not close to any plane,
-  /// or the normal of that single plane really close to the point (in this case, it *is* normalized).
-  ///
-  /// Note: If the point is really close to more than one plane, those planes' normals are added,
-  /// and in this case the vector returned *is not* normalized.  This can be used as a flag, so that
-  /// the callee knows that nsurf==2 (the maximum value possible).
-  ///
+  /// @param point Point position in local coordinates
+  /// @param[out] normal A vector normal to the plane closest to point.
+  /// If the point has kSurface condition for more than one plane, the un-normalized sum is returned
+  /// @param[out] edge Point on edge condition. The normal vector needs to be normalized by the user
+  /// @return Distance to closest surface
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v NormalKernel(Vector3D<Real_v> const &point,
-                                                                   Vector3D<Real_v> &normal) const
+                                                                   Vector3D<Real_v> &normal, bool &edge) const
   {
-    Real_v safety = -InfinityLength<Real_v>();
+    Real_v safety = InfinityLength<Real_v>();
 
     // vectorizable loop
     Real_v dist[N];
+    Vector3D<Real_v> cornerNormal;
+    unsigned char surfaces = 0;
+    edge                   = false;
     for (int i = 0; i < N; ++i) {
-      dist[i] = (this->fA[i] * point.x() + this->fB[i] * point.y() + this->fC[i] * point.z() + this->fD[i]);
+      dist[i] = Abs(this->fA[i] * point.x() + this->fB[i] * point.y() + this->fC[i] * point.z() + this->fD[i]);
+      // If closest update normal
+      if (dist[i] < safety) {
+        normal.Set(this->fA[i], this->fB[i], this->fC[i]);
+        safety = dist[i];
+      }
+      // If on surface add to separate vector
+      if (dist[i] < kTolerance) {
+        surfaces++;
+        cornerNormal += Vector3D<Real_v>(this->fA[i], this->fB[i], this->fC[i]);
+      }
+    }
+    if (surfaces > 1) {
+      // The point is on the edge - do not normalize the vector
+      normal = cornerNormal;
+      edge   = true;
     }
 
-    // non-vectorizable part
-    for (int i = 0; i < 4; ++i) {
-      Real_v saf_i = dist[i] - safety;
-
-      // if more planes found as far (within tolerance) as the best one so far *and not fully inside*, add its normal
-      vecCore__MaskedAssignFunc(normal, Abs(saf_i) < kHalfTolerance && dist[i] >= -kHalfTolerance,
-                                normal + Vector3D<Real_v>(this->fA[i], this->fB[i], this->fC[i]));
-
-      // this one is farther than our previous one -- update safety and normal
-      vecCore__MaskedAssignFunc(normal, saf_i > Real_v(0.), Vector3D<Real_v>(this->fA[i], this->fB[i], this->fC[i]));
-      vecCore__MaskedAssignFunc(safety, saf_i > Real_v(0.), dist[i]);
-      // std::cerr<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
-      // <<"\n";
-    }
-
-    // Note: this could be (rarely) a non-normalized normal vector (when point is close to 2 planes)
-    // std::cerr<<"Return from PlaneShell::Normal: safety="<< safety <<", normal="<< normal <<"\n";
     return safety;
   }
 };
