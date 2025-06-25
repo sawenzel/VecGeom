@@ -183,16 +183,16 @@ public:
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void TransformNormal(Vector3D<InputType> const &master,
                                                                     Vector3D<InputType> &local) const
   {
-    local.Set(master[0] * fInvScale[1] * fInvScale[2], master[1] * fInvScale[2] * fInvScale[0],
-              master[2] * fInvScale[0] * fInvScale[1]);
+    local.Set(master[0] * fInvScale[0], master[1] * fInvScale[1], master[2] * fInvScale[2]);
+    local.Normalize();
   }
 
   template <typename InputType>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> TransformNormal(
       Vector3D<InputType> const &master) const
   {
-    Vector3D<InputType> local(master[0] * fInvScale[1] * fInvScale[2], master[1] * fInvScale[2] * fInvScale[0],
-                              master[2] * fInvScale[0] * fInvScale[1]);
+    Vector3D<InputType> local(master[0] * fInvScale[0], master[1] * fInvScale[1], master[2] * fInvScale[2]);
+    local.Normalize();
     return local;
   }
 
@@ -203,15 +203,16 @@ public:
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void InverseTransformNormal(Vector3D<InputType> const &local,
                                                                            Vector3D<InputType> &master) const
   {
-    master.Set(local[0] * fScale[1] * fScale[2], local[1] * fScale[2] * fScale[0], local[2] * fScale[0] * fScale[1]);
+    master.Set(local[0] * fScale[0], local[1] * fScale[1], local[2] * fScale[2]);
+    master.Normalize();
   }
 
   template <typename InputType>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<InputType> InverseTransformNormal(
       Vector3D<InputType> const &local) const
   {
-    Vector3D<InputType> master(local[0] * fScale[1] * fScale[2], local[1] * fScale[2] * fScale[0],
-                               local[2] * fScale[0] * fScale[1]);
+    Vector3D<InputType> master(local[0] * fScale[0], local[1] * fScale[1], local[2] * fScale[2]);
+    master.Normalize();
     return master;
   }
 

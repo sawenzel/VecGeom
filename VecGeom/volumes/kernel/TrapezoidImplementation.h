@@ -369,54 +369,56 @@ struct TrapezoidImplementation {
   {
 
     VECGEOM_CONST Precision delta = 1000. * kTolerance;
-    Vector3D<Real_v> normal(0.);
-    Real_v safety = -InfinityLength<Real_v>();
+    Vector3D<Real_v> normal, cornerNormal;
+    Real_v safety = InfinityLength<Real_v>();
+    bool edge     = false;
 
 #ifdef VECGEOM_PLANESHELL
     // Get normal from side planes -- PlaneShell case
-    safety = unplaced.GetPlanes()->NormalKernel(point, normal);
+    safety = unplaced.GetPlanes()->NormalKernel(point, normal, edge);
 
 #else
     // Loop over side planes
-
+    Vector3D<Real_v> cornerNormal;
+    unsigned char surfaces = 0;
     // vectorizable loop
     TrapSidePlane const *fPlanes = unplaced.GetPlanes();
     Real_v dist[4];
     for (int i = 0; i < 4; ++i) {
-      dist[i] = (fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y() + fPlanes[i].fC * point.z() + fPlanes[i].fD);
+      dist[i] = Abs(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y() + fPlanes[i].fC * point.z() + fPlanes[i].fD);
+      // If closest update normal
+      if (dist[i] < safety) {
+        normal = unplaced.normals[i];
+        safety = dist[i];
+      }
+      // If on surface add to separate vector
+      if (dist[i] < kTolerance) {
+        surfaces++;
+        cornerNormal += unplaced.normals[i];
+      }
     }
 
-    // non-vectorizable part
-    for (int i = 0; i < 4; ++i) {
-      Real_v saf_i = dist[i] - safety;
-
-      // if more planes found as far (within tolerance) as the best one so far *and not fully inside*, add its normal
-      vecCore__MaskedAssignFunc(normal, Abs(saf_i) < kHalfTolerance && dist[i] >= -kHalfTolerance,
-                                normal + unplaced.normals[i]);
-
-      // this one is farther than our previous one -- update safety and normal
-      vecCore__MaskedAssignFunc(normal, saf_i > 0.0, unplaced.normals[i]);
-      vecCore__MaskedAssignFunc(safety, saf_i > 0.0, dist[i]);
-      // std::cerr<<"dist["<< i <<"]="<< dist[i] <<", saf_i="<< saf_i <<", safety="<< safety <<", normal="<< normal
-      // <<"\n";
+    if (surfaces > 1) {
+      // The point is on the edge - do not normalize the vector
+      normal = cornerNormal;
+      edge   = true;
     }
 #endif
 
     // check if normal is valid w.r.t. z-planes, and define normals based on safety (see above)
-    Real_v safz(Sign(point[2]) * point[2] - unplaced.fDz);
-
-    vecCore__MaskedAssignFunc(normal, Abs(safz - safety) < kHalfTolerance && safz >= -kHalfTolerance,
-                              normal + Vector3D<Real_v>(0, 0, Sign(point.z())));
-
-    vecCore__MaskedAssignFunc(normal, safz > safety && safz >= -kHalfTolerance,
-                              Vector3D<Real_v>(0, 0, Sign(point.z())));
-    vecCore::MaskedAssign(safety, safz > safety, safz);
+    Real_v safz = vecCore::math::Abs(vecCore::math::Abs(point[2]) - unplaced.fDz);
+    if (edge && safz < kTolerance) {
+      // The point is on a corner
+      normal += Vector3D<Real_v>(0., 0., Sign(point.z()));
+    } else {
+      if (safz < safety) {
+        normal.Set(0., 0., Sign(point.z()));
+        safety = safz;
+      }
+    }
     valid = Abs(safety) <= delta;
-    // std::cerr<<"safz="<< safz <<", safety="<< safety <<", normal="<< normal <<", valid="<< valid <<"\n";
-
     // returned vector must be normalized
-    if (normal.Mag2() > 1.0) normal.Normalize(); //??? check use of MaskedAssignFunc here!!!
-
+    normal.Normalize();
     return normal;
   }
 };
