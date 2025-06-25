@@ -521,13 +521,6 @@ public:
         auto ichild        = GetChildIdImpl(nav_ind);
         auto nav_ind_child = GetChildNavInd(parent, ichild);
         valid &= nav_ind_child == nav_ind;
-      } else {
-        // Check the pointers of daughters
-        int nd = GetNdaughtersImpl(nav_ind);
-        for (auto i = 0; i < nd; ++i) {
-          auto nav_ind_child = GetChildNavInd(nav_ind, i);
-          valid &= NavInd(nav_ind_child) == nav_ind;
-        }
       }
     }
     return valid;
