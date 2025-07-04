@@ -76,6 +76,17 @@ VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
 template <typename Real_t>
 constexpr Real_t kEpsilonT        = std::numeric_limits<Real_t>::epsilon();
 VECGEOM_CONST double kInfinityDbl = std::numeric_limits<double>::infinity();
+// a function to estimate ULP *unit in the last place for a number
+// Compute ULP of a given number x (templated on precision type)
+template <typename T>
+VECCORE_ATT_HOST_DEVICE T ULP(T x)
+{
+  static_assert(std::is_floating_point<T>::value, "T must be a floating point type");
+  // Use nextafter to find the next representable value greater than x
+  T next = std::nextafter(x, vecCore::NumericLimits<T>::Infinity());
+  return vecCore::math::Abs(next - x);
+}
+
 // a special constant to indicate a "miss" length
 VECGEOM_CONST Precision kInfLength        = vecCore::NumericLimits<Precision>::Max();
 VECGEOM_CONST Precision kMaximum          = vecCore::NumericLimits<Precision>::Max();
