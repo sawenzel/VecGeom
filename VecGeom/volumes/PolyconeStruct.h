@@ -265,7 +265,7 @@ struct PolyconeStruct {
       Precision zmin = section.fShift - section.fSolid.fDz;
       Precision zmax = section.fShift + section.fSolid.fDz;
       Precision rmin = section.fSolid.fRmin1;
-      Precision rmax = section.fSolid.fRmax1;
+      Precision rmax = section.fSolid.fOriginalRmax1;
       if (iplane == 0) {
         prevZ    = zmin;
         prevRmin = rmin;
@@ -285,7 +285,7 @@ struct PolyconeStruct {
       // Add top Z plane
       prevZ    = zmax;
       prevRmin = section.fSolid.fRmin2;
-      prevRmax = section.fSolid.fRmax2;
+      prevRmax = section.fSolid.fOriginalRmax2;
       z_values.push_back(prevZ);
       rmin_values.push_back(prevRmin);
       rmax_values.push_back(prevRmax);
@@ -412,6 +412,7 @@ struct PolyconeStruct {
       prevRmin = rMin;
       prevRmax = rMax;
     }
+
     for (auto val : fRMaxTwoDVec) {
       fTwoDVec.push_back(val);
     }

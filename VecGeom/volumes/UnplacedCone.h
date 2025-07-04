@@ -116,11 +116,11 @@ public:
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmin1() const { return fCone.fRmin1; }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmax1() const { return fCone.fRmax1; }
+  Precision GetRmax1() const { return fCone.fOriginalRmax1; }
   VECCORE_ATT_HOST_DEVICE
   Precision GetRmin2() const { return fCone.fRmin2; }
   VECCORE_ATT_HOST_DEVICE
-  Precision GetRmax2() const { return fCone.fRmax2; }
+  Precision GetRmax2() const { return fCone.fOriginalRmax2; }
   VECCORE_ATT_HOST_DEVICE
   Precision GetDz() const { return fCone.fDz; }
   VECCORE_ATT_HOST_DEVICE

@@ -158,7 +158,7 @@ public:
 #define VECTOR2D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECCORE_ATT_HOST_DEVICE                             \
   VECGEOM_FORCE_INLINE                                \
-  VecType &operator OPERATOR(const VecType &other)    \
+  VecType &operator OPERATOR(const VecType & other)   \
   {                                                   \
     vec[0] OPERATOR other.vec[0];                     \
     vec[1] OPERATOR other.vec[1];                     \
@@ -166,7 +166,7 @@ public:
   }                                                   \
   VECCORE_ATT_HOST_DEVICE                             \
   VECGEOM_FORCE_INLINE                                \
-  VecType &operator OPERATOR(const Type &scalar)      \
+  VecType &operator OPERATOR(const Type & scalar)     \
   {                                                   \
     vec[0] OPERATOR scalar;                           \
     vec[1] OPERATOR scalar;                           \
@@ -353,6 +353,18 @@ template <typename Type>
 VECCORE_ATT_HOST_DEVICE Type Vector2D<Type>::Phi() const
 {
   return ATan2(vec[1], vec[0]);
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator==(Vector2D<Type> const &lhs, Vector2D<Type> const &rhs)
+{
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
+}
+
+template <typename Type>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool operator!=(Vector2D<Type> const &lhs, Vector2D<Type> const &rhs)
+{
+  return !(lhs == rhs);
 }
 
 template <typename Type>

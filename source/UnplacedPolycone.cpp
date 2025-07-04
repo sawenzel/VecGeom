@@ -249,16 +249,17 @@ UnplacedPolycone::UnplacedPolycone(Precision phiStart, // initial phi starting a
 VECCORE_ATT_HOST_DEVICE
 void UnplacedPolycone::Print() const
 {
+  using ulong_t = unsigned long;
   printf("UnplacedPolycone { stPhi: %.2f, delPhi: %.2f, Nz: %d}\n", fPolycone->fStartPhi, fPolycone->fDeltaPhi,
          fPolycone->fNz);
-  printf("\t------- %zu z planes follow ---------\n", fPolycone->fZs.size());
+  printf("\t------- %lu z planes follow ---------\n", ulong_t(fPolycone->fZs.size()));
   for (size_t p = 0; p < fPolycone->fZs.size(); ++p) {
-    printf("\t plane #%zu at z pos %lf\n", p, fPolycone->fZs[p]);
+    printf("\t plane #%lu at z pos %g\n", ulong_t(p), fPolycone->fZs[p]);
   }
 
-  printf("\t------ %zu sections follow ----------\n", fPolycone->fSections.size());
+  printf("\t------ %lu sections follow ----------\n", ulong_t(fPolycone->fSections.size()));
   for (int s = 0; s < fPolycone->GetNSections(); ++s) {
-    printf("\t section #%d, shift %lf\n\t ", s, fPolycone->fSections[s].fShift);
+    printf("\t section #%d, shift %g\n\t ", s, fPolycone->fSections[s].fShift);
     fPolycone->fSections[s].fSolid.Print();
     printf("\n");
   }
