@@ -39,6 +39,12 @@ bool TestPolycone()
   Precision rmax1[8] = {1233., 1233., 1233., 1233., 1233., 1233., 1233., 1233.};
   Polycone_t cms_TRAK("oldcms_TRAK", 0, 360. * kPi / 180., 8, z1, rmin1, rmax1);
 
+  int numRZ          = 9;
+  Precision rmin2[9] = {0., 10., 10., 5., 5., 10., 10., 2., 2.};
+  Precision z2[9]    = {5., 7., 9., 11., 25., 27., 29., 31., 35.};
+  // Test construction of RZ polycone
+  GeoManager::MakeInstance<UnplacedPolycone>(0., kPi / 4, numRZ, rmin2, z2);
+
   int Nz = 4;
   // a few cones
   Precision rmin[] = {0.1, 0.0, 0.0, 0.4};

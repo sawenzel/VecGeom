@@ -167,35 +167,39 @@ int Benchmarker::CompareDistances(SOA3D<Precision> *points, SOA3D<Precision> *di
       if (!(specialized[i] == kInfLength && unspecialized[i] == kInfLength) &&
           std::fabs(specialized[i] - unspecialized[i]) > fTolerance) {
         mismatch = true;
+        if (fVerbosity > 2) mismatchOutput << " (" << unspecialized[i] - specialized[i] << ") ";
       }
 #ifdef VECGEOM_ROOT
       if (fOkToRunROOT) {
         // The miss condition 'root[i]==1e30' does not hold for scaled shape,
         // where
         // the returned distance is scaled with respect to the unscaled value
+        if (fVerbosity > 2) mismatchOutput << " / " << root[i];
         if (std::fabs(specialized[i] - root[i]) > fTolerance && !(specialized[i] == kInfLength && root[i] > 1e20)) {
           mismatch = true;
+          if (fVerbosity > 2) mismatchOutput << " (" << root[i] - specialized[i] << ") ";
         }
-        if (fVerbosity > 2) mismatchOutput << " / " << root[i];
       }
 #endif
 #ifdef VECGEOM_GEANT4
       if (fOkToRunG4) {
         if (geant4) {
+          if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
           if (!(specialized[i] == kInfLength && geant4[i] == ::kInfinity) &&
               std::fabs(specialized[i] - geant4[i]) > fTolerance) {
             mismatch = true;
+            if (fVerbosity > 2) mismatchOutput << " (" << geant4[i] - specialized[i] << ") ";
           }
-          if (fVerbosity > 2) mismatchOutput << " / " << geant4[i];
         }
       }
 #endif
 #ifdef VECGEOM_ENABLE_CUDA
+      if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
       if (!(specialized[i] == kInfLength && cuda[i] == kInfLength) &&
           std::fabs(specialized[i] - cuda[i]) > fTolerance) {
         mismatch = true;
+        if (fVerbosity > 2) mismatchOutput << " (" << cuda[i] - specialized[i] << ") ";
       }
-      if (fVerbosity > 2) mismatchOutput << " / " << cuda[i];
 #endif
       mismatches += mismatch;
 

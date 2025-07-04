@@ -41,6 +41,20 @@ struct AllocTrait {
     for (size_t i = 0; i < nElem; ++i)
       Destroy(arr[i]);
   }
+
+  VECCORE_ATT_HOST_DEVICE
+  static void Reset(T &obj)
+  {
+    obj.~T();
+    new (&obj) T();
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  static void Reset(T *arr, size_t nElem)
+  {
+    for (size_t i = 0; i < nElem; ++i)
+      Reset(arr[i]);
+  }
 };
 
 template <typename T>
@@ -65,7 +79,18 @@ struct AllocTrait<T *> {
   static void Destroy(T *&) {}
 
   VECCORE_ATT_HOST_DEVICE
-  static void Destroy(T ** /*arr*/, size_t /*nElem*/) {}
+  static void Destroy(T **, size_t) {}
+
+  VECCORE_ATT_HOST_DEVICE
+  static void Reset(T *&ptr) { ptr = nullptr; }
+
+  VECCORE_ATT_HOST_DEVICE
+  static void Reset(T **arr, size_t nElem)
+  {
+    if (arr == nullptr) return;
+    for (size_t i = 0; i < nElem; ++i)
+      Reset(arr[i]);
+  }
 };
 } // namespace Internal
 
@@ -94,10 +119,17 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  VectorBase(Type *const vec, const int sz) : fData(vec), fSize(sz), fMemorySize(sz) {}
+  VectorBase(Type *const vec, const int sz) : fData(vec), fSize(sz), fMemorySize(sz)
+  {
+    VECGEOM_ASSERT(sz > 0 && "Trying to initialize from a zero-size array");
+  }
 
   VECCORE_ATT_HOST_DEVICE
-  VectorBase(Type *const vec, const int sz, const int maxsize) : fData(vec), fSize(sz), fMemorySize(maxsize) {}
+  VectorBase(Type *const vec, const int sz, const int maxsize) : fData(vec), fSize(sz), fMemorySize(maxsize)
+  {
+    VECGEOM_ASSERT(sz > 0 && "Trying to initialize from a zero-size array");
+    VECGEOM_ASSERT(fMemorySize >= fSize && "Maximum size cannot be smaller than actual size");
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VectorBase(VectorBase const &other) : fSize(other.fSize), fMemorySize(other.fMemorySize)
@@ -115,14 +147,17 @@ public:
   {
     if (&other != this) {
       // The array must be either already allocated or buffered with a larger size to fit the elements
-      VECGEOM_ASSERT((fAllocated || !fData || fMemorySize >= other.fSize) &&
+      VECGEOM_ASSERT((!is_preallocated() || fMemorySize >= other.fSize) &&
                      "Trying to allocate larger vector into a preallocated one");
-      if (fSize > 0) Internal::AllocTrait<Type>::Destroy(fData, fSize);
       if (fMemorySize < other.fSize) {
+        // Need to re-allocate the array with the right size
         if (fAllocated) Internal::AllocTrait<Type>::Deallocate(fData);
         fData       = Internal::AllocTrait<Type>::Allocate(other.fSize);
         fAllocated  = true;
         fMemorySize = other.fSize;
+      } else {
+        // Reset all elements
+        Internal::AllocTrait<Type>::Reset(fData, fSize);
       }
       for (size_t i = 0; i < other.fSize; ++i)
         fData[i] = other.fData[i];
@@ -146,14 +181,16 @@ public:
   {
     if (fAllocated) {
       Internal::AllocTrait<Type>::Deallocate(fData);
-      fAllocated = false;
+      fData       = nullptr;
+      fAllocated  = false;
+      fMemorySize = fSize = 0;
     }
   }
 
   VECCORE_ATT_HOST_DEVICE
   void clear()
   {
-    if (fAllocated) Internal::AllocTrait<Type>::Destroy(fData, fSize);
+    Internal::AllocTrait<Type>::Reset(fData, fSize);
     fSize = 0;
   }
 
@@ -172,6 +209,7 @@ public:
       size_t newsize = (fSize == 0) ? 4 : 2 * fMemorySize;
       reserve(newsize);
     }
+    // Copy-construct in place
     new (&fData[fSize++]) Type(item);
   }
 
@@ -181,6 +219,10 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool is_allocated() const { return fAllocated; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  bool is_preallocated() const { return (!fAllocated && fData); }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -208,14 +250,16 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  void resize(size_t newsize, Type value)
+  void resize(size_t newsize, const Type &value)
   {
     if (newsize <= fSize) {
+      // shrinking: reset exceeding elements
       for (size_t i = newsize; i < fSize; ++i) {
-        Internal::AllocTrait<Type>::Destroy(fData[i]);
+        Internal::AllocTrait<Type>::Reset(fData[i]);
       }
       fSize = newsize;
     } else {
+      // expanding
       if (newsize > fMemorySize) {
         reserve(newsize);
       }
@@ -229,13 +273,12 @@ public:
   void reserve(size_t newsize)
   {
     if (newsize > fMemorySize) {
-      VECGEOM_VALIDATE((fAllocated || (fMemorySize == 0)), << "Trying to increase a pre-allocated vector");
+      VECGEOM_VALIDATE(!is_preallocated(), << "Trying to increase a pre-allocated vector");
       // Allocate an array of elements of size newsize, constructed in place
       Type *newdata = Internal::AllocTrait<Type>::Allocate(newsize);
       // Copy existing elements into the new array
       for (size_t i = 0; i < fSize; ++i)
         new (&newdata[i]) Type(fData[i]);
-      Internal::AllocTrait<Type>::Destroy(fData, fSize);
       if (fAllocated) {
         Internal::AllocTrait<Type>::Deallocate(fData);
       }
@@ -256,7 +299,7 @@ public:
         *c = *(c + 1);
     }
     --fSize;
-    if (fSize) Internal::AllocTrait<Type>::Destroy(fData[fSize]);
+    if (fSize) Internal::AllocTrait<Type>::Reset(fData[fSize]);
     return where;
   }
 };

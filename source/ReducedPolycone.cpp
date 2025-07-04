@@ -278,16 +278,15 @@ void ReducedPolycone::GetRandZVectorAtDiffZ(Vector<Vector2D<Precision>> const &p
 {
 
   Vector<Precision> zVect;
-  Vector<Precision> rVect;
-  supVect.clear();
-  for (unsigned int i = 0; i < poiVect.size(); i++) {
-    rVect.push_back(poiVect[i].x());
+  for (unsigned int i = 0; i < poiVect.size(); i++)
     zVect.push_back(poiVect[i].y());
-  }
   ConvertToUniqueVector(zVect);
+  auto nz = zVect.size();
 
-  for (unsigned int i = 0; i < zVect.size(); i++) {
-    Vector<Precision> rVect;
+  supVect.reserve(nz);
+  dz.reserve(nz);
+  for (unsigned int i = 0; i < nz; i++) {
+    Vector<Precision> rVect(poiVect.size());
     for (unsigned int j = 0; j < poiVect.size(); j++) {
       if (poiVect[j].y() == zVect[i]) rVect.push_back(poiVect[j].x());
     }
@@ -300,9 +299,9 @@ VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::ProcessContour(Vector<Precision> const &z)
 {
 
-  Vector<Precision> zV;
   Vector<Vector2D<Precision>> poiVect;
   CalcPoIVectorFor2DPolygon(poiVect, z);
+  Vector<Precision> zV;
   Vector<Vector<Precision>> supVect;
   GetRandZVectorAtDiffZ(poiVect, zV, supVect);
   // Make Unique R vector at different Z
