@@ -138,6 +138,7 @@ set(TEST_EXECUTABLES_CORE
   core/TestMakeInstance.cpp
   #  services/CompNavStatePools.cpp
   core/TestMaskedAssign.cpp
+  core/TestOvershoot.cpp
   core/TestVector.cpp
   core/TestHybridBVH.cpp
   core/TestEarlyReturns.cpp

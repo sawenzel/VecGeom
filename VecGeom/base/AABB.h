@@ -237,16 +237,17 @@ public:
   bool IntersectInvDirApproach(Vector3D<Real_t> point, Vector3D<Real_t> invdir, Real_t step, Real_t &approach) const
   {
     Real_t tmin, tmax;
+    approach = Real_t(0.0);
     ComputeIntersectionInvDir(point, invdir, tmin, tmax);
-    bool hit = tmin <= tmax && tmax >= Real_t(0.0);
-    if (hit && tmin > step) {
-      // Estimate maximum error of the result to correct the step limit
-      auto err = vecgeom::kEpsilonT<Real_t> * point.Abs().Max() / tmin;
-      hit      = tmin < step + err;
+    if (tmax < Real_t(0.0) || tmin > tmax) return false;
+
+    // Overestimate error to 10 ULP (corresponding to 20 roundings in the bad direction)
+    Real_t err = Real_t(10.) * ULP<Real_t>(vecCore::math::Max(point.Abs().Max(), tmin));
+    // Do not approach if distance less than unit
+    if (tmin < (step + err) && tmin > Real_t(1.)) {
+      approach = vecCore::math::Max(tmin - err, Real_t(0.));
     }
-    // note: just approaching 0.99 to prevent overstepping
-    approach = (hit && tmin > 1.) ? 0.99 * tmin : Real_t(0);
-    return hit;
+    return true;
   }
 
   /**
