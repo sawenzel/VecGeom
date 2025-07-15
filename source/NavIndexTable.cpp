@@ -54,12 +54,16 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   auto ichild       = pv->GetChildId();
   if (ichild < 0 && pv != GeoManager::Instance().GetWorld())
     VECGEOM_LOG(critical) << "Found placed volume having undefined child id";
-  auto lv           = pv->GetLogicalVolume();
-  auto ivol         = lv->id();
-  bool selected     = IsSelected(ivol);
-  bool visited      = IsVisited(ivol);
-  bool new_scene    = level == 1 && scene_id > 0;
-  unsigned short nd = (unsigned short)lv->GetDaughters().size();
+  auto lv         = pv->GetLogicalVolume();
+  auto ivol       = lv->id();
+  bool selected   = IsSelected(ivol);
+  bool visited    = IsVisited(ivol);
+  bool new_scene  = level == 1 && scene_id > 0;
+  size_t raw_size = lv->GetDaughters().size();
+  if (raw_size > std::numeric_limits<NavIndex_t>::max()) {
+    throw std::runtime_error("Volume has too many daughters for NavStateIndex");
+  }
+  NavIndex_t nd = static_cast<NavIndex_t>(raw_size);
   if (lv->GetDaughters().size() >= std::numeric_limits<unsigned int>::max()) {
     VECGEOM_LOG(critical) << "Navigation table does not support volumes having more than "
                           << std::numeric_limits<unsigned int>::max() << " daughters";
