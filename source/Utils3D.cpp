@@ -274,7 +274,7 @@ void Polygon::Extent(Precision x[2], Precision y[2], Precision z[2])
     if ((*fVert)[i].x() < x[0]) x[0] = (*fVert)[i].x();
 
     if ((*fVert)[i].y() > y[1]) y[1] = (*fVert)[i].y();
-    if ((*fVert)[i].x() < y[0]) y[0] = (*fVert)[i].y();
+    if ((*fVert)[i].y() < y[0]) y[0] = (*fVert)[i].y();
 
     if ((*fVert)[i].z() > z[1]) z[1] = (*fVert)[i].z();
     if ((*fVert)[i].z() < z[0]) z[0] = (*fVert)[i].z();
