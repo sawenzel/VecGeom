@@ -47,6 +47,7 @@ The table below shows the available CMake options for VecGeom that may be used t
 |VECGEOM_BUILTIN_VECCORE|OFF|Build VecCore and its dependencies from source|
 |VECGEOM_CUDA_VOLUME_SPECIALIZATION|OFF|Use specialized volumes for CUDA|
 |VECGEOM_DISTANCE_DEBUG|OFF|Enable comparison of calculated distances against ROOT/Geant4 behind the scenes|
+|VECGEOM_DOXYGEN|OFF|Enable Doxygen docs|
 |VECGEOM_EMBREE|OFF|Enable Intel Embree|
 |VECGEOM_ENABLE_CUDA|OFF|Enable compilation for CUDA|
 |VECGEOM_FAST_MATH|OFF|Enable the -ffast-math compiler option in Release builds|
