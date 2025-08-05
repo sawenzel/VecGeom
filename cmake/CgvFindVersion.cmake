@@ -1,5 +1,6 @@
 #------------------------------- -*- cmake -*- -------------------------------#
 # SPDX-License-Identifier: Apache-2.0
+# SPDX-PackageName: "CGV: CMake Git Version"
 #
 # https://github.com/sethrj/cmake-git-version
 #
@@ -102,17 +103,37 @@ macro(_cgv_timestamp tsfile tsvar)
 endmacro()
 
 #-----------------------------------------------------------------------------#
+# Execute a command, logging verbosely, saving output
+macro(_cgv_git_call_output output_var)
+  message(VERBOSE "Executing ${GIT_EXECUTABLE} from ${CGV_SOURCE_DIR}: ${ARGN}")
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" ${ARGN}
+    WORKING_DIRECTORY "${CGV_SOURCE_DIR}"
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_VARIABLE GIT_ERR
+    RESULT_VARIABLE GIT_RESULT
+    OUTPUT_VARIABLE ${output_var}
+  )
+endmacro()
+
+#-----------------------------------------------------------------------------#
 # Save the version with a timestamp to a cache variable
 
 function(_cgv_store_version vstring vsuffix vhash tsfile)
   if(NOT vstring)
     message(WARNING "The version metadata for ${CGV_PROJECT} could not "
-      "be determined: installed version number may be incorrect")
+      "be determined: installed version number may be incorrect. Try "
+      "downloading an official release tarball, using `git archive`, "
+      "using `git clone` without `--shallow` nor deleting `.git`, or "
+      "manually specifying a known version by configuring with "
+      "`-D${CGV_CACHE_VAR}=1.2.3")
   endif()
   # Replace 11-03 with 11.3
   string(REGEX REPLACE "-+0*" "." vstring "${vstring}")
   # Remove trailing periods
   string(REGEX REPLACE "\\.+$" "" vstring "${vstring}")
+  # Remove leading zeros from version components
+  string(REGEX REPLACE "0+([1-9]+[0-9]*)" "\\1" vstring "${vstring}")
 
   # Get timestamp
   _cgv_timestamp("${tsfile}" _vtimestamp)
@@ -132,20 +153,13 @@ endfunction()
 # Get the path to the git head used to describe the current repostiory
 function(_cgv_git_path resultvar)
   if(GIT_EXECUTABLE)
-    execute_process(
-      COMMAND "${GIT_EXECUTABLE}" "rev-parse" "--git-path" "HEAD"
-      WORKING_DIRECTORY "${CGV_SOURCE_DIR}"
-      ERROR_VARIABLE _GIT_ERR
-      OUTPUT_VARIABLE _TSFILE
-      RESULT_VARIABLE _GIT_RESULT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    _cgv_git_call_output(_TSFILE "rev-parse" "--git-path" "HEAD")
   else()
-    set(_GIT_RESULT 1)
-    set(_GIT_ERR "GIT_EXECUTABLE is not defined")
+    set(GIT_RESULT 1)
+    set(GIT_ERR "GIT_EXECUTABLE is not defined")
   endif()
-  if(_GIT_RESULT)
-    message(AUTHOR_WARNING "Failed to get path to git head: ${_GIT_ERR}")
+  if(GIT_RESULT)
+    message(AUTHOR_WARNING "Failed to get path to git head: ${GIT_ERR}")
     set(_TSFILE)
   else()
     get_filename_component(_TSFILE "${_TSFILE}" ABSOLUTE BASE_DIR
@@ -278,20 +292,13 @@ function(_cgv_try_git_describe)
   endif()
 
   # Load git description
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" "describe" "--tags" ${_match}
-    WORKING_DIRECTORY "${CGV_SOURCE_DIR}"
-    ERROR_VARIABLE _GIT_ERR
-    OUTPUT_VARIABLE _VERSION_STRING
-    RESULT_VARIABLE _GIT_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if(_GIT_RESULT)
-    message(AUTHOR_WARNING "No suitable git tags found': ${_GIT_ERR}")
+  _cgv_git_call_output(_VERSION_STRING "describe" "--tags" ${_match})
+  if(GIT_RESULT)
+    message(AUTHOR_WARNING "No suitable git tags found': ${GIT_ERR}")
     return()
   endif()
-  if(_GIT_ERR)
-    message(AUTHOR_WARNING "git describe warned: ${_GIT_ERR}")
+  if(GIT_ERR)
+    message(AUTHOR_WARNING "git describe warned: ${GIT_ERR}")
   endif()
   if(NOT _VERSION_STRING)
     message(AUTHOR_WARNING "Failed to get ${CGV_PROJECT} version from git: "
@@ -299,15 +306,9 @@ function(_cgv_try_git_describe)
     return()
   endif()
 
-  # Get git branch: may fail if detached
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" "symbolic-ref" "--short" "HEAD"
-    WORKING_DIRECTORY "${CGV_SOURCE_DIR}"
-    ERROR_VARIABLE _GIT_ERR
-    OUTPUT_VARIABLE _BRANCH_STRING
-    RESULT_VARIABLE _GIT_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  # Get git branch: may fail if detached, leading to empty output, which is
+  # the desired behavior
+  _cgv_git_call_output(_BRANCH_STRING "symbolic-ref" "--short" "HEAD")
 
   _cgv_git_path(_TSFILE)
   _cgv_try_parse_git_describe("${_VERSION_STRING}" "${_BRANCH_STRING}" "${_TSFILE}")
@@ -320,16 +321,10 @@ function(_cgv_try_git_hash)
     return()
   endif()
   # Fall back to just getting the hash
-  execute_process(
-    COMMAND "${GIT_EXECUTABLE}" "log" "-1" "--format=%h" "HEAD"
-    WORKING_DIRECTORY "${CGV_SOURCE_DIR}"
-    OUTPUT_VARIABLE _VERSION_HASH
-    RESULT_VARIABLE _GIT_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if(_GIT_RESULT)
+  _cgv_git_call_output(_VERSION_HASH "log" "-1" "--format=%h" "HEAD")
+  if(_VERSION_HASH_RESULT)
     message(AUTHOR_WARNING "Failed to get current commit hash from git: "
-      "${_GIT_ERR}")
+      "${_VERSION_HASH_ERR}")
     return()
   endif()
 
@@ -340,13 +335,20 @@ endfunction()
 function(_cgv_try_all)
   if(${CGV_CACHE_VAR})
     # Previous configure already set the variable: check the timestamp
+    set(_tsfile)
     list(LENGTH ${CGV_CACHE_VAR} _len)
-    if(_len EQUAL 5)
+    if(_len EQUAL 1)
+      # Version number specified by user
+      message(AUTHOR_WARNING
+        "Using manually input git version ${${CGV_CACHE_VAR}}"
+      )
+      set(${CGV_CACHE_VAR} "${${CGV_CACHE_VAR}}" "" "" "" PARENT_SCOPE)
+      return()
+    elseif(_len EQUAL 5)
       list(GET ${CGV_CACHE_VAR} 3 _tsfile)
       list(GET ${CGV_CACHE_VAR} 4 _timestamp)
     else()
-      message(VERBOSE "Old cache variable ${CGV_CACHE_VAR}: length=${_len}")
-      set(_tsfile)
+      message(VERBOSE "Invalid cache variable ${CGV_CACHE_VAR}: length=${_len}")
     endif()
     if(_tsfile)
       _cgv_timestamp("${_tsfile}" _curtimestamp)
@@ -450,4 +452,4 @@ if(CMAKE_SCRIPT_MODE_FILE)
   endif()
 endif()
 
-# cmake-git-version 1.2.1
+# cmake-git-version 1.2.2-1+main.a7b5e0a
