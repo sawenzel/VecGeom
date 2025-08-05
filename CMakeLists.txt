@@ -127,6 +127,7 @@ enum_option(VECGEOM_BACKEND DOC "Vector backend API to be used"
 
 # External dependencies
 option(VECGEOM_BUILTIN_VECCORE "Build VecCore and its dependencies from source" OFF)
+option(VECGEOM_DOXYGEN "Build Doxygen documentation" OFF)
 option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
 option(VECGEOM_ENABLE_CUDA "Enable compilation for CUDA." OFF)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" ON)
@@ -964,6 +965,7 @@ install(EXPORT VecGeomTargets
 
 ################################################################################
 # Doxygen documentation
+if (VECGEOM_DOXYGEN)
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   set(DOXYFILE_OUTPUT_DIR  ${PROJECT_BINARY_DIR}/doxygen)
@@ -984,4 +986,5 @@ if(DOXYGEN_FOUND)
     COMMAND ${CMAKE_COMMAND} -E make_directory ${DOXYFILE_OUTPUT_DIR}
     COMMENT "Creating doc directory")
   add_dependencies(doxygen doxydir)
+endif()
 endif()
