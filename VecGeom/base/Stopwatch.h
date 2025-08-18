@@ -7,7 +7,7 @@
 #include "VecGeom/base/Global.h"
 
 // OS X compatibility
-#ifdef __MACH__
+#if defined(__MACH__) && defined(__APPLE__)
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
@@ -28,7 +28,7 @@ inline long long now()
   count_t result;
   struct timespec ts;
 
-#ifdef __MACH__
+#if defined(__MACH__) && defined(__APPLE__)
   // OS X compatibility code taken from
   // http://stackoverflow.com/questions/5167269/
   clock_serv_t cclock;
@@ -46,11 +46,8 @@ inline long long now()
   return result;
 }
 
-inline double seconds(count_t value)
-{
-  return value * 1E-9;
-}
-}
+inline double seconds(count_t value) { return value * 1E-9; }
+} // namespace standardtimer
 
 /**
  * @brief Timer for benchmarking purposes
@@ -107,7 +104,7 @@ public:
 
   inline double CpuElapsed() const { return fCpuStop - fCpuStart; }
 };
-}
-} // End global namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 #endif // VECGEOM_BASE_STOPWATCH_H_
