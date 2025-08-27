@@ -121,7 +121,8 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VectorBase(Type *const vec, const int sz) : fData(vec), fSize(sz), fMemorySize(sz)
   {
-    VECGEOM_ASSERT(sz > 0 && "Trying to initialize from a zero-size array");
+    // May be called by ConstructOnGpu with an empty list
+    // VECGEOM_ASSERT(sz > 0 && "Trying to initialize from a zero-size array");
   }
 
   VECCORE_ATT_HOST_DEVICE
