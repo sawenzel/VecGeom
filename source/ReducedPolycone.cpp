@@ -28,9 +28,16 @@ void ReducedPolycone::SetRMax()
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::SetRZ(Vector<Vector2D<Precision>> const &rzVect)
 {
+  // The RZ vector must have at least 3 RZ points and two different z values
+  VECGEOM_VALIDATE(rzVect.size() > 2, << "Cannot setup reduced polycone with less than 3 points");
   fRZVect.clear();
-  for (unsigned int i = 0; i < rzVect.size(); i++)
+  auto z          = rzVect[0].y();
+  bool differentZ = false;
+  for (unsigned int i = 0; i < rzVect.size(); i++) {
     fRZVect.push_back(rzVect[i]);
+    if (Abs(z - rzVect[i].y()) > kTolerance) differentZ = true;
+  }
+  VECGEOM_VALIDATE(differentZ, << "Cannot setup reduced polycone with all points at same Z value");
   SetRMax();
 }
 
@@ -45,8 +52,9 @@ void ReducedPolycone::ConvertToUniqueVector(Vector<Precision> &vect)
    *
    * Ideally this algo should be the part of Vector.h
    */
+  if (vect.size() < 2) return;
   for (unsigned int i = 0; i < vect.size(); i++) {
-    for (unsigned int j = 0; j < vect.size() - 1; j++) {
+    for (unsigned int j = 0; (j + 1) < vect.size(); j++) {
       if (vect[j] >= vect[j + 1]) {
         Precision temp = vect[j];
         vect[j]        = vect[j + 1];
@@ -77,6 +85,7 @@ void ReducedPolycone::GetUniqueZVector(Vector<Precision> &z)
     z.push_back(fRZVect[i].y());
   }
   ConvertToUniqueVector(z);
+  VECGEOM_VALIDATE(z.size() > 1., << "Not enough vertices at different Z");
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -196,7 +205,7 @@ bool ReducedPolycone::ContourCheck(Vector<Precision> const &z)
 
   // Creating vector of checkerLines
   Vector<Line2D> checkerLineVect;
-  for (unsigned int i = 0; i < z.size() - 1; i++) {
+  for (unsigned int i = 0; (i + 1) < z.size(); i++) {
     Precision zval = (z[i] + z[i + 1]) / 2.;
     checkerLineVect.push_back(Line2D(Vector2D<Precision>(0., zval), Vector2D<Precision>(fRMax, zval)));
   }
@@ -312,7 +321,7 @@ void ReducedPolycone::ProcessContour(Vector<Precision> const &z)
 
   Vector<Line2D> lineVect(fRZVect.size());
   GetLineVector(lineVect);
-  for (unsigned int i = 0; i < z.size() - 1; i++) {
+  for (unsigned int i = 0; (i + 1) < z.size(); i++) {
     Vector<Line2D> sectionLine;
     for (unsigned int j = 0; j < supVect[i].size(); j++) {
 
@@ -441,8 +450,8 @@ bool ReducedPolycone::ContourGeneric(Vector<Precision> const &z)
 VECCORE_ATT_HOST_DEVICE
 void ReducedPolycone::ProcessGenericContour(Vector<Precision> const &z)
 {
-  unsigned int numOfSections = z.size() - 1;
-  for (unsigned int i = 0; i < numOfSections; i++) {
+  VECGEOM_VALIDATE(z.size() > 1, << "Not enough Z points in the contour");
+  for (unsigned int i = 0; (i + 1) < z.size(); i++) {
     Vector<Line2D> sortedLinesVect;
     sortedLinesVect = GetVectorOfSortedLinesByHorizontalDistance(i);
     Vector<Section> coaxialCones;
@@ -507,8 +516,8 @@ Vector<Line2D> ReducedPolycone::GetVectorOfSortedLinesByHorizontalDistance(unsig
   for (unsigned int i = 0; i < secLineVect.size(); i++) {
     indexStructVect.push_back(IndexStruct(i, secLineVect[i].GetHorizontalDistance(midVal)));
   }
-  for (unsigned int i = 0; i < indexStructVect.size() - 1; i++) {
-    for (unsigned int j = 0; j < indexStructVect.size() - i - 1; j++) {
+  for (unsigned int i = 0; (i + 1) < indexStructVect.size(); i++) {
+    for (unsigned int j = 0; (j + i + 1) < indexStructVect.size(); j++) {
       if (indexStructVect[j].distance > indexStructVect[j + 1].distance) {
         IndexStruct temp       = indexStructVect[j];
         indexStructVect[j]     = indexStructVect[j + 1];
