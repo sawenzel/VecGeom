@@ -72,14 +72,8 @@ cuda_rdc_target_link_libraries(VecGeomTest
 )
 
 if(VECGEOM_GEANT4 AND VECGEOM_ROOT)
-  # We use VGM to convert (test) geometries from ROOT input to G4
-  # without needing an intermediate gdml file
-  # for user friendliness .. added as external project for now
+  # Install prefix for VGM built via ExternalProject
   set(VGM_INSTALL "${PROJECT_BINARY_DIR}/vgminstall")
-  set(VGM_LIBRARIES
-    "${VGM_INSTALL}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}BaseVGM${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    "${VGM_INSTALL}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}Geant4GM${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    "${VGM_INSTALL}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}RootGM${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
   ExternalProject_Add(VGM
     GIT_REPOSITORY "https://github.com/vmc-project/vgm.git"
@@ -89,17 +83,30 @@ if(VECGEOM_GEANT4 AND VECGEOM_ROOT)
       -DGeant4_DIR=${Geant4_DIR}
       -DROOT_DIR=${ROOT_DIR}
       -DCMAKE_INSTALL_LIBDIR=${VGM_INSTALL}/lib
-    BUILD_BYPRODUCTS ${VGM_LIBRARIES})
+      -DCMAKE_BUILD_RPATH=\$ORIGIN
+      -DCMAKE_INSTALL_RPATH=\$ORIGIN
+      -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON
+  )
 
-  # This is hacky, but avoids chicken-egg of ExternalPackage vs FindPackage
-  # NB: Realistically, either need to vendor/FetchContent VGM, or use external package...
-  if(NOT EXISTS "${VGM_INSTALL}/include")
-    file(MAKE_DIRECTORY "${VGM_INSTALL}/include")
-  endif()
-  add_library(VecGeom::VGM INTERFACE IMPORTED)
-  target_include_directories(VecGeom::VGM INTERFACE "${VGM_INSTALL}/include")
-  cuda_rdc_target_link_libraries(VecGeom::VGM INTERFACE ${VGM_LIBRARIES})
+  # Interface target for VGM
+  add_library(VecGeomVGM INTERFACE)
+  add_library(VecGeom::VGM ALIAS VecGeomVGM)
 
-  cuda_rdc_target_link_libraries(VecGeomTest PRIVATE VecGeom::VGM)
-  add_dependencies(VecGeomTest VGM)
+  target_include_directories(VecGeomVGM INTERFACE "${VGM_INSTALL}/include")
+  target_link_directories(   VecGeomVGM INTERFACE "${VGM_INSTALL}/lib")   # <— key
+
+  # Link by library names; resolver will find them in ${VGM_INSTALL}/lib at build time
+  cuda_rdc_target_link_libraries(VecGeomVGM INTERFACE
+    BaseVGM ClhepVGM Geant4GM RootGM
+  )
+
+  # Ensure build/link happen after VGM is built/installed
+  add_dependencies(VecGeomTest_objects VGM)
+  add_dependencies(VecGeomTest         VGM)
+  add_dependencies(VecGeomVGM          VGM)   # optional, helps if something links VecGeom::VGM directly
+
+  # Run-from-build-tree rpath for anything linking VecGeomTest
+  set_property(TARGET VecGeomTest APPEND PROPERTY BUILD_RPATH   "${VGM_INSTALL}/lib")
+  set_property(TARGET VecGeomTest APPEND PROPERTY INSTALL_RPATH "${VGM_INSTALL}/lib")
+  cuda_rdc_target_link_libraries(VecGeomTest PUBLIC VecGeom::VGM)
 endif()
