@@ -21,6 +21,7 @@ error: no matching function for call to ‘CLHEP::Hep3Vector::Hep3Vector(<unreso
 #define VECGEOM_G4GEOMANAGER_H_
 
 #include "VecGeom/base/Config.h"
+#include "VecGeom/base/Assert.h"
 
 class G4Navigator;
 class G4VPhysicalVolume;
