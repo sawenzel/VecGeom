@@ -46,12 +46,10 @@ public:
   virtual Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
                                   Precision step_max = kInfLength) const override
   {
-#ifndef VECCORE_CUDA
-    VECGEOM_VALIDATE(d.IsNormalized(), << " direction not normalized in call to  DistanceToOut ");
-#endif
+    VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output = kInfLength;
     Implementation::template DistanceToOut<>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max,
-                                           output);
+                                             output);
 
 // detect -inf responses which are often an indication for a real bug
 #ifndef VECCORE_CUDA
@@ -82,9 +80,7 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
                                  const Precision step_max = kInfLength) const override
   {
-#ifndef VECCORE_CUDA
-    VECGEOM_VALIDATE(d.IsNormalized(), << " direction not normalized in call to  DistanceToOut ");
-#endif
+    VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output(kInfLength);
     Implementation::DistanceToIn(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max, output);
     return output;

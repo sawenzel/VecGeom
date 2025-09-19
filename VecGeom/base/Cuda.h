@@ -13,6 +13,31 @@
   #define VECGEOM_IMPL_NAMESPACE cuda
   #define VECGEOM_NAMESPACE ::vecgeom
   #define VECGEOM_ALIGNED __align__((64))
+
+  namespace wide {
+   // 2-lane double
+  struct alignas(16) d2 {
+    double2 v;
+    __host__ __device__ d2() : v{0.0, 0.0} {}
+    __host__ __device__ d2(double a, double b) : v{a, b} {}
+    __host__ __device__ inline double x() const { return v.x; }
+    __host__ __device__ inline double y() const { return v.y; }
+    __host__ __device__ inline void set(double a, double b){ v = make_double2(a, b); }
+  };
+
+  // 4-lane float
+  struct alignas(16) f4 {
+    float4 v;
+    __host__ __device__ f4() : v{0.f, 0.f, 0.f, 0.f} {}
+    __host__ __device__ f4(float a,float b,float c,float d) : v{a, b, c, d} {}
+    __host__ __device__ inline float x() const { return v.x; }
+    __host__ __device__ inline float y() const { return v.y; }
+    __host__ __device__ inline float z() const { return v.z; }
+    __host__ __device__ inline float w() const { return v.w; }
+    __host__ __device__ inline void set(float a, float b, float c, float d) { v = make_float4(a, b, c, d); }
+  };
+  } // namespace wide
+
   #define VECGEOM_HOST_FORWARD_DECLARE(X) namespace cxx { X }
   #define VECGEOM_DEVICE_FORWARD_DECLARE(X) class __QuietSemi
   #define VECGEOM_DEVICE_DECLARE_CONV(classOrStruct,X) class __QuietSemi
@@ -35,6 +60,30 @@
   // Not compiling with NVCC
   #define VECGEOM_IMPL_NAMESPACE cxx
   #define VECGEOM_NAMESPACE ::vecgeom
+  namespace wide {
+  // 2-lane double
+  struct alignas(16) d2 {
+    double x_, y_;
+    d2() : x_(0.0), y_(0.0) {}
+    d2(double a, double b) : x_(a), y_(b) {}
+    inline double x() const { return x_; }
+    inline double y() const { return y_; }
+    inline void set(double a, double b){ x_=a; y_=b; }
+  };
+
+  // 4-lane float
+  struct alignas(16) f4 {
+    float x_, y_, z_, w_;
+    f4() : x_(0.f), y_(0.f), z_(0.f), w_(0.f) {}
+    f4(float a, float b, float c, float d) : x_(a), y_(b), z_(c), w_(d) {}
+    inline float x() const { return x_; }
+    inline float y() const { return y_; }
+    inline float z() const { return z_; }
+    inline float w() const { return w_; }
+    inline void set(float a, float b, float c, float d){ x_=a; y_=b; z_=c; w_=d; }
+  };
+  
+  } // namespace wide
   #ifdef VECGEOM_ENABLE_CUDA
     // CUDA is enabled, but currently compiling regular C++ code.
     // This enables methods that interface between C++ and CUDA environments
@@ -214,7 +263,7 @@ public:
   T &operator[](size_t idx) { return fValue[idx]; }
 };
 #endif
-}
+} // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
 #endif

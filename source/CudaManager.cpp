@@ -287,27 +287,37 @@ void CudaManager::Clear()
 // allocates space to transfer a collection/container to the GPU
 // a typical collection is a set/vector of placed volume pointers etc.
 template <typename Coll>
-bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title, const Coll &data, bool isforplacedvol)
+bool CudaManager::AllocateCollectionOnCoproc(const char *verbose_title, const Coll &data, bool isforplacedvol,
+                                             size_t min_align /* = 1*/)
 {
   // NOTE: Code need to be enhanced to propage the error correctly.
 
   if (verbose_ > 2) std::cerr << "Allocating " << verbose_title << "...";
 
-  size_t totalSize = 0;
+  // Utility to align up to a power of 2
+  auto AlignUp = [](size_t x, size_t a) { return (x + (a - 1)) & ~(a - 1); };
+
   // calculate total size of buffer on GPU to hold the GPU copies of the collection
+  size_t off = 0;
   for (auto i : data) {
-    totalSize += i->DeviceSizeOf();
+    off = AlignUp(off, min_align); // align start of this object
+    off += i->DeviceSizeOf();      // advance by its size
   }
 
-  GpuAddress gpu_address;
-  gpu_address.Allocate(totalSize);
-  allocated_memory_.push_back(gpu_address);
+  const size_t totalSize = off;
+  GpuAddress base; // holds the device pointer
+  base.Allocate(totalSize);
+  allocated_memory_.push_back(base);
 
   // record a GPU memory location for each object in the collection to be copied
+  off = 0;
   for (auto i : data) {
-    memory_map_[ToCpuAddress(i)] = gpu_address;
-    if (isforplacedvol) fGPUtoCPUmapForPlacedVolumes_[gpu_address] = i;
-    gpu_address += i->DeviceSizeOf();
+    off                 = AlignUp(off, min_align);
+    GpuAddress obj_addr = base + off;
+    assert(((reinterpret_cast<size_t>(obj_addr.GetPtr()) & (min_align - 1)) == 0) && "device pointer not aligned");
+    memory_map_[ToCpuAddress(i)] = obj_addr;
+    if (isforplacedvol) fGPUtoCPUmapForPlacedVolumes_[obj_addr] = i;
+    off += i->DeviceSizeOf();
   }
 
   if (verbose_ > 2) {
@@ -418,7 +428,7 @@ void CudaManager::AllocateGeometry()
     if (verbose_ > 2) std::cerr << " OK\n";
   }
 
-  AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_);
+  AllocateCollectionOnCoproc("unplaced volumes", unplaced_volumes_, false, 16);
   VECGEOM_DEVICE_API_CALL(GetLastError());
 
   // the allocation for placed volumes is a bit different (due to compact buffer treatment), so we call a specialized

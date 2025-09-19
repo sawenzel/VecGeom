@@ -205,7 +205,7 @@ private:
    * Helper routine allocate GPU memory for a collection of object
    */
   template <typename Coll>
-  bool AllocateCollectionOnCoproc(const char *verbose_title, const Coll &data, bool isplaced = false);
+  bool AllocateCollectionOnCoproc(const char *verbose_title, const Coll &data, bool isplaced = false, size_t align = 1);
 
   /**
    * Helper routine allocate GPU memory for placed volume objects

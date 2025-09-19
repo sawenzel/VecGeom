@@ -6,6 +6,7 @@
 
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/AlignedBase.h"
+#include "VecGeom/base/Vector2D.h"
 
 #include <cstdlib>
 #include <ostream>
@@ -127,6 +128,31 @@ public:
   VECGEOM_FORCE_INLINE
   Type const &z() const { return vec[2]; }
 
+  /// @brief Create 2D vectors out of pairs of components
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> XY() const { return {vec[0], vec[1]}; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> YX() const { return {vec[1], vec[0]}; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> XZ() const { return {vec[0], vec[2]}; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> ZX() const { return {vec[2], vec[0]}; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> YZ() const { return {vec[1], vec[2]}; }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  Vector2D<Type> ZY() const { return {vec[2], vec[1]}; }
+
   VECCORE_ATT_HOST_DEVICE
   void Set(Type const &a, Type const &b, Type const &c)
   {
@@ -238,6 +264,23 @@ public:
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<Type> Cross(Vector3D<OtherType> const &right) const
   {
     return Cross<Type, OtherType>(*this, right);
+  }
+
+  /// The Z component of the cross (vector) product of two Vector3D<T> objects
+  /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class FirstType, class SecondType>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Type CrossZ(Vector3D<FirstType> const &left,
+                                                                  Vector3D<SecondType> const &right)
+  {
+    return left[0] * right[1] - left[1] * right[0];
+  }
+
+  /// The Z component of the cross (vector) product of two Vector3D<T> objects
+  /// \return Type (where Type is float, double, or various SIMD vector types)
+  template <class OtherType>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Type CrossZ(Vector3D<OtherType> const &right) const
+  {
+    return CrossZ<Type, OtherType>(*this, right);
   }
 
   /// Maps each vector entry to a function that manipulates the entry type.

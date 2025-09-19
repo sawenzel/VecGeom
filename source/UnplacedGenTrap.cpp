@@ -25,24 +25,20 @@ Vector3D<Precision> UnplacedGenTrap::SamplePointOnSurface() const
   // Avoid using the bounding box due to possible point-like top/bottom
   // which would be impossible to sample
   bool degenerate[6] = {false};
-  int nvertices      = 4; // by default 4 vertices on top/bottom faces
-  // bottom
+  int nvertb         = 4;
+  int nvertt         = 4;
   for (unsigned int j = 0; j < 4; ++j) {
-    if ((Abs(fGenTrap.fDeltaX[j]) < kTolerance) && (Abs(fGenTrap.fDeltaY[j]) < kTolerance)) nvertices--;
+    auto k      = (j + 1) % 4;
+    bool degenb = (fGenTrap.fVertices[k] - fGenTrap.fVertices[j]).Mag2() < kToleranceSquared;
+    if (degenb) nvertb--;
+    bool degent = (fGenTrap.fVertices[k + 4] - fGenTrap.fVertices[j + 4]).Mag2() < kToleranceSquared;
+    if (degent) nvertt--;
+    if (degenb && degent) degenerate[j] = true;
   }
-  if (nvertices < 3) degenerate[4] = true;
-  nvertices = 4;
-  // top
-  for (unsigned int j = 0; j < 4; ++j) {
-    if ((Abs(fGenTrap.fDeltaX[j + 4]) < kTolerance) && (Abs(fGenTrap.fDeltaY[j + 4]) < kTolerance)) nvertices--;
-  }
-  if (nvertices < 3) degenerate[5] = true;
-  for (unsigned int j = 0; j < 4; ++j) {
-    if ((Abs(fGenTrap.fDeltaX[j]) < kTolerance) && (Abs(fGenTrap.fDeltaY[j]) < kTolerance) &&
-        (Abs(fGenTrap.fDeltaX[j + 4]) < kTolerance) && (Abs(fGenTrap.fDeltaY[j + 4]) < kTolerance))
-      degenerate[j] = true;
-  }
-  // Shoot on non-degenerate surface
+  if (nvertb < 3) degenerate[4] = true;
+  if (nvertt < 3) degenerate[5] = true;
+
+  // Shoot on a non-degenerate surface
   unsigned int i = 0;
   while (1) {
     i = int(RNG::Instance().uniform(0., 6.));
@@ -68,27 +64,6 @@ Vector3D<Precision> UnplacedGenTrap::SamplePointOnSurface() const
   i *= 4; // now matching the index of the start vertex
           // Compute min/max  in x and y for the selected surface
 
-  // Consider degenerate cases (if we would like to generate points also on these)
-  /*
-    if (nvertices <= 1) {
-      // A single vertex. Generate the point identical to the vertex
-      point.Set(fVertices[i].x(), fVertices[i].y(), z);
-      return point;
-    } else if (nvertices == 2) {
-      for (int j = i; j< i + 4 ; ++j) {
-        if ( (Abs(fDeltaX[j]) < kTolerance) && (Abs(fDeltaY[j]) < kTolerance) ) continue;
-        // We have found two different points. Generate a random x:
-        x = RNG::Instance().uniform(fVertices[j].x(), fVertices[j+1].x());
-        // Calculate corresponding y
-        if (Abs(fDeltaX[j]) < kTolerance)
-          y = RNG::Instance().uniform(fVertices[j].y(), fVertices[j+1].y());
-        else
-          y = fVertices[j].y() + (x - fVertices[j].x())*fDeltaY[j]/fDeltaX[j];
-        point.Set(x,y,z);
-        return point;
-      }
-    }
-  */
   // Generate point on top/bottom surfaces
   Precision xmin = fGenTrap.fVertices[i].x();
   Precision xmax = xmin;
@@ -139,17 +114,14 @@ Precision UnplacedGenTrap::SurfaceArea() const
   Precision surfTop     = 0.;
   Precision surfBottom  = 0.;
   Precision surfLateral = 0;
+  Vertex_t const *vert  = fGenTrap.fVertices;
   for (int i = 0; i < 4; ++i) {
     int j = (i + 1) % 4;
-    surfBottom +=
-        0.5 * (fGenTrap.fVerticesX[i] * fGenTrap.fVerticesY[j] - fGenTrap.fVerticesX[j] * fGenTrap.fVerticesY[i]);
-    surfTop += 0.5 * (fGenTrap.fVerticesX[i + 4] * fGenTrap.fVerticesY[j + 4] -
-                      fGenTrap.fVerticesX[j + 4] * fGenTrap.fVerticesY[i + 4]);
-    vi.Set(fGenTrap.fVerticesX[i + 4] - fGenTrap.fVerticesX[i], fGenTrap.fVerticesY[i + 4] - fGenTrap.fVerticesY[i],
-           2 * fGenTrap.fDz);
-    vj.Set(fGenTrap.fVerticesX[j + 4] - fGenTrap.fVerticesX[j], fGenTrap.fVerticesY[j + 4] - fGenTrap.fVerticesY[j],
-           2 * fGenTrap.fDz);
-    hi0.Set(fGenTrap.fVerticesX[j] - fGenTrap.fVerticesX[i], fGenTrap.fVerticesY[j] - fGenTrap.fVerticesY[i], 0.);
+    surfBottom += 0.5 * vert[i].CrossZ(vert[j]);
+    surfTop += 0.5 * vert[i + 4].CrossZ(vert[j + 4]);
+    vi.Set(vert[i + 4].x() - vert[i].x(), vert[i + 4].y() - vert[i].y(), 2 * fGenTrap.fDz);
+    vj.Set(vert[j + 4].x() - vert[j].x(), vert[j + 4].y() - vert[j].y(), 2 * fGenTrap.fDz);
+    hi0.Set(vert[j].x() - vert[i].x(), vert[j].y() - vert[i].y(), 0.);
     vres = 0.5 * (Vertex_t::Cross(vi + vj, hi0) + Vertex_t::Cross(vi, vj));
     surfLateral += vres.Mag();
   }
@@ -170,17 +142,14 @@ Precision UnplacedGenTrap::volume() const
 {
   // Computes analytically the capacity of the trapezoid
   int i, j;
-  Precision capacity = 0;
+  Vertex_t const *vert = fGenTrap.fVertices;
+  Precision capacity   = 0;
   for (i = 0; i < 4; i++) {
     j = (i + 1) % 4;
-    capacity +=
-        0.25 * fGenTrap.fDz *
-        ((fGenTrap.fVerticesX[i] + fGenTrap.fVerticesX[i + 4]) * (fGenTrap.fVerticesY[j] + fGenTrap.fVerticesY[j + 4]) -
-         (fGenTrap.fVerticesX[j] + fGenTrap.fVerticesX[j + 4]) * (fGenTrap.fVerticesY[i] + fGenTrap.fVerticesY[i + 4]) +
-         (1. / 3) * ((fGenTrap.fVerticesX[i + 4] - fGenTrap.fVerticesX[i]) *
-                         (fGenTrap.fVerticesY[j + 4] - fGenTrap.fVerticesY[j]) -
-                     (fGenTrap.fVerticesX[j] - fGenTrap.fVerticesX[j + 4]) *
-                         (fGenTrap.fVerticesY[i] - fGenTrap.fVerticesY[i + 4])));
+    capacity += 0.25 * fGenTrap.fDz *
+                ((vert[i].x() + vert[i + 4].x()) * (vert[j].y() + vert[j + 4].y()) -
+                 (vert[j].x() + vert[j + 4].x()) * (vert[i].y() + vert[i + 4].y()) +
+                 (1. / 3.) * (vert[i + 4] - vert[i]).CrossZ(vert[j + 4] - vert[j]));
   }
   return Abs(capacity);
 }
@@ -326,9 +295,14 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedGenTrap::CopyToGpu(DevicePtr<cuda::VUnp
   // Copy vertices on GPU, then create the object
   Precision *xv_gpu_ptr = AllocateOnGpu<Precision>(8 * sizeof(Precision));
   Precision *yv_gpu_ptr = AllocateOnGpu<Precision>(8 * sizeof(Precision));
+  Precision verticesx[8], verticesy[8];
+  for (auto i = 0; i < 8; ++i) {
+    verticesx[i] = fGenTrap.fVertices[i].x();
+    verticesy[i] = fGenTrap.fVertices[i].y();
+  }
 
-  vecgeom::CopyToGpu(fGenTrap.fVerticesX, xv_gpu_ptr, 8 * sizeof(Precision));
-  vecgeom::CopyToGpu(fGenTrap.fVerticesY, yv_gpu_ptr, 8 * sizeof(Precision));
+  vecgeom::CopyToGpu(verticesx, xv_gpu_ptr, 8 * sizeof(Precision));
+  vecgeom::CopyToGpu(verticesy, yv_gpu_ptr, 8 * sizeof(Precision));
 
   DevicePtr<cuda::VUnplacedVolume> gpugentrap =
       CopyToGpuImpl<UnplacedGenTrap>(in_gpu_ptr, xv_gpu_ptr, yv_gpu_ptr, GetDZ());
@@ -338,10 +312,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedGenTrap::CopyToGpu(DevicePtr<cuda::VUnp
 }
 
 //______________________________________________________________________________
-DevicePtr<cuda::VUnplacedVolume> UnplacedGenTrap::CopyToGpu() const
-{
-  return CopyToGpuImpl<UnplacedGenTrap>();
-}
+DevicePtr<cuda::VUnplacedVolume> UnplacedGenTrap::CopyToGpu() const { return CopyToGpuImpl<UnplacedGenTrap>(); }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
