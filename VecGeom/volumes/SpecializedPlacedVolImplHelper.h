@@ -114,9 +114,7 @@ public:
   virtual Precision DistanceToIn(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
                                  const Precision stepMax = kInfLength) const override
   {
-#ifndef VECCORE_CUDA
-    VECGEOM_VALIDATE(direction.IsNormalized(), << " direction not normalized in call to DistanceToIn ");
-#endif
+    VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to DistanceToIn ");
     Precision output(kInfLength);
     Transformation3D const *tr = this->GetTransformation();
     Specialization::DistanceToIn(*this->GetUnplacedStruct(), tr->Transform(point), tr->TransformDirection(direction),
@@ -131,9 +129,7 @@ public:
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
                                         const Precision stepMax = kInfLength) const override
   {
-#ifndef VECCORE_CUDA
-    VECGEOM_VALIDATE(direction.IsNormalized(), << " direction not normalized in call to PlacedDistanceToOut ");
-#endif
+    VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to PlacedDistanceToOut ");
     Transformation3D const *tr = this->GetTransformation();
     Precision output(-1.);
     Specialization::template DistanceToOut<>(*this->GetUnplacedStruct(), tr->Transform(point),

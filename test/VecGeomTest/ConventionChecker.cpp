@@ -160,6 +160,7 @@ bool ShapeTester<ImplT>::ShapeConventionSurfacePoint()
         ReportError(
             &nError, point, direction, Dist,
             "DistanceToIn for Surface Point entering into the Shape should be 0 within tolerance (VecGeom convention)");
+        Dist = fVolume->DistanceToIn(point, direction);
       }
     }
 
@@ -213,6 +214,7 @@ bool ShapeTester<ImplT>::ShapeConventionSurfacePoint()
           ReportError(&nError, point, direction, Dist,
                       "DistanceToOut for Surface Point entering into the Shape should be > 0.");
 
+          Dist = CallDistanceToOut(fVolume, point, direction, norm, convex);
           fScore |= (1 << indx);
           surfPointConventionPassed &= false;
         }
@@ -234,7 +236,7 @@ bool ShapeTester<ImplT>::ShapeConventionSurfacePoint()
     }
 
     indx = 5;
-    // Conventions check for SafetyFromInside
+    // Conventions check for SafetyToOut
     Dist = fVolume->SafetyToOut(point);
     // if (Dist >= kInfLength) Dist = kInfLength;
     {
@@ -243,7 +245,8 @@ bool ShapeTester<ImplT>::ShapeConventionSurfacePoint()
         fScore |= (1 << indx);
         surfPointConventionPassed &= false;
         ReportError(&nError, point, direction, Dist,
-                    "SafetyFromInside for Surface Point should be <= tolerance (VecGeom convention)");
+                    "SafetyToOut for Surface Point should be <= tolerance (VecGeom convention)");
+        Dist = fVolume->SafetyToOut(point);
       }
     }
   }
@@ -311,12 +314,12 @@ bool ShapeTester<ImplT>::ShapeConventionInsidePoint()
     }
 
     indx = 9;
-    // Conventions Check for SafetyFromInside
+    // Conventions Check for SafetyToOut
     Dist = fVolume->SafetyToOut(point);
     // if (Dist >= kInfLength) Dist = kInfLength;
     if (!(Dist > 0.)) {
-      ReportError(&nError, point, direction, Dist, "SafetyFromInside for Inside Point should be > 0.");
-
+      ReportError(&nError, point, direction, Dist, "SafetyToOut for Inside Point should be > 0.");
+      Dist = fVolume->SafetyToOut(point);
       fScore |= (1 << indx);
       insidePointConventionPassed &= false;
     }
@@ -377,20 +380,22 @@ bool ShapeTester<ImplT>::ShapeConventionOutsidePoint()
     Dist = fVolume->SafetyToIn(point);
     // if (Dist >= kInfLength) Dist = kInfLength;
     if (!(Dist > 0.)) {
-      ReportError(&nError, point, direction, Dist, "SafetyFromOutside for Outside Point should be > 0.");
+      ReportError(&nError, point, direction, Dist, "SafetyToIn for Outside Point should be > 0.");
+      Dist = fVolume->SafetyToIn(point);
       fScore |= (1 << indx);
       outsidePointConventionPassed &= false;
     }
 
     indx = 13;
-    // Conventions Check for SafetyFromInside
+    // Conventions Check for SafetyToOut
     Dist = fVolume->SafetyToOut(point);
     // if (Dist >= kInfLength) Dist = kInfLength;
     {
       bool ok = (Dist < 0.);
       if (!ok) {
         ReportError(&nError, point, direction, Dist,
-                    "SafetyFromInside for Outside Point should be Negative (-1) (Wrong side)");
+                    "SafetyToOut for Outside Point should be Negative (-1) (Wrong side)");
+        Dist = fVolume->SafetyToOut(point);
         fScore |= (1 << indx);
         outsidePointConventionPassed &= false;
       }

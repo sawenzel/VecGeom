@@ -63,6 +63,13 @@ inline constexpr double kToleranceCone<double> = double(1e-7);
 template <>
 inline constexpr float kToleranceCone<float> = float(1e-3);
 
+template <typename Real_t>
+constexpr Real_t kToleranceArb4 = Real_t(0);
+template <>
+inline constexpr double kToleranceArb4<double> = double(1e-6);
+template <>
+inline constexpr float kToleranceArb4<float> = float(1e-3);
+
 #ifdef VECGEOM_BVH_SINGLE
 constexpr double kToleranceBVH = double(1e-4);
 #else

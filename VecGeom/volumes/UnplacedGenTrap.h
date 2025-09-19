@@ -10,9 +10,9 @@
 #include "VecGeom/base/AlignedBase.h"
 #include "VecGeom/volumes/GenTrapStruct.h"
 #include "VecGeom/volumes/UnplacedVolume.h"
-#include "VecGeom/volumes/SecondOrderSurfaceShell.h"
 #include "VecGeom/volumes/kernel/GenTrapImplementation.h"
 #include "VecGeom/volumes/UnplacedVolumeImplHelper.h"
+#include <VecGeom/management/Logger.h>
 
 namespace vecgeom {
 
@@ -46,7 +46,7 @@ public:
   UnplacedGenTrap(const Precision verticesx[], const Precision verticesy[], Precision halfzheight)
       : fGenTrap(verticesx, verticesy, halfzheight)
   {
-    fGlobalConvexity = !fGenTrap.fIsTwisted;
+    fGlobalConvexity = fGenTrap.IsPlanar();
     ComputeBBox();
   }
 
@@ -68,11 +68,6 @@ public:
   VECCORE_ATT_HOST_DEVICE
   GenTrapStruct<Precision> const &GetStruct() const { return fGenTrap; }
 
-  /** @brief Getter for the surface shell */
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  SecondOrderSurfaceShell<4> const &GetShell() const { return (fGenTrap.fSurfaceShell); }
-
   /** @brief Getter for the half-height */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -86,7 +81,7 @@ public:
   /** @brief Getter for the twist angle of a face */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetTwist(int i) const { return (fGenTrap.fTwist[i]); }
+  Precision GetTwist(int i) const { return (fGenTrap.GetTwist(i)); }
 
   /** @brief Getter for one of the 8 vertices in Vector3D<Precision> form */
   VECCORE_ATT_HOST_DEVICE
@@ -95,13 +90,35 @@ public:
 
   /** @brief Getter for the array of X coordinates of vertices */
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  const Precision *GetVerticesX() const { return fGenTrap.fVerticesX; }
+  const Precision *GetVerticesX() const
+  {
+    static bool printed_once{false};
+    auto vertx = new Precision[8];
+    for (auto i = 0; i < 8; ++i)
+      vertx[i] = fGenTrap.fVertices[i].x();
+    if (!printed_once) {
+      VECGEOM_LOG(warning)
+          << "GetVerticesX is deprecated and you now own the allocated array. Use GetVertices instead.";
+      printed_once = true;
+    }
+    return vertx;
+  }
 
   /** @brief Getter for the array of Y coordinates of vertices */
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  const Precision *GetVerticesY() const { return fGenTrap.fVerticesY; }
+  const Precision *GetVerticesY() const
+  {
+    static bool printed_once{false};
+    auto verty = new Precision[8];
+    for (auto i = 0; i < 8; ++i)
+      verty[i] = fGenTrap.fVertices[i].y();
+    if (!printed_once) {
+      VECGEOM_LOG(warning)
+          << "GetVerticesY is deprecated and you now own the allocated array. Use GetVertices instead.";
+      printed_once = true;
+    }
+    return verty;
+  }
 
   /** @brief Getter for the list of vertices */
   VECCORE_ATT_HOST_DEVICE
@@ -110,7 +127,7 @@ public:
 
   /** @brief Computes if this gentrap is twisted */
   VECCORE_ATT_HOST_DEVICE
-  bool ComputeIsTwisted() { return fGenTrap.ComputeIsTwisted(); }
+  bool ComputeIsTwisted() { return fGenTrap.ComputeTwistedFaces() > 0; }
 
   /** @brief Computes if the top and bottom quadrilaterals are convex (mandatory) */
   VECCORE_ATT_HOST_DEVICE
@@ -119,12 +136,12 @@ public:
   /** @brief Getter for the planarity of lateral surfaces */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool IsPlanar() const { return (!fGenTrap.fIsTwisted); }
+  bool IsPlanar() const { return (fGenTrap.IsPlanar()); }
 
   /** @brief Getter for the global convexity of the trapezoid */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool IsDegenerated(int i) const { return (fGenTrap.fDegenerated[i]); }
+  bool IsDegenerated(int i) const { return (fGenTrap.IsDegenerated(i)); }
 
   /** @brief Computes if opposite segments are crossing, making a malformed shape */
   // This can become a general utility

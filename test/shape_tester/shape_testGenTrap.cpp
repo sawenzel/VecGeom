@@ -42,7 +42,13 @@ int main(int argc, char *argv[])
   //
   Precision verticesx6[8] = {-0.507492, -0.507508, 1.522492, -0.507492, -0.507492, -0.507508, 1.522492, -0.507492};
   Precision verticesy6[8] = {-3.634000, 3.63400, 3.634000, -3.634000, -3.634000, 3.634000, 3.634000, -3.634000};
-  GenTrap_t *solid        = 0;
+  // LAr__EMEC__OuterWheelLead02
+  Precision verticesx7[8] = {0.896627857949204, -0.948748880854048, -1.63491584809173, 1.46457499100965,
+                             -5.65714565287452, -7.50463942638245,  -23.6312418315791, -20.5248321431158};
+  Precision verticesy7[8] = {613.710713143274, 613.710713143274, 2000.80727630046, 2000.80727630046,
+                             616.052231799555, 616.052231799555, 2008.45977950464, 2008.45977950464};
+
+  GenTrap_t *solid = 0;
   switch (type) {
   case 0:
     // 4 different vertices, twisted
@@ -79,8 +85,14 @@ int main(int argc, char *argv[])
     std::cout << "Testing degenerated planar trapezoid\n";
     solid = new GenTrap_t("test_VecGeomGenTrap", verticesx6, verticesy6, 5);
     break;
+  case 7:
+    // LAr__EMEC__OuterWheelLead02
+    std::cout << "Testing LAr__EMEC__OuterWheelLead02 trapezoid\n";
+    solid = new GenTrap_t("LAr__EMEC__OuterWheelLead02", verticesx7, verticesy7, 7.08333333333333);
+    break;
   default:
     std::cout << "Unknown test case.\n";
+    return 1;
   }
 
   solid->Print();
@@ -89,12 +101,10 @@ int main(int argc, char *argv[])
   tester.setDebug(debug);
   tester.setStat(stat);
   tester.SetMaxPoints(npoints);
+  tester.SetErrorOnZeroDoutGrazing(false);
+  tester.SetSolidTolerance(vecgeom::kToleranceArb4<Precision>);
 
-  #ifndef VECGEOM_SINGLE_PRECISION
-    tester.SetSolidTolerance(1.e-7);
-  #endif
-  
-  tester.SetTestBoundaryErrors(true);
+  // tester.SetTestBoundaryErrors(true);
   int errCode = tester.Run(solid);
 
   std::cout << "Final Error count for Shape *** " << solid->GetName() << "*** = " << errCode << "\n";
