@@ -1,3 +1,47 @@
+Version 2.0.0-rc7        25th September 2025
+============================================
+Overview
+- Major rewrite and full stabilization of GenericTrapezoid (GenTrap),
+fixing all known corner cases and improving both CPU/GPU performance. 
+- Safer navigation in very large geometries; fix for harmful truncation 
+in NavigationTable that could crash with >160k daughters.
+- Better build tooling: CUDA RDC fallback for installed VecGeom,
+togglable Doxygen generation, improved cmake-git-version script,
+restored Geant4-based CI build.
+- Numerous portability, warning, and correctness fixes.
+
+Detailed changes
+- Solids / Geometry
+  - GenericTrapezoid scalar refactor with documented algorithms;
+  Lipschitz-based conservative safety; inside/normal improvements; 
+  caching and CUDA-side optimizations; additional edge-case tests 
+  (EMEC bad aspect-ratio) and many micro-optimizations.
+  - Fixed copy/paste error in `Utils3D::Polygon::Extent` mixing X/Y 
+  in a comparison.
+
+- Navigation
+  - Remove harmful truncation in `NavigationTable` (number of daughters 
+  truncated to `short`), which could crash large detectors (e.g., ATLAS ITKPixel).
+  Added a protective throw.
+  - Navigation fixes and cleanup tied to the GenericTrapezoid work.
+
+- Build / CMake / Tooling
+  - Add CMake fallback for `cuda_rdc_target_sources` for installed 
+  VecGeom (improves CUDA RDC usability).
+  - Make Doxygen generation optional via `VECGEOM_DOXYGEN` (default OFF).
+  - Improve `cmake-git-version` script (VECGEOM-631): allow user-provided
+  describe, better hints if metadata missing.
+
+- CI / Testing
+  - Fix Geant4-based builds and add a CI target using Geant4.
+  - Add EMEC bad aspect-ratio trapezoid test; enable extra debug lines in
+  shape tests.
+
+- Portability / Warnings
+  - Fix build error on GNU/Hurd.
+  - Silence `<argument 1 value exceeds maximum object size>` warnings in
+  `ReducedPolycone`.
+
 Version 2.0.0-rc6        3rd July 2025
 ======================================
 Base:
