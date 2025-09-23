@@ -394,7 +394,6 @@ GenTrapImplementation::DistanceToSurf(UnplacedStruct_t const &unplaced, Vector3D
   //   * For inside->out queries, the first positive root is a valid exit
   //     as soon as it passes the window tests, hence early-return is safe.
 
-  auto distance = big;
   if (!unplaced.IsTwisted(i)) {
     // -------------------------
     // Planar face intersection
@@ -798,9 +797,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::SafetyT
   }
 
   // Combine Z safety with lateral faces using SafetyArb4
-  safety       = Abs(point[2]) - unplaced.fDz;
-  auto safetyZ = safety;
-  safety       = SafetyArb4(unplaced, point, safety, false);
+  safety = Abs(point[2]) - unplaced.fDz;
+  safety = SafetyArb4(unplaced, point, safety, false);
 }
 
 //______________________________________________________________________________
@@ -998,20 +996,17 @@ VECCORE_ATT_HOST_DEVICE Vector2D<Real_v> GenTrapImplementation::XYZtoUV(Unplaced
 {
   // Parametrize v from z: bottom plane z=-Dz -> v=0, top plane z=+Dz -> v=1
   Real_v v = unplaced.fDz2 * (point[2] + unplaced.fDz);
-  auto j   = (i + 1) % 4;
 
   // Points E, F on the generators (A, C) and (B, D) at z = point[2]
 #if GENTRAP_USE_HYBRID_COEFFS
   const auto &A  = unplaced.fVertices[i];
-  const auto &C  = unplaced.fVertices[j];
   const auto &G0 = unplaced.fG0[i];                // B - A
-  const auto &G1 = unplaced.fG1[i];                // D - C
   const auto &E0 = unplaced.fE0[i];                // C - A
   const auto &E1 = unplaced.fE1[i];                // D - B
   auto E         = A + v * G0;                     // (1-v)A + vB
-  auto F         = C + v * G1;                     // (1-v)C + vD
   auto EF        = (Real_v(1.) - v) * E0 + v * E1; // F - E but stable form
 #else
+  auto j  = (i + 1) % 4;
   auto E  = (1. - v) * unplaced.fVertices[i] + v * unplaced.fVertices[i + 4];
   auto F  = (1. - v) * unplaced.fVertices[j] + v * unplaced.fVertices[j + 4];
   auto EF = F - E;
