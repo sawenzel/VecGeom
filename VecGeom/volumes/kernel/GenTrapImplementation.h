@@ -537,7 +537,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Generic
   auto on_surfz = (unplaced.fDz - Abs(point.z())) < Real_v(kTolerance);
 
   // Evaluate implicit equations for lateral faces; any positive value means "outside that face"
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (int i = 0; i < 4; i++) {
     if (unplaced.IsDegenerated(i)) continue;
     auto eqeval = unplaced.IsTwisted(i) ? unplaced.fSurf[i].Evaluate(point) : unplaced.fSurf[i].EvaluatePlanar(point);
@@ -697,7 +697,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Distanc
 
   // Fall back to lateral surfaces and keep the minimum positive distance
   // Separate planar/twisted unrolled loops to reduce divergence on device compare to a mixed loop
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (auto i = 0; i < 4; ++i) {
     if (!unplaced.IsDegenerated(i) && !unplaced.IsTwisted(i)) {
       // Planar faces: necessary front-facing check to avoid useless intersections
@@ -711,7 +711,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Distanc
     }
   }
 
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (auto i = 0; i < 4; ++i) {
     if (!unplaced.IsDegenerated(i) && unplaced.IsTwisted(i)) {
       // Twisted faces: keep coarse direction cull; use the hoisted v-window cap
@@ -757,14 +757,14 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void GenTrapImplementation::Distanc
 
   // Fall back to lateral surfaces and keep the minimum positive distance
   // Separate planar/twisted unrolled loops to reduce divergence on device compare to a mixed loop
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (auto i = 0; i < 4; ++i) {
     if (!unplaced.IsDegenerated(i) && !unplaced.IsTwisted(i)) {
       distance = Min(distance, DistanceToSurf(unplaced, point, direction, i, true, Real_v(0), distance));
     }
   }
 
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (auto i = 0; i < 4; ++i) {
     if (!unplaced.IsDegenerated(i) && unplaced.IsTwisted(i)) {
       if (!unplaced.fMesh[i].MayHit(point, direction, true)) continue;
@@ -1047,7 +1047,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v GenTrapImplementation::Safet
   Real_v safety = safmax;
 
   // Aggregate per-face conservative signed safeties
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   for (int i = 0; i < 4; i++) {
     if (!unplaced.IsDegenerated(i) && !unplaced.IsTwisted(i)) {
       // Planar faces: signed distance to plane using stored outward normal
@@ -1056,7 +1056,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v GenTrapImplementation::Safet
     }
   }
 
-#pragma unroll 4
+  VECGEOM_PRAGMA_UNROLL(4)
   // Twisted bilinear faces: use Lipschitz bound of the implicit function
   // Note: We could replace this for slightly twisted faces with the much cheaper
   //       but less precise: unplaced.fMesh[i].FastSignedSafety(point, inside);

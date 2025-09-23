@@ -52,6 +52,35 @@ using NavIndex_t = unsigned int;
 #endif
 #endif
 
+// Portable unroll pragma
+// Usage: VECGEOM_PRAGMA_UNROLL(4)
+// Expands to:
+//   CUDA/NVCC:          #pragma unroll 4
+//   Clang (host):       #pragma clang loop unroll_count(4)
+//   GCC >= 8 (host):    #pragma GCC unroll 4
+//   Other compilers:    (nothing)
+
+// stringizers for _Pragma
+#define VECGEOM_PRAGMA_STR_(x) #x
+#define VECGEOM_PRAGMA_STR(x) VECGEOM_PRAGMA_STR_(x)
+
+#if defined(__CUDACC__) || defined(__CUDA_ARCH__)
+// NVCC supports "#pragma unroll N"
+#define VECGEOM_PRAGMA_UNROLL(N) _Pragma(VECGEOM_PRAGMA_STR(unroll N))
+
+#elif defined(__clang__)
+// Clang wants: "#pragma clang loop unroll_count(N)"
+#define VECGEOM_PRAGMA_UNROLL(N) _Pragma(VECGEOM_PRAGMA_STR(clang loop unroll_count(N)))
+
+#elif defined(__GNUC__) && (__GNUC__ >= 8)
+// GCC supports: "#pragma GCC unroll N"
+#define VECGEOM_PRAGMA_UNROLL(N) _Pragma(VECGEOM_PRAGMA_STR(GCC unroll N))
+
+#else
+// Unknown compiler: no-op
+#define VECGEOM_PRAGMA_UNROLL(N)
+#endif
+
 // Allow constexpr variables and functions if possible
 #define VECGEOM_CONSTEXPR constexpr
 #define VECGEOM_CONSTEXPR_RETURN constexpr
