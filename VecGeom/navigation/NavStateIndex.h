@@ -325,7 +325,7 @@ public:
 
     // Potentially skip one NavIndex_t to ensure alignment of transformation data
     auto transformationDataIndex     = nav_ind + 6 + nd + ((nd + 1) & 1);
-    const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
+    const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
     transformationDataIndex += unsigned{padTransformationData};
 
     const auto address = reinterpret_cast<const Precision *>(NavIndAddr(transformationDataIndex));
@@ -359,7 +359,7 @@ public:
 
     // Potentially skip one NavIndex_t to ensure alignment of transformation data
     auto transformationDataIndex     = nav_ind + 6 + nd + ((nd + 1) & 1);
-    const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
+    const bool padTransformationData = (transformationDataIndex * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
     transformationDataIndex += unsigned{padTransformationData};
 
     const auto address = reinterpret_cast<const Precision *>(NavIndAddr(transformationDataIndex));

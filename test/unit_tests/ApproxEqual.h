@@ -7,6 +7,9 @@
 #define APPROXEQUAL_HH
 
 #include <cmath>
+#include "VecGeom/base/Math.h"
+
+using vecgeom::Precision;
 
 const double kApproxEqualTolerance    = 1E-6;
 const double kApproxEqualToleranceFlt = 1E-3;

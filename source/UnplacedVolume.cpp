@@ -233,7 +233,7 @@ void VUnplacedVolume::CopyBBoxesToGpu(const std::vector<VUnplacedVolume const *>
 namespace cxx {
 
 template void CopyBBoxesToGpuImpl<cuda::VUnplacedVolume, DevicePtr<cuda::VUnplacedVolume>>(
-    std::size_t, DevicePtr<cuda::VUnplacedVolume> const *, cuda::Precision *);
+    std::size_t, DevicePtr<cuda::VUnplacedVolume> const *, Precision *);
 
 } // namespace cxx
 
