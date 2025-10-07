@@ -23,7 +23,6 @@ namespace vecgeom {
 class LoopNavigator {
 
 public:
-  // using Precision          = vecgeom::Precision;
   // using Vector3D<Precision>           = vecgeom::Vector3D<Precision><vecgeom::Precision>;
 
   static constexpr Precision kBoundaryPush = 10 * vecgeom::kTolerance;

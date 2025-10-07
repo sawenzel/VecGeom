@@ -14,12 +14,16 @@
 namespace vgbrep {
 
 ///< VecGeom type aliases
-template <typename Real_t>
-using Vector3D = vecgeom::Vector3D<Real_t>;
+
+using Precision      = vecgeom::Precision;
+using uint           = vecgeom::uint;
+using NavIndex_t     = vecgeom::NavIndex_t;
+using Transformation = vecgeom::Transformation3D;
 
 template <typename Real_t>
-using Vector2D       = vecgeom::Vector2D<Real_t>;
-using Transformation = vecgeom::Transformation3D;
+using Vector3D = vecgeom::Vector3D<Real_t>;
+template <typename Real_t>
+using Vector2D = vecgeom::Vector2D<Real_t>;
 template <typename Real_t>
 using TransformationMP = vecgeom::Transformation3DMP<Real_t>;
 

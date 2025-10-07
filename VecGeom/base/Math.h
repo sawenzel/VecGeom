@@ -3,9 +3,18 @@
 
 #include <cmath>
 #include <limits>
+#include "VecGeom/base/Config.h"
 #include "VecCore/Limits.h"
 
 namespace vecgeom {
+
+#ifdef VECGEOM_SINGLE_PRECISION
+#define VECCORE_SINGLE_PRECISION
+using Precision = float;
+#else
+using Precision = double;
+#endif
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifdef __CUDA_ARCH__
@@ -15,7 +24,6 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 #endif
 
 #ifdef VECGEOM_SINGLE_PRECISION
-using Precision                        = float;
 VECGEOM_CONST Precision kTolerance     = 1e-3;
 VECGEOM_CONST Precision kInvTolerance  = 1e3;
 VECGEOM_CONST Precision kPushTolerance = 1e-3;
@@ -24,7 +32,6 @@ VECGEOM_CONST Precision kAngTolerance  = 1e-2;
 VECGEOM_CONST Precision kConeTolerance = 1e-3;
 VECGEOM_CONST Precision kFarAway       = 1e5;
 #else
-using Precision                        = double;
 VECGEOM_CONST Precision kTolerance     = 1e-9;
 VECGEOM_CONST Precision kInvTolerance  = 1e9;
 VECGEOM_CONST Precision kPushTolerance = 1e-6;

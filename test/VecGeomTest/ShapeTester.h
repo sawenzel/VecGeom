@@ -13,14 +13,14 @@
 #include "Visualizer.h"
 #endif
 
+using vecgeom::Precision;
+using Vec_t = vecgeom::Vector3D<Precision>;
+
 #ifdef VECGEOM_SINGLE_PRECISION
 const Precision kApproxEqualTolerance = 1e-3;
 #else
 const Precision kApproxEqualTolerance = 1e-6;
 #endif
-
-using vecgeom::Precision;
-using Vec_t = vecgeom::Vector3D<Precision>;
 
 struct ShapeTesterErrorList {
   std::string fMessage;

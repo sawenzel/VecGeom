@@ -8,24 +8,12 @@
 #error VecGeom requires compiler and library support for the ISO C++ 2011 standard.
 #endif
 
-#include "VecGeom/base/Config.h"
-
-#ifdef VECGEOM_SINGLE_PRECISION
-#define VECCORE_SINGLE_PRECISION
-using Precision = float;
-#else
-using Precision = double;
-#endif
-
+#include <type_traits>
 #include <VecCore/VecCore>
 
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Math.h"
-#include <type_traits>
-
-using uint       = unsigned int;
-using NavIndex_t = unsigned int;
 
 #define VECGEOM
 
@@ -96,6 +84,9 @@ using NavIndex_t = unsigned int;
 #endif
 
 namespace vecgeom {
+
+using uint       = unsigned int;
+using NavIndex_t = unsigned int;
 
 enum class ESolidType : char {
   boolean = 0,

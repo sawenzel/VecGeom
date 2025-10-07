@@ -44,7 +44,7 @@ struct GeometryInfo {
       amax[i] = amaxv[i];
     }
 
-    const vecgeom::Vector3D<Precision> testPoint{1., 2., -3.};
+    const vecgeom::Vector3D<vecgeom::Precision> testPoint{1., 2., -3.};
     unplacedSafety = unplaced->Contains(testPoint) ? unplaced->SafetyToOut(testPoint) : unplaced->SafetyToIn(testPoint);
   }
 

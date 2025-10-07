@@ -100,7 +100,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   // To keep the transformation data aligned, we may insert padding. Precision is either the same size or
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
-  static_assert(sizeof(::Precision) == sizeof(NavIndex_t) || sizeof(::Precision) == 2 * sizeof(NavIndex_t));
+  static_assert(sizeof(Precision) == sizeof(NavIndex_t) || sizeof(Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
   // Count of data fields before the transformation
   constexpr unsigned record_count_before_trans = 7;
@@ -110,7 +110,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   const auto record_count_notrans = record_count_before_trans + record_count_daughters;
   const bool padTransformationData =
-      ((indicesBefore + record_count_before_trans) * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
+      ((indicesBefore + record_count_before_trans) * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
 
   // Size in bytes of the current touchable data record
   const size_t current_size =
@@ -243,11 +243,10 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   // To keep the transformation data sufficiently aligned, we may insert padding. Precision is either the same size or
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
-  static_assert(sizeof(::Precision) == sizeof(NavIndex_t) || sizeof(::Precision) == 2 * sizeof(NavIndex_t));
-  const auto indicesBefore   = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
-  const auto daughterIndices = 6 + nd + ((nd + 1) & 1);
-  const bool padTransformationData =
-      ((indicesBefore + daughterIndices) * sizeof(NavIndex_t)) % sizeof(::Precision) != 0;
+  static_assert(sizeof(Precision) == sizeof(NavIndex_t) || sizeof(Precision) == 2 * sizeof(NavIndex_t));
+  const auto indicesBefore         = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
+  const auto daughterIndices       = 6 + nd + ((nd + 1) & 1);
+  const bool padTransformationData = ((indicesBefore + daughterIndices) * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
 
   // Size in bytes of the current node data
   const size_t current_size =
@@ -257,7 +256,7 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   if (fDoCount) {
     fTableSize += current_size;
-    VECGEOM_ASSERT(fTableSize % sizeof(::Precision) == 0 &&
+    VECGEOM_ASSERT(fTableSize % sizeof(Precision) == 0 &&
                    "NavigationIndexTable size until now must be a multiple of sizeof(Precision)");
     return 0;
   }
