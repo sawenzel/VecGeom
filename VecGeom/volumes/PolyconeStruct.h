@@ -532,9 +532,9 @@ struct PolyconeStruct {
   void SetAndCheckSPhiAngle(Precision sPhi)
   {
     // Ensure fSphi in [0, 2PI)
-    while (sPhi < 0.)
-      sPhi += kTwoPi;
-    fStartPhi = std::fmod(sPhi, kTwoPi);
+    fStartPhi = sPhi;
+    while (fStartPhi < 0.)
+      fStartPhi += kTwoPi;
     // Update Wedge
     fPhiWedge.SetStartPhi(fStartPhi);
     fPhiWedge.UpdateNormals();
@@ -562,11 +562,10 @@ struct PolyconeStruct {
     fStartPhi = sPhi;
     while (fStartPhi < 0)
       fStartPhi += kTwoPi;
-    fStartPhi = std::fmod(sPhi, kTwoPi);
 
     fDeltaPhi = dPhi;
     if (dPhi <= 0. || dPhi > kTwoPi - kTolerance) {
-      fStartPhi = 0;
+      fStartPhi = 0.;
       fDeltaPhi = kTwoPi;
     }
     // Update Wedge
