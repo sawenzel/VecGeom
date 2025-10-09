@@ -42,7 +42,6 @@ struct CrossingSeq {
   std::vector<double> fSteps;                    ///< Step lengths to next crossing
   std::vector<vecgeom::NavigationState> fStates; ///< States after each crossing
 
-  VECCORE_ATT_HOST_DEVICE
   size_t GetNsteps() const { return fSteps.size(); }
 
   /// @brief Initialize crossing object
@@ -52,7 +51,6 @@ struct CrossingSeq {
   /// @param dx x start dir
   /// @param dy y start dir
   /// @param dz z start dir
-  VECCORE_ATT_HOST_DEVICE
   void Init(double x, double y, double z, double dx, double dy, double dz)
   {
     fSteps.clear();
@@ -83,7 +81,6 @@ struct CrossingSeq {
   /// @param istep_err_other Index of the diverging step of the sequence to compare to
   /// @param accept_zeros whether 0 steps should throw an error or not
   /// @return Are the sequences identical
-  VECCORE_ATT_HOST_DEVICE
   bool IsEqual(CrossingSeq const &other, int &istep_err, int &istep_err_other, bool accept_zeros = false)
   {
     auto kTolerance         = 10 * vecgeom::kToleranceStrict<Real_t>;

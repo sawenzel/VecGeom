@@ -80,13 +80,13 @@ private:
   //  void SetDaughter(unsigned int i, VPlacedVolume const *pvol);
 
 public:
-#ifndef VECCORE_CUDA
-  /// Standard constructor taking a name and an unplaced volume
+  /// Standard constructor taking a name and an unplaced volume (NOT CUDA compatible)
   LogicalVolume(char const *const label, VUnplacedVolume const *const unplaced_vol);
 
   /// Standard constructor taking an unplaced volume
   LogicalVolume(VUnplacedVolume const *const unplaced_vol) : LogicalVolume("", unplaced_vol) {}
 
+#ifndef VECCORE_CUDA
   /// copy operators deleted
   LogicalVolume(LogicalVolume const &other)            = delete;
   LogicalVolume *operator=(LogicalVolume const &other) = delete;
@@ -247,6 +247,13 @@ private:
   std::set<LogicalVolume *> GetSetOfDaughterLogicalVolumes() const;
 
 }; // End class
+
+#ifdef VECCORE_CUDA
+inline LogicalVolume::LogicalVolume(char const *const, VUnplacedVolume const *const)
+{
+  assert(0 && "Cannot construct in CUDA");
+}
+#endif
 
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
