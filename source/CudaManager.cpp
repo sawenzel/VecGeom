@@ -73,8 +73,9 @@ void CopyUnplacedVolumes(std::vector<vecgeom::cxx::VUnplacedVolume const *> &&vo
                                                 std::vector<vecgeom::cxx::DevicePtr<vecgeom::cuda::VUnplacedVolume>>>>
       typesToCopy;
   for (auto i = 0u; i < volumesToCopy.size(); ++i) {
-    const std::type_index tidx{typeid(*volumesToCopy[i])};
-    typesToCopy[tidx].first.push_back(volumesToCopy[i]);
+    auto* host_ptr = volumesToCopy[i];
+    const std::type_index tidx{typeid(*host_ptr)};
+    typesToCopy[tidx].first.push_back(host_ptr);
     typesToCopy[tidx].second.push_back(std::move(devPtrs[i]));
   }
 

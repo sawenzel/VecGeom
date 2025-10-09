@@ -132,29 +132,6 @@ option(VECGEOM_EMBREE "Enable Intel Embree" OFF)
 option(VECGEOM_ENABLE_CUDA "Enable compilation for CUDA." OFF)
 option(VECGEOM_GDML "Enable GDML persistency. Requires Xerces-C" ON)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24" OR VECGEOM_ENABLE_CUDA)
-include("${PROJECT_SOURCE_DIR}/cmake/external/CudaRdcUtils.cmake")
-else()
-function(cuda_rdc_add_library)
-   add_library(${ARGV})
-endfunction()
-function(cuda_rdc_target_include_directories)
-   target_include_directories(${ARGV})
-endfunction()
-function(cuda_rdc_target_link_libraries)
-   target_link_libraries(${ARGV})
-endfunction()
-function(cuda_rdc_install)
-   install(${ARGV})
-endfunction()
-function(cuda_rdc_set_target_properties)
-   set_target_properties(${ARGV})
-endfunction()
-function(cuda_rdc_target_sources)
-   target_sources(${ARGV})
-endfunction()
-endif()
-
 if(VECGEOM_ENABLE_CUDA)
   set(_default_surf ON)
 else()
@@ -341,6 +318,42 @@ cmake_dependent_option(VECGEOM_TEST_VTUNE
 cmake_dependent_option(VECGEOM_TEST_COVERAGE
   "Enable coverage testing flags" OFF "BUILD_TESTING" OFF)
 
+################################################################################
+# CUDA setup must be performed before VecCore due to its "CheckLanguage" use
+
+if(VECGEOM_ENABLE_CUDA)
+  enable_language(CUDA)
+
+  if(NOT CMAKE_CUDA_HOST_COMPILER STREQUAL CMAKE_CXX_COMPILER)
+    # See https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_HOST_COMPILER.html#variable:CMAKE_%3CLANG%3E_HOST_COMPILER
+    message(WARNING "CUDA host compiler mismatch: "
+      "CMAKE_CUDA_HOST_COMPILER=${CMAKE_CUDA_HOST_COMPILER} "
+      "but CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+  endif()
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24" OR VECGEOM_ENABLE_CUDA)
+  include("${PROJECT_SOURCE_DIR}/cmake/external/CudaRdcUtils.cmake")
+else()
+  function(cuda_rdc_add_library)
+    add_library(${ARGV})
+  endfunction()
+  function(cuda_rdc_target_include_directories)
+    target_include_directories(${ARGV})
+  endfunction()
+  function(cuda_rdc_target_link_libraries)
+    target_link_libraries(${ARGV})
+  endfunction()
+  function(cuda_rdc_install)
+    install(${ARGV})
+  endfunction()
+  function(cuda_rdc_set_target_properties)
+    set_target_properties(${ARGV})
+  endfunction()
+  function(cuda_rdc_target_sources)
+    target_sources(${ARGV})
+  endfunction()
+endif()
 
 ################################################################################
 # Minimum version of VecCore we need.
@@ -493,7 +506,6 @@ endif()
 # - CUDA Compiler Flags/Settings for each build type
 #
 if(VECGEOM_ENABLE_CUDA)
-  enable_language(CUDA)
   # Keep these checks coherent with the C++ compiler/standard
   if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11)
