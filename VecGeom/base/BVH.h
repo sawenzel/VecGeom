@@ -271,8 +271,8 @@ public:
         const unsigned int childL = 2 * id + 1;
         const unsigned int childR = 2 * id + 2;
 
-        const Precision safetyL = fNodes[childL].Safety(localpoint);
-        const Precision safetyR = fNodes[childR].Safety(localpoint);
+        const Real_t safetyL = fNodes[childL].Safety(localpoint);
+        const Real_t safetyR = fNodes[childR].Safety(localpoint);
 
         const bool traverseL = safetyL < safety;
         const bool traverseR = safetyR < safety;
