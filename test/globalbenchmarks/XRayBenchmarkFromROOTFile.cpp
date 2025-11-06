@@ -30,9 +30,8 @@
 #include "VecGeom/navigation/NewSimpleNavigator.h"
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
 #include "VecGeom/navigation/HybridNavigator2.h"
-#include "VecGeom/navigation/BVHNavigatorV.h"
 
-//#define CALLGRIND
+// #define CALLGRIND
 #ifdef CALLGRIND
 #include <valgrind/callgrind.h>
 #endif
@@ -134,7 +133,7 @@ Vector3D<Precision> GetStartPoint(Vector3D<Precision> const &origin, Vector3D<Pr
   return tmp;
 }
 
-//#define LOGDATA
+// #define LOGDATA
 
 void AddTrack(LogicalVolume const *lvol, Vec3_t p, Vec3_t d, NavigationState const *state)
 {
@@ -200,28 +199,18 @@ void BenchTracks()
   }
 }
 
-void InitNavigators(int use_bvh_navigator)
+void InitNavigators()
 {
-  if (use_bvh_navigator) BVHManager::Init();
-
   for (auto &lvol : GeoManager::Instance().GetLogicalVolumesMap()) {
     auto ndaughters = lvol.second->GetDaughtersp()->size();
 
     if (ndaughters <= 2) {
       lvol.second->SetNavigator(NewSimpleNavigator<>::Instance());
     } else if (ndaughters <= 10) {
-      if (use_bvh_navigator) {
-        lvol.second->SetNavigator(BVHNavigatorV<>::Instance());
-      } else {
-        lvol.second->SetNavigator(SimpleABBoxNavigator<>::Instance());
-      }
+      lvol.second->SetNavigator(SimpleABBoxNavigator<>::Instance());
     } else { // ndaughters > 10
-      if (use_bvh_navigator) {
-        lvol.second->SetNavigator(BVHNavigatorV<>::Instance());
-      } else {
-        lvol.second->SetNavigator(HybridNavigator<>::Instance());
-        HybridManager2::Instance().InitStructure((lvol.second));
-      }
+      lvol.second->SetNavigator(HybridNavigator<>::Instance());
+      HybridManager2::Instance().InitStructure((lvol.second));
     }
   }
 }
@@ -345,7 +334,7 @@ void XRayWithROOT(int axis, Vector3D<Precision> origin, Vector3D<Precision> bbox
                   << "\n";
       }
     } // end inner loop
-  }   // end outer loop
+  } // end outer loop
   std::cout << "ZERO STEPS ROOT " << zerosteps_accum << "\n";
 } // end XRayWithROOT
 
@@ -455,7 +444,7 @@ void XRayWithVecGeom_PolymorphicNavigationFramework(int axis, Vector3D<Precision
       }
 
     } // end inner loop
-  }   // end outer loop
+  } // end outer loop
   std::cout << "ZERO STEPS VG " << zerosteps_accum << "\n";
 
   NavigationState::ReleaseInstance(curnavstate);
@@ -550,7 +539,7 @@ int XRayWithGeant4(G4VPhysicalVolume *world /* the detector to scan */, int axis
       }
 
     } // end inner loop
-  }   // end outer loop
+  } // end outer loop
   std::cout << "ZERO STEPS G4 " << zerosteps_accum << "\n";
   return 0;
 }
@@ -617,9 +606,8 @@ int main(int argc, char *argv[])
 
   pixel_width = atof(argv[4]);
 
-  unsigned int use_bvh_navigator = 0;
-  unsigned int cutatlevel        = 1000;
-  bool cutlevel                  = false;
+  unsigned int cutatlevel = 1000;
+  bool cutlevel           = false;
   for (auto i = 5; i < argc; i++) {
     if (!strcmp(argv[i], "--novoxel")) voxelize = false;
     if (!strcmp(argv[i], "--noassembly")) assemblies = false;
@@ -632,9 +620,6 @@ int main(int argc, char *argv[])
     if (!strcmp(argv[i], "--zerosteplimit")) {
       kZeroStepLimit = atof(argv[i + 1]);
       std::cout << "Setting zero step limit to " << kZeroStepLimit << "\n";
-    }
-    if (!strcmp(argv[i], "--use-bvh-navigator")) {
-      use_bvh_navigator = 1;
     }
   }
 
@@ -878,7 +863,7 @@ int main(int argc, char *argv[])
     // GeoManager::Instance().GetWorld()->PrintContent();
     std::cerr << "total number of nodes " << GeoManager::Instance().GetWorld()->GetLogicalVolume()->GetNTotal() << "\n";
 
-    InitNavigators(use_bvh_navigator);
+    InitNavigators();
 
     timer.Start();
 #ifdef CALLGRIND

@@ -36,7 +36,7 @@ endforeach()
 
 # - Navigation tests using GDML input file
 
-foreach(NAVIGATOR SimpleABBoxNavigator HybridNavigator BVHNavigatorV)
+foreach(NAVIGATOR SimpleABBoxNavigator HybridNavigator)
   foreach(GDML trackML cms2018)
     set(GDML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/gdmls/${GDML}.gdml)
     add_test(NAME Test${NAVIGATOR}-${GDML}

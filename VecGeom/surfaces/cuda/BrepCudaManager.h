@@ -2,8 +2,8 @@
 #define VECGEOM_SURFACE_BREPCUDAMANAGER_H_
 
 #include <VecGeom/surfaces/SurfData.h>
-#include "VecGeom/surfaces/bvh/AABBsurf.h"
-#include "VecGeom/surfaces/bvh/BVHsurf.h"
+#include "VecGeom/base/AABB.h"
+#include "VecGeom/base/BVH.h"
 #include "VecGeom/volumes/VolumeTree.h"
 #include "VecGeom/management/Logger.h"
 #include "VecGeom/base/Assert.h"
@@ -11,9 +11,9 @@
 namespace vgbrep {
 
 template <typename Real_t>
-__global__ void FinishBVHCopy(bvh::BVHsurf<Real_t> *dBVH, int *dPrimId, int *dOffset, int *dNChild,
-                              bvh::AABBsurf<typename SurfData<Real_t>::Real_b> *dAABBs,
-                              bvh::AABBsurf<typename SurfData<Real_t>::Real_b> *dNodes)
+__global__ void FinishBVHCopy(vecgeom::BVH<Real_t> *dBVH, int *dPrimId, int *dOffset, int *dNChild,
+                              vecgeom::AABB<typename SurfData<Real_t>::Real_b> *dAABBs,
+                              vecgeom::AABB<typename SurfData<Real_t>::Real_b> *dNodes)
 {
   if (dBVH == nullptr) {
     printf("Error: Null pointer 'dBVH' encountered in FinishBVHCopy\n");
@@ -43,13 +43,13 @@ __global__ void FinishBVHCopy(bvh::BVHsurf<Real_t> *dBVH, int *dPrimId, int *dOf
 }
 
 template <typename Real_t>
-void CopyBVH(const bvh::BVHsurf<Real_t> &hBVH, bvh::BVHsurf<Real_t> *dBVH)
+void CopyBVH(const vecgeom::BVH<Real_t> &hBVH, vecgeom::BVH<Real_t> *dBVH)
 {
   int *dPrimId;
   int *dOffset;
   int *dNChild;
-  bvh::AABBsurf<Real_t> *dNodes;
-  bvh::AABBsurf<Real_t> *dAABBs;
+  vecgeom::AABB<Real_t> *dNodes;
+  vecgeom::AABB<Real_t> *dAABBs;
 
   int rootNChild = hBVH.GetRootNChild();
   if (rootNChild <= 0) {
@@ -67,8 +67,8 @@ void CopyBVH(const bvh::BVHsurf<Real_t> &hBVH, bvh::BVHsurf<Real_t> *dBVH)
   VECGEOM_DEVICE_API_CALL(Malloc(&dPrimId, hBVH.GetRootNChild() * sizeof(int)));
   VECGEOM_DEVICE_API_CALL(Malloc(&dOffset, nodes * sizeof(int)));
   VECGEOM_DEVICE_API_CALL(Malloc(&dNChild, nodes * sizeof(int)));
-  VECGEOM_DEVICE_API_CALL(Malloc(&dNodes, nodes * sizeof(bvh::AABBsurf<Real_t>)));
-  VECGEOM_DEVICE_API_CALL(Malloc(&dAABBs, hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dNodes, nodes * sizeof(vecgeom::AABB<Real_t>)));
+  VECGEOM_DEVICE_API_CALL(Malloc(&dAABBs, hBVH.GetRootNChild() * sizeof(vecgeom::AABB<Real_t>)));
 
   // Ensure pointers are not null after allocation
   if (!dPrimId || !dAABBs || !dOffset || !dNChild || !dNodes) {
@@ -81,9 +81,9 @@ void CopyBVH(const bvh::BVHsurf<Real_t> &hBVH, bvh::BVHsurf<Real_t> *dBVH)
       Memcpy(dOffset, hBVH.GetOffset(), nodes * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
   VECGEOM_DEVICE_API_CALL(
       Memcpy(dNChild, hBVH.GetNChild(), nodes * sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
-  VECGEOM_DEVICE_API_CALL(Memcpy(dNodes, hBVH.GetNodes(), nodes * sizeof(bvh::AABBsurf<Real_t>),
+  VECGEOM_DEVICE_API_CALL(Memcpy(dNodes, hBVH.GetNodes(), nodes * sizeof(vecgeom::AABB<Real_t>),
                                  VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
-  VECGEOM_DEVICE_API_CALL(Memcpy(dAABBs, hBVH.GetAABBs(), hBVH.GetRootNChild() * sizeof(bvh::AABBsurf<Real_t>),
+  VECGEOM_DEVICE_API_CALL(Memcpy(dAABBs, hBVH.GetAABBs(), hBVH.GetRootNChild() * sizeof(vecgeom::AABB<Real_t>),
                                  VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)));
 
   // Adjust pointers in the GPU instance

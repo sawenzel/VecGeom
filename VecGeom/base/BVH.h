@@ -41,12 +41,12 @@ class BVH {
 private:
   uint fRootId    = 0;           ///< Id of the root element this BVH was constructed for
   int fRootNChild = 0;           ///< Number of children of the root element
+  int fDepth      = 0;           ///< Depth of the BVH
   int *fPrimId{nullptr};         ///< Child volume ids for each BVH node
   int *fOffset{nullptr};         ///< Offset in @c fPrimId for first child of each BVH node
   int *fNChild{nullptr};         ///< Number of children for each BVH node
   AABB<Real_t> *fNodes{nullptr}; ///< AABBs of BVH nodes
   AABB<Real_t> *fAABBs{nullptr}; ///< AABBs of children of the BVH root element
-  int fDepth = 0;                ///< Depth of the BVH
 
 public:
   // Default constructor
@@ -56,6 +56,7 @@ public:
   {
   }
 
+  uint GetRootId() const { return fRootId; }
   int GetRootNChild() const { return fRootNChild; };
   int GetDepth() const { return fDepth; };
   const int *GetPrimId() const { return fPrimId; };
@@ -81,6 +82,45 @@ public:
   ~BVH() { Clear(); }
   void Clear();
 
+  /**
+   * Initializer used by BVHcreator. Takes as input pre-constructed BVH buffers.
+   * @param id  Id of the logical volume
+   * @param nchild Number of children of the volume
+   * @param depth Depth of the BVH binary tree stored in the device buffers.
+   * @param dPrimId Device buffer with child volume ids
+   * @param dAABBs  Device buffer with AABBs of child volumes
+   * @param dOffset Device buffer with offsets in @c dPrimId for first child of each BVH node
+   * @param dNChild Device buffer with number of children for each BVH node
+   * @param dNodes AABBs of BVH nodes
+   */
+  VECCORE_ATT_HOST_DEVICE
+  void Set(int id, int nchild, int depth, int *dPrimId, vecgeom::AABB<Real_t> *dAABBs, int *dOffset, int *dNChild,
+           vecgeom::AABB<Real_t> *dNodes)
+  {
+    fRootId     = id;
+    fRootNChild = nchild;
+    fDepth      = depth;
+    SetPointers(dPrimId, dOffset, dNChild, dAABBs, dNodes);
+  }
+
+  /**
+   * Setter for all member arrays. Used to update the pointers after a copy from host to device
+   * @param dPrimId Device buffer with child volume ids
+   * @param dAABBs  Device buffer with AABBs of child volumes
+   * @param dOffset Device buffer with offsets in @c dPrimId for first child of each BVH node
+   * @param dNChild Device buffer with number of children for each BVH node
+   * @param dNodes AABBs of BVH nodes
+   */
+  VECCORE_ATT_HOST_DEVICE
+  void SetPointers(int *dPrimId, int *dOffset, int *dNChild, AABB<Real_t> *dAABBs, AABB<Real_t> *dNodes)
+  {
+    fPrimId = dPrimId;
+    fOffset = dOffset;
+    fNChild = dNChild;
+    fAABBs  = dAABBs;
+    fNodes  = dNodes;
+  }
+
 #ifdef VECGEOM_ENABLE_CUDA
   /**
    * Constructor for GPU. Takes as input pre-constructed BVH buffers.
@@ -97,22 +137,24 @@ public:
       AABB<Real_t> *dNodes);
 
   /**
-   * Setter for all member arrays. Used to update the pointers after a copy from host to device
+   * Constructor for GPU. Takes as input pre-constructed BVH buffers.
+   * @param id  Id of the logical volume
+   * @param nchild Number of children of the volume
+   * @param depth Depth of the BVH binary tree stored in the device buffers.
    * @param dPrimId Device buffer with child volume ids
    * @param dAABBs  Device buffer with AABBs of child volumes
    * @param dOffset Device buffer with offsets in @c dPrimId for first child of each BVH node
    * @param dNChild Device buffer with number of children for each BVH node
    * @param dNodes AABBs of BVH nodes
    */
-  VECCORE_ATT_DEVICE
-  void SetPointers(int *dPrimId, int *dOffset, int *dNChild, AABB<Real_t> *dAABBs, AABB<Real_t> *dNodes)
+  VECCORE_ATT_HOST_DEVICE
+  BVH(int id, int nchild, int depth, int *dPrimId, vecgeom::AABB<Real_t> *dAABBs, int *dOffset, int *dNChild,
+      vecgeom::AABB<Real_t> *dNodes)
+      : fRootId(id), fRootNChild(nchild), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild), fNodes(dNodes),
+        fAABBs(dAABBs), fDepth(depth)
   {
-    fPrimId = dPrimId;
-    fOffset = dOffset;
-    fNChild = dNChild;
-    fAABBs  = dAABBs;
-    fNodes  = dNodes;
   }
+
 #endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
@@ -125,6 +167,23 @@ public:
   /** Print a summary of BVH contents */
   VECCORE_ATT_HOST_DEVICE
   void Print(bool verbose = false) const;
+
+  uint GetAllocatedSize() const
+  {
+    uint nodes = (2 << fDepth) - 1;
+    uint size{0};
+    // fAABBs
+    size += fRootNChild * sizeof(vecgeom::AABB<Real_t>);
+    // fNodes
+    size += nodes * sizeof(vecgeom::AABB<Real_t>);
+    // fNChild
+    size += nodes * sizeof(int);
+    // fOffset
+    size += nodes * sizeof(int);
+    // fPrimId
+    size += fRootNChild * sizeof(int);
+    return size;
+  }
 
   /**
    * Check ray defined by <tt>localpoint + t * localdir</tt> for intersections with children
@@ -251,20 +310,25 @@ public:
     do {
       const unsigned int id = *--ptr;
 
+      // We can safely ignore nodes that are farther than the current safety
+      if (fNodes[id].Safety(localpoint) > safety) continue;
+
       if (fNChild[id] >= 0) {
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Safety(localpoint) < safety) {
-            auto safety_node = fAABBs[prim].Safety(localpoint);
+            auto safety_leaf = fAABBs[prim].Safety(localpoint);
             // If the distance to the current node is larger than the safety we can ignore it
-            if (safety_node >= safety) continue;
+            if (safety_leaf >= safety) continue;
             // Don't check daughters if the safety is larger than the accuracy limit
-            if (safety_node > limit) {
-              safety = safety_node;
+            if (safety_leaf > limit) {
+              safety = safety_leaf;
               continue;
             }
             const Precision dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
-            if (dist < safety) safety = dist;
+            if (dist > -vecgeom::kToleranceDist<Precision>) {
+              if (dist < safety) safety = dist;
+            }
           }
         }
       } else {
@@ -295,12 +359,12 @@ public:
    * @param[in] exclude_item_id Element that should be ignored.
    * @param[in] localpoint Point in the local coordinates of the BVH root element.
    * @param[out] container_id Id of the element in which @p localpoint is contained
-   * @param[out] daughterlocalpoint Point in the local coordinates of the container element
+   * @param[out] path Navigation state of the container element
    * @returns Whether @p localpoint falls within a child element of this BVH.
    */
   template <typename Navigator>
-  VECCORE_ATT_HOST_DEVICE bool LevelLocate(long const exclude_item_id, Vector3D<Precision> const &localpoint,
-                                           long &container_id, Vector3D<Precision> &daughterlocalpoint) const
+  VECCORE_ATT_HOST_DEVICE bool LevelLocate(int const exclude_item_id, Vector3D<Real_t> const &localpoint,
+                                           int &container_id, vecgeom::NavigationState &path) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -313,7 +377,7 @@ public:
           const int prim = fPrimId[fOffset[id] + i];
           if (fAABBs[prim].Contains(localpoint)) {
             if (!Navigator::SkipItem(fRootId, prim, exclude_item_id) &&
-                Navigator::CandidateContains(fRootId, prim, localpoint, daughterlocalpoint)) {
+                Navigator::CandidateContains(fRootId, prim, localpoint, path)) {
               container_id = Navigator::ItemId(fRootId, prim);
               return true;
             }
@@ -393,14 +457,12 @@ public:
   VECCORE_ATT_HOST_DEVICE void ApproachNextDaughter(Vector3D<Precision> localpoint, Vector3D<Precision> localdir,
                                                     Precision &step, long const last_exited_id) const
   {
-
-    // Todo: requires templation to use single precision in the BVH as CheckDaughterIntersections
-    // Omitted for now as this function is not used
-
     unsigned int stack[BVH_MAX_DEPTH] = {0}, *ptr = &stack[1];
 
     /* Calculate and reuse inverse direction to save on divisions */
-    Vector3D<Precision> invlocaldir(1.0 / NonZero(localdir[0]), 1.0 / NonZero(localdir[1]), 1.0 / NonZero(localdir[2]));
+    Vector3D<Real_t> invlocaldir(static_cast<Real_t>(1.0 / NonZero(localdir[0])),
+                                 static_cast<Real_t>(1.0 / NonZero(localdir[1])),
+                                 static_cast<Real_t>(1.0 / NonZero(localdir[2])));
 
     do {
       unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
@@ -409,7 +471,7 @@ public:
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           int prim = fPrimId[fOffset[id] + i];
-          /* Check AABB first, then the element itself if needed */
+          /* Check vecgeom::AABB first, then the element itself if needed */
           if (fAABBs[prim].IntersectInvDir(localpoint, invlocaldir, step)) {
             const auto dist = Navigator::CandidateApproachSolid(fRootId, prim, localpoint, localdir);
             /* If distance to current child is smaller than current step, update step and hitcandidate */

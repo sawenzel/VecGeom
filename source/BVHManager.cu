@@ -3,7 +3,6 @@
 
 #include "VecGeom/management/BVHManager.h"
 #include "VecGeom/backend/cuda/Interface.h"
-#include <VecGeom/navigation/BVHNavigatorV.h>
 #include <VecGeom/navigation/BVHSafetyEstimator.h>
 
 #include "VecGeom/base/Assert.h"
@@ -42,20 +41,10 @@ VECCORE_ATT_DEVICE
 BVHSafetyEstimator *gBVHSafetyEstimator = nullptr;
 
 VECCORE_ATT_DEVICE
-VNavigator *gBVHNavigatorV = nullptr;
-
-VECCORE_ATT_DEVICE
 VSafetyEstimator *BVHSafetyEstimator::Instance()
 {
   if (gBVHSafetyEstimator == nullptr) gBVHSafetyEstimator = new BVHSafetyEstimator();
   return gBVHSafetyEstimator;
-}
-
-template <>
-VECCORE_ATT_DEVICE VNavigator *BVHNavigatorV<false>::Instance()
-{
-  if (gBVHNavigatorV == nullptr) gBVHNavigatorV = new BVHNavigatorV();
-  return gBVHNavigatorV;
 }
 
 template BVH<float> *AllocateDeviceBVHBuffer<float>(size_t);

@@ -1336,9 +1336,9 @@ bool BrepHelper<Real_t>::CreateCommonSurfacesScenes()
 
   // Allocate space for the BVHs
   using Real_b    = typename SurfData<Real_t>::Real_b;
-  fSurfData->fBVH = new bvh::BVHsurf<Real_b>[fCPUdata.fShells.size()];
+  fSurfData->fBVH = new vecgeom::BVH<Real_b>[fCPUdata.fShells.size()];
   fSurfData->fBVHSolids =
-      new bvh::BVHsurf<Real_b>[fCPUdata.fShells.size()]; // Auxiliary BVH for location, built from solid AABBs
+      new vecgeom::BVH<Real_b>[fCPUdata.fShells.size()]; // Auxiliary BVH for location, built from solid AABBs
 
   for (auto logical_volume : lvols) {
     // Get the index allocated for this shell's BVH
