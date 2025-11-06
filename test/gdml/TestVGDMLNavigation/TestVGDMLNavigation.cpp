@@ -1,7 +1,6 @@
 #include "Frontend.h" // VecGeom/gdml/Frontend.h
 
 #include "VecGeom/management/GeoManager.h"
-#include "VecGeom/navigation/BVHNavigatorV.h"
 #include "VecGeom/navigation/HybridNavigator2.h"
 #include "VecGeom/navigation/NewSimpleNavigator.h"
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
@@ -45,7 +44,6 @@ VNavigator const *get_navigator(const char *name)
       NewSimpleNavigator<>::Instance(),
       SimpleABBoxNavigator<>::Instance(),
       HybridNavigator<>::Instance(),
-      BVHNavigatorV<>::Instance(),
   };
 
   for (auto navigator : navigators)
@@ -168,8 +166,6 @@ int main(int argc, char **argv)
 
     HybridManager2::Instance().InitStructure(item.second);
   }
-
-  BVHManager::Init();
 
   auto getSeed = [](std::default_random_engine &rng) {
     std::stringstream ss;

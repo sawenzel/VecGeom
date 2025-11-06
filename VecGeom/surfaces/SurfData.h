@@ -2,7 +2,7 @@
 #define VECGEOM_SURFDATA_H_
 
 #include <VecGeom/surfaces/Model.h>
-#include <VecGeom/surfaces/bvh/BVHsurf.h>
+#include <VecGeom/base/BVH.h>
 #include <VecGeom/base/BVH.h>
 
 namespace vgbrep {
@@ -100,9 +100,9 @@ struct SurfData {
   int *fShellEnteringSurfaceLvolIdList{nullptr}; ///< Id of the logical volume each entering surface belongs to
   int *fShellDaughterPvolIdList{nullptr};        ///< Global PV Ids of the daughter PVs of each Volume
   int *fShellDaughterPvolTransList{nullptr};     ///< Transformations of the daughter PVs of each Volume
-  bvh::BVHsurf<Real_b> *fBVH{
+  vecgeom::BVH<Real_b> *fBVH{
       nullptr}; ///< BVH per volume shell, built from the AABBs of its entering and exiting surfaces
-  bvh::BVHsurf<Real_b> *fBVHSolids{nullptr}; ///< BVH per volume shell, built from the AABBs of the daughter volumes
+  vecgeom::BVH<Real_b> *fBVHSolids{nullptr}; ///< BVH per volume shell, built from the AABBs of the daughter volumes
 
   SurfData() = default;
 

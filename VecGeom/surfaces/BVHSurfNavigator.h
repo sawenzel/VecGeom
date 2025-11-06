@@ -2,7 +2,7 @@
 #define BVH_SURF_NAVIGATOR_H
 
 #include <VecGeom/base/Vector3D.h>
-#include <VecGeom/surfaces/bvh/BVHsurf.h>
+#include <VecGeom/base/BVH.h>
 #include <VecGeom/surfaces/Navigator.h>
 
 namespace vgbrep {
@@ -282,7 +282,7 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   static bool CandidateContains(int lv_index, int index, Vector3D<Real_t> const &localpoint,
-                                vecgeom::NavigationState &path) //, Vector3D<Real_t> &daughterlocalpoint)
+                                vecgeom::NavigationState &path)
   {
     // Get the SurfData instance
     auto const &surfdata = SurfData<Real_t>::Instance();
@@ -423,8 +423,7 @@ public:
 
     auto bvhstep = stepmax;
     // long last_exited_id     = -1;
-    bvh.template CheckDaughterIntersections<BVHSurfNavigator>(localpoint, localdir, bvhstep, // last_exited_id,
-                                                              hitsurf_index);
+    bvh.template CheckDaughterIntersections<BVHSurfNavigator>(localpoint, localdir, bvhstep, -1, hitsurf_index);
     // If there is no physics step limitation, a surface must be found
     if (hitsurf_index < 0) {
       // Nothing is hit within the step limit

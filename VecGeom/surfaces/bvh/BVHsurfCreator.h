@@ -1,5 +1,5 @@
 /// \file BVHsurfCreator.h
-/// Creator of BVHsurf for a volume
+/// Creator of BVH for a volume
 
 #ifndef VECGEOM_SURFACES_BVHCREATOR_H_
 #define VECGEOM_SURFACES_BVHCREATOR_H_
@@ -7,7 +7,7 @@
 #include <fstream>
 #include <VecGeom/management/ABBoxManager.h>
 #include <VecGeom/surfaces/Model.h>
-#include <VecGeom/surfaces/bvh/BVHsurf.h>
+#include <VecGeom/base/BVH.h>
 
 namespace vgbrep {
 namespace bvh {
@@ -21,8 +21,8 @@ enum class ConstructionAlgorithm : unsigned int {
 namespace {
 using namespace vecgeom;
 template <typename Real_b>
-int *splitAlongLongestAxis(const AABBsurf<Real_b> *primitiveBoxes, int *begin, int *end,
-                           const AABBsurf<Real_b> &currentBVHNode)
+int *splitAlongLongestAxis(const vecgeom::AABB<Real_b> *primitiveBoxes, int *begin, int *end,
+                           const vecgeom::AABB<Real_b> &currentBVHNode)
 {
   const Vector3D<Precision> basis[] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
   auto closestAxis                  = [](Vector3D<Precision> v) {
@@ -39,8 +39,8 @@ int *splitAlongLongestAxis(const AABBsurf<Real_b> *primitiveBoxes, int *begin, i
 }
 
 template <typename Real_b>
-int *largestDistanceAlongAxis(const AABBsurf<Real_b> *primitiveBoxes, int *begin, int *end,
-                              const AABBsurf<Real_b> & /*currentBVHNode*/)
+int *largestDistanceAlongAxis(const vecgeom::AABB<Real_b> *primitiveBoxes, int *begin, int *end,
+                              const vecgeom::AABB<Real_b> & /*currentBVHNode*/)
 {
   // Compute maximum extension of lower-left front corners along all axes
   float extension[3][2] = {{0.f, 0.f}, {0.f, 0.f}, {0.f, 0.f}};
@@ -89,22 +89,22 @@ bool less3D(const T &left, const T &right, const int sortAxis)
  * @param end   Past-the-end index of primitives to be considered.
  */
 template <typename Real_b>
-std::vector<std::pair<double, double>> sweepSurfaceArea(const AABBsurf<Real_b> *primitiveBoxes, int const *begin,
+std::vector<std::pair<double, double>> sweepSurfaceArea(const vecgeom::AABB<Real_b> *primitiveBoxes, int const *begin,
                                                         int const *end)
 {
   if (begin >= end) return {};
 
   std::vector<std::pair<double, double>> areas(std::distance(begin, end), {0., 0.});
 
-  AABBsurf<Real_b> box{primitiveBoxes[*begin]};
+  vecgeom::AABB<Real_b> box{primitiveBoxes[*begin]};
   for (auto it = begin + 1; it < end; ++it) {
     areas[it - begin].first = box.SurfaceArea();
-    box                     = AABBsurf<Real_b>::Union(box, primitiveBoxes[*it]);
+    box                     = vecgeom::AABB<Real_b>::Union(box, primitiveBoxes[*it]);
   }
 
-  AABBsurf<Real_b> box2{primitiveBoxes[*(end - 1)]};
+  vecgeom::AABB<Real_b> box2{primitiveBoxes[*(end - 1)]};
   for (auto it = end - 1; it >= begin; --it) {
-    box2                     = AABBsurf<Real_b>::Union(box2, primitiveBoxes[*(it)]);
+    box2                     = vecgeom::AABB<Real_b>::Union(box2, primitiveBoxes[*(it)]);
     areas[it - begin].second = box2.SurfaceArea();
   }
 
@@ -125,8 +125,8 @@ std::vector<std::pair<double, double>> sweepSurfaceArea(const AABBsurf<Real_b> *
  * @return Index of the first element of the second group. If this is `end`, no good split was found.
  */
 template <typename Real_b>
-int *surfaceAreaHeuristic(const AABBsurf<Real_b> *primitiveBoxes, int *begin, int *end,
-                          const AABBsurf<Real_b> & /*currentBVHNode*/)
+int *surfaceAreaHeuristic(const vecgeom::AABB<Real_b> *primitiveBoxes, int *begin, int *end,
+                          const vecgeom::AABB<Real_b> & /*currentBVHNode*/)
 {
   int bestSplitAxis          = -1;
   double bestTraversalMetric = std::distance(begin, end);
@@ -181,8 +181,8 @@ int *surfaceAreaHeuristic(const AABBsurf<Real_b> *primitiveBoxes, int *begin, in
  * @see ConstructionAlgorithm
  */
 template <typename Real_b>
-int *(*splittingFunction[])(const AABBsurf<Real_b> * /*primitveAABBs*/, int * /*firstPrimitive*/,
-                            int * /*lastPrimitive*/, const AABBsurf<Real_b> & /*currentBVHNode*/) = {
+int *(*splittingFunction[])(const vecgeom::AABB<Real_b> * /*primitveAABBs*/, int * /*firstPrimitive*/,
+                            int * /*lastPrimitive*/, const vecgeom::AABB<Real_b> & /*currentBVHNode*/) = {
     &splitAlongLongestAxis,
     &largestDistanceAlongAxis,
     &surfaceAreaHeuristic,
@@ -206,7 +206,8 @@ int *(*splittingFunction[])(const AABBsurf<Real_b> * /*primitveAABBs*/, int * /*
 
 template <typename Real_b>
 void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, int *aPrimId, int *aNChild, int *aOffset,
-                  AABBsurf<Real_b> *aNodes, AABBsurf<Real_b> *aAABBs, ConstructionAlgorithm constructionAlgorithm)
+                  vecgeom::AABB<Real_b> *aNodes, vecgeom::AABB<Real_b> *aAABBs,
+                  ConstructionAlgorithm constructionAlgorithm)
 {
   if (id >= nodes) return;
 
@@ -218,7 +219,7 @@ void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, in
 
   aNodes[id] = aAABBs[*first];
   for (auto it = std::next(first); it != last; ++it)
-    aNodes[id] = AABBsurf<Real_b>::Union(aNodes[id], aAABBs[*it]);
+    aNodes[id] = vecgeom::AABB<Real_b>::Union(aNodes[id], aAABBs[*it]);
 
   // Only one child. No need to continue
   if (std::next(first) == last) return;
@@ -241,7 +242,7 @@ void ComputeNodes(unsigned int id, int *first, int *last, unsigned int nodes, in
 /// @param surfacesBVH If false, build the BVH from the AABBs of the daughter volumes, instead of the AABBs of the entering and exiting surfaces
 /// @param depth Optionally, the depth of the binary tree
 template <typename Real_t>
-static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b> &bvh,
+static void InitBVH(int ivol, BVH<typename vgbrep::SurfData<Real_t>::Real_b> &bvh,
                     vgbrep::CPUsurfData<Precision> const &cpudata,
                     Vector3D<typename vgbrep::SurfData<Real_t>::Real_b> *boxes, int nBoxes, int depth = 0)
 {
@@ -252,9 +253,9 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
 
   auto aRootNChild = nBoxes;
 
-  auto aAABBs = new AABBsurf<Real_b>[nBoxes];
+  auto aAABBs = new vecgeom::AABB<Real_b>[nBoxes];
   for (auto i = 0; i < nBoxes; ++i)
-    aAABBs[i] = AABBsurf(boxes[2 * i], boxes[2 * i + 1]);
+    aAABBs[i] = vecgeom::AABB(boxes[2 * i], boxes[2 * i + 1]);
 
   /* Initialize map of primitive ids (i.e. child volume ids) as {0, 1, 2, ...}. */
   auto aPrimId = new int[nBoxes];
@@ -266,13 +267,13 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
    * volumes, or roughly at most 4 children per leaf node. For example, for 1000 volumes, the
    * default depth would be log2(500) = 8.96 -> 8, with 2^8 - 1 = 511 nodes, and 256 leaf nodes.
    */
-  int aDepth = std::min(depth ? depth : std::max(0, (int)std::log2(nBoxes / 2)), BVHsurf<Real_b>::BVH_MAX_DEPTH);
+  int aDepth = std::min(depth ? depth : std::max(0, (int)std::log2(nBoxes / 2)), BVH<Real_b>::BVH_MAX_DEPTH);
 
   unsigned int nodes = (2 << aDepth) - 1;
 
   auto aNChild = new int[nodes];
   auto aOffset = new int[nodes];
-  auto aNodes  = new AABBsurf<Real_b>[nodes];
+  auto aNodes  = new vecgeom::AABB<Real_b>[nodes];
   std::fill(aNChild, aNChild + nodes, 0);
   std::fill(aOffset, aOffset + nodes, -1);
 
@@ -290,16 +291,16 @@ static void InitBVH(int ivol, BVHsurf<typename vgbrep::SurfData<Real_t>::Real_b>
 
 // Dump the BVH in binary format
 template <typename Real_b>
-static void DumpBVH(const BVHsurf<Real_b> &bvh, const char *filename)
+static void DumpBVH(const BVH<Real_b> &bvh, const char *filename)
 {
-  auto fillAABBbuffer = [](const AABBsurf<Real_b> *aabbs, int n, double *buffer) {
+  auto fillAABBbuffer = [](const vecgeom::AABB<Real_b> *aabbs, int n, double *buffer) {
     for (auto i = 0; i < n; ++i) {
-      buffer[6 * i]     = aabbs[i].fMin[0];
-      buffer[6 * i + 1] = aabbs[i].fMin[1];
-      buffer[6 * i + 2] = aabbs[i].fMin[2];
-      buffer[6 * i + 3] = aabbs[i].fMax[0];
-      buffer[6 * i + 4] = aabbs[i].fMax[1];
-      buffer[6 * i + 5] = aabbs[i].fMax[2];
+      buffer[6 * i]     = aabbs[i].Min()[0];
+      buffer[6 * i + 1] = aabbs[i].Min()[1];
+      buffer[6 * i + 2] = aabbs[i].Min()[2];
+      buffer[6 * i + 3] = aabbs[i].Max()[0];
+      buffer[6 * i + 4] = aabbs[i].Max()[1];
+      buffer[6 * i + 5] = aabbs[i].Max()[2];
     }
   };
 

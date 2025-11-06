@@ -242,7 +242,7 @@ public:
     if (tmax < Real_t(0.0) || tmin > tmax) return false;
 
     // Overestimate error to 10 ULP (corresponding to 20 roundings in the bad direction)
-    Real_t err = Real_t(10.) * ULP<Real_t>(vecCore::math::Max(point.Abs().Max(), tmin));
+    Real_t err = Real_t(500.) * ULP<Real_t>(vecCore::math::Max(point.Abs().Max(), tmin));
     // Do not approach if distance less than unit
     if (tmin < (step + err) && tmin > Real_t(1.)) {
       approach = vecCore::math::Max(tmin - err, Real_t(0.));
