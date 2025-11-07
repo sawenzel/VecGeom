@@ -76,6 +76,20 @@ if(NOT CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|Intel)")
   message(WARNING "Unsupported C++ compiler '${CMAKE_CXX_COMPILER_ID}', build may fail.")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  SET(GNU TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+  SET(Intel TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  SET(Clang TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+  SET(IntelLLVM TRUE)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  SET(AppleClang TRUE)
+endif()
+
+message(STATUS "CXX Compiler: '${CMAKE_CXX_COMPILER_ID}'")
+
 # - C++ standard and extensions
 vecgeom_set_default(CMAKE_CXX_STANDARD 17 STRING "C++ standard")
 vecgeom_set_default(CMAKE_CXX_EXTENSIONS OFF "Allow C++ compiler extensions")
