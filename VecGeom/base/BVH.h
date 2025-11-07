@@ -51,8 +51,8 @@ private:
 public:
   // Default constructor
   BVH()
-      : fRootId(0), fRootNChild(0), fPrimId(nullptr), fOffset(nullptr), fNChild(nullptr), fNodes(nullptr),
-        fAABBs(nullptr), fDepth(0)
+      : fRootId(0), fRootNChild(0), fDepth(0), fPrimId(nullptr), fOffset(nullptr), fNChild(nullptr), fNodes(nullptr),
+        fAABBs(nullptr)
   {
   }
 
@@ -150,8 +150,8 @@ public:
   VECCORE_ATT_HOST_DEVICE
   BVH(int id, int nchild, int depth, int *dPrimId, vecgeom::AABB<Real_t> *dAABBs, int *dOffset, int *dNChild,
       vecgeom::AABB<Real_t> *dNodes)
-      : fRootId(id), fRootNChild(nchild), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild), fNodes(dNodes),
-        fAABBs(dAABBs), fDepth(depth)
+      : fRootId(id), fRootNChild(nchild), fDepth(depth), fPrimId(dPrimId), fOffset(dOffset), fNChild(dNChild),
+        fNodes(dNodes), fAABBs(dAABBs)
   {
   }
 
