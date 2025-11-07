@@ -110,8 +110,8 @@ BVH<Real_t>::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfD
 template <typename Real_t>
 VECCORE_ATT_DEVICE BVH<Real_t>::BVH(LogicalVolume const *volume, int depth, int *dPrimId, AABB<Real_t> *dAABBs,
                                     int *dOffset, int *dNChild, AABB<Real_t> *dNodes)
-    : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fPrimId(dPrimId), fOffset(dOffset),
-      fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs), fDepth(depth)
+    : fRootId(volume->id()), fRootNChild(volume->GetDaughters().size()), fDepth(depth), fPrimId(dPrimId),
+      fOffset(dOffset), fNChild(dNChild), fNodes(dNodes), fAABBs(dAABBs)
 {
 }
 #endif
