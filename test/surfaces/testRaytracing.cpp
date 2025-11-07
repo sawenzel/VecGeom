@@ -207,7 +207,6 @@ int ValidateLocate(Vector3D<Precision> const *points, NavigationState const *in_
 void ComputeSafetiesSolid(Vector3D<Precision> const *points, Vector3D<Precision> const *dirs,
                           NavigationState const *in_states, Precision *ref_safeties, TestConfig const &config)
 {
-  const char *status[2] = {"entering", "exiting"};
   for (auto i = 0; i < config.nrays; ++i) {
     double safety = LoopNavigator::ComputeSafety(points[i], in_states[i]);
     if (config.validate_results) ref_safeties[i] = safety;
@@ -549,7 +548,8 @@ int ValidateCrossing(Vector3D<Precision> const *points, Vector3D<Precision> cons
       printf("\033[1;31m=== ray %d has a propagation difference at step %d (correponding solid model step %d) dist_ref "
              "= %.10g :  dist = %.10g\033[0m\n",
              i, istep_err, istep_err_solid, ref_crossings[i].fSteps[istep_err_solid], crossings[i].fSteps[istep_err]);
-      if ((istep_err < crossings[i].GetNsteps() - 1) && (istep_err_solid < ref_crossings[i].GetNsteps() - 1) &&
+      if (((size_t)istep_err < crossings[i].GetNsteps() - 1) &&
+          ((size_t)istep_err_solid < ref_crossings[i].GetNsteps() - 1) &&
           crossings[i].fStates[istep_err + 1].GetState() != ref_crossings[i].fStates[istep_err_solid + 1].GetState()) {
         printf("\033[1;32msolid model state after step:\033[0m\n");
         ref_crossings[i].fStates[istep_err_solid + 1].Print();
