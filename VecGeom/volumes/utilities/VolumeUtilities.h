@@ -72,8 +72,7 @@ inline bool IsHittingAnyDaughter(Vector3D<Precision> const &point, Vector3D<Prec
  * @param scale an optional scale factor (default is 1)
  * @return a random output point
  */
-VECGEOM_FORCE_INLINE
-Vector3D<Precision> SamplePoint(Vector3D<Precision> const &size, const Precision scale = 1)
+inline Vector3D<Precision> SamplePoint(Vector3D<Precision> const &size, const Precision scale = 1)
 {
   const Vector3D<Precision> ret(scale * (1. - 2. * RNG::Instance().uniform()) * size[0],
                                 scale * (1. - 2. * RNG::Instance().uniform()) * size[1],
@@ -103,8 +102,7 @@ VECGEOM_FORCE_INLINE Vector3D<Precision> SamplePoint(Vector3D<Precision> const &
  *  @details Mostly used for benchmarks, when a direction is needed.
  *  @return a random, normalized direction vector
  */
-VECGEOM_FORCE_INLINE
-Vector3D<Precision> SampleDirection()
+inline Vector3D<Precision> SampleDirection()
 {
 
   Vector3D<Precision> dir((1. - 2. * RNG::Instance().uniform()), (1. - 2. * RNG::Instance().uniform()),
@@ -121,8 +119,7 @@ Vector3D<Precision> SampleDirection()
  *  @details Mostly used for benchmarks, when a direction is needed.
  *  @return a random, normalized direction vector
  */
-VECGEOM_FORCE_INLINE
-Vector3D<Precision> SampleDirectionIsotropic()
+inline Vector3D<Precision> SampleDirectionIsotropic()
 {
 
   Precision phi  = 2 * kPi * RNG::Instance().uniform();

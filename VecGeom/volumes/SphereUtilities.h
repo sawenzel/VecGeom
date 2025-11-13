@@ -32,8 +32,7 @@ T sqr(T x)
 #ifndef VECCORE_CUDA
 // Generate radius in annular ring according to uniform area
 template <typename T>
-VECGEOM_FORCE_INLINE
-T GetRadiusInRing(T rmin, T rmax)
+inline T GetRadiusInRing(T rmin, T rmax)
 {
   if (rmin == rmax) return rmin;
 

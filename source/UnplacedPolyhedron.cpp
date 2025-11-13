@@ -360,7 +360,6 @@ bool UnplacedPolyhedron::InsideTriangle(Vector3D<Precision> &v1, Vector3D<Precis
   return false;
 }
 
-VECCORE_ATT_HOST_DEVICE
 Vector3D<Precision> UnplacedPolyhedron::GetPointOnTriangle(Vector3D<Precision> const &v1, Vector3D<Precision> const &v2,
                                                            Vector3D<Precision> const &v3) const
 {
