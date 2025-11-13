@@ -1,3 +1,80 @@
+VecGeom Release 2.0.0-rc8      13th November 2025
+==================================================
+
+This release candidate includes important fixes and improvements across
+navigation, BVH accuracy and consistency, CUDA RDC handling, compiler
+compatibility, and general code robustness. It also removes deprecated or
+broken components and improves documentation.
+
+- Navigation and geometry fixes
+  - Fixed a long-standing bug in `LocatePointIn` in both `BVHNavigator` and
+    `LooperNavigator`. The function received points in the *parent* reference
+    frame of a volume, but the BVH expected points in the *local* frame.
+    The missing transformation caused incorrect navigation for all but the
+    world volume. The behavior is now corrected and documented.
+  - Updated `RelocatePoint` to match the corrected `LocatePointIn` behavior.
+  - Added a new `LocatePointInNavState` method, which takes a point expressed in
+    the local coordinate system of an existing navigation state and finds the
+    deepest state containing that point.
+  - Matched polycone phi-angle readjustment to Geant4 (and UPolycone wrapper),
+    resolving inconsistencies observed in the CMS D110 Run4 geometry.
+
+- BVH improvements and cleanup
+  - Unification of BVH and BVHSurf: removed the diverged `BVHSurf` and merged
+    all functionality into the main BVH implementation. Removed also
+    `AABBSurf` and `BVHNavigatorV`, transferring remaining useful functions
+    into BVH.
+  - Increased error tolerance for `ComputeIntersectionInvDir` from 10 to
+    500 ULP to avoid false hits inside approached AABBs.
+  - Restored solids’ version of `ComputeSafety`.
+  - Made internal `ComputeSafety` precision use `Real_t`, avoiding
+    unnecessary casts and enabling precision-templated BVH variants.
+  - Relaxed and simplified several internal checks.
+
+- CUDA and build-system updates
+  - Removed broken CUDA RNG implementation.
+  - Major updates to CUDA RDC handling in `CudaRdcUtils`:
+      - Avoid propagation of `-Wl,--no-undefined` when building CUDA RDC
+        intermediate libraries, which by design contain undefined symbols.
+      - Explicitly allow undefined symbols via platform-appropriate options
+        (`allow-shlib-undefined`, `-z undefs`) where available.
+      - Added missing `cudart` linkage for non-CUDA libraries depending on
+        CUDA libraries.
+      - Updated CudaRdcUtils to version 13.
+      - Removed dead code, debug remnants, and global linker flag restoration.
+  - Fixed build errors with Clang 19 and CUDA 12.9:
+      - Corrected device annotations and visibility attributes.
+      - Fixed use of nonexistent device functions.
+      - Added a warning when host compiler and CUDA compiler differ.
+      - Fixed an issue where VecCore’s `check_language(CUDA)` erased
+        `CMAKE_CUDA_HOST_COMPILER`. A wrapper for `find_package(VecCore)`
+        now prints VecCore version and components at configure time.
+      - Updated `.gitignore` to allow storing CMake preset files in the
+        source directory.
+
+- Compiler warnings and portability
+  - Fixed two macOS warnings: an uninitialized BVH constructor variable and
+    removal of an unused branch intended for surface BVH construction.
+  - Enabled compiler flags properly: previous CMake logic referenced variables
+    that were not set. Compiler flags are now selected using
+    `CMAKE_CXX_COMPILER_ID`. Also fixed new warnings in `testRaytracing.cpp`.
+  - Fixed `-Wreorder` warning by correcting the initialization order of
+    `BVH::fDepth`.
+  - Added portable pragma unrolling via `VECGEOM_PRAGMA_UNROLL(N)`, enabling
+    consistent loop unrolling and removing warnings in the generic trapezoid.
+  - Fixed warnings for gcc15.
+
+- API and type namespace updates
+  - Moved `Precision`, `NavIndex_t`, and `uint_t` out of the global namespace
+    into `vecgeom`/`vgbrep`. This change improves namespace hygiene and
+    consistency.
+  - Added `VECGEOM_PRECISION_NAMESPACE` macro to preserve compatibility with
+    previous dev and v1.x releases.
+  - Updated CUDA paths and dependent code accordingly.
+
+- Miscellaneous
+  - Fixed minor annotation issues and improved documentation in several areas.
+
 Version 2.0.0-rc7        25th September 2025
 ============================================
 Overview
