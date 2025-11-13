@@ -95,9 +95,7 @@ Precision EllipticalConeLateralArea(Precision pA, Precision pB, Precision pH)
 /// @param a X semi-axis
 /// @param b Y semi-axis
 //
-VECCORE_ATT_HOST_DEVICE
-VECGEOM_FORCE_INLINE
-Vector2D<Precision> RandomPointInEllipse(Precision a, Precision b)
+inline Vector2D<Precision> RandomPointInEllipse(Precision a, Precision b)
 {
   Precision aa = (a * a == 0.) ? 0. : 1. / (a * a);
   Precision bb = (b * b == 0.) ? 0. : 1. / (b * b);
@@ -113,9 +111,7 @@ Vector2D<Precision> RandomPointInEllipse(Precision a, Precision b)
 /// @param a X semi-axis
 /// @param b Y semi-axis
 //
-VECCORE_ATT_HOST_DEVICE
-VECGEOM_FORCE_INLINE
-Vector2D<Precision> RandomPointOnEllipse(Precision a, Precision b)
+inline Vector2D<Precision> RandomPointOnEllipse(Precision a, Precision b)
 {
   Precision A      = vecCore::math::Abs(a);
   Precision B      = vecCore::math::Abs(b);

@@ -106,13 +106,9 @@ public:
   VECGEOM_FORCE_INLINE
   Precision GetQuadrilateralArea(int index) const;
 
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Vector3D<Precision> GetPointOnTriangle(int index, int iCorner0, int iCorner1, int iCorner2) const;
+  inline Vector3D<Precision> GetPointOnTriangle(int index, int iCorner0, int iCorner1, int iCorner2) const;
 
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  Vector3D<Precision> GetPointOnFace(int index) const;
+  inline Vector3D<Precision> GetPointOnFace(int index) const;
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -223,7 +219,6 @@ Precision Quadrilaterals::GetQuadrilateralArea(int index) const
   return fArea;
 }
 
-VECCORE_ATT_HOST_DEVICE
 Vector3D<Precision> Quadrilaterals::GetPointOnTriangle(int index, int iCorner0, int iCorner1, int iCorner2) const
 {
   Precision r1 = RNG::Instance().uniform(0.0, 1.0);
@@ -237,7 +232,6 @@ Vector3D<Precision> Quadrilaterals::GetPointOnTriangle(int index, int iCorner0, 
   return fCorners[iCorner0][index] + r1 * vec1 + r2 * vec2;
 }
 
-VECCORE_ATT_HOST_DEVICE
 Vector3D<Precision> Quadrilaterals::GetPointOnFace(int index) const
 {
 
