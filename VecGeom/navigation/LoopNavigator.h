@@ -27,6 +27,30 @@ public:
 
   static constexpr Precision kBoundaryPush = 10 * vecgeom::kTolerance;
 
+  /**
+   * @brief Locate the deepest daughter volume that contains a point, starting from a given placed volume.
+   *
+   * ## Coordinate frames
+   * - **Input point** @p point is in the **parent frame of @p vol** (i.e. the same frame expected by
+   *   `VPlacedVolume::Inside` for @p vol).
+   * - The NavigationState @p path should point to the **parent frame of @p vol**.
+   * @param[in]  vol
+   *   The starting placed volume (the mother at which the descent begins). Must be non-null if @p top is true.
+   * @param[in]  point
+   *   Query point **in the parent frame of @p vol**.
+   * @param[in,out] path
+   *   Navigation state to be filled. Must start at the  **parent frame of @p vol**.
+   * @param[in]  top
+   *   If true, the function first validates that the point is inside @p vol. If false, a nullptr is returned
+   * @param[in]  exclude
+   *   Optional placed volume to exclude once during the descent (useful to avoid immediately
+   *   re-entering a volume you just exited). The exclusion is applied only to the first BVH
+   *   query and then cleared.
+   * @return
+   *   The deepest placed volume that contains the point, or `nullptr` if @p top is true and
+   *   `vol->Inside(point)` reports outside. When the descent stops at @p vol (i.e. no daughter
+   *   contains the point), returns @p vol.
+   */
   VECCORE_ATT_HOST_DEVICE
   static Daughter LocatePointIn(Daughter vol, Vector3D<Precision> const &point, vecgeom::NavigationState &path,
                                 bool top, Daughter exclude = nullptr)
@@ -40,7 +64,8 @@ public:
     }
 
     Daughter currentvolume = vol;
-    Vector3D<Precision> currentpoint(point);
+    // transform the point into the reference frame of the `vol`
+    Vector3D<Precision> currentpoint(vol->GetTransformation()->Transform<Precision>(point));
     path.Push(currentvolume);
 
     bool godeeper;
@@ -71,12 +96,21 @@ public:
     return currentvolume;
   }
 
+  /**
+   * @brief Find new final NavigationState after a NavigationState has just been left (i.e., after exiting its corresponding top volume)
+   * The function will climb up the NavigationStates until the point is inside, and then descend again to find the
+   * deepest volume containing the point. The just exited volume will be skipped
+   * @param[in]  localpoint   Point in the **local frame of the navigation state (path.Top())**
+   * @param[in,out] path      Navigation state of the volume that was just left; updated to the new deepest containing path.
+   * @return The deepest placed volume that contains the point (after re-location), or nullptr if no mother exists.
+   */
   VECCORE_ATT_HOST_DEVICE
   static Daughter RelocatePoint(Vector3D<Precision> const &localpoint, vecgeom::NavigationState &path)
   {
     Daughter currentmother          = path.Top();
     Daughter skip                   = nullptr;
     Vector3D<Precision> transformed = localpoint;
+    // continue to climb up the Navigation tree until a volume is found which contains the volume
     do {
       skip = currentmother;
       path.Pop();
@@ -84,11 +118,74 @@ public:
       currentmother = path.Top();
     } while (currentmother && (currentmother->IsAssembly() || !currentmother->UnplacedContains(transformed)));
 
+    // first volume up the hierarchy is found that contains the point. Now descend to find the deepest state that
+    // contains the point
     if (currentmother) {
-      path.Pop();
-      return LocatePointIn(currentmother, transformed, path, false, skip);
+      return LocatePointInNavState(transformed, path, false, skip);
     }
     return currentmother;
+  }
+
+  /**
+   * @brief Update NavState path to the deepest state that contains given point starting from the given path.
+   * @param[in]  localpoint
+   *   localpoint **in the reference frame of @p path.**.
+   * @param[in,out] path
+   *   Starting NavigationState; output of the final NavigationState
+   * @param[in]  top
+   *   If true, the function first validates that the point is inside @p path. If false, a nullptr is returned
+   * @param[in]  exclude
+   *   Optional placed volume to exclude once during the descent
+   * @return
+   *   The final top-volume of the NavState after finding the deepest NavState that contains the point
+   */
+  VECCORE_ATT_HOST_DEVICE
+  static Daughter LocatePointInNavState(Vector3D<Precision> const &localpoint, vecgeom::NavigationState &path, bool top,
+                                        vecgeom::VPlacedVolume const *exclude = nullptr)
+  {
+    VECGEOM_ASSERT(path.Top() != nullptr);
+
+    auto currentLogical = path.Top()->GetLogicalVolume();
+    VECGEOM_ASSERT(currentLogical != nullptr);
+
+    // If requested, validate at the logical level (unplaced containment)
+    if (top) {
+      auto inside = currentLogical->GetUnplacedVolume()->Inside(localpoint);
+      if (inside == kOutside) return nullptr;
+      // Set the boundary state to the path
+      if (inside == kSurface) path.SetBoundaryState(true);
+    }
+
+    Vector3D<Precision> currentpoint(localpoint);
+
+    while (currentLogical->GetDaughters().size() > 0) {
+      bool godeeper = false;
+
+      // Linear scan over placed daughters of the current logical volume
+      for (auto *daughter : currentLogical->GetDaughters()) {
+        if (exclude && daughter == exclude) continue;
+
+        // Transform the point from the current logical frame to the daughter's local frame
+        const auto transformedpoint = daughter->GetTransformation()->Transform<Precision>(currentpoint);
+        const auto inside           = daughter->GetUnplacedVolume()->Inside(transformedpoint);
+        if (inside == kOutside) continue;
+        if (inside == kSurface) path.SetBoundaryState(true);
+        // Point inside child
+        path.Push(daughter);
+        currentpoint   = transformedpoint;
+        currentLogical = daughter->GetLogicalVolume();
+        godeeper       = true;
+        // Skip checking other children
+        break;
+      }
+
+      // Only exclude the placed volume once since we could enter it again via a
+      // different volume history.
+      exclude = nullptr;
+      if (!godeeper) break; // no containing daughter at this level
+    }
+
+    return path.Top();
   }
 
 private:
