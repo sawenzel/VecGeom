@@ -2,6 +2,7 @@
 /// \author Guilherme Amadio
 
 #include "VecGeom/management/BVHManager.h"
+#include "VecGeom/management/ABBoxManager.h"
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/Logger.h"
 
@@ -28,9 +29,12 @@ void BVHManager::Init()
   GeoManager::Instance().GetAllLogicalVolumes(lvols);
   // There may be volumes not used in the hierarchy, so the maximum index may be larger
   hBVH<Real_t>.resize(GeoManager::Instance().GetLogicalVolumesMap().size());
-  for (auto logical_volume : lvols)
+  for (auto logical_volume : lvols) {
+    int n{0};
+    auto ptrAABB = ABBoxManager<Precision>::Instance().GetABBoxes(logical_volume, n);
     hBVH<Real_t>[logical_volume->id()] =
-        logical_volume->GetDaughters().size() > 0 ? new BVH<Real_t>(*logical_volume) : nullptr;
+        logical_volume->GetDaughters().size() > 0 ? new BVH<Real_t>(*logical_volume, ptrAABB, n) : nullptr;
+  }
 }
 
 cuda::BVH<BVHManager::Real_t> const *BVHManager::DeviceInit()
@@ -43,7 +47,7 @@ cuda::BVH<BVHManager::Real_t> const *BVHManager::DeviceInit()
   for (int id = 0; id < n; ++id) {
     if (!hBVH<Real_t>[id]) continue;
 
-    hBVH<Real_t>[id] -> CopyToGpu(&reinterpret_cast<cxx::BVH<Real_t> *>(ptr)[id]);
+    hBVH<Real_t>[id]->CopyToGpu(&reinterpret_cast<cxx::BVH<Real_t> *>(ptr)[id]);
   }
   return ptr;
 #else

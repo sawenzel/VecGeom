@@ -52,35 +52,20 @@ enum class BVH<Real_t>::ConstructionAlgorithm : unsigned int {
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
 template <typename Real_t>
-BVH<Real_t>::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfData<Precision> const *cpudata,
-                 int depth)
+BVH<Real_t>::BVH(LogicalVolume const &volume, Vector3D<Precision> *ptrAABB, int nChild, int depth)
     : fRootId(volume.id())
 {
-  int n;
-  Vector3D<Precision> *ptr;
+  VECGEOM_VALIDATE(nChild > 0, << "Cannot construct BVH for volume with no children!");
 
-  /* ptr is a pointer to ndaughters times (min, max) corner vectors of each AABB */
-  if (surfacesBVH) {
-#ifdef VECGEOM_USE_SURF
-    ptr = ABBoxManager<Precision>::Instance().GetSurfaceABBoxes(volume.id(), n, *cpudata);
-#else
-    VECGEOM_LOG(critical) << "Surface BVH requested but  VECGEOM_USE_SURF not enabled";
-#endif
-  } else {
-    ptr = ABBoxManager<Precision>::Instance().GetABBoxes(&volume, n);
-  }
+  fRootNChild = nChild;
 
-  if (n <= 0) throw std::logic_error("Cannot construct BVH for volume with no children!");
-
-  fRootNChild = n;
-
-  fAABBs = new AABB<Real_t>[n];
-  for (int i = 0; i < n; ++i)
-    fAABBs[i] = AABB<Real_t>(ptr[2 * i], ptr[2 * i + 1]);
+  fAABBs = new AABB<Real_t>[nChild];
+  for (int i = 0; i < nChild; ++i)
+    fAABBs[i] = AABB<Real_t>(ptrAABB[2 * i], ptrAABB[2 * i + 1]);
 
   /* Initialize map of primitive ids (i.e. child volume ids) as {0, 1, 2, ...}. */
-  fPrimId = new int[n];
-  std::iota(fPrimId, fPrimId + n, 0);
+  fPrimId = new int[nChild];
+  std::iota(fPrimId, fPrimId + nChild, 0);
 
   /*
    * If depth = 0, choose depth dynamically based on the number of child volumes, up to the fixed
@@ -88,7 +73,7 @@ BVH<Real_t>::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfD
    * volumes, or roughly at most 4 children per leaf node. For example, for 1000 volumes, the
    * default depth would be log2(500) = 8.96 -> 8, with 2^8 - 1 = 511 nodes, and 256 leaf nodes.
    */
-  fDepth = std::min(depth ? depth : std::max(0, (int)std::log2(n / 2)), BVH_MAX_DEPTH);
+  fDepth = std::min(depth ? depth : std::max(0, (int)std::log2(nChild / 2)), BVH_MAX_DEPTH);
 
   unsigned int nodes = (2 << fDepth) - 1;
 
@@ -99,7 +84,7 @@ BVH<Real_t>::BVH(LogicalVolume const &volume, bool surfacesBVH, vgbrep::CPUsurfD
   std::fill(fOffset, fOffset + nodes, -1);
 
   /* Recursively initialize BVH nodes starting at the root node */
-  ComputeNodes(0, fPrimId, fPrimId + n, nodes, ConstructionAlgorithm::SurfaceAreaHeuristic);
+  ComputeNodes(0, fPrimId, fPrimId + nChild, nodes, ConstructionAlgorithm::SurfaceAreaHeuristic);
 
   /* Mark internal nodes with a negative number of children to simplify traversal */
   for (unsigned int id = 0; id < nodes / 2; ++id)
