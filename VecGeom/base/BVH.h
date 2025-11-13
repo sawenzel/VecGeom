@@ -70,13 +70,13 @@ public:
   /**
    * Constructor.
    * @param volume Pointer to logical volume for which the BVH will be created.
-   * @param surfacesBVH Whether to build this BVH from AABBs created for solids or surfaces
+   * @param ptrAABB Container of AABBs for this volume
+   * @param nChild Number of children of the volume
    * @param depth Depth of the BVH binary tree. Defaults to zero, in which case
    * the actual depth will be chosen dynamically based on the number of child volumes.
    * When a fixed depth is chosen, it cannot be larger than @p BVH_MAX_DEPTH.
    */
-  BVH(LogicalVolume const &volume, bool surfacesBVH = false, vgbrep::CPUsurfData<Precision> const *surfData = nullptr,
-      int depth = 0);
+  BVH(LogicalVolume const &volume, Vector3D<Precision> *ptrAABB, int nChild, int depth = 0);
 
   /** Destructor. */
   ~BVH() { Clear(); }
