@@ -661,10 +661,8 @@ public:
     state.TopMatrix(m);
     Vector3D<Precision> localpoint = m.Transform(pushed);
 
-    Daughter pvol = state.Top();
-
-    state.Pop();
-    LocatePointIn(pvol, localpoint, state, false, state.GetLastExited());
+    // passing the state to check in + the local point in the reference frame of the state
+    LocatePointInNavState(localpoint, state, false, state.GetLastExited());
 
     if (state.Top() != nullptr) {
       while (state.Top()->IsAssembly()) {

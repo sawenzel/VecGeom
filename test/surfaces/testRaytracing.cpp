@@ -110,13 +110,10 @@ void LocateSolids(Vector3D<Precision> const *points, Vector3D<Precision> const *
     in_states[0] = config.input_state;
     in_states[0].SetBoundaryState(config.on_boundary);
     NavigationState state_located = in_states[0];
-    state_located.Pop();
     Transformation3D trans;
     state_located.TopMatrix(trans);
-    // Now in the parent of the user state
-    // Locate starting from the parent, validating the user state
-    auto vol = LoopNavigator::LocatePointIn(in_states[0].Top(), trans.Transform(points[0]), state_located, true);
-    // auto vol = LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[0], state_located, true);
+    // Locate point in the user state
+    auto vol = LoopNavigator::LocatePointInNavState(trans.Transform(points[0]), state_located, true);
     if (!vol) VECGEOM_LOG(info) << "Provided input state top volume does NOT contain the point";
     int match = (vol != nullptr) && (state_located.HasSamePathAsOther(config.input_state));
     VECGEOM_LOG(info) << "Provided input state: " << config.input_state.GetNavIndex();
@@ -143,15 +140,20 @@ void LocateSolids(Vector3D<Precision> const *points, Vector3D<Precision> const *
     return;
   }
 
+  const auto world = GeoManager::Instance().GetWorld();
   for (auto i = 0; i < config.nrays; ++i) {
-    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+    in_states[i].Push(world);
+    LoopNavigator::LocatePointInNavState(points[i], in_states[i], true);
   }
 }
 //==================================================================================
 void LocateSolidsBVH(Vector3D<Precision> const *points, NavigationState *in_states, TestConfig const &config)
 {
+  const auto world = GeoManager::Instance().GetWorld();
   for (auto i = 0; i < config.nrays; ++i) {
-    BVHNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], in_states[i], true);
+    // Locate point in world. Need to push new_state to world state, but set checking the top volume to true
+    in_states[i].Push(world);
+    BVHNavigator::LocatePointInNavState(points[i], in_states[i], true);
   }
 }
 //==================================================================================
@@ -176,7 +178,8 @@ void LocateSurfBVH(Vector3D<Precision> const *points, NavigationState *out_state
 int ValidateLocate(Vector3D<Precision> const *points, NavigationState const *in_states, NavigationState *out_states,
                    bool validate_bvh, TestConfig const &config)
 {
-  int num_errors = 0;
+  int num_errors   = 0;
+  const auto world = GeoManager::Instance().GetWorld();
   for (auto i = 0; i < config.nrays; ++i) {
     if (out_states[i].GetNavIndex() != in_states[i].GetNavIndex()) {
       num_errors++;
@@ -184,7 +187,9 @@ int ValidateLocate(Vector3D<Precision> const *points, NavigationState const *in_
         printf("%d: p{%16.12f, %16.12f, %16.12f}\n", i, points[i][0], points[i][1], points[i][2]);
         // This just replays the failing locate query for debugging
         NavigationState out_state;
-        LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), points[i], out_state, true);
+        // Locate point in world. Need to push new_state to world state, but set checking the top volume to true
+        out_state.Push(world);
+        LoopNavigator::LocatePointInNavState(points[i], out_state, true);
         printf("   solid model state:        ");
         out_state.Print();
         out_state.Clear();
@@ -250,6 +255,7 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
   // all of them are located in in_state
   auto &rng         = RNG::Instance();
   auto const navind = in_state.GetNavIndex();
+  const auto world  = GeoManager::Instance().GetWorld();
   NavigationState new_state;
   bool is_safe = true;
   for (int i = 0; i < nsamples; ++i) {
@@ -259,7 +265,9 @@ bool CheckSafety(Vector3D<Precision> const &point, NavigationState const &in_sta
     double the = std::acos(2 * rng.uniform() - 1);
     Vector3D<Precision> ranpoint(std::sin(the) * std::cos(phi), std::sin(the) * std::sin(phi), std::cos(the));
     safepoint += safety * ranpoint; // safety is rounded from float
-    LoopNavigator::LocatePointIn(GeoManager::Instance().GetWorld(), safepoint, new_state, true);
+    // Locate point in world. Need to push new_state to world state, but set checking the top volume to true
+    new_state.Push(world);
+    LoopNavigator::LocatePointInNavState(safepoint, new_state, true);
     is_safe = new_state.GetNavIndex() == navind;
     if (!is_safe) break;
   }

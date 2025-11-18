@@ -24,8 +24,10 @@ __global__ void LocateSolids(Vector3D<Precision> const *points, NavigationState 
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < config.nrays; i += blockDim.x * gridDim.x) {
     Vector3D<Precision> const &pos = points[i];
-    // Locate with solid-based model
-    LoopNavigator::LocatePointIn(world, pos, in_states[i], true);
+    // Locate point in world with solid-based model
+    // Need to push new_state to world state, but set checking the top volume to true
+    in_states[i].Push(world);
+    LoopNavigator::LocatePointInNavState(pos, in_states[i], true);
   }
 }
 //==================================================================================
@@ -34,8 +36,10 @@ __global__ void LocateSolidsBVH(Vector3D<Precision> const *points, NavigationSta
 {
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < config.nrays; i += blockDim.x * gridDim.x) {
     Vector3D<Precision> const &pos = points[i];
-    // Locate with solid-based model
-    BVHNavigator::LocatePointIn(world, pos, in_states[i], true);
+    // Locate point in world with solid-based model using the BVH
+    // Need to push new_state to world state, but set checking the top volume to true
+    in_states[i].Push(world);
+    BVHNavigator::LocatePointInNavState(pos, in_states[i], true);
   }
 }
 //==================================================================================
