@@ -1,6 +1,12 @@
-VecGeom Release 2.0.0-rc8      13th November 2025
-==================================================
+Version 2.0.0-rc9      18th November 2025
+=========================================
+This release candidate fixes a bug RelocateToNextVolume passing points in
+the coordinates of vol to LocatePointIn, instead of the parent of vol.
+To avoid further confusion, the cleaner and simpler function 
+LocatePointInNavState is used.
 
+Version 2.0.0-rc8      13th November 2025
+==================================================
 This release candidate includes important fixes and improvements across
 navigation, BVH accuracy and consistency, CUDA RDC handling, compiler
 compatibility, and general code robustness. It also removes deprecated or
