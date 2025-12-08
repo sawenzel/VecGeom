@@ -177,13 +177,6 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  static vecgeom::LogicalId const &ToLogicalId(size_t iplaced)
-  {
-    return vecgeom::VolumeTree::Instance().fPlaced[iplaced].fVolume;
-  }
-
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   static unsigned short GetNdaughtersImpl(NavIndex_t nav_ind)
   {
     constexpr unsigned int kOffsetNd = 5 * sizeof(NavIndex_t) + 2;
@@ -718,19 +711,6 @@ public:
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   void SetBoundaryState(bool b) { fOnBoundary = b; }
-};
-
-struct ExitSurfState {
-  int common_id;
-  int frame_id;
-  bool left_side;
-  bool overlap;
-
-  VECCORE_ATT_HOST_DEVICE
-  ExitSurfState(int common_surf = 0, int frame = 0, bool ls = 0, bool ol = 0)
-      : common_id(common_surf), frame_id(frame), left_side(ls), overlap(ol)
-  {
-  }
 };
 
 /**
