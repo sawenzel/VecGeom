@@ -12,10 +12,7 @@
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/volumes/VolumeTree.h"
-
-#ifdef VECGEOM_ENABLE_CUDA
-#include "VecGeom/management/CudaManager.h"
-#endif
+#include "VecGeom/management/DeviceGlobals.h"
 
 #include <iostream>
 #include <string>
@@ -637,14 +634,10 @@ public:
   void GetPathAsListOfIndices(std::list<uint> &indices) const;
   void ResetPathFromListOfIndices(VPlacedVolume const *world, std::list<uint> const &indices);
 
-  // replaces the volume pointers from CPU volumes in fPath
-  // to the equivalent pointers on the GPU
-  // uses the CudaManager to do so
+  // N/A: only for NavStatePath
   void ConvertToGPUPointers() {}
 
-  // replaces the pointers from GPU volumes in fPath
-  // to the equivalent pointers on the CPU
-  // uses the CudaManager to do so
+  // N/A: only for NavStatePath
   void ConvertToCPUPointers() {}
 
   // clear all information
