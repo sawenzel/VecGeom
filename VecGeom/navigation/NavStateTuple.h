@@ -325,13 +325,6 @@ public:
     return vecgeom::VolumeTree::Instance().fPlaced[iplaced];
   }
 
-  VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
-  static vecgeom::LogicalId const &ToLogicalId(size_t iplaced)
-  {
-    return vecgeom::VolumeTree::Instance().fPlaced[iplaced].fVolume;
-  }
-
   /// @brief Implementation for getting the logical id for a given navigation index
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
