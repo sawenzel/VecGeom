@@ -241,11 +241,13 @@ public:
     ComputeIntersectionInvDir(point, invdir, tmin, tmax);
     if (tmax < Real_t(0.0) || tmin > tmax) return false;
 
-    // Overestimate error to 10 ULP (corresponding to 20 roundings in the bad direction)
-    Real_t err = Real_t(500.) * ULP<Real_t>(vecCore::math::Max(point.Abs().Max(), tmin));
+    Real_t ulp = ULP<Real_t>(vecCore::math::Max(point.Abs().Max(), tmin));
     // Do not approach if distance less than unit
-    if (tmin < (step + err) && tmin > Real_t(1.)) {
-      approach = vecCore::math::Max(tmin - err, Real_t(0.));
+    // Overestimate error to 10 ULP (corresponding to 20 roundings in the bad direction)
+    if (tmin < (step + (Real_t(10.) * ulp)) && tmin > Real_t(1.)) {
+      // For use with the surface model, it was found that a larger error overestimation is needed in order to avoid
+      // approaches that overshoot the surface
+      approach = vecCore::math::Max(tmin - (Real_t(500.) * ulp), Real_t(0.));
     }
     return true;
   }

@@ -326,9 +326,11 @@ public:
               continue;
             }
             const Precision dist = Navigator::CandidateSafetyToIn(fRootId, prim, localpoint);
-            if (dist > -vecgeom::kToleranceDist<Precision>) {
-              if (dist < safety) safety = dist;
-            }
+            // FIXME: A check for negative distances is needed for using the BVH with surfaces,
+            // however, it causes unexpected navigation issues with solids
+            // if (dist > -vecgeom::kToleranceDist<Precision>) {
+            if (dist < safety) safety = dist;
+            // }
           }
         }
       } else {
