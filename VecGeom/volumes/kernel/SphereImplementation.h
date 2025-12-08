@@ -154,9 +154,9 @@ struct SphereImplementation {
     } else {
       tmpPt = point + sd1 * direction;
       vecCore::MaskedAssign(outerDist,
-                            !done && (sd1 >= Real_v(-kTolerance) && sd1 < Real_v(kInfLength))
-                                  && sphere.fPhiWedge.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside
-                                  && sphere.fThetaCone.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside,
+                            !done && (sd1 >= Real_v(-kTolerance) && sd1 < Real_v(kInfLength)) &&
+                                sphere.fPhiWedge.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside &&
+                                sphere.fThetaCone.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside,
                             sd1);
     }
 
@@ -172,9 +172,9 @@ struct SphereImplementation {
         //   std::cerr<<" ---- Called by InnerRad ---- " << std::endl;
         tmpPt = point + sd2 * direction;
         vecCore::MaskedAssign(innerDist,
-                              !done && (sd2 >= Real_v(-kTolerance) && sd2 < Real_v(kInfLength))
-                                    && sphere.fPhiWedge.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside
-                                    && sphere.fThetaCone.Inside<Real_v,Inside_t>(tmpPt) != EInside::kOutside,
+                              !done && (sd2 >= Real_v(-kTolerance) && sd2 < Real_v(kInfLength)) &&
+                                  sphere.fPhiWedge.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside &&
+                                  sphere.fThetaCone.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside,
                               sd2);
       }
     }
@@ -190,16 +190,16 @@ struct SphereImplementation {
     if (!fullThetaSphere) {
       Bool_v intsect1(false);
       Bool_v intsect2(false);
-      Real_v distTheta1(kInfLength);
-      Real_v distTheta2(kInfLength);
+      Real_v distTheta1(kInfLength), distCone1(kInfLength);
+      Real_v distTheta2(kInfLength), distCone2(kInfLength);
 
       sphere.fThetaCone.DistanceToIn<Real_v>(point, direction, distTheta1, distTheta2, intsect1,
                                              intsect2); //,cone1IntSecPt, cone2IntSecPt);
       Vector3D<Real_v> coneIntSecPt1 = point + distTheta1 * direction;
-      Real_v distCone1               = coneIntSecPt1.Mag2();
+      if (vecCore::MaskFull(intsect1)) distCone1 = coneIntSecPt1.Mag2(); // avoid FPE due to kInfLength * kInfLength
 
       Vector3D<Real_v> coneIntSecPt2 = point + distTheta2 * direction;
-      Real_v distCone2               = coneIntSecPt2.Mag2();
+      if (vecCore::MaskFull(intsect2)) distCone2 = coneIntSecPt2.Mag2(); // avoid FPE due to kInfLength * kInfLength
 
       Bool_v isValidCone1 =
           (distCone1 >= sphere.fRmin * sphere.fRmin && distCone1 <= sphere.fRmax * sphere.fRmax) && intsect1;
@@ -320,31 +320,34 @@ struct SphereImplementation {
       sphere.fPhiWedge.DistanceToOut<Real_v>(localPoint, localDir, distPhi1, distPhi2);
 
     Bool_v containsCond1(false), containsCond2(false);
-    // Min Face
-    dist                   = Min(distPhi1, distPhi2);
-    Vector3D<Real_v> tmpPt = localPoint + dist * localDir;
-    Real_v rad2            = tmpPt.Mag2();
-
     Bool_v tempCond(false);
-    tempCond = ((dist == distPhi1) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, true>(tmpPt)) ||
-               ((dist == distPhi2) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, false>(tmpPt));
+    // Min Face
+    dist = Min(distPhi1, distPhi2);
+    if (dist < kInfLength) {
+      Vector3D<Real_v> tmpPt = localPoint + dist * localDir;
+      Real_v rad2            = tmpPt.Mag2();
 
-    containsCond1 = tempCond && (rad2 > sphere.fRmin * sphere.fRmin) && (rad2 < sphere.fRmax * sphere.fRmax) &&
-                    sphere.fThetaCone.Contains<Real_v>(tmpPt);
+      tempCond = ((dist == distPhi1) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, true>(tmpPt)) ||
+                 ((dist == distPhi2) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, false>(tmpPt));
+
+      containsCond1 = tempCond && (rad2 > sphere.fRmin * sphere.fRmin) && (rad2 < sphere.fRmax * sphere.fRmax) &&
+                      sphere.fThetaCone.Contains<Real_v>(tmpPt);
+    }
 
     vecCore__MaskedAssignFunc(distance, !done && containsCond1, Min(dist, distance));
 
     // Max Face
-    dist  = Max(distPhi1, distPhi2);
-    tmpPt = localPoint + dist * localDir;
+    dist = Max(distPhi1, distPhi2);
+    if (dist < kInfLength) {
+      Vector3D<Real_v> tmpPt = localPoint + dist * localDir;
 
-    rad2     = tmpPt.Mag2();
-    tempCond = Bool_v(false);
-    tempCond = ((dist == distPhi1) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, true>(tmpPt)) ||
-               ((dist == distPhi2) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, false>(tmpPt));
+      Real_v rad2 = tmpPt.Mag2();
+      tempCond    = ((dist == distPhi1) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, true>(tmpPt)) ||
+                 ((dist == distPhi2) && sphere.fPhiWedge.IsOnSurfaceGeneric<Real_v, false>(tmpPt));
 
-    containsCond2 = tempCond && (rad2 > sphere.fRmin * sphere.fRmin) && (rad2 < sphere.fRmax * sphere.fRmax) &&
-                    sphere.fThetaCone.Contains<Real_v>(tmpPt);
+      containsCond2 = tempCond && (rad2 > sphere.fRmin * sphere.fRmin) && (rad2 < sphere.fRmax * sphere.fRmax) &&
+                      sphere.fThetaCone.Contains<Real_v>(tmpPt);
+    }
     vecCore__MaskedAssignFunc(distance, ((!done) && (!containsCond1) && containsCond2), Min(dist, distance));
   }
 
