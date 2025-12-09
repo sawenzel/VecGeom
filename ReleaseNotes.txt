@@ -1,3 +1,280 @@
+Version 2.0.0          5th December 2025
+========================================
+This is the first stable release of VecGeom 2.0.0.
+It consolidates all changes from the 2.0.0-rc1…rc9 pre-releases, bringing:
+- A new GPU-friendly “frames” surface model.
+- A complete rewrite and stabilization of GenericTrapezoid.
+- Major robustness improvements in navigation and BVH.
+- Overhauled CUDA RDC/build tooling and portability fixes.
+- New logging/diagnostics and device APIs.
+- Significant API cleanup and removal of legacy vector interfaces.
+
+Below is a high-level summary of the main areas.
+
+Overview
+- Introduced a surface-model framework (“frames”) for accelerated navigation
+using bounded half-spaces and BVHs on GPU.
+- Fully refactored GenericTrapezoid (GenTrap) with robust algorithms, better 
+numerical behavior, and improved CPU/GPU performance.
+- Strengthened global navigation (BVH/Looper navigators, NavState helpers, 
+NavigationTable) for large, complex geometries.
+- Modernized CUDA RDC integration and build-system handling, improving 
+compatibility with recent compilers and toolchains.
+- Introduced unified logging facilities, new device APIs, and portability 
+macros.
+- Removed legacy vector APIs and obsolete infrastructure, simplifying the 
+public interface.
+
+Surface Model (“frames”)
+- Added the frames surface model for Geant-like hierarchical 3D solid 
+modeling based on bounded half-spaces.
+- Provides a header-only, stateless GPU navigation API, mirroring VecGeom 
+solid navigation interfaces.
+- Supports planar, cylindrical, conical half-spaces and frame types (window, 
+ring, etc.) to define bounded regions.
+- Introduced FramedSurface objects storing solid–surface intersections for 
+efficient navigation and ray tracing.
+- Designed to be GPU-friendly: avoids recursion and virtuals, reduces 
+register/stack pressure, and mitigates divergence.
+- Supports double and mixed-precision modes and uses BVHs for fast collision 
+detection and ray tracing.
+- Replaced the GPU solids hierarchy with an indexed LogicId/PlacedId scheme 
+for improved performance and memory usage.
+
+Solids / Geometry
+- GenericTrapezoid (GenTrap)
+  - Major scalar refactor with documented algorithms and improved numerical
+  robustness.
+  - Implemented Lipschitz-based conservative safety, improved Inside() / Normal() 
+  handling, and support for difficult aspect ratios.
+  - Added caching, CUDA-side optimizations, and extensive edge-case tests 
+  (e.g. EMEC bad aspect-ratio configuration).
+  - Numerous micro-optimizations and navigation fixes tied to GenTrap.
+
+- Polycone / Polyhedron / Tube / Sphere / Torus
+  - Polycone:
+    - New SafetyToOut() based on the line segment forming the boundary, fixing
+    all known safety issues.
+    - Fixes for generic polycone construction logic and RZ polycones; improved 
+    ReducedPolycone segment checks.
+
+  - Polyhedron:
+    - Introduced a stable Z-plane index finder and fixes in PolyhedronStruct.
+  - Tube:
+    - Corrected Y-component typo in phi-plane normal calculation.
+  - Sphere:
+    - Fixed DistanceToIn() for robust ray entry behavior.
+  - Torus:
+    - Fixes for phi cuts in corner cases and rescaling in radius calculations.
+
+- Other shapes and geometry utilities
+  - Contains() improved across shapes to correctly handle points on surfaces 
+  and reduce boundary artifacts.
+  - Polygon and Box: added small tolerances in edge/face tests to prevent crashes 
+  during relocation.
+  - Scaled shapes and trapezoids: fixed normal computations.
+  - Torus cleanup: removed duplicated data between UnplacedTorus2 and torus struct; 
+  fixed bounding tube initialization.
+  - VUnplacedVolume::Extent exposed as a pure virtual interface; unplaced volumes 
+  must provide an extent.
+  - Introduced buffer-based allocation for containers (Vector, SOA3D, AOS3D) 
+  and several data structures (Quadrilaterals, Planes), enabling allocation-free 
+  polycone/polyhedron creation on GPU.
+  - UnplacedVolume::Normal is now a usable public interface.
+
+Navigation & BVH
+- Locate/Relocate fixes
+  - Fixed long-standing bugs in LocatePointIn for both BVHNavigator and 
+  LooperNavigator where points were passed in the parent frame while BVH expected 
+  local coordinates.
+  - Updated RelocatePoint to match the corrected LocatePointIn behavior.
+  - Introduced LocatePointInNavState, taking a point in the local coordinate system 
+  of an existing navigation state and returning the deepest containing state.
+  - RelocateToNextVolume now passes correctly transformed points to 
+  LocatePointIn and uses LocatePointInNavState for clarity and correctness.
+
+- Generic navigation robustness
+  - Improved handling of negative distances to daughters: points with negative 
+  distance due to a push are now treated as inside, avoiding extra relocation 
+  and potential field-propagation errors.
+  - When exiting, navigation now finds the deepest mother containing the point 
+  instead of relying solely on UnplacedContains, preventing incorrect relocation 
+  from surface points.
+  - Older navigators synchronized with these changes; removed obsolete debug/dead code.
+
+- NavigationTable and large geometries
+  - Removed harmful truncation of the number of daughters to short in 
+  NavigationTable, which could crash very large detectors (>160k daughters, 
+  e.g. ATLAS ITKPixel).
+  - Added a protective throw when limits are exceeded.
+  - Navigation fixes and cleanups tied to large-geometry support.
+
+- BVH improvements and unification
+  - Unified BVH implementations: removed the diverged BVHSurf, merged useful 
+  functionality into the main BVH, and removed AABBSurf and BVHNavigatorV.
+  - Increased tolerance in ComputeIntersectionInvDir from 10 to 500 ULP to avoid 
+  false hits inside approached AABBs.
+  - Restored solids’ ComputeSafety implementation and made its internal precision 
+  use Real_t, enabling precision-templated BVH variants.
+  - Relaxed and simplified internal BVH checks; fixed uninitialized BVH 
+  variables and unused surface-BVH branches.
+  - Added ABBoxManager_t alias for forward compatibility with a templated 
+  ABBoxManager (precision-dependent surface BVH).
+
+- NavState utilities
+  - Extended NavStateIndex / NavStateTuple:
+    - World() getter for the world placed volume.
+    - Constructor from a container of state indices.
+    - GetLastExitedState() and SetLastExited() for tracking last exited volumes.
+    - IsValid(state) to validate indices/tuples.
+    - Print(print_names) option to print volume names along a navigation path.
+  - NavStatePath::GetLastExited now guards against out-of-range indices.
+
+CUDA, GPU & RDC
+- Integrated CudaRdcUtils (v12 and then updated to v13) and synchronized 
+with upstream CudaRdcUtils.cmake.
+- Introduced a VecGeomCUDA project and forward-ported RDC settings and 
+libraries.
+- Improved CUDA RDC handling in CudaRdcUtils:
+  - Avoid propagation of -Wl,--no-undefined when building CUDA RDC 
+  intermediate libraries.
+  - Explicitly allow undefined symbols via platform-specific options 
+  (e.g. allow-shlib-undefined, -z undefs).
+  - Added missing cudart linkage for non-CUDA libraries depending on CUDA ones.
+- Propagated CUDA include paths to the host compiler to simplify builds.
+- Enabled single-precision support in the solid BVH and allowed CudaManager 
+to accept a null “world” pointer on device.
+- Switched device code to use VecCore math routines instead of <cmath> 
+for consistency and performance.
+- Fixed GPU construction issues for cones/polycones with sections where 
+rmin = rmax by constructing with the original rmax and aligning CPU/GPU behavior.
+- Removed broken CUDA RNG implementation.
+
+Logging, Diagnostics & Device API
+- Introduced a unified logger, contributed from Celeritas, with documentation 
+and adoption across core modules and VGDML.
+- Reduced spurious “calling host from host/device” messages and refined 
+log levels for cleaner diagnostics.
+- Replaced cout/printf with cerr and guarded CUDA output appropriately.
+- Implemented a device-portable API layer:
+  - BVH Manager device-pointer access APIs and VECGEOM_BVHMANAGER_DEVICE 
+  macro for downstream consumers.
+  - A set of device-portable assertion and API call macros for CPU/GPU builds.
+
+Portability Macros & GPU Utilities
+- Added new GPU portability and exception-handling macros, including:
+  - VECGEOM_DEVICE_API_CALL for CUDA/HIP-style API calls and error checking 
+  (currently CUDA in use).
+  - VECGEOM_DEVICE_API_SYMBOL for portable symbols.
+  - VECGEOM_ASSERT and VECGEOM_VALIDATE for always-on runtime checks (throwing 
+  std::runtime_error on failure).
+
+Configuration, Build System & Tooling
+- Introduced and refined CMake-based versioning:
+  - Added full VecGeom version strings to exported configuration and proper 
+  version provenance for non-point releases.
+  - Added cmake-git-version support with improved hints for missing metadata; 
+  updated version matching for vX.Y.Z-dev.W.
+  - Fixed version-finding scripts for archived versions and refined automatic 
+  versioning based on Git branches.
+- Configuration and CI:
+  - Enforced out-of-source builds to avoid confusing warnings and stray 
+  build products.
+  - Updated tested CMake and compiler versions (including GCC 12–15, 
+  Clang 16/19) and migrated CI to newer CUDA and platforms (e.g. cuda12 on alma9).
+  - Fixed Geant4 11.2 linking issues (split G4Persistency libraries) and 
+  restored Geant4-based CI builds.
+  - Updated Docker images and expanded tested configurations.
+  - Added optional GDML validation controlled by command-line arguments.
+- CMake options & tooling:
+  - Refactored CMake options and definitions; fixed version-string logic.
+  - Ensured final VecGeom library is retained with --as-needed linker flags.
+  - Added CMake fallback for cuda_rdc_target_sources when using installed VecGeom.
+  - Made Doxygen generation optional via VECGEOM_DOXYGEN (default OFF).
+  - Improved intelligent CMake defaults and removed surprising ccache behavior.
+  - Updated .gitignore to allow storing CMake preset files in the source directory.
+
+Compiler Compatibility & Warnings
+- Fixed issues with:
+  - Clang 16/19, including missing template arguments, device annotations, 
+  visibility attributes, and nonexistent device functions.
+  - GCC 12.3, GCC 14, and GCC 15 (warnings and diagnostics).
+  - macOS-specific warnings and uninitialized constructors.
+  - GNU/Hurd build failures.
+- Enabled proper compiler flag setup via CMAKE_CXX_COMPILER_ID and corrected 
+logic that previously referenced unset variables.
+- Fixed -Wreorder warnings (e.g. initialization order of BVH::fDepth).
+- Added VECGEOM_PRAGMA_UNROLL(N) for portable loop unrolling, used among 
+others in GenericTrapezoid and to remove unroll-related warnings.
+- Fixed -Wfloat-conversion by eliminating implicit double–float casts.
+- Addressed stack and object-size warnings (e.g. for ReducedPolycone) and 
+adjusted stacks for CMS GPU CI tests.
+
+Base Containers & Memory Safety
+- Vector:
+  - Fixed destructor behavior for composition cases where the same object 
+  could be destroyed multiple times.
+  - Cleaned up possible double-destruction and added extensive tests 
+  (TestVector, including nested Vector<Vector<T>>).
+- Memory safety
+  - Prevented reads of destructed memory (closing VECGEOM-624) by strengthening 
+  object lifetimes.
+  - Fixed several uninitialized constructors and undefined behavior in 
+  core components.
+
+API & Namespace Changes
+- Removed legacy vector APIs:
+  - Eliminated vector interfaces from VNavigator, VPlacedVolume, VUnplacedVolume, 
+  VSafetyEstimator, and related helpers.
+  - Removed vector-based tests and benchmarking code, including Geant-V 
+  specific functionality from LogicalVolume.
+- Simplified implementation helpers and removed Geant-V specific or unused 
+APIs:
+  - Removed GetTransCode, GetRotCode, Rectangles, Lorentz headers,
+  SpecializedTransformation3D, unused MessageLogger, custom Map, and other 
+  dead code.
+  - Removed extended DistanceToOut function variants that were not used 
+  by any shape.
+  - Moved PrintType to placed volumes and removed unused printing helpers.
+- Namespace hygiene:
+  - Moved Precision, NavIndex_t, and uint_t out of the global namespace 
+  into vecgeom/vgbrep.
+  - Added VECGEOM_PRECISION_NAMESPACE macro to preserve source compatibility 
+  with dev and v1.x releases.
+  - Updated CUDA paths and dependent code accordingly.
+- Rotation and transformation:
+  - Removed template-based rotations and obsolete typedefs (RotationCode,
+  TranslationCode); fHasRotation is now handled directly.
+  - Transformation3D is now compatible with G4AffineTransformation in Geant4, 
+  making VGDML-produced transformations numerically compatible with 
+  Geant4’s G4GDMLRead.
+
+Persistency & VGDML
+- Fixed rotation handling for Boolean components in VGDML:
+  - Corrected for row-major vs column-major rotation layouts between 
+  VecGeom and Geant4 using transposed elements.
+- Fixed conversion of Boolean subtractions to Geant4, ensuring proper 
+rotation for the subtracted node.
+- Improved memory setup (stack/heap) to pass GeometryTest for CMS geometries.
+- Switched VGDML volume registration to map lookups instead of linear 
+search, significantly speeding up conversion.
+- Added a generic benchmark to measure performance of a volume loaded 
+from a GDML file.
+- Adopted a singleton pattern for XercesC initialization with a proper 
+destructor for clean shutdown.
+
+Miscellaneous
+- Matched polycone phi-angle readjustment to Geant4 (and UPolycone wrapper), 
+resolving inconsistencies (e.g. CMS D110 Run4 geometry).
+- Reduced verbosity in FillUncontainedPoints() and moved FlatVoxelManager 
+messages to diagnostic logger levels.
+- Added ABBoxManager_t alias and other forward-compatibility hooks for 
+future precision-templated BVH.
+- Ensured Unit() does not perturb the magnitude of generated unit vectors; 
+user must avoid calling Unit() on null vectors.
+- Numerous small documentation updates, annotation fixes, and code cleanups 
+across the tree.
+
 Version 2.0.0-rc9      18th November 2025
 =========================================
 This release candidate fixes a bug RelocateToNextVolume passing points in
