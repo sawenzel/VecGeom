@@ -10,12 +10,14 @@ if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
 # - Setup the project
-cmake_minimum_required(VERSION 3.16...3.26)
+cmake_minimum_required(VERSION 3.16...4.1.1)
 
 include(cmake/modules/RecordCmdLine.cmake)
 include(ExternalProject)
 
-# Set VecGeom_VERSION using git tags or release metadata
+# Fallback version in case of shallow clone: update when tagging "-dev"
+set(VecGeom_VERSION 2.0)
+# Load VecGeom_VERSION from git tags or release metadata if possible
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/CgvFindVersion.cmake")
 cgv_find_version(VecGeom)
 message(STATUS "VecGeom version string: ${VecGeom_VERSION_STRING}")
@@ -338,8 +340,8 @@ cmake_dependent_option(VECGEOM_TEST_COVERAGE
 if(VECGEOM_ENABLE_CUDA)
   enable_language(CUDA)
 
-  if(NOT CMAKE_CUDA_HOST_COMPILER STREQUAL CMAKE_CXX_COMPILER)
-    # See https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_HOST_COMPILER.html#variable:CMAKE_%3CLANG%3E_HOST_COMPILER
+  if(CMAKE_CUDA_HOST_COMPILER AND NOT CMAKE_CUDA_HOST_COMPILER STREQUAL CMAKE_CXX_COMPILER)
+    # See https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_HOST_COMPILER.html
     message(WARNING "CUDA host compiler mismatch: "
       "CMAKE_CUDA_HOST_COMPILER=${CMAKE_CUDA_HOST_COMPILER} "
       "but CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
