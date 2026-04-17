@@ -87,14 +87,11 @@ void ShapeTester<ImplT>::SetDefaults()
   fGCapacityAnalytical = 0;
   fGNumberOfScans      = 15;
 
-  //
-  // Zero error list
-  //
-  fErrorList = 0;
-
   fVisualize          = false;
   fSolidTolerance     = vecgeom::kTolerance;
   fSolidFarAway       = vecgeom::kFarAway;
+  fSampleSeed         = 0;
+  fUseSampleSeed      = false;
   fStat               = false;
   fTestBoundaryErrors = false;
   fDebug              = false;
@@ -1834,149 +1831,36 @@ void ShapeTester<ImplT>::Flush(const string &s)
 }
 
 template <typename ImplT>
-void ShapeTester<ImplT>::CreatePointsAndDirectionsSurface()
-{
-  Vec_t norm, point;
-  for (int i = 0; i < fMaxPointsSurface; i++) {
-
-    Vec_t pointU;
-#if 0
-    int retry = 100;
-    do
-    { bool surfaceExist=true;
-      if(surfaceExist) {
-        pointU = fVolume->GetUnplacedVolume()->SamplePointOnSurface();
-      }
-      else {
-        Vec_t dir = GetRandomDirection(), norm;
-        bool convex=false;
-        Precision random = fRNG.uniform();
-        int index = (int)fMaxPointsInside*random;
-        Precision dist = CallDistanceToOut(fVolume, fPoints[index],dir,norm,convex);
-        pointU = fPoints[index]+dir*dist ;
-
-      }
-      if (retry-- == 0) break;
-    }
-    while (fVolume->Inside(pointU) != vecgeom::EInside::kSurface);
-#endif
-    int retry = 100;
-    do {
-      pointU                          = fVolume->GetUnplacedVolume()->SamplePointOnSurface();
-      Vec_t vec                       = GetRandomDirection();
-      fDirections[i + fOffsetSurface] = vec;
-      point.Set(pointU.x(), pointU.y(), pointU.z());
-      fPoints[i + fOffsetSurface] = point;
-      if (retry-- == 0) {
-        std::cout << "Couldn't find point on surface in 100 trials, so skipping this point." << std::endl;
-        break;
-      }
-    } while (fVolume->Inside(pointU) != vecgeom::EInside::kSurface);
-  }
-}
-
-/*
-template <typename ImplT>
-void ShapeTester<ImplT>::CreatePointsAndDirectionsEdge()
-{
-  Vec_t norm, point;
-
-  for (int i = 0; i < fMaxPointsEdge; i++) {
-    Vec_t pointU;
-    int retry = 100;
-    do {
-      fVolume->SamplePointsOnEdge(1, &pointU);
-      if (retry-- == 0) break;
-    } while (fVolume->Inside(pointU) != vecgeom::EInside::kSurface);
-    Vec_t vec      = GetRandomDirection();
-    fDirections[i] = vec;
-
-    point.Set(pointU.x(), pointU.y(), pointU.z());
-    fPoints[i + fOffsetEdge] = point;
-  }
-}
-*/
-
-template <typename ImplT>
-void ShapeTester<ImplT>::CreatePointsAndDirectionsOutside()
-{
-
-  Vec_t minExtent, maxExtent;
-  fVolume->Extent(minExtent, maxExtent);
-  Precision maxX = std::max(std::fabs(maxExtent.x()), std::fabs(minExtent.x()));
-  Precision maxY = std::max(std::fabs(maxExtent.y()), std::fabs(minExtent.y()));
-  Precision maxZ = std::max(std::fabs(maxExtent.z()), std::fabs(minExtent.z()));
-  Precision rOut = std::sqrt(maxX * maxX + maxY * maxY + maxZ * maxZ);
-
-  for (int i = 0; i < fMaxPointsOutside; i++) {
-
-    Vec_t vec, point;
-    do {
-      point.x() = -1 + 2 * fRNG.uniform();
-      point.y() = -1 + 2 * fRNG.uniform();
-      point.z() = -1 + 2 * fRNG.uniform();
-      point *= rOut * fOutsideMaxRadiusMultiple;
-    } while (fVolume->Inside(point) != vecgeom::EInside::kOutside);
-
-    Precision random = fRNG.uniform();
-    if (random <= fOutsideRandomDirectionPercent / 100.) {
-      vec = GetRandomDirection();
-    } else {
-      Vec_t pointSurface = fVolume->GetUnplacedVolume()->SamplePointOnSurface();
-      vec                = pointSurface - point;
-      vec.Normalize();
-    }
-
-    fPoints[i + fOffsetOutside]     = point;
-    fDirections[i + fOffsetOutside] = vec;
-  }
-}
-
-// DONE: inside fPoints generation uses random fPoints inside bounding box
-template <typename ImplT>
-void ShapeTester<ImplT>::CreatePointsAndDirectionsInside()
-{
-  Vec_t minExtent, maxExtent;
-  fVolume->Extent(minExtent, maxExtent);
-  int i = 0;
-  while (i < fMaxPointsInside) {
-    Precision x = RandomRange(minExtent.x(), maxExtent.x());
-    Precision y = RandomRange(minExtent.y(), maxExtent.y());
-    if (minExtent.y() == maxExtent.y()) y = RandomRange(-1000, +1000);
-    Precision z = RandomRange(minExtent.z(), maxExtent.z());
-    Vec_t point0(x, y, z);
-    if (fVolume->Inside(point0) == vecgeom::EInside::kInside) {
-      Vec_t point(x, y, z);
-      Vec_t vec                      = GetRandomDirection();
-      fPoints[i + fOffsetInside]     = point;
-      fDirections[i + fOffsetInside] = vec;
-      i++;
-    }
-  }
-}
-
-template <typename ImplT>
 void ShapeTester<ImplT>::CreatePointsAndDirections()
 {
   if (fMethod != "XRayProfile") {
-    fMaxPointsInside  = (int)(fMaxPoints * (fInsidePercent / 100));
-    fMaxPointsOutside = (int)(fMaxPoints * (fOutsidePercent / 100));
-    fMaxPointsEdge    = (int)(fMaxPoints * (fEdgePercent / 100));
-    fMaxPointsSurface = fMaxPoints - fMaxPointsInside - fMaxPointsOutside - fMaxPointsEdge;
+    vecgeom::test::ShapeSamplingConfig config;
+    config.max_points                     = fMaxPoints;
+    config.inside_percent                 = fInsidePercent;
+    config.outside_percent                = fOutsidePercent;
+    config.edge_percent                   = fEdgePercent;
+    config.outside_max_radius_multiple    = fOutsideMaxRadiusMultiple;
+    config.outside_random_direction_ratio = fOutsideRandomDirectionPercent;
+    config.seed                           = fSampleSeed;
+    config.reseed                         = fUseSampleSeed;
 
-    fOffsetInside  = 0;
-    fOffsetSurface = fMaxPointsInside;
-    fOffsetEdge    = fOffsetSurface + fMaxPointsSurface;
-    fOffsetOutside = fOffsetEdge + fMaxPointsEdge;
+    vecgeom::test::ShapeSampler sampler(fRNG);
+    auto samples = sampler.Generate(fVolume, config);
 
-    fPoints.resize(fMaxPoints);
-    fDirections.resize(fMaxPoints);
+    fMaxPointsInside  = samples.max_points_inside;
+    fMaxPointsOutside = samples.max_points_outside;
+    fMaxPointsEdge    = samples.max_points_edge;
+    fMaxPointsSurface = samples.max_points_surface;
+
+    fOffsetInside  = samples.offset_inside;
+    fOffsetSurface = samples.offset_surface;
+    fOffsetEdge    = samples.offset_edge;
+    fOffsetOutside = samples.offset_outside;
+
+    fPoints     = std::move(samples.points);
+    fDirections = std::move(samples.directions);
     fResultPrecision.resize(fMaxPoints);
     fResultVector.resize(fMaxPoints);
-
-    CreatePointsAndDirectionsOutside();
-    CreatePointsAndDirectionsInside();
-    CreatePointsAndDirectionsSurface();
   }
 }
 
@@ -2214,8 +2098,8 @@ int ShapeTester<ImplT>::Run(ImplT const *testVolume)
   string name = testVolume->GetName();
   std::cout << "\n\n";
   std::cout << "===============================================================================\n";
-  std::cout << "Invoking test for Method " << fMethod << " on " << name << " ..."
-            << "\nFolder is " << fFolder << std::endl;
+  std::cout << "Invoking test for Method " << fMethod << " on " << name << " ..." << "\nFolder is " << fFolder
+            << std::endl;
   std::cout << "===============================================================================\n";
   std::cout << "\n";
 
@@ -2269,8 +2153,8 @@ int ShapeTester<ImplT>::RunMethod(ImplT const *testVolume, std::string fMethod1)
 
   std::cout << "\n\n";
   std::cout << "===============================================================================\n";
-  std::cout << "Invoking test for Method " << fMethod << " on " << name << " ..."
-            << "\nFolder is " << fFolder << std::endl;
+  std::cout << "Invoking test for Method " << fMethod << " on " << name << " ..." << "\nFolder is " << fFolder
+            << std::endl;
   std::cout << "===============================================================================\n";
   std::cout << "\n";
 
@@ -2301,41 +2185,18 @@ int ShapeTester<ImplT>::RunMethod(ImplT const *testVolume, std::string fMethod1)
 // times already.
 //
 template <typename ImplT>
-void ShapeTester<ImplT>::ReportError(int *nError, Vec_t &p, Vec_t &v, Precision distance,
-                                     std::string comment) //, std::ostream &fLogger )
+void ShapeTester<ImplT>::DisplayRecordedError(const vecgeom::test::ShapeRecordDecision &decision, int *nError,
+                                              const Vec_t &p, const Vec_t &v, Precision distance,
+                                              const std::string &comment)
 {
-
-  ShapeTesterErrorList *last = 0, *errors = fErrorList;
-  while (errors) {
-
-    if (errors->fMessage == comment) {
-      if (++errors->fNUsed > fNumDisp) return;
-      break;
-    }
-    last   = errors;
-    errors = errors->fNext;
-  }
-
-  if (errors == 0) {
-    //
-    // New error: add it the end of our list
-    //
-    errors           = new ShapeTesterErrorList;
-    errors->fMessage = comment;
-    errors->fNUsed   = 1;
-    errors->fNext    = 0;
-    if (fErrorList)
-      last->fNext = errors;
-    else
-      fErrorList = errors;
-  }
+  if (!decision.should_display) return;
 
   //
   // Output the fMessage
   //
 
   std::cout << "% " << comment;
-  if (errors->fNUsed == fNumDisp) std::cout << " (any further such errors suppressed)";
+  if (decision.suppress_future) std::cout << " (any further such errors suppressed)";
   std::cout << " Distance = " << distance;
   std::cout << std::endl;
 
@@ -2357,6 +2218,14 @@ void ShapeTester<ImplT>::ReportError(int *nError, Vec_t &p, Vec_t &v, Precision 
     throw std::runtime_error("***EEE*** ShapeTester[UFatalErrorInArguments]: " + text.str());
   }
 }
+
+template <typename ImplT>
+void ShapeTester<ImplT>::ReportError(int *nError, Vec_t &p, Vec_t &v, Precision distance,
+                                     std::string comment) //, std::ostream &fLogger )
+{
+  auto decision = fCheckResult.Record(comment, p, v, distance, fNumDisp);
+  DisplayRecordedError(decision, nError, p, v, distance, comment);
+}
 //
 // ClearErrors
 // Reset list of errors (and clear memory)
@@ -2364,15 +2233,7 @@ void ShapeTester<ImplT>::ReportError(int *nError, Vec_t &p, Vec_t &v, Precision 
 template <typename ImplT>
 void ShapeTester<ImplT>::ClearErrors()
 {
-  ShapeTesterErrorList *here, *sNext;
-
-  here = fErrorList;
-  while (here) {
-    sNext = here->fNext;
-    delete here;
-    here = sNext;
-  }
-  fErrorList = 0;
+  fCheckResult.Clear();
 }
 //
 // CountErrors
@@ -2380,16 +2241,7 @@ void ShapeTester<ImplT>::ClearErrors()
 template <typename ImplT>
 int ShapeTester<ImplT>::CountErrors() const
 {
-  ShapeTesterErrorList *here;
-  int answer = 0;
-
-  here = fErrorList;
-  while (here) {
-    answer += here->fNUsed;
-    here = here->fNext;
-  }
-
-  return answer;
+  return fCheckResult.CountErrors();
 }
 
 template <>

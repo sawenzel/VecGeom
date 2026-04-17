@@ -20,6 +20,51 @@ function(add_to_ctest EXECUTABLES)
   endforeach()
 endfunction()
 
+function(add_shape_contract_case_tests TARGET_NAME TIER LABELS)
+  foreach(SOLID_CASE ${ARGN})
+    set(ENABLED_FAMILIES contracts normals surface distance_to_out distance_to_in safeties hit_consistency)
+    foreach(FAMILY ${ENABLED_FAMILIES})
+      list(FIND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES ${SOLID_CASE}:${FAMILY} DISABLED_FAMILY_INDEX)
+      list(FIND SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES ${TIER}:${SOLID_CASE}:${FAMILY} DISABLED_TIER_FAMILY_INDEX)
+      if(DISABLED_FAMILY_INDEX GREATER -1 OR DISABLED_TIER_FAMILY_INDEX GREATER -1)
+        list(REMOVE_ITEM ENABLED_FAMILIES ${FAMILY})
+      endif()
+    endforeach()
+
+    list(LENGTH ENABLED_FAMILIES ENABLED_FAMILY_COUNT)
+    if(ENABLED_FAMILY_COUNT EQUAL 0)
+      continue()
+    endif()
+
+    if(ENABLED_FAMILY_COUNT EQUAL 7)
+      add_test(NAME ${TARGET_NAME}:${TIER}:${SOLID_CASE}
+        COMMAND ${TARGET_NAME} -tier ${TIER} -test_family all -case_name ${SOLID_CASE})
+      set_tests_properties(${TARGET_NAME}:${TIER}:${SOLID_CASE} PROPERTIES LABELS "${LABELS}")
+    else()
+      foreach(FAMILY ${ENABLED_FAMILIES})
+        add_test(NAME ${TARGET_NAME}:${TIER}:${FAMILY}:${SOLID_CASE}
+          COMMAND ${TARGET_NAME} -tier ${TIER} -test_family ${FAMILY} -case_name ${SOLID_CASE})
+        set_tests_properties(${TARGET_NAME}:${TIER}:${FAMILY}:${SOLID_CASE} PROPERTIES LABELS "${LABELS};${FAMILY}")
+      endforeach()
+    endif()
+  endforeach()
+endfunction()
+
+function(add_shape_manual_edge_case_tests TARGET_NAME TIER LABELS)
+  foreach(SOLID_CASE ${ARGN})
+    list(FIND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES ${SOLID_CASE}:manual_edge_cases DISABLED_FAMILY_INDEX)
+    list(FIND SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES ${TIER}:${SOLID_CASE}:manual_edge_cases DISABLED_TIER_FAMILY_INDEX)
+    if(DISABLED_FAMILY_INDEX GREATER -1 OR DISABLED_TIER_FAMILY_INDEX GREATER -1)
+      continue()
+    endif()
+
+    add_test(NAME ${TARGET_NAME}:${TIER}:manual_edge_cases:${SOLID_CASE}
+      COMMAND ${TARGET_NAME} -tier ${TIER} -test_family manual_edge_cases -case_name ${SOLID_CASE})
+    set_tests_properties(${TARGET_NAME}:${TIER}:manual_edge_cases:${SOLID_CASE}
+      PROPERTIES LABELS "${LABELS};manual_edge_cases")
+  endforeach()
+endfunction()
+
 function(add_tests_for_files TEST_NAME)
   set(COMMAND_ARGS)
   set(GEOMS_ARGS)
@@ -115,7 +160,11 @@ endif()
 # - Core Tests
 set(TEST_EXECUTABLES_CORE
   core/TestVoxelHashMap.cpp
+  core/RNGTest.cpp
   core/SafetyEstimatorTest.cpp
+  core/ShapeCheckResultTest.cpp
+  core/ShapeContractDeterministicTest.cpp
+  core/ShapeSampleSetTest.cpp
   core/ContainerTest.cpp
   core/create_geometry.cpp
   core/BitSetTest.cpp
@@ -184,6 +233,230 @@ endif()
 
 build_executables("${TEST_EXECUTABLES_CORE}")
 add_to_ctest("${TEST_EXECUTABLES_CORE}")
+
+add_executable(ShapeContractTest core/ShapeContractTest.cpp)
+cuda_rdc_target_link_libraries(ShapeContractTest PUBLIC VecGeomTest)
+
+set(VECGEOM_SHAPE_CONTRACT_CTEST_TIER "medium" CACHE STRING
+  "ShapeContractTest tier registered in CTest (fast, medium, or slow)")
+set_property(CACHE VECGEOM_SHAPE_CONTRACT_CTEST_TIER PROPERTY STRINGS fast medium slow)
+set(_VECGEOM_SHAPE_CONTRACT_ALLOWED_CTEST_TIERS fast medium slow)
+if(NOT VECGEOM_SHAPE_CONTRACT_CTEST_TIER IN_LIST _VECGEOM_SHAPE_CONTRACT_ALLOWED_CTEST_TIERS)
+  message(FATAL_ERROR
+    "Unsupported VECGEOM_SHAPE_CONTRACT_CTEST_TIER='${VECGEOM_SHAPE_CONTRACT_CTEST_TIER}'. "
+    "Use fast, medium, or slow.")
+endif()
+
+set(SHAPE_CONTRACT_SOLID_CASES
+  # Box
+  box
+
+  # Tube
+  tube_fullphi
+  tube_section
+  tube_thin_wall_long
+  tube_narrow_phi
+  tube_almost_full_phi
+  tube_short_disk
+
+  # Cone
+  cone_fullphi
+  cone_section
+  cone_thin_shell
+  cone_almost_cylinder
+  cone_narrow_phi
+  cone_almost_full_phi
+
+  # Ellipsoid
+  ellipsoid
+
+  # EllipticalCone
+  elliptical_cone
+
+  # EllipticalTube
+  elliptical_tube
+  elliptical_tube_thin
+  elliptical_tube_long
+
+  # Parallelepiped
+  parallelepiped_general
+  parallelepiped_high_shear
+
+  # Tet
+  tet
+  tet_sliver_like
+
+  # Trd
+  trd_boxlike
+  trd_extreme_aspect
+  trd_increasing_xy
+
+  # Trapezoid
+  trapezoid_corners
+  trapezoid_extreme_skew
+  trapezoid_near_para
+
+  polycone_cms_like
+  generic_polycone_irregular
+  polycone_two_section_sharp_jump
+  polycone_many_section_alternating
+  polycone_nearly_repeated_z
+  generic_polycone_zigzag_profile
+  paraboloid
+
+  # CutTube
+  cuttube_section_inner
+
+  # Hype
+  hype
+
+  # Orb
+  orb
+
+  # Sphere
+  sphere_thin_shell
+  sphere_narrow_phi
+  sphere_narrow_theta
+  sphere_almost_full_phi
+  sphere_section
+
+  # Torus2
+  torus2_general
+
+  # Polyhedron
+  polyhedron_phi_section
+
+  # GenTrap
+  gentrap_twisted
+
+  # SExtru
+  sextru_circular
+
+  # Extruded
+  extruded_multilayer
+
+  # Tessellated
+  tessellated_orb
+
+  # MultiUnion
+  multiunion_boxes
+
+  # Boolean
+  boolean_union_offset_boxes
+  boolean_intersection_box_tube
+  boolean_subtraction_box_tube
+  )
+
+# this list should be resolved and go away
+set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
+  cone_section:contracts
+  cone_narrow_phi:contracts
+  elliptical_cone:surface
+  polycone_cms_like:contracts
+  polycone_cms_like:normals
+  polycone_cms_like:surface
+  generic_polycone_irregular:contracts
+  generic_polycone_irregular:distance_to_in
+  generic_polycone_irregular:hit_consistency
+  polycone_two_section_sharp_jump:distance_to_in
+  polycone_two_section_sharp_jump:hit_consistency
+  polycone_two_section_sharp_jump:safeties
+  polycone_many_section_alternating:distance_to_in
+  polycone_many_section_alternating:hit_consistency
+  polycone_many_section_alternating:safeties
+  polycone_nearly_repeated_z:contracts
+  polycone_nearly_repeated_z:normals
+  polycone_nearly_repeated_z:distance_to_in
+  polycone_nearly_repeated_z:distance_to_out
+  polycone_nearly_repeated_z:safeties
+  polycone_nearly_repeated_z:hit_consistency
+  generic_polycone_zigzag_profile:contracts
+  generic_polycone_zigzag_profile:normals
+  generic_polycone_zigzag_profile:surface
+  generic_polycone_zigzag_profile:distance_to_out
+  generic_polycone_zigzag_profile:distance_to_in
+  generic_polycone_zigzag_profile:safeties
+  generic_polycone_zigzag_profile:hit_consistency
+  paraboloid:contracts
+  paraboloid:normals
+  paraboloid:surface
+  paraboloid:distance_to_in
+  paraboloid:hit_consistency
+  multiunion_boxes:normals
+  multiunion_boxes:distance_to_in
+  multiunion_boxes:hit_consistency
+  boolean_union_offset_boxes:normals
+  boolean_intersection_box_tube:contracts
+  boolean_intersection_box_tube:distance_to_in
+  boolean_intersection_box_tube:hit_consistency
+  boolean_subtraction_box_tube:contracts
+  boolean_subtraction_box_tube:normals
+  trd_boxlike:surface
+  trd_extreme_aspect:surface
+  cuttube_section_inner:surface
+  hype:distance_to_in
+  hype:hit_consistency
+  hype:surface
+  orb:surface
+  sphere_thin_shell:surface
+  sphere_narrow_phi:surface
+  sphere_narrow_theta:normals
+  sphere_narrow_theta:surface
+  sphere_almost_full_phi:surface
+  sphere_section:distance_to_in
+  sphere_section:hit_consistency
+  sphere_section:surface
+  tessellated_orb:surface
+  torus2_general:hit_consistency
+  torus2_general:surface
+  extruded_multilayer:surface
+  )
+
+if(VECGEOM_TEST_STATIC_ANALYSIS)
+  list(APPEND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
+    extruded_multilayer:contracts
+    extruded_multilayer:normals
+    extruded_multilayer:distance_to_out
+    extruded_multilayer:distance_to_in
+    extruded_multilayer:safeties
+    extruded_multilayer:hit_consistency
+    )
+endif()
+
+# Keep the tier-specific hook for future plumbing, but medium findings are
+# intentionally promoted to the common family-disable list so fast/medium stay
+# aligned on the same enabled coverage.
+set(SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES
+  )
+
+set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
+  box
+  tube_fullphi
+  )
+
+# Register one unit test per configured solid in the selected CTest tier while
+# keeping disabled coverage in family-scoped lists only. Disabled families stay
+# available through the ShapeContractTest executable for local debugging
+# without recompilation.
+set(SHAPE_CONTRACT_CTEST_TIERS ${VECGEOM_SHAPE_CONTRACT_CTEST_TIER})
+
+foreach(SHAPE_CONTRACT_CTEST_TIER_NAME ${SHAPE_CONTRACT_CTEST_TIERS})
+  if(SHAPE_CONTRACT_CTEST_TIER_NAME STREQUAL "fast")
+    set(SHAPE_CONTRACT_CASE_LABELS "fast;contracts;normals;surface;distance_to_out;distance_to_in;safeties;hit_consistency")
+    set(SHAPE_CONTRACT_MANUAL_LABELS "fast;manual_edge_cases")
+  elseif(SHAPE_CONTRACT_CTEST_TIER_NAME STREQUAL "medium")
+    set(SHAPE_CONTRACT_CASE_LABELS "medium;contracts;normals;surface;distance_to_out;distance_to_in;safeties;hit_consistency;seeded")
+    set(SHAPE_CONTRACT_MANUAL_LABELS "medium;manual_edge_cases")
+  elseif(SHAPE_CONTRACT_CTEST_TIER_NAME STREQUAL "slow")
+    set(SHAPE_CONTRACT_CASE_LABELS "slow;contracts;normals;surface;distance_to_out;distance_to_in;safeties;hit_consistency;seeded")
+    set(SHAPE_CONTRACT_MANUAL_LABELS "slow;manual_edge_cases")
+  endif()
+
+  add_shape_contract_case_tests(ShapeContractTest ${SHAPE_CONTRACT_CTEST_TIER_NAME} "${SHAPE_CONTRACT_CASE_LABELS}"
+    ${SHAPE_CONTRACT_SOLID_CASES})
+  add_shape_manual_edge_case_tests(ShapeContractTest ${SHAPE_CONTRACT_CTEST_TIER_NAME} "${SHAPE_CONTRACT_MANUAL_LABELS}"
+    ${SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES})
+endforeach()
 
 ################################################################################
 # - ROOT Tests

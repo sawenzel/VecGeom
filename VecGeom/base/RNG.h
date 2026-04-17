@@ -6,12 +6,13 @@
 
 #include "VecGeom/base/Global.h"
 
+#include <cstdint>
 #include <random>
 
 namespace vecgeom {
 
 /**
- * @brief Singleton random number generator.
+ * @brief Thread-local singleton random number generator on CPU.
  */
 class RNG {
 
@@ -22,20 +23,50 @@ private:
   VECGEOM_FORCE_INLINE
   Precision GetUniform() { return uniform_dist(rng); }
 
-
 public:
   RNG() : rng(0), uniform_dist(0, 1) {}
 
 public:
-  void seed(unsigned long seed_val) { rng.seed(seed_val); }
+  using Seed_t = std::mt19937::result_type;
+
+  void seed(unsigned long seed_val) { rng.seed(static_cast<Seed_t>(seed_val)); }
 
   /**
-   * Access singleton instance.
+   * Build a deterministic seed for one logical stream starting from a base
+   * seed. The stream id is part of the contract so callers can reproduce a
+   * failing randomized test independent of which worker thread executes it.
+   */
+  static Seed_t MakeStreamSeed(unsigned long base_seed, unsigned long stream_id = 0)
+  {
+    std::uint64_t z = static_cast<std::uint64_t>(base_seed);
+    z += 0x9e3779b97f4a7c15ULL + static_cast<std::uint64_t>(stream_id);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+    z = z ^ (z >> 31);
+    return static_cast<Seed_t>(z);
+  }
+
+  /// Seed an arbitrary RNG instance from a deterministic base-seed/stream-id pair.
+  static void SeedEngine(RNG &engine, unsigned long base_seed, unsigned long stream_id = 0)
+  {
+    engine.seed(MakeStreamSeed(base_seed, stream_id));
+  }
+
+  /**
+   * Access the calling thread's singleton RNG instance.
    */
   static RNG &Instance()
   {
-    static RNG instance;
+    // The singleton is thread-local on CPU so randomized helpers can be used
+    // safely in parallel without racing on one shared generator.
+    static thread_local RNG instance;
     return instance;
+  }
+
+  /// Seed the calling thread's RNG stream deterministically.
+  static void SeedStream(unsigned long base_seed, unsigned long stream_id = 0)
+  {
+    SeedEngine(Instance(), base_seed, stream_id);
   }
 
   /**
@@ -89,6 +120,6 @@ private:
   RNG &operator=(RNG const &);
 };
 
-} // End global namespace
+} // namespace vecgeom
 
 #endif // VECGEOM_BASE_RNG_H_

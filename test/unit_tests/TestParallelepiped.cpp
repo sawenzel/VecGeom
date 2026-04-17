@@ -20,6 +20,7 @@ template <class Parallelepiped_t>
 bool TestParallelepiped()
 {
   using namespace vecgeom::VECGEOM_IMPL_NAMESPACE;
+  using vecgeom::Precision;
   using Vec_t = vecgeom::Vector3D<vecgeom::Precision>;
   EnumInside inside;
   const Precision dx    = 20;
@@ -380,11 +381,10 @@ bool TestParallelepiped()
       ++nzpos;
     }
   }
-  std::cout << "facet surface -/+x, -/+y, -/+z: "
-            << "\t" << sx << ", \t" << sx << ", \t" << sy << ", \t" << sy << ", \t" << sz << ", \t" << sz << std::endl;
-  std::cout << "n. of samples -/+x, -/+y, -/+z: "
-            << "\t" << nxneg << ", \t" << nxpos << ", \t" << nyneg << ", \t" << nypos << ", \t" << nzneg << ", \t"
-            << nzpos << std::endl;
+  std::cout << "facet surface -/+x, -/+y, -/+z: " << "\t" << sx << ", \t" << sx << ", \t" << sy << ", \t" << sy
+            << ", \t" << sz << ", \t" << sz << std::endl;
+  std::cout << "n. of samples -/+x, -/+y, -/+z: " << "\t" << nxneg << ", \t" << nxpos << ", \t" << nyneg << ", \t"
+            << nypos << ", \t" << nzneg << ", \t" << nzpos << std::endl;
   VECGEOM_ASSERT(std::abs(nxneg - sx * nfactor) < 0.01 * sx * nfactor);
   VECGEOM_ASSERT(std::abs(nxpos - sx * nfactor) < 0.01 * sx * nfactor);
   VECGEOM_ASSERT(std::abs(nyneg - sy * nfactor) < 0.01 * sy * nfactor);

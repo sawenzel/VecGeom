@@ -15,6 +15,7 @@
 #include "VecGeom/base/Assert.h"
 
 using vecgeom::kPi;
+using vecgeom::Precision;
 
 template <class Polyhedra_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision>>
 bool TestPolyhedra()
