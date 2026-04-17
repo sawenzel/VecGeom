@@ -1,6 +1,11 @@
 //===-- test/shape_tester/ShapeTester.h ----------------------------*- C++ -*-===//
 //
-// Definition of the batch solid test
+// Definition of the batch solid test.
+//
+// The new helper-level contract runner is documented in docs/shape_testing.md.
+// This legacy wrapper still owns the whole-solid workflow, but many of the
+// reusable predicates now live in ShapeContractChecks.h and are shared with
+// ShapeContractTest.
 //
 
 #ifndef ShapeTester_hh
@@ -8,6 +13,10 @@
 
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/base/RNG.h"
+#include "VecGeomTest/ApproxEqual.h"
+#include "VecGeomTest/ShapeCheckResult.h"
+#include "VecGeomTest/ShapeContractChecks.h"
+#include "VecGeomTest/ShapeSampleSet.h"
 
 #ifdef VECGEOM_ROOT
 #include "Visualizer.h"
@@ -15,18 +24,6 @@
 
 using vecgeom::Precision;
 using Vec_t = vecgeom::Vector3D<Precision>;
-
-#ifdef VECGEOM_SINGLE_PRECISION
-const Precision kApproxEqualTolerance = 1e-3;
-#else
-const Precision kApproxEqualTolerance = 1e-6;
-#endif
-
-struct ShapeTesterErrorList {
-  std::string fMessage;
-  int fNUsed;
-  struct ShapeTesterErrorList *fNext;
-};
 
 template <typename ImplT>
 class ShapeTester {
@@ -53,6 +50,11 @@ public:
   inline void SetOutsideMaxRadiusMultiple(const Precision percent) { fOutsideMaxRadiusMultiple = percent; }
   inline void SetOutsideRandomDirectionPercent(const Precision percent) { fOutsideRandomDirectionPercent = percent; }
   inline void SetSaveAllData(const bool safe) { fIfSaveAllData = safe; }
+  inline void SetSampleSeed(const unsigned long seed)
+  {
+    fSampleSeed    = seed;
+    fUseSampleSeed = true;
+  }
   inline void SetSolidTolerance(const Precision value) { fSolidTolerance = value; }
   inline void SetSolidFarAway(const Precision value) { fSolidFarAway = value; }
   inline void SetTestBoundaryErrors(bool flag) { fTestBoundaryErrors = flag; }
@@ -127,10 +129,6 @@ private:
                   bool graphics = true);
   Precision CrossedLength(const Vec_t &point, const Vec_t &dir, bool useeps);
   void CreatePointsAndDirections();
-  void CreatePointsAndDirectionsSurface();
-  void CreatePointsAndDirectionsEdge();
-  void CreatePointsAndDirectionsInside();
-  void CreatePointsAndDirectionsOutside();
 
   void CompareAndSaveResults(const std::string &fMethod, double resG, double resR, double resU);
   int SaveResultsToFile(const std::string &fMethod);
@@ -162,23 +160,20 @@ private:
   /* Private functions for Convention Checker, These functions never need
    * to be called from Outside the class
    */
-  void PrintConventionMessages();     // Function to print convention messages
-  void GenerateConventionReport();    // Function to generate Convention Report
-  void SetupConventionMessages();     // Function to setup convention messages
-  bool ShapeConventionChecker();      // Function that call other core convention checking function
-  bool ShapeConventionSurfacePoint(); // Function to check conventions for Surface Points
-  bool ShapeConventionInsidePoint();  // Function to check conventions for Inside Points
-  bool ShapeConventionOutsidePoint(); // Function to check conventions for Outside Points
-  void SetNumDisp(int);               // Function to set num. of points to be displayed during convention failure
-  bool ApproxEqual(const double &x, const double &y); // Helper function to check approximate equality of doubles
-  bool ApproxEqual(const float &x, const float &y);   // Helper function to check approximate equality of floats
-  // Return true if the 3vector check is approximately equal to target
-  template <class Vec_t>
-  bool ApproxEqual(const Vec_t &check, const Vec_t &target);
+  void PrintConventionMessages();  // Function to print convention messages
+  void GenerateConventionReport(); // Function to generate Convention Report
+  void SetupConventionMessages();  // Function to setup convention messages
+  bool ShapeConventionChecker();   // Function that call other core convention checking function
+  void SetNumDisp(int);            // Function to set num. of points to be displayed during convention failure
 
 protected:
   Vec_t GetRandomPoint() const;
   double GaussianRandom(const double cutoff) const;
+  // Legacy error display path kept separate from structured recording so the
+  // extracted contract helpers can reuse the same console/debug output without
+  // depending on ShapeTester internals for result storage.
+  void DisplayRecordedError(const vecgeom::test::ShapeRecordDecision &decision, int *nError, const Vec_t &p,
+                            const Vec_t &v, Precision distance, const std::string &comment);
   void ReportError(int *nError, Vec_t &p, Vec_t &v, Precision distance,
                    std::string comment); //, std::ostream &fLogger );
   void ClearErrors();
@@ -203,7 +198,7 @@ protected:
 
   std::string fMethod; // data member to store the name of method to be executed
 
-  ShapeTesterErrorList *fErrorList; // data member to store the list of errors
+  vecgeom::test::ShapeCheckResult fCheckResult; // structured list of error categories and occurrences
 
 private:
   std::vector<Vec_t> fPoints;     // STL vector to store the points generated for various tests of ShapeTester
@@ -245,6 +240,8 @@ private:
   // call with true parameter if want to see visualization in case of some mismatch
   Precision fSolidTolerance; // Tolerance on boundary declared by solid (default kTolerance)
   Precision fSolidFarAway;   // Distance to shoot points at from solid in TestFarAwayPoints
+  unsigned long fSampleSeed; // Optional deterministic sampling seed for extracted ShapeSampleSet generation
+  bool fUseSampleSeed;       // Whether to reseed both local and global RNGs before sampling
 #ifdef VECGEOM_ROOT
   vecgeom::Visualizer fVisualizer; // Visualizer object to visualize the geometry if fVisualize is set.
 #endif

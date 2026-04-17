@@ -13,6 +13,7 @@
 
 #include <cmath>
 using vecgeom::kPi;
+using vecgeom::Precision;
 
 template <class Torus_t, class Vec_t = vecgeom::Vector3D<vecgeom::Precision>>
 bool testTorus()

@@ -1,0 +1,180 @@
+/**
+ * @file TestCaseManualEdgeCases.h
+ * @brief Curated hand-picked rays for explicit helper-family reproduction.
+ *
+ * Unlike the sampled registries, these cases are meant to reproduce one chosen
+ * solid, topology, and helper family with a hand-authored point/direction (or
+ * outside-point/inside-target pair). ShapeContractTest exposes them through the
+ * `manual_edge_cases` family and the `-manual_*` selectors.
+ *
+ * See docs/shape_testing.md for the public manual-edge-case workflow and the
+ * extension rules followed by the registry below.
+ */
+//
+// How to add a manual edge case:
+// 1. Pick an existing solid from TestCaseSolids.h and keep the new case grouped
+//    with the same shape family below.
+// 2. Choose the helper method to reproduce via target_family_name.
+// 3. Choose the topology bucket via topology:
+//      inside / surface / edge / outside
+// 4. For outside distance_to_in / hit_consistency style cases, set
+//    uses_target_point=true and provide a paired inside target_point instead of
+//    an explicit direction.
+// 5. Keep the case enabled here. If it exposes a real bug that is not fixed in
+//    the same merge request, disable only the manual_edge_cases CTest family
+//    for that solid in test/CMakeLists.txt.
+
+#ifndef VECGEOM_TEST_VECGEOMTEST_TESTCASEMANUALEDGECASES_HH
+#define VECGEOM_TEST_VECGEOMTEST_TESTCASEMANUALEDGECASES_HH
+
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include "VecGeomTest/ShapeCheckResult.h"
+
+namespace vecgeom {
+namespace test {
+
+/**
+ * @brief One curated hand-picked replay case for the manual helper family.
+ */
+struct ManualEdgeCase {
+  const char *name               = "";
+  const char *solid_case_name    = "";
+  const char *target_family_name = "";
+  ShapeSampleCategory topology   = ShapeSampleCategory::kUnknown;
+  Vec_t point;
+  Vec_t direction;
+  bool uses_target_point = false;
+  Vec_t target_point;
+  Precision grazing_tolerance = 0.;
+  const char *description     = "";
+};
+
+/**
+ * @brief Return the effective ray direction for one manual edge case.
+ *
+ * Cases targeting an outside-to-inside entry store a `target_point` instead of
+ * an explicit direction so the intended topology is obvious in the registry.
+ */
+inline Vec_t EffectiveManualEdgeCaseDirection(const ManualEdgeCase &manual_case)
+{
+  if (!manual_case.uses_target_point) return manual_case.direction;
+
+  const Vec_t delta         = manual_case.target_point - manual_case.point;
+  const Precision magnitude = delta.Mag();
+  return magnitude > 0. ? delta.Unit() : Vec_t(0., 0., 0.);
+}
+
+/**
+ * @brief Return the full curated manual edge-case registry.
+ */
+inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
+{
+  static const std::vector<ManualEdgeCase> cases = {
+      // Box
+      {"box_surface_grazing_positive_x", "box", "surface", ShapeSampleCategory::kSurface, Vec_t(10., 0., 0.),
+       Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0., "Smooth +X face grazing ray on the box surface."},
+      {"box_surface_entering_positive_x", "box", "contracts", ShapeSampleCategory::kSurface, Vec_t(10., 0., 0.),
+       Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Surface entering ray on the +X box face for convention checks."},
+      {"box_surface_normal_positive_x", "box", "normals", ShapeSampleCategory::kSurface, Vec_t(10., 0., 0.),
+       Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0., "Surface normal check on the +X box face."},
+      {"box_inside_exit_positive_x", "box", "distance_to_out", ShapeSampleCategory::kInside, Vec_t(0., 0., 0.),
+       Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0., "Inside radial exit ray towards the +X box face."},
+      {"box_outside_entry_positive_x", "box", "distance_to_in", ShapeSampleCategory::kOutside, Vec_t(12., 0., 0.),
+       Vec_t(0., 0., 0.), true, Vec_t(0., 0., 0.), 0., "Outside entry ray targeting the box center from +X."},
+      {"box_inside_safety_positive_x", "box", "safeties", ShapeSampleCategory::kInside, Vec_t(0., 0., 0.),
+       Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0., "Inside safety check paired with a +X exit ray in the box."},
+      {"box_outside_hit_consistency_positive_x", "box", "hit_consistency", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(0., 0., 0.), 0.,
+       "Outside -> inside propagated hit-consistency ray for the box."},
+
+      // Tube
+      {"tube_fullphi_surface_grazing_outer_r", "tube_fullphi", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(10., 0., 0.), Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Outer-radius grazing ray on the full-phi tube."},
+      {"tube_fullphi_surface_entering_outer_r", "tube_fullphi", "contracts", ShapeSampleCategory::kSurface,
+       Vec_t(10., 0., 0.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Surface entering ray on the outer radius of the full-phi tube."},
+      {"tube_fullphi_surface_normal_outer_r", "tube_fullphi", "normals", ShapeSampleCategory::kSurface,
+       Vec_t(10., 0., 0.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Surface normal check on the outer radius of the full-phi tube."},
+      {"tube_fullphi_inside_radial_exit", "tube_fullphi", "distance_to_out", ShapeSampleCategory::kInside,
+       Vec_t(7.5, 0., 0.), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Inside radial exit ray from the tube shell mid-radius."},
+      {"tube_fullphi_outside_radial_entry", "tube_fullphi", "distance_to_in", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
+       "Outside radial entry ray targeting a known inside point in the tube shell."},
+      {"tube_fullphi_inside_safety_radial", "tube_fullphi", "safeties", ShapeSampleCategory::kInside,
+       Vec_t(7.5, 0., 0.), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Inside safety check paired with a radial exit ray in the tube shell."},
+      {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
+       "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+  };
+  return cases;
+}
+
+/**
+ * @brief Find one curated manual edge case by its stable name.
+ */
+inline const ManualEdgeCase *FindManualEdgeCase(const std::string &name)
+{
+  for (auto const &manual_case : GetManualEdgeCases()) {
+    if (manual_case.name == name) return &manual_case;
+  }
+  return nullptr;
+}
+
+/**
+ * @brief Return every curated manual edge case for one sampled solid case.
+ */
+inline std::vector<const ManualEdgeCase *> FindManualEdgeCasesForSolid(const std::string &solid_case_name)
+{
+  std::vector<const ManualEdgeCase *> matches;
+  for (auto const &manual_case : GetManualEdgeCases()) {
+    if (manual_case.solid_case_name == solid_case_name) matches.push_back(&manual_case);
+  }
+  return matches;
+}
+
+/**
+ * @brief Return the stable list of curated manual edge-case names.
+ */
+inline const std::vector<std::string> &GetManualEdgeCaseNames()
+{
+  static const std::vector<std::string> names = [] {
+    std::vector<std::string> values;
+    values.reserve(GetManualEdgeCases().size());
+    for (auto const &manual_case : GetManualEdgeCases()) {
+      values.emplace_back(manual_case.name);
+    }
+    return values;
+  }();
+  return names;
+}
+
+/**
+ * @brief Return the sampled-solid names that currently have manual edge cases.
+ */
+inline const std::vector<std::string> &GetManualEdgeCaseSolidNames()
+{
+  static const std::vector<std::string> solid_names = [] {
+    std::vector<std::string> values;
+    values.reserve(GetManualEdgeCases().size());
+    for (auto const &manual_case : GetManualEdgeCases()) {
+      if (std::find(values.begin(), values.end(), manual_case.solid_case_name) == values.end()) {
+        values.emplace_back(manual_case.solid_case_name);
+      }
+    }
+    return values;
+  }();
+  return solid_names;
+}
+
+} // namespace test
+} // namespace vecgeom
+
+#endif

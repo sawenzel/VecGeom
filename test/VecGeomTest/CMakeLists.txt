@@ -1,5 +1,9 @@
 set(VecGeomTest_sources
   # Shape tester
+  ApproxEqual.h
+  ShapeCheckResult.h
+  ShapeContractChecks.h
+  ShapeSampleSet.h
   ShapeTester.h
   ShapeTester.cpp #includes ConventionChecker.cpp ...
   # Benchmark
