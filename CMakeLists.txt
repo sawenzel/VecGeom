@@ -1013,27 +1013,7 @@ install(EXPORT VecGeomTargets
 
 
 ################################################################################
-# Doxygen documentation
-if (VECGEOM_DOXYGEN)
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  set(DOXYFILE_OUTPUT_DIR  ${PROJECT_BINARY_DIR}/doxygen)
-  foreach(d doc/doxygen VecGeom persistency scripts source)
-    if(NOT EXISTS ${PROJECT_SOURCE_DIR}/${d})
-      message(SEND_ERROR "Doxygen configured wrongly: The path ${d} doesn't exist in ${PROJECT_SOURCE_DIR}.")
-    endif()
-    set(DOXYFILE_SOURCE_DIRS "${DOXYFILE_SOURCE_DIRS} ${PROJECT_SOURCE_DIR}/${d}")
-  endforeach()
-
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in
-    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-  add_custom_target(doxygen
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    COMMENT "Writing documentation to ${DOXYFILE_OUTPUT_DIR}..."
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-  add_custom_target(doxydir
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${DOXYFILE_OUTPUT_DIR}
-    COMMENT "Creating doc directory")
-  add_dependencies(doxygen doxydir)
-endif()
+# Doxygen documentation, if requested
+if(VECGEOM_DOXYGEN)
+  add_subdirectory(doc)
 endif()
