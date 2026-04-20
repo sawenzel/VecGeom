@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -252,6 +253,7 @@ inline const char *InsideLabel(vecgeom::EnumInside inside)
 inline std::string FormatVec(const Vec_t &vec)
 {
   std::ostringstream out;
+  out << std::setprecision(17);
   out << "(" << vec.x() << ", " << vec.y() << ", " << vec.z() << ")";
   return out.str();
 }

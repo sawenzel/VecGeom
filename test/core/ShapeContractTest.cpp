@@ -14,11 +14,14 @@
 #undef NDEBUG
 
 #include "VecGeom/base/FpeEnable.h"
+#include "VecGeom/base/Stopwatch.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -48,6 +51,15 @@ enum class ShapeContractTestFamily {
   kAll
 };
 
+enum class ShapeBenchmarkOperation {
+  kInside,
+  kNormal,
+  kDistanceToIn,
+  kDistanceToOut,
+  kSafetyToIn,
+  kSafetyToOut
+};
+
 // Parsed CLI state shared by the list, sampled-family, and manual-edge-case
 // execution paths.
 struct ShapeContractOptions {
@@ -62,13 +74,39 @@ struct ShapeContractOptions {
   int seed                     = -1;
   int stream_id                = -1;
   int replay_index             = -1;
+  int benchmark_repetitions    = 9;
+  int benchmark_warmup         = 3;
+  int benchmark_target_calls   = 100000;
   Precision grazing_tolerance  = static_cast<Precision>(-1.);
+  bool benchmark_mode          = false;
   bool show_help               = false;
   bool list_cases              = false;
   bool list_families           = false;
   bool list_test_families      = false;
   bool list_manual_cases       = false;
   bool used_defaults           = true;
+};
+
+struct ShapeBenchmarkWorkload {
+  std::string label;
+  ShapeBenchmarkOperation operation = ShapeBenchmarkOperation::kInside;
+  int offset                        = 0;
+  int count                         = 0;
+};
+
+struct ShapeBenchmarkSummary {
+  std::string label;
+  int samples                    = 0;
+  int loops_per_repeat           = 0;
+  int warmup_repetitions         = 0;
+  int measured_repetitions       = 0;
+  std::uint64_t calls_per_repeat = 0;
+  Precision mean_seconds         = 0.;
+  Precision stddev_seconds       = 0.;
+  Precision min_seconds          = 0.;
+  Precision max_seconds          = 0.;
+  Precision ns_per_call          = 0.;
+  Precision rel_sigma_percent    = 0.;
 };
 
 struct ShapeContractOutcome {
@@ -272,6 +310,8 @@ void PrintUsage(const char *argv0)
          "<contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|manual_edge_cases|all>] "
          "[-case_name <name|all>] [-family <name|all>]\n"
       << "             [-npoints <count>] [-seed <seed>] [-stream_id <id>] [-replay_index <index>]\n"
+      << "             [-benchmark] [-benchmark_repetitions <count>] [-benchmark_warmup <count>]\n"
+      << "             [-benchmark_target_calls <count>]\n"
       << "             [-manual_case_name <name|all>] "
          "[-manual_method <contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|all>]\n"
       << "             [-manual_topology <inside|surface|edge|outside|all>]\n"
@@ -294,6 +334,9 @@ void PrintUsage(const char *argv0)
   std::cout << "  Use -family <name> to run all configured solids in one shape family.\n";
   std::cout << "  Use -replay_index <index> with a single case and a single test family to replay one sampled\n";
   std::cout << "  point/direction from that family's shared sample cache.\n";
+  std::cout << "  Use -benchmark to time the geometry APIs touched by the selected helper family on the same\n";
+  std::cout << "  sampled cache, replayed sample, or manual edge case. Benchmark warmup passes are discarded so\n";
+  std::cout << "  old/new comparisons run on hot cache for both versions.\n";
   std::cout << "  Manual edge cases are already explicit replays; use -manual_case_name, -manual_method, and\n";
   std::cout << "  -manual_topology to choose a specific solid, ray topology, and helper method to reproduce.\n";
   std::cout << "  The replayed sample set is determined by the pair (seed, stream_id): seed chooses the base\n";
@@ -309,6 +352,10 @@ void PrintUsage(const char *argv0)
   std::cout << "  -seed <seed>           Override the configured base deterministic seed.\n";
   std::cout << "  -stream_id <id>        Override the logical deterministic sub-stream id paired with the seed.\n";
   std::cout << "  -replay_index <index>  Replay one sampled ray for the selected case.\n";
+  std::cout << "  -benchmark             Run hot-cache timing instead of correctness validation.\n";
+  std::cout << "  -benchmark_repetitions <n> Number of measured timing repetitions. Default: 9.\n";
+  std::cout << "  -benchmark_warmup <n>  Number of discarded hot-cache warmup repetitions. Default: 3.\n";
+  std::cout << "  -benchmark_target_calls <n> Target geometry calls per measured repetition. Default: 100000.\n";
   std::cout << "  -manual_case_name <n>  Curated manual edge-case name to run. Default: all.\n";
   std::cout << "  -manual_method <name>  Filter manual edge cases by helper method. Default: all.\n";
   std::cout << "  -manual_topology <t>   Filter manual edge cases by topology. Default: all.\n";
@@ -332,6 +379,10 @@ void PrintUsage(const char *argv0)
   std::cout << "  " << argv0
             << " -test_family manual_edge_cases -case_name box -manual_case_name box_inside_exit_positive_x\n";
   std::cout << "  " << argv0 << " -tier fast -test_family surface -case_name box -grazing_tolerance 1e-6\n";
+  std::cout << "  " << argv0 << " -benchmark -tier fast -test_family surface -case_name cone_narrow_phi\n";
+  std::cout << "  " << argv0
+            << " -benchmark -tier slow -test_family surface -case_name cone_narrow_phi -seed 57 -stream_id 35 "
+               "-npoints 10000000 -replay_index 4594302\n";
   std::cout << "  " << argv0 << " -tier medium -test_family contracts -case_name cone_section\n";
   std::cout << "  " << argv0
             << " -tier medium -test_family contracts -case_name cone_section -npoints 1000 -seed 42 -stream_id 7\n";
@@ -446,6 +497,29 @@ ShapeContractOptions ParseOptions(int argc, char *argv[])
       options.used_defaults = false;
       continue;
     }
+    if (argument == "-benchmark") {
+      options.benchmark_mode = true;
+      options.used_defaults  = false;
+      continue;
+    }
+    if (argument == "-benchmark_repetitions") {
+      VECGEOM_VALIDATE(i + 1 < argc, << "Missing value for option -benchmark_repetitions.");
+      ParseIntArgument("-benchmark_repetitions", argv[++i], options.benchmark_repetitions);
+      options.used_defaults = false;
+      continue;
+    }
+    if (argument == "-benchmark_warmup") {
+      VECGEOM_VALIDATE(i + 1 < argc, << "Missing value for option -benchmark_warmup.");
+      ParseIntArgument("-benchmark_warmup", argv[++i], options.benchmark_warmup);
+      options.used_defaults = false;
+      continue;
+    }
+    if (argument == "-benchmark_target_calls") {
+      VECGEOM_VALIDATE(i + 1 < argc, << "Missing value for option -benchmark_target_calls.");
+      ParseIntArgument("-benchmark_target_calls", argv[++i], options.benchmark_target_calls);
+      options.used_defaults = false;
+      continue;
+    }
     if (argument == "-manual_case_name") {
       VECGEOM_VALIDATE(i + 1 < argc, << "Missing value for option -manual_case_name.");
       options.manual_case_name = argv[++i];
@@ -490,7 +564,9 @@ void PrintDefaultRunSummary(const ShapeContractOptions &options)
                "for the heavier seeded tier, -tier slow for the nightly-style tier, -test_family normals, "
                "-test_family surface, "
                "-test_family distance_to_out, -test_family distance_to_in, -test_family safeties, "
-               "-test_family hit_consistency, -test_family manual_edge_cases, or -test_family all for grouped family "
+               "-test_family hit_consistency, -test_family manual_edge_cases, -test_family all, or -benchmark for "
+               "hot-cache timing on the selected helper workloads."
+               " Use grouped family "
                "execution, -list_cases to inspect the configured cases, or -list_families to inspect the available "
                "families."
             << std::endl;
@@ -636,6 +712,13 @@ Precision ResolveGrazingTolerance(const ShapeContractOptions &options)
 {
   return options.grazing_tolerance >= static_cast<Precision>(0.) ? options.grazing_tolerance
                                                                  : static_cast<Precision>(0.);
+}
+
+void ValidateBenchmarkOptions(const ShapeContractOptions &options)
+{
+  VECGEOM_VALIDATE(options.benchmark_repetitions > 0, << "Use -benchmark_repetitions with a positive integer.");
+  VECGEOM_VALIDATE(options.benchmark_warmup >= 0, << "Use -benchmark_warmup with a non-negative integer.");
+  VECGEOM_VALIDATE(options.benchmark_target_calls > 0, << "Use -benchmark_target_calls with a positive integer.");
 }
 
 int ViolationDisplayLimit(ShapeContractTier tier)
@@ -880,6 +963,361 @@ private:
   bool fHitConsistencyOutcomeReady = false;
 };
 
+struct ShapeBenchmarkSlice {
+  const char *label = "";
+  int offset        = 0;
+  int count         = 0;
+};
+
+ShapeBenchmarkSlice MakeAllBenchmarkSlice(const vecgeom::test::ShapeContractSampleView &samples)
+{
+  return {"all_samples", 0, samples.TotalPoints()};
+}
+
+ShapeBenchmarkSlice MakeInsideBenchmarkSlice(const vecgeom::test::ShapeContractSampleView &samples)
+{
+  return {"inside_samples", samples.offset_inside, samples.max_points_inside};
+}
+
+ShapeBenchmarkSlice MakeSurfaceEdgeBenchmarkSlice(const vecgeom::test::ShapeContractSampleView &samples)
+{
+  return {"surface_edge_samples", samples.offset_surface, samples.max_points_surface + samples.max_points_edge};
+}
+
+ShapeBenchmarkSlice MakeOutsideBenchmarkSlice(const vecgeom::test::ShapeContractSampleView &samples)
+{
+  return {"outside_samples", samples.offset_outside, samples.max_points_outside};
+}
+
+ShapeBenchmarkSlice MakeSingleBenchmarkSlice(int sample_index, const char *label) { return {label, sample_index, 1}; }
+
+const char *ShapeBenchmarkOperationLabel(ShapeBenchmarkOperation operation)
+{
+  switch (operation) {
+  case ShapeBenchmarkOperation::kInside:
+    return "Inside";
+  case ShapeBenchmarkOperation::kNormal:
+    return "Normal";
+  case ShapeBenchmarkOperation::kDistanceToIn:
+    return "DistanceToIn";
+  case ShapeBenchmarkOperation::kDistanceToOut:
+    return "DistanceToOut";
+  case ShapeBenchmarkOperation::kSafetyToIn:
+    return "SafetyToIn";
+  case ShapeBenchmarkOperation::kSafetyToOut:
+    return "SafetyToOut";
+  }
+  return "Inside";
+}
+
+std::string MakeBenchmarkWorkloadLabel(ShapeBenchmarkOperation operation, const ShapeBenchmarkSlice &slice)
+{
+  std::ostringstream out;
+  out << ShapeBenchmarkOperationLabel(operation) << "(" << slice.label << ")";
+  return out.str();
+}
+
+void AppendBenchmarkWorkload(std::vector<ShapeBenchmarkWorkload> &workloads, ShapeBenchmarkOperation operation,
+                             const ShapeBenchmarkSlice &slice)
+{
+  if (slice.count <= 0) return;
+  const auto label = MakeBenchmarkWorkloadLabel(operation, slice);
+  for (auto const &existing : workloads) {
+    if (existing.label == label && existing.offset == slice.offset && existing.count == slice.count &&
+        existing.operation == operation) {
+      return;
+    }
+  }
+  workloads.push_back({label, operation, slice.offset, slice.count});
+}
+
+std::vector<ShapeBenchmarkWorkload> BuildBenchmarkWorkloadsForFamily(
+    const vecgeom::test::ShapeContractSampleView &samples, ShapeContractTestFamily test_family)
+{
+  std::vector<ShapeBenchmarkWorkload> workloads;
+  const auto all_samples     = MakeAllBenchmarkSlice(samples);
+  const auto inside_samples  = MakeInsideBenchmarkSlice(samples);
+  const auto surface_samples = MakeSurfaceEdgeBenchmarkSlice(samples);
+  const auto outside_samples = MakeOutsideBenchmarkSlice(samples);
+
+  auto add_contracts = [&]() {
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kInside, all_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, outside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, outside_samples);
+  };
+
+  switch (test_family) {
+  case ShapeContractTestFamily::kContracts:
+    add_contracts();
+    break;
+  case ShapeContractTestFamily::kNormals:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, surface_samples);
+    break;
+  case ShapeContractTestFamily::kSurface:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, surface_samples);
+    break;
+  case ShapeContractTestFamily::kDistanceToOut:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, inside_samples);
+    break;
+  case ShapeContractTestFamily::kDistanceToIn:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, outside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, outside_samples);
+    break;
+  case ShapeContractTestFamily::kSafeties:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, outside_samples);
+    break;
+  case ShapeContractTestFamily::kHitConsistency:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, surface_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, inside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, outside_samples);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, outside_samples);
+    break;
+  case ShapeContractTestFamily::kAll:
+    add_contracts();
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, surface_samples);
+    break;
+  case ShapeContractTestFamily::kManualEdgeCases:
+    VECGEOM_VALIDATE(false, << "manual_edge_cases should be benchmarked through their selected target family.");
+    break;
+  }
+  return workloads;
+}
+
+std::vector<ShapeBenchmarkWorkload> BuildReplayBenchmarkWorkloads(ShapeContractTestFamily test_family, int sample_index)
+{
+  std::vector<ShapeBenchmarkWorkload> workloads;
+  const auto replay_sample = MakeSingleBenchmarkSlice(sample_index, "replay_sample");
+  switch (test_family) {
+  case ShapeContractTestFamily::kContracts:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kInside, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kNormals:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, replay_sample);
+    break;
+  case ShapeContractTestFamily::kSurface:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kDistanceToOut:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kDistanceToIn:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, replay_sample);
+    break;
+  case ShapeContractTestFamily::kSafeties:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kHitConsistency:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kAll:
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kInside, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kNormal, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kDistanceToOut, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToIn, replay_sample);
+    AppendBenchmarkWorkload(workloads, ShapeBenchmarkOperation::kSafetyToOut, replay_sample);
+    break;
+  case ShapeContractTestFamily::kManualEdgeCases:
+    VECGEOM_VALIDATE(false, << "manual_edge_cases do not use -replay_index.");
+    break;
+  }
+  return workloads;
+}
+
+Precision SanitizeBenchmarkValue(Precision value)
+{
+  if (!std::isfinite(static_cast<double>(value)) || value >= vecgeom::kInfLength * static_cast<Precision>(0.5)) {
+    return static_cast<Precision>(0.);
+  }
+  return value;
+}
+
+Precision ExecuteBenchmarkWorkload(vecgeom::VPlacedVolume const *shape,
+                                   const vecgeom::test::ShapeContractSampleView &view,
+                                   const ShapeBenchmarkWorkload &workload)
+{
+  Precision accumulator = 0.;
+  for (int i = 0; i < workload.count; ++i) {
+    const int sample_index = workload.offset + i;
+    const Vec_t &point     = view.Point(sample_index);
+    const Vec_t &direction = view.Direction(sample_index);
+    switch (workload.operation) {
+    case ShapeBenchmarkOperation::kInside:
+      accumulator += static_cast<Precision>(static_cast<int>(shape->Inside(point)));
+      break;
+    case ShapeBenchmarkOperation::kNormal: {
+      Vec_t normal(0., 0., 0.);
+      const bool valid = shape->Normal(point, normal);
+      accumulator += valid ? static_cast<Precision>(1.) : static_cast<Precision>(0.);
+      accumulator += SanitizeBenchmarkValue(normal.x());
+      accumulator += SanitizeBenchmarkValue(normal.y());
+      accumulator += SanitizeBenchmarkValue(normal.z());
+      break;
+    }
+    case ShapeBenchmarkOperation::kDistanceToIn:
+      accumulator += SanitizeBenchmarkValue(shape->DistanceToIn(point, direction));
+      break;
+    case ShapeBenchmarkOperation::kDistanceToOut:
+      accumulator += SanitizeBenchmarkValue(shape->DistanceToOut(point, direction));
+      break;
+    case ShapeBenchmarkOperation::kSafetyToIn:
+      accumulator += SanitizeBenchmarkValue(shape->SafetyToIn(point));
+      break;
+    case ShapeBenchmarkOperation::kSafetyToOut:
+      accumulator += SanitizeBenchmarkValue(shape->SafetyToOut(point));
+      break;
+    }
+  }
+  return accumulator;
+}
+
+volatile Precision gShapeBenchmarkSink = 0.;
+
+void ConsumeBenchmarkAccumulator(Precision value) { gShapeBenchmarkSink += value; }
+
+ShapeBenchmarkSummary RunBenchmarkWorkload(vecgeom::VPlacedVolume const *shape,
+                                           const vecgeom::test::ShapeContractSampleView &view,
+                                           const ShapeBenchmarkWorkload &workload, const ShapeContractOptions &options)
+{
+  ShapeBenchmarkSummary summary;
+  summary.label                = workload.label;
+  summary.samples              = workload.count;
+  summary.warmup_repetitions   = options.benchmark_warmup;
+  summary.measured_repetitions = options.benchmark_repetitions;
+  summary.loops_per_repeat     = std::max(1, (options.benchmark_target_calls + workload.count - 1) / workload.count);
+  summary.calls_per_repeat =
+      static_cast<std::uint64_t>(summary.samples) * static_cast<std::uint64_t>(summary.loops_per_repeat);
+
+  auto run_once = [&]() {
+    Precision local_accumulator = 0.;
+    for (int loop = 0; loop < summary.loops_per_repeat; ++loop) {
+      local_accumulator += ExecuteBenchmarkWorkload(shape, view, workload);
+    }
+    ConsumeBenchmarkAccumulator(local_accumulator);
+  };
+
+  for (int i = 0; i < options.benchmark_warmup; ++i) {
+    run_once();
+  }
+
+  std::vector<Precision> timings;
+  timings.reserve(options.benchmark_repetitions);
+  for (int i = 0; i < options.benchmark_repetitions; ++i) {
+    vecgeom::Stopwatch timer;
+    timer.Start();
+    run_once();
+    timings.push_back(timer.Stop());
+  }
+
+  summary.min_seconds = timings.empty() ? 0. : *std::min_element(timings.begin(), timings.end());
+  summary.max_seconds = timings.empty() ? 0. : *std::max_element(timings.begin(), timings.end());
+
+  Precision sum = 0.;
+  for (auto elapsed : timings)
+    sum += elapsed;
+  summary.mean_seconds = timings.empty() ? 0. : sum / static_cast<Precision>(timings.size());
+
+  Precision variance = 0.;
+  for (auto elapsed : timings) {
+    const Precision centered = elapsed - summary.mean_seconds;
+    variance += centered * centered;
+  }
+  if (timings.size() > 1) {
+    variance /= static_cast<Precision>(timings.size() - 1);
+  } else {
+    variance = 0.;
+  }
+  summary.stddev_seconds = std::sqrt(variance);
+  if (summary.calls_per_repeat > 0) {
+    summary.ns_per_call =
+        summary.mean_seconds * static_cast<Precision>(1.0e9) / static_cast<Precision>(summary.calls_per_repeat);
+  }
+  if (summary.mean_seconds > 0.) {
+    summary.rel_sigma_percent = static_cast<Precision>(100.) * summary.stddev_seconds / summary.mean_seconds;
+  }
+  return summary;
+}
+
+void PrintBenchmarkSummaryHeader(const std::string &label, ShapeContractTier tier, ShapeContractTestFamily test_family,
+                                 const ShapeContractOptions &options, std::uint64_t fingerprint)
+{
+  std::cout << "Benchmark " << label << " tier=" << TierLabel(tier) << " test_family=" << TestFamilyLabel(test_family)
+            << " hot_cache=true warmup=" << options.benchmark_warmup << " repetitions=" << options.benchmark_repetitions
+            << " target_calls=" << options.benchmark_target_calls << " fingerprint=" << fingerprint << std::endl;
+}
+
+void PrintBenchmarkSummaryLine(const ShapeBenchmarkSummary &summary)
+{
+  std::cout << "  workload=" << summary.label << " samples=" << summary.samples
+            << " loops_per_repeat=" << summary.loops_per_repeat << " calls_per_repeat=" << summary.calls_per_repeat
+            << " mean_s=" << summary.mean_seconds << " stddev_s=" << summary.stddev_seconds
+            << " rel_sigma_pct=" << summary.rel_sigma_percent << " min_s=" << summary.min_seconds
+            << " max_s=" << summary.max_seconds << " ns_per_call=" << summary.ns_per_call << std::endl;
+}
+
+void BenchmarkWorkloadsForView(vecgeom::VPlacedVolume const *shape, const vecgeom::test::ShapeContractSampleView &view,
+                               const std::vector<ShapeBenchmarkWorkload> &workloads,
+                               const ShapeContractOptions &options)
+{
+  VECGEOM_VALIDATE(!workloads.empty(), << "No benchmark workloads matched the selected helper family and sample set.");
+  for (auto const &workload : workloads) {
+    PrintBenchmarkSummaryLine(RunBenchmarkWorkload(shape, view, workload, options));
+  }
+}
+
+void BenchmarkSelectedFamilies(const vecgeom::test::TestCaseSolid &solid_case, const ShapeContractOptions &options,
+                               ShapeContractTier tier, ShapeContractTestFamily test_family)
+{
+  ShapeContractExecutionCache cache(solid_case, tier, options);
+  auto view      = vecgeom::test::MakeShapeContractSampleView(cache.Samples());
+  auto workloads = BuildBenchmarkWorkloadsForFamily(view, test_family);
+  std::ostringstream label;
+  label << "case='" << solid_case.name << "'";
+  PrintBenchmarkSummaryHeader(label.str(), tier, test_family, options, cache.Fingerprint());
+  BenchmarkWorkloadsForView(cache.Shape(), view, workloads, options);
+}
+
+void BenchmarkReplaySample(const vecgeom::test::TestCaseSolid &solid_case, const ShapeContractOptions &options,
+                           ShapeContractTier tier, ShapeContractTestFamily test_family)
+{
+  ShapeContractExecutionCache cache(solid_case, tier, options);
+  auto view = vecgeom::test::MakeShapeContractSampleView(cache.Samples());
+  VECGEOM_VALIDATE(options.replay_index >= 0 && options.replay_index < view.TotalPoints(),
+                   << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
+                   << ") for solid '" << cache.SolidCase().name << "'.");
+  const auto context = vecgeom::test::MakeShapeCheckContext(view, options.replay_index);
+  auto workloads     = BuildReplayBenchmarkWorkloads(test_family, options.replay_index);
+  std::ostringstream label;
+  label << "replay case='" << solid_case.name << "' sample_index=" << options.replay_index
+        << " category=" << vecgeom::test::ShapeSampleCategoryLabel(context.sample_group);
+  PrintBenchmarkSummaryHeader(label.str(), tier, test_family, options, cache.Fingerprint());
+  BenchmarkWorkloadsForView(cache.Shape(), view, workloads, options);
+}
+
 bool ManualEdgeCaseNeedsTargetPoint(const vecgeom::test::ManualEdgeCase &manual_case)
 {
   return manual_case.uses_target_point;
@@ -1114,6 +1552,38 @@ void ValidateManualEdgeCases(const ShapeContractOptions &options, const std::str
   const bool verbose_on_success = selected_cases.size() == 1;
   for (auto const *manual_case : selected_cases) {
     ValidateManualEdgeCase(*manual_case, options, executable_path, tier, verbose_on_success);
+  }
+}
+
+void BenchmarkManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, const ShapeContractOptions &options,
+                             ShapeContractTier tier)
+{
+  auto const *solid_case = vecgeom::test::FindTestCaseSolid(manual_case.solid_case_name);
+  VECGEOM_VALIDATE(solid_case != nullptr, << "Manual edge case '" << manual_case.name << "' references unknown solid '"
+                                          << manual_case.solid_case_name << "'.");
+
+  auto shape        = solid_case->make_shape();
+  auto samples      = MakeManualEdgeCaseSamples(manual_case);
+  auto view         = vecgeom::test::MakeShapeContractSampleView(samples);
+  const int index   = ManualEdgeCasePrimarySampleIndex(samples, manual_case);
+  const auto family = ParseTestFamilySelection(manual_case.target_family_name);
+  auto workloads    = BuildReplayBenchmarkWorkloads(family, index);
+
+  std::ostringstream label;
+  label << "manual_case='" << manual_case.name << "' solid='" << manual_case.solid_case_name
+        << "' topology=" << vecgeom::test::ShapeSampleCategoryLabel(manual_case.topology);
+  PrintBenchmarkSummaryHeader(label.str(), tier, family, options, MakeSampleFingerprint(samples));
+  BenchmarkWorkloadsForView(shape.get(), view, workloads, options);
+}
+
+void BenchmarkManualEdgeCases(const ShapeContractOptions &options, ShapeContractTier tier)
+{
+  auto selected_cases = ResolveSelectedManualEdgeCases(options);
+  VECGEOM_VALIDATE(!selected_cases.empty(),
+                   << "No manual edge cases matched the requested filters. Use -list_manual_cases to inspect the "
+                   << "configured manual cases.");
+  for (auto const *manual_case : selected_cases) {
+    BenchmarkManualEdgeCase(*manual_case, options, tier);
   }
 }
 
@@ -1478,7 +1948,11 @@ void RunRequestedSolidCases(const ShapeContractOptions &options, const std::stri
   VECGEOM_VALIDATE(options.case_name == "all" || options.family_name == "all",
                    << "Use either -case_name or -family, not both.");
   if (test_family == ShapeContractTestFamily::kManualEdgeCases) {
-    ValidateManualEdgeCases(options, executable_path, tier);
+    if (options.benchmark_mode) {
+      BenchmarkManualEdgeCases(options, tier);
+    } else {
+      ValidateManualEdgeCases(options, executable_path, tier);
+    }
     return;
   }
   VECGEOM_VALIDATE(!(options.replay_index >= 0 && options.case_name == "all"),
@@ -1489,12 +1963,20 @@ void RunRequestedSolidCases(const ShapeContractOptions &options, const std::stri
   if (options.case_name == "all") {
     if (options.family_name != "all") {
       for (auto const *solid_case : vecgeom::test::FindTestCaseSolidsByFamily(options.family_name)) {
-        ValidateSelectedFamilies(*solid_case, options, executable_path, tier, test_family);
+        if (options.benchmark_mode) {
+          BenchmarkSelectedFamilies(*solid_case, options, tier, test_family);
+        } else {
+          ValidateSelectedFamilies(*solid_case, options, executable_path, tier, test_family);
+        }
       }
       return;
     }
     for (auto const &solid_case : vecgeom::test::GetTestCaseSolids()) {
-      ValidateSelectedFamilies(solid_case, options, executable_path, tier, test_family);
+      if (options.benchmark_mode) {
+        BenchmarkSelectedFamilies(solid_case, options, tier, test_family);
+      } else {
+        ValidateSelectedFamilies(solid_case, options, executable_path, tier, test_family);
+      }
     }
     return;
   }
@@ -1502,10 +1984,18 @@ void RunRequestedSolidCases(const ShapeContractOptions &options, const std::stri
   auto const *solid_case = vecgeom::test::FindTestCaseSolid(options.case_name);
   VECGEOM_VALIDATE(solid_case != nullptr, << "Unknown ShapeContractTest case '" << options.case_name << "'.");
   if (options.replay_index >= 0) {
-    ReplaySelectedFamily(*solid_case, options, tier, test_family);
+    if (options.benchmark_mode) {
+      BenchmarkReplaySample(*solid_case, options, tier, test_family);
+    } else {
+      ReplaySelectedFamily(*solid_case, options, tier, test_family);
+    }
     return;
   }
-  ValidateSelectedFamilies(*solid_case, options, executable_path, tier, test_family);
+  if (options.benchmark_mode) {
+    BenchmarkSelectedFamilies(*solid_case, options, tier, test_family);
+  } else {
+    ValidateSelectedFamilies(*solid_case, options, executable_path, tier, test_family);
+  }
 }
 
 } // namespace
@@ -1520,6 +2010,7 @@ int main(int argc, char *argv[])
   ParseTierSelection(options.tier_name);
   const auto test_family = ParseTestFamilySelection(options.test_family_name);
   ValidateManualOptionUsage(options, test_family);
+  ValidateBenchmarkOptions(options);
   if (options.list_families) {
     std::cout << JoinConfiguredFamilyNames() << std::endl;
     return 0;
