@@ -6,55 +6,36 @@
 
 #include "VecGeom/base/Global.h"
 
-// OS X compatibility
-#if defined(__MACH__) && defined(__APPLE__)
-#include <mach/clock.h>
-#include <mach/mach.h>
-#endif
-
+#include <chrono>
+#include <cstdio>
 #include <ctime>
-#include <unistd.h>
 #include <sys/times.h>
+#include <unistd.h>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 namespace standardtimer {
-// this implementation is stripped from the TBB library ( so that we don't need to link against tbb )
+// Use a monotonic host clock for elapsed-time measurements so benchmarking is
+// not affected by wall-clock adjustments.
+using steady_clock_t = std::chrono::steady_clock;
+using count_t        = steady_clock_t::time_point;
 
-typedef long long count_t;
+inline count_t now() { return steady_clock_t::now(); }
 
-inline long long now()
-{
-  count_t result;
-  struct timespec ts;
-
-#if defined(__MACH__) && defined(__APPLE__)
-  // OS X compatibility code taken from
-  // http://stackoverflow.com/questions/5167269/
-  clock_serv_t cclock;
-  mach_timespec_t mts;
-  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-  clock_get_time(cclock, &mts);
-  mach_port_deallocate(mach_task_self(), cclock);
-  ts.tv_sec  = mts.tv_sec;
-  ts.tv_nsec = mts.tv_nsec;
-#else
-  clock_gettime(CLOCK_REALTIME, &ts);
-#endif
-
-  result = static_cast<count_t>(1000000000UL) * static_cast<count_t>(ts.tv_sec) + static_cast<count_t>(ts.tv_nsec);
-  return result;
-}
-
-inline double seconds(count_t value) { return value * 1E-9; }
+inline double seconds(steady_clock_t::duration value) { return std::chrono::duration<double>(value).count(); }
 } // namespace standardtimer
 
 /**
- * @brief Timer for benchmarking purposes
+ * @brief Lightweight host-side stopwatch for elapsed and CPU timing.
+ *
+ * `Elapsed()` measures monotonic wall time through `std::chrono::steady_clock`.
+ * `CpuElapsed()` reports process user+system CPU time through `times(2)`.
+ *
+ * The class is intended for host-side benchmarking and progress reporting,
+ * including host code compiled in CUDA translation units. It is not a device
+ * timer.
  */
 class Stopwatch {
-  // Note see http://jogojapan.github.io/blog/2012/11/25/measuring-cpu-time/
-  // for some interesting ideas on how to implement in a
 private:
   standardtimer::count_t t1;
   standardtimer::count_t t2;
