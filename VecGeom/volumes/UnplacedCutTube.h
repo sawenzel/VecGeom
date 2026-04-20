@@ -23,10 +23,13 @@ VECGEOM_DEVICE_DECLARE_CONV(class, UnplacedCutTube);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
+/**
+ * @brief Unplaced cut tube with optional inner radius, phi section, and tilted cut planes.
+ */
 class UnplacedCutTube : public UnplacedVolumeImplHelper<CutTubeImplementation>, public AlignedBase {
 
 private:
-  CutTubeStruct<Precision> fCutTube; //> The cut tube data holder
+  CutTubeStruct<Precision> fCutTube; ///< Cached cuttube geometry data
 
 public:
   VECCORE_ATT_HOST_DEVICE
@@ -37,7 +40,6 @@ public:
                   Precision const &dphi, Vector3D<Precision> const &bottomNormal, Vector3D<Precision> const &topNormal)
       : fCutTube(rmin, rmax, z, sphi, dphi, bottomNormal, topNormal)
   {
-    // Constructor
     if (bottomNormal.z() >= 0 || topNormal.z() <= 0) {
       Print();
 #ifndef VECCORE_CUDA
@@ -56,7 +58,6 @@ public:
                   Precision const &tx, Precision const &ty, Precision const &tz)
       : fCutTube(rmin, rmax, z, sphi, dphi, Vector3D<Precision>(bx, by, bz), Vector3D<Precision>(tx, ty, tz))
   {
-    // Constructor
     if (bz >= 0 || tz <= 0) {
       Print();
 #ifndef VECCORE_CUDA

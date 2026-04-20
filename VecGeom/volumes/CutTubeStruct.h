@@ -17,20 +17,23 @@ namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-// a plain and lightweight struct to encapsulate data members of a cut tube
+/**
+ * @brief Cached geometric state for a cut tube.
+ *
+ * The embedded tube helper uses the `kInfLength` z sentinel because the cut
+ * planes, not flat z planes, own the longitudinal boundaries.
+ */
 template <typename T = double>
 struct CutTubeStruct {
-  T fDz;                     //< Z half length
-  TubeStruct<T> fTubeStruct; //< Tube parameters
-  CutPlanes fCutPlanes;      //< Cut planes
+  T fDz;                     ///< Z half length
+  TubeStruct<T> fTubeStruct; ///< Radial / phi helper state with infinite-z sentinel
+  CutPlanes fCutPlanes;      ///< Top and bottom cut planes
 
   T fCosPhi1; //< Cosine of phi
   T fSinPhi1; //< Sine of phi
   T fCosPhi2; //< Cosine of phi+dphi
   T fSinPhi2; //< Sine of phi+dphi
   T fMaxVal;
-
-  // constructors
 
   VECCORE_ATT_HOST_DEVICE
   CutTubeStruct() : fTubeStruct(0., 0., 0., 0., 0.), fCutPlanes() {}

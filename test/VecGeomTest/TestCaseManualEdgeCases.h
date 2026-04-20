@@ -113,6 +113,11 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+      {"cuttube_section_inner_cut_plane_grazing", "cuttube_section_inner", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(4.1438716887445688, 0., -0.20947942872035785),
+       Vec_t(0.46997756897067333, 0.5375170920854937, 0.70014031478009531), false, Vec_t(0., 0., 0.), 0.,
+       "Smooth cut-plane surface replay whose grazing direction previously drove the embedded infinite-z tube path "
+       "through invalid z-plane arithmetic."},
       {"cone_thin_shell_surface_entering_outer_lower_ring", "cone_thin_shell", "contracts",
        ShapeSampleCategory::kSurface, Vec_t(-43.093354838211269, -25.356710388709519, -200.0),
        Vec_t(0.90448163727274844, 0.15468343036337337, -0.39747453277842609), false, Vec_t(0., 0., 0.), 0.,
