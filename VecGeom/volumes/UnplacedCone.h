@@ -25,20 +25,19 @@ VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(class, SUnplacedCone, typename);
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
- * Class representing an unplaced cone; Encapsulated parameters of a cone and
- * functions that do not depend on how the cone is placed in a reference frame
+ * @brief Unplaced cone or conical tube section.
  *
- * The unplaced cone is represented by the following parameters
+ * Stores the intrinsic cone parameters and geometry queries independently of
+ * any placement transform.
  *
- * Member Data:
- *
- * fCone.fDz half length in z direction;  ( the cone has height 2*fDz )
- * fCone.fRmin1  inside radius at  -fDz ( in internal coordinate system )
- * fCone.fRmin2  inside radius at  +fDz
- * fCone.fRmax1  outside radius at -fDz
- * fCone.fRmax2  outside radius at +fDz
- * fCone.fSPhi starting angle of the segment in radians
- * fCone.fDPhi delta angle of the segment in radians
+ * Main parameters:
+ * - `fCone.fDz`: half length in z; the full cone height is `2 * fCone.fDz`
+ * - `fCone.fRmin1`: inner radius at `-fDz`
+ * - `fCone.fRmin2`: inner radius at `+fDz`
+ * - `fCone.fRmax1`: outer radius at `-fDz`
+ * - `fCone.fRmax2`: outer radius at `+fDz`
+ * - `fCone.fSPhi`: starting angle in radians
+ * - `fCone.fDPhi`: angular span in radians
  */
 class UnplacedCone : public VUnplacedVolume {
 
@@ -251,7 +250,7 @@ public:
 
   Vector3D<Precision> SamplePointOnSurface() const override;
 
-  // Helper funtion to detect edge points
+  // Helper function to detect edge points.
   template <bool top>
   bool IsOnZPlane(Vector3D<Precision> const &point) const;
   template <bool start>
