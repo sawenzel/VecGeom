@@ -391,7 +391,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   boolean_subtraction_box_tube:normals
   trd_boxlike:surface
   trd_extreme_aspect:surface
-  cuttube_section_inner:surface
   hype:distance_to_in
   hype:hit_consistency
   hype:surface
@@ -429,6 +428,7 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES
 
 set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   box
+  cuttube_section_inner
   cone_narrow_phi
   tube_fullphi
   )

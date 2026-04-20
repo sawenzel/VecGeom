@@ -472,9 +472,14 @@ struct TubeImplementation {
     //=== First, for points outside and moving away --> return infinity
     distance = kInfLength;
 
+    const bool hasZPlanes = tube.fZ < kInfLength;
+
     // outside of Z range and going away?
-    Real_v distz = Abs(point.z()) - tube.fZ; // avoid a division for now
-    done |= distz > kHalfTolerance && point.z() * dir.z() >= 0;
+    Real_v distz(0.);
+    if (hasZPlanes) {
+      distz = Abs(point.z()) - tube.fZ; // avoid a division for now
+      done |= distz > kHalfTolerance && point.z() * dir.z() >= 0;
+    }
 
     // // outside of tube and going away?
     // done |= Abs(point.x()) > tube.rmax()+kHalfTolerance && point.x()*dir.x()
@@ -493,8 +498,8 @@ struct TubeImplementation {
     // return -1
     vecCore__MaskedAssignFunc(distance, !done, Real_v(-1.0));
 
-    // For points inside z-range, return -1
-    Bool_v inside = distz < -kHalfTolerance;
+    // Infinite-z helper uses such as CutTube never reject entry on z here.
+    Bool_v inside = !hasZPlanes || distz < -kHalfTolerance;
 
     inside &= rsq < tube.fTolIrmax2;
     if (checkRminTreatment<tubeTypeT>(tube)) {
@@ -514,27 +519,29 @@ struct TubeImplementation {
     // should be valid at z-plane crossing)
     vecCore::MaskedAssign(distance, !done, Real_v(kInfLength));
 
-    distz /= NonZeroAbs(dir.z());
-    // std::cerr << "Dist : " << distz << std::endl;
+    if (hasZPlanes) {
+      distz /= NonZeroAbs(dir.z());
+      // std::cerr << "Dist : " << distz << std::endl;
 
-    Real_v hitx = point.x() + distz * dir.x();
-    Real_v hity = point.y() + distz * dir.y();
-    Real_v r2   = hitx * hitx + hity * hity; // radius of intersection with z-plane
-    Bool_v okz  = distz > -kHalfTolerance && (point.z() * dir.z() < 0);
+      Real_v hitx = point.x() + distz * dir.x();
+      Real_v hity = point.y() + distz * dir.y();
+      Real_v r2   = hitx * hitx + hity * hity; // radius of intersection with z-plane
+      Bool_v okz  = distz > -kHalfTolerance && (point.z() * dir.z() < 0);
 
-    okz &= (r2 <= tube.fRmax2);
-    if (checkRminTreatment<tubeTypeT>(tube)) {
-      okz &= (tube.fRmin2 <= r2);
+      okz &= (r2 <= tube.fRmax2);
+      if (checkRminTreatment<tubeTypeT>(tube)) {
+        okz &= (tube.fRmin2 <= r2);
+      }
+      if (checkPhiTreatment<tubeTypeT>(tube) && !vecCore::MaskEmpty(okz)) {
+        Bool_v insector;
+        PointInCyclicalSector<Real_v, tubeTypeT, UnplacedStruct_t, false>(tube, hitx, hity, insector);
+        okz &= insector;
+        // okz &= tube.fPhiWedge.ContainsWithBoundary<Real_v>(
+        // Vector3D<Real_v>(hitx, hity, 0.0) );
+      }
+      vecCore::MaskedAssign(distance, !done && okz, distz);
+      done |= okz;
     }
-    if (checkPhiTreatment<tubeTypeT>(tube) && !vecCore::MaskEmpty(okz)) {
-      Bool_v insector;
-      PointInCyclicalSector<Real_v, tubeTypeT, UnplacedStruct_t, false>(tube, hitx, hity, insector);
-      okz &= insector;
-      // okz &= tube.fPhiWedge.ContainsWithBoundary<Real_v>(
-      // Vector3D<Real_v>(hitx, hity, 0.0) );
-    }
-    vecCore::MaskedAssign(distance, !done && okz, distz);
-    done |= okz;
 
     // point on outer cyl?
     Bool_v isOnSurface   = IsOnTubeSurface<Real_v, UnplacedStruct_t, false>(tube, point);
