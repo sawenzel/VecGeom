@@ -113,6 +113,19 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+      {"cone_thin_shell_surface_entering_outer_lower_ring", "cone_thin_shell", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(-43.093354838211269, -25.356710388709519, -200.0),
+       Vec_t(0.90448163727274844, 0.15468343036337337, -0.39747453277842609), false, Vec_t(0., 0., 0.), 0.,
+       "Surface-entering replay ray on the lower outer ring of the thin-shell cone from the 10M-point stress run."},
+      {"cone_narrow_phi_outside_phi_entry", "cone_narrow_phi", "distance_to_in", ShapeSampleCategory::kOutside,
+       Vec_t(2.8232263578195393, 1.0145900317433738, 0.0), Vec_t(0., 0., 0.), true,
+       Vec_t(2.812939466458048, 1.0427710957073528, 0.0), 0.,
+       "Outside-to-inside entry ray crossing the start-phi plane of the narrow-phi hollow cone."},
+      {"cone_narrow_phi_surface_edge_zero_distances", "cone_narrow_phi", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(0.61463510936581522, 0.22435935479431501, -8.7655697525015839),
+       Vec_t(-0.59316595886414847, 0.71320369634116421, -0.37348980276585314), false, Vec_t(0., 0., 0.), 0.,
+       "Surface-family replay ray on the narrow-phi cone where DistanceToIn and DistanceToOut both collapse to zero "
+       "in the 10M-point stress run."},
   };
   return cases;
 }

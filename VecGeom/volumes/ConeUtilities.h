@@ -14,8 +14,6 @@
 #include "VecGeom/volumes/kernel/GenericKernels.h"
 #include "VecGeom/volumes/kernel/shapetypes/ConeTypes.h"
 #include "VecGeom/volumes/kernel/TubeImplementation.h"
-#include <cstdio>
-
 namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
@@ -28,8 +26,8 @@ using UnplacedStruct_t = ConeStruct<Precision>;
 namespace ConeUtilities {
 
 /**
- * Returns whether a point is inside a cylindrical sector, as defined
- * by the two vectors that go along the endpoints of the sector
+ * Determine whether a point lies inside a cylindrical sector defined by the
+ * two rays that delimit its phi span.
  *
  * The same could be achieved using atan2 to calculate the angle formed
  * by the point, the origin and the X-axes, but this is a lot faster,
@@ -55,16 +53,15 @@ namespace ConeUtilities {
  *
  * If going from point to end is CCW, again, the point is certainly inside.
  *
- * This function is a frankensteinian creature that can determine which of the two cases (smaller vs
- * larger than pi) to use either at compile time (if it has enough information, saving an ifVolumeType
- * statement) or at runtime.
+ * The helper can choose the smaller-than-pi versus larger-than-pi test either
+ * at compile time or at runtime, depending on what the cone type exposes.
  **/
 
 #if (1)
 template <typename Real_v, typename ShapeType, bool onSurfaceT, bool includeSurface = true>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(UnplacedStruct_t const &volume,
                                                                                Real_v const &x, Real_v const &y,
-                                                                               typename vecCore::Mask_v<Real_v> &ret)
+                                                                               bool &ret)
 {
 
   using namespace ::vecgeom::ConeTypes;
@@ -97,9 +94,9 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(U
   } else {
     if (smallerthanpi) {
       if (includeSurface)
-        ret = (startCheck >= -kConeTolerance) & (endCheck >= -kConeTolerance);
+        ret = (startCheck >= -kConeTolerance) && (endCheck >= -kConeTolerance);
       else
-        ret = (startCheck >= kConeTolerance) & (endCheck >= kConeTolerance);
+        ret = (startCheck >= kConeTolerance) && (endCheck >= kConeTolerance);
     } else {
       if (includeSurface)
         ret = (startCheck >= -kConeTolerance) || (endCheck >= -kConeTolerance);
@@ -110,6 +107,55 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(U
 }
 
 #endif
+
+template <typename Real_v, typename ShapeType>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ClassifyPointInCyclicalSector(UnplacedStruct_t const &volume,
+                                                                                       Real_v const &x, Real_v const &y,
+                                                                                       bool &inside, bool &outside)
+{
+  using namespace ::vecgeom::ConeTypes;
+
+  Real_v startx = volume.fAlongPhi1x;
+  Real_v starty = volume.fAlongPhi1y;
+  Real_v endx   = volume.fAlongPhi2x;
+  Real_v endy   = volume.fAlongPhi2y;
+
+  bool smallerthanpi;
+  if (SectorType<ShapeType>::value == kUnknownAngle)
+    smallerthanpi = volume.fDPhi <= kPi;
+  else
+    smallerthanpi = SectorType<ShapeType>::value == kOnePi || SectorType<ShapeType>::value == kSmallerThanPi;
+
+  Real_v startCheck = (-x * starty) + (y * startx);
+  Real_v endCheck   = (-endx * y) + (endy * x);
+  Real_v zero(0.);
+  Real_v tol(kTolerance);
+
+  if (smallerthanpi) {
+    inside  = (startCheck > tol) && (endCheck > tol);
+    outside = (startCheck < -tol) || (endCheck < -tol);
+  } else {
+    inside  = (startCheck > tol) || (endCheck > tol);
+    outside = (startCheck < -tol) && (endCheck < -tol);
+  }
+
+  auto unresolved = !(inside || outside);
+  if (!unresolved) return;
+
+  bool onStartSurface = ((x * startx) + (y * starty) >= zero) && (Abs(startCheck) < tol);
+  bool onEndSurface   = ((x * endx) + (y * endy) >= zero) && (Abs(endCheck) < tol);
+  bool onSurface      = onStartSurface || onEndSurface;
+
+  bool exactOutside = startCheck < zero;
+  if (smallerthanpi) {
+    exactOutside |= endCheck < zero;
+  } else {
+    exactOutside &= endCheck < zero;
+  }
+
+  outside |= !onSurface && exactOutside;
+  inside |= !onSurface && !exactOutside;
+}
 
 #if (1)
 template <typename Real_v, bool ForInnerRadius>
@@ -135,43 +181,44 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v GetRadiusOfConeAtPoin
 
 #endif
 
-/*
- * Check intersection of the trajectory with a phi-plane
- * All points of the along-vector of a phi plane lie on
- * s * (alongX, alongY)
- * All points of the trajectory of the particle lie on
- * (x, y) + t * (vx, vy)
- * Thefore, it must hold that s * (alongX, alongY) == (x, y) + t * (vx, vy)
- * Solving by t we get t = (alongY*x - alongX*y) / (vy*alongX - vx*alongY)
- * s = (x + t*vx) / alongX = (newx) / alongX
+/**
+ * Intersect a trajectory with one cone phi plane.
  *
- * If we have two non colinear phi-planes, need to make sure
- * point falls on its positive direction <=> dot product between
- * along vector and hit-point is positive <=> hitx*alongX + hity*alongY > 0
+ * Points on the phi plane lie on `s * (alongX, alongY)`.
+ * Points on the trajectory lie on `(x, y) + t * (vx, vy)`.
+ * Therefore `s * (alongX, alongY) == (x, y) + t * (vx, vy)`, which gives
+ * `t = (alongY * x - alongX * y) / (vy * alongX - vx * alongY)`.
+ *
+ * For two non-colinear phi planes we also require the hit point to stay on the
+ * positive half-line of the chosen phi boundary.
  */
 
 template <typename Real_v, typename ConeType, bool PositiveDirectionOfPhiVector, bool insectorCheck>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryIntersection(
     Precision alongX, Precision alongY, Precision normalX, Precision normalY, UnplacedStruct_t const &cone,
-    Vector3D<Real_v> const &pos, Vector3D<Real_v> const &dir, Real_v &dist, typename vecCore::Mask_v<Real_v> &ok)
+    Vector3D<Real_v> const &pos, Vector3D<Real_v> const &dir, Real_v &dist, bool &ok)
 {
   const Real_v zero(0.0);
   dist = kInfLength;
 
-  // approaching phi plane from the right side?
-  // this depends whether we use it for DistanceToIn or DistanceToOut
-  // Note: wedge normals poing towards the wedge inside, by convention!
+  // Wedge normals point towards the wedge interior, so the admissible side
+  // depends on whether the caller is searching for an entering or exiting hit.
   if (insectorCheck)
     ok = ((dir.x() * normalX) + (dir.y() * normalY) > zero); // DistToIn  -- require tracks entering volume
   else
     ok = ((dir.x() * normalX) + (dir.y() * normalY) < zero); // DistToOut -- require tracks leaving volume
-
-  // if( /*Backend::early_returns &&*/ vecCore::MaskEmpty(ok) ) return;
+  if (!ok) return;
 
   Real_v dirDotXY = (dir.y() * alongX) - (dir.x() * alongY);
-  vecCore__MaskedAssignFunc(dist, dirDotXY != 0, ((alongY * pos.x()) - (alongX * pos.y())) / NonZero(dirDotXY));
-  ok &= dist > -kConeTolerance;
-  // if( /*Backend::early_returns &&*/ vecCore::MaskEmpty(ok) ) return;
+  if (dirDotXY == 0.) {
+    ok = false;
+    return;
+  }
+  dist = ((alongY * pos.x()) - (alongX * pos.y())) / NonZero(dirDotXY);
+  if (dist <= -kConeTolerance) {
+    ok = false;
+    return;
+  }
 
   if (insectorCheck) {
     Real_v hitx          = pos.x() + dist * dir.x();
@@ -181,19 +228,19 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryInter
     Real_v innerRadIrTol = GetRadiusOfConeAtPoint<Real_v, true>(cone, hitz) + kTolerance;
     Real_v outerRadIrTol = GetRadiusOfConeAtPoint<Real_v, false>(cone, hitz) - kTolerance;
 
-    ok &= Abs(hitz) <= cone.fTolIz && (r2 >= innerRadIrTol * innerRadIrTol) && (r2 <= outerRadIrTol * outerRadIrTol);
+    ok = Abs(hitz) <= cone.fTolIz && (r2 >= innerRadIrTol * innerRadIrTol) && (r2 <= outerRadIrTol * outerRadIrTol);
+    if (!ok) return;
 
-    // GL: tested with this if(PosDirPhiVec) around if(insector), so
-    // if(insector){} requires PosDirPhiVec==true to run
-    //  --> shapeTester still finishes OK (no mismatches) (some cycles saved...)
+    // For cones with two distinct phi planes, keep only intersections on the
+    // positive half-line of the chosen boundary ray.
     if (PositiveDirectionOfPhiVector) {
-      ok = ok && ((hitx * alongX) + (hity * alongY)) > zero;
+      ok = ((hitx * alongX) + (hity * alongY)) > zero;
     }
   } else {
     if (PositiveDirectionOfPhiVector) {
       Real_v hitx = pos.x() + dist * dir.x();
       Real_v hity = pos.y() + dist * dir.y();
-      ok          = ok && ((hitx * alongX) + (hity * alongY)) >= zero;
+      ok          = ((hitx * alongX) + (hity * alongY)) >= zero;
     }
   }
 }
@@ -232,8 +279,8 @@ VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> GetNormal(UnplacedStruct_t const
 }
 
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnConicalSurface(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnConicalSurface(UnplacedStruct_t const &cone,
+                                                                            Vector3D<Real_v> const &point)
 {
 
   using namespace ConeUtilities;
@@ -248,7 +295,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Rea
 
 // precondition: point is on cone surface - as returned from IsOnConicalSurface()
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsMovingOutsideConicalSurface(
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingOutsideConicalSurface(
     UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
 {
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) >= Real_v(0.);
@@ -256,69 +303,34 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Rea
 
 // precondition: point is on cone surface - as returned from IsOnConicalSurface()
 template <typename Real_v, bool ForInnerSurface>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsMovingInsideConicalSurface(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingInsideConicalSurface(UnplacedStruct_t const &cone,
+                                                                                      Vector3D<Real_v> const &point,
+                                                                                      Vector3D<Real_v> const &direction)
 {
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) <= Real_v(0.);
 }
 
 template <typename Real_v>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnStartPhi(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnStartPhi(UnplacedStruct_t const &cone,
+                                                                      Vector3D<Real_v> const &point)
 {
-  //  class evolution::Wedge;
-  return cone.fPhiWedge.IsOnSurfaceGeneric(cone.fPhiWedge.GetAlong1(), cone.fPhiWedge.GetNormal1(), point);
+  Real_v startCheck = (-point.x() * cone.fAlongPhi1y) + (point.y() * cone.fAlongPhi1x);
+  return ((point.x() * cone.fAlongPhi1x) + (point.y() * cone.fAlongPhi1y) >= Real_v(0.)) &&
+         (Abs(startCheck) < Real_v(kTolerance));
 }
 
 template <typename Real_v>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnEndPhi(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnEndPhi(UnplacedStruct_t const &cone,
+                                                                    Vector3D<Real_v> const &point)
 {
-
-  return cone.fPhiWedge.IsOnSurfaceGeneric(cone.fPhiWedge.GetAlong2(), cone.fPhiWedge.GetNormal2(), point);
-}
-
-template <typename Real_v, bool ForTopPlane>
-VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingInside(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
-{
-
-  Real_v rho    = point.Perp2();
-  Precision fDz = cone.fDz;
-
-  if (ForTopPlane) {
-    return (rho > (cone.fSqRmin2 - kConeTolerance)) && (rho < (cone.fSqRmax2 + kConeTolerance)) &&
-           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) && (direction.z() < Real_v(0.));
-  } else {
-    return (rho > (cone.fSqRmin1 - kConeTolerance)) && (rho < (cone.fSqRmax1 + kConeTolerance)) &&
-           (point.z() < (-fDz + kConeTolerance)) && (point.z() > (-fDz - kConeTolerance)) &&
-           (direction.z() > Real_v(0.));
-  }
-}
-
-template <typename Real_v, bool ForTopPlane>
-VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnZPlaneAndMovingOutside(
-    UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
-{
-
-  Real_v rho    = point.Perp2();
-  Precision fDz = cone.fDz;
-
-  if (ForTopPlane) {
-    return (rho > (cone.fSqRmin2 - kConeTolerance)) && (rho < (cone.fSqRmax2 + kConeTolerance)) &&
-           (point.z() < (fDz + kConeTolerance)) && (point.z() > (fDz - kConeTolerance)) && (direction.z() > Real_v(0.));
-  } else {
-    return (rho > (cone.fSqRmin1 - kConeTolerance)) && (rho < (cone.fSqRmax1 + kConeTolerance)) &&
-           (point.z() < (-fDz + kConeTolerance)) && (point.z() > (-fDz - kConeTolerance)) &&
-           (direction.z() < Real_v(0.));
-  }
+  Real_v endCheck = (-cone.fAlongPhi2x * point.y()) + (cone.fAlongPhi2y * point.x());
+  return ((point.x() * cone.fAlongPhi2x) + (point.y() * cone.fAlongPhi2y) >= Real_v(0.)) &&
+         (Abs(endCheck) < Real_v(kTolerance));
 }
 
 } // namespace ConeUtilities
 
-/* This class is introduced to allow Partial Specialization of selected functions,
-** and will be very much useful when running Cone and Polycone in Scalar mode
-*/
+/* This helper class keeps the generic template path and a scalar specialization side by side. */
 template <class Real_v, class coneTypeT>
 class ConeHelpers {
 
@@ -326,56 +338,35 @@ public:
   ConeHelpers() {}
   ~ConeHelpers() {}
   template <bool ForDistToIn, bool ForInnerSurface>
-  VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v>
-  DetectIntersectionAndCalculateDistanceToConicalSurface(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point,
-                                                         Vector3D<Real_v> const &direction, Real_v &distance)
+  VECCORE_ATT_HOST_DEVICE static bool DetectIntersectionAndCalculateDistanceToConicalSurface(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction, Real_v &distance)
   {
 
     using namespace ConeUtilities;
     using namespace ConeTypes;
-    typedef typename vecCore::Mask_v<Real_v> Bool_t;
     const Real_v zero(0.0);
 
-    distance                = kInfLength;
-    Bool_t onConicalSurface = IsOnConicalSurface<Real_v, ForInnerSurface>(cone, point);
-    Vector3D<Real_v> normal = ConeUtilities::GetNormal<Real_v, ForInnerSurface>(cone, point);
-    Bool_t tangentToSurface = vecCore::math::Abs(direction.Dot(normal)) == zero;
-    Bool_t done             = onConicalSurface && tangentToSurface;
-    if (vecCore::MaskFull(done)) return Bool_t(false);
+    distance              = kInfLength;
+    bool onConicalSurface = IsOnConicalSurface<Real_v, ForInnerSurface>(cone, point);
+    if (onConicalSurface) {
+      Vector3D<Real_v> normal = ConeUtilities::GetNormal<Real_v, ForInnerSurface>(cone, point);
+      if (vecCore::math::Abs(direction.Dot(normal)) == zero) return false;
 
-    // if precond is all false, save some CPU
-    const Bool_t precond = !done && onConicalSurface;
-    if (!vecCore::MaskEmpty(precond)) {
-      if (ForDistToIn) {
-        Bool_t isOnSurfaceAndMovingInside =
-            precond & ConeUtilities::IsMovingInsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
+      bool movingAcrossSurface =
+          ForDistToIn ? ConeUtilities::IsMovingInsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction)
+                      : ConeUtilities::IsMovingOutsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
 
+      if (movingAcrossSurface) {
         if (!checkPhiTreatment<coneTypeT>(cone)) {
-          vecCore__MaskedAssignFunc(distance, isOnSurfaceAndMovingInside, zero);
-          done |= isOnSurfaceAndMovingInside;
-          if (vecCore::MaskFull(done)) return done;
-        } else {
-          Bool_t insector(false);
-          ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
-          vecCore__MaskedAssignFunc(distance, insector && isOnSurfaceAndMovingInside, zero);
-          done |= (insector && isOnSurfaceAndMovingInside);
-          if (vecCore::MaskFull(done)) return done;
+          distance = zero;
+          return true;
         }
 
-      } else {
-        Bool_t isOnSurfaceAndMovingOutside =
-            precond & ConeUtilities::IsMovingOutsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
-
-        if (!checkPhiTreatment<coneTypeT>(cone)) {
-          vecCore__MaskedAssignFunc(distance, isOnSurfaceAndMovingOutside, zero);
-          done |= isOnSurfaceAndMovingOutside;
-          if (vecCore::MaskFull(done)) return done;
-        } else {
-          Bool_t insector(false);
-          ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
-          vecCore__MaskedAssignFunc(distance, insector && isOnSurfaceAndMovingOutside, zero);
-          done |= (insector && isOnSurfaceAndMovingOutside);
-          if (vecCore::MaskFull(done)) return done;
+        bool insector(false);
+        ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
+        if (insector) {
+          distance = zero;
+          return true;
         }
       }
     }
@@ -383,7 +374,6 @@ public:
     Real_v pDotV2D = point.x() * direction.x() + point.y() * direction.y();
 
     Real_v a(0.), b(0.), c(0.);
-    Bool_t ok(false);
     Precision fDz = cone.fDz;
     if (ForInnerSurface) {
 
@@ -411,21 +401,28 @@ public:
 
       Real_v b2 = b * b;
       Real_v ac = a * c;
-      if (vecCore::MaskFull(b2 < ac)) return Bool_t(false);
+      if (b2 < ac) return false;
       Real_v d2 = b2 - ac;
 
       Real_v delta = Sqrt(vecCore::math::Abs(d2));
       if (ForDistToIn) {
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b >= zero), (c / NonZero(-b - delta)));
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b < zero), (-b + delta) / NonZero(a));
+        if (b >= zero) {
+          distance = c / NonZero(-b - delta);
+        } else {
+          distance = (-b + delta) / NonZero(a);
+        }
       } else {
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b >= zero), (-b - delta) / NonZero(a));
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b < zero), (c / NonZero(-b + delta)));
+        if (b == zero && delta == zero) return false;
+        if (b >= zero) {
+          distance = (-b - delta) / NonZero(a);
+        } else {
+          distance = c / NonZero(-b + delta);
+        }
       }
 
-      if (vecCore::MaskFull(distance < zero)) return Bool_t(false);
+      if (distance < zero) return false;
       Real_v newZ = point.z() + (direction.z() * distance);
-      ok          = (Abs(newZ) < fDz);
+      if (Abs(newZ) >= fDz) return false;
 
     } else {
 
@@ -450,38 +447,39 @@ public:
       }
       Real_v b2 = b * b;
       Real_v ac = a * c;
-      if (vecCore::MaskFull(b2 < ac)) return Bool_t(false);
+      if (b2 < ac) return false;
       Real_v d2    = b2 - ac;
       Real_v delta = Sqrt(vecCore::math::Abs(d2));
 
       if (ForDistToIn) {
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b > zero), (-b - delta) / NonZero(a));
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b < zero), (c / NonZero(-b + delta)));
-      } else {
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b < zero), (-b + delta) / NonZero(a));
-        vecCore__MaskedAssignFunc(distance, !done && d2 >= zero && (b >= zero), (c / NonZero(-b - delta)));
-        ok = distance > zero;
-      }
-
-      if (vecCore::MaskFull(distance < zero)) return Bool_t(false);
-      if (ForDistToIn) {
+        if (b == zero && delta == zero) return false;
+        if (b > zero) {
+          distance = (-b - delta) / NonZero(a);
+        } else {
+          distance = c / NonZero(-b + delta);
+        }
         Real_v newZ = point.z() + (direction.z() * distance);
-        ok          = (Abs(newZ) < cone.fDz + kHalfTolerance);
+        if (Abs(newZ) >= cone.fDz + kHalfTolerance) return false;
+      } else {
+        if (b < zero) {
+          distance = (-b + delta) / NonZero(a);
+        } else if (onConicalSurface) {
+          distance = (-b - delta) / NonZero(a);
+        } else {
+          distance = c / NonZero(-b - delta);
+        }
+        if (distance <= zero) return false;
       }
     }
-    vecCore__MaskedAssignFunc(distance, distance < zero, Real_v(kInfLength));
 
     if (checkPhiTreatment<coneTypeT>(cone)) {
-      Real_v hitx(0), hity(0), hitz(0);
-      Bool_t insector(false); // = Backend::kFalse;
-      vecCore__MaskedAssignFunc(hitx, distance < kInfLength, point.x() + distance * direction.x());
-      vecCore__MaskedAssignFunc(hity, distance < kInfLength, point.y() + distance * direction.y());
-      vecCore__MaskedAssignFunc(hitz, distance < kInfLength, point.z() + distance * direction.z());
-
+      Real_v hitx = point.x() + distance * direction.x();
+      Real_v hity = point.y() + distance * direction.y();
+      bool insector(false);
       ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, hitx, hity, insector);
-      ok &= ((insector) && (distance < kInfLength));
+      if (!insector) return false;
     }
-    return ok;
+    return true;
   }
 
   template <bool ForInside>
@@ -708,6 +706,8 @@ public:
       } else {
         if (b < 0.) {
           distance = (-b + delta) / NonZero(a);
+        } else if (onConicalSurface) {
+          distance = (-b - delta) / NonZero(a);
         } else {
           distance = (c / NonZero(-b - delta));
         }

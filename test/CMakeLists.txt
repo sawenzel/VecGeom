@@ -349,8 +349,6 @@ set(SHAPE_CONTRACT_SOLID_CASES
 
 # this list should be resolved and go away
 set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
-  cone_section:contracts
-  cone_narrow_phi:contracts
   elliptical_cone:surface
   polycone_cms_like:contracts
   polycone_cms_like:normals
@@ -431,6 +429,7 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES
 
 set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   box
+  cone_narrow_phi
   tube_fullphi
   )
 
