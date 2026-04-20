@@ -653,7 +653,7 @@ private:
 };
 
 struct ShapeContractCheckSummary {
-  int score                  = 0;
+  std::uint64_t score        = 0;
   bool surface_points_passed = true;
   bool inside_points_passed  = true;
   bool outside_points_passed = true;
@@ -703,7 +703,7 @@ inline const char *ShapeSurfaceKindLabel(ShapeSurfaceKind kind)
 }
 
 struct ShapeNormalCheckSummary {
-  int score                 = 0;
+  std::uint64_t score       = 0;
   bool surface_passed       = true;
   bool inside_exit_passed   = true;
   bool outside_entry_passed = true;
@@ -750,7 +750,7 @@ struct ShapeNormalRayReplay {
 };
 
 struct ShapeSurfaceCheckSummary {
-  int score           = 0;
+  std::uint64_t score = 0;
   bool surface_passed = true;
   bool grazing_passed = true;
 
@@ -779,7 +779,7 @@ struct ShapeSurfaceRayReplay {
 };
 
 struct ShapeDistanceToOutCheckSummary {
-  int score                 = 0;
+  std::uint64_t score       = 0;
   bool inside_points_passed = true;
 
   bool Passed() const { return inside_points_passed; }
@@ -1323,7 +1323,8 @@ bool EvaluateSurfaceConventionSample(
 
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckSurfaceConventions(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
-                             DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink, int &score)
+                             DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
+                             std::uint64_t &score)
 {
   bool surface_point_convention_passed = true;
   for (int i = 0; i < samples.max_points_surface + samples.max_points_edge; ++i) {
@@ -1334,7 +1335,7 @@ bool CheckSurfaceConventions(ImplT const *volume, const ShapeContractSampleView 
     bool sample_passed     = EvaluateSurfaceConventionSample(
         volume, point, direction, solid_tolerance, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     surface_point_convention_passed = surface_point_convention_passed && sample_passed;
@@ -1402,7 +1403,8 @@ bool EvaluateInsideConventionSample(
 
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckInsideConventions(ImplT const *volume, const ShapeContractSampleView &samples,
-                            DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink, int &score)
+                            DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
+                            std::uint64_t &score)
 {
   bool inside_point_convention_passed = true;
 
@@ -1414,7 +1416,7 @@ bool CheckInsideConventions(ImplT const *volume, const ShapeContractSampleView &
     bool sample_passed     = EvaluateInsideConventionSample(
         volume, point, direction, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     inside_point_convention_passed = inside_point_convention_passed && sample_passed;
@@ -1499,7 +1501,8 @@ bool EvaluateOutsideConventionSample(
 
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckOutsideConventions(ImplT const *volume, const ShapeContractSampleView &samples,
-                             DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink, int &score)
+                             DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
+                             std::uint64_t &score)
 {
   bool outside_point_convention_passed = true;
 
@@ -1511,7 +1514,7 @@ bool CheckOutsideConventions(ImplT const *volume, const ShapeContractSampleView 
     bool sample_passed     = EvaluateOutsideConventionSample(
         volume, point, direction, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     outside_point_convention_passed = outside_point_convention_passed && sample_passed;
@@ -1799,7 +1802,7 @@ bool EvaluateSurfacePointSample(
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
                         Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out,
-                        ShapeContractViolationSink &sink, int &score)
+                        ShapeContractViolationSink &sink, std::uint64_t &score)
 {
   bool surface_points_passed = true;
   for (int i = 0; i < samples.max_points_surface + samples.max_points_edge; ++i) {
@@ -1810,7 +1813,7 @@ bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samp
     bool sample_passed     = EvaluateSurfacePointSample(
         volume, point, direction, solid_tolerance, grazing_tolerance, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     surface_points_passed = surface_points_passed && sample_passed;
@@ -1896,7 +1899,7 @@ template <typename ImplT, typename DistanceToOutCaller>
 bool CheckInsideDistanceToOutSamples(ImplT const *volume, const ShapeContractSampleView &samples,
                                      Precision solid_tolerance, Precision max_extent_distance,
                                      DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
-                                     int &score)
+                                     std::uint64_t &score)
 {
   bool inside_points_passed = true;
   for (int i = 0; i < samples.max_points_inside; ++i) {
@@ -1907,7 +1910,7 @@ bool CheckInsideDistanceToOutSamples(ImplT const *volume, const ShapeContractSam
     bool sample_passed     = EvaluateInsideDistanceToOutSample(
         volume, point, direction, solid_tolerance, max_extent_distance, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     inside_points_passed = inside_points_passed && sample_passed;
@@ -2592,7 +2595,7 @@ bool EvaluateSurfaceNormalSample(
 
 template <typename ImplT>
 bool CheckSurfaceNormals(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
-                         ShapeContractViolationSink &sink, int &score)
+                         ShapeContractViolationSink &sink, std::uint64_t &score)
 {
   bool surface_normals_passed = true;
   for (int i = 0; i < samples.max_points_surface + samples.max_points_edge; ++i) {
@@ -2603,7 +2606,7 @@ bool CheckSurfaceNormals(ImplT const *volume, const ShapeContractSampleView &sam
     bool sample_passed     = EvaluateSurfaceNormalSample(
         volume, point, direction, solid_tolerance, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     surface_normals_passed = surface_normals_passed && sample_passed;
@@ -2704,7 +2707,8 @@ bool EvaluateInsideExitNormalSample(
 
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckInsideExitNormals(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
-                            DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink, int &score)
+                            DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
+                            std::uint64_t &score)
 {
   bool inside_exit_passed = true;
   for (int i = 0; i < samples.max_points_inside; ++i) {
@@ -2715,7 +2719,7 @@ bool CheckInsideExitNormals(ImplT const *volume, const ShapeContractSampleView &
     bool sample_passed     = EvaluateInsideExitNormalSample(
         volume, point, direction, solid_tolerance, call_distance_to_out, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     inside_exit_passed = inside_exit_passed && sample_passed;
@@ -2822,7 +2826,7 @@ bool EvaluateOutsideEntryNormalSample(
 
 template <typename ImplT>
 bool CheckOutsideEntryNormals(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
-                              ShapeContractViolationSink &sink, int &score)
+                              ShapeContractViolationSink &sink, std::uint64_t &score)
 {
   bool outside_entry_passed = true;
   for (int i = 0; i < samples.max_points_outside; ++i) {
@@ -2833,7 +2837,7 @@ bool CheckOutsideEntryNormals(ImplT const *volume, const ShapeContractSampleView
     bool sample_passed     = EvaluateOutsideEntryNormalSample(
         volume, point, direction, solid_tolerance, context,
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
-          if (failure_context.convention_bit >= 0) score |= (1 << failure_context.convention_bit);
+          if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         });
     outside_entry_passed = outside_entry_passed && sample_passed;
@@ -2849,8 +2853,8 @@ ShapeSurfaceCheckSummary RunShapeSurfaceChecks(ImplT const *volume, const ShapeC
 {
   ShapeSurfaceCheckSummary summary;
   CheckSurfacePoints(volume, samples, solid_tolerance, grazing_tolerance, call_distance_to_out, sink, summary.score);
-  summary.surface_passed = (summary.score & (1 << kSurfaceRayNotBothZero)) == 0;
-  summary.grazing_passed = (summary.score & (1 << kSurfaceGrazingNotBothZero)) == 0;
+  summary.surface_passed = (summary.score & (std::uint64_t(1) << kSurfaceRayNotBothZero)) == 0;
+  summary.grazing_passed = (summary.score & (std::uint64_t(1) << kSurfaceGrazingNotBothZero)) == 0;
   return summary;
 }
 

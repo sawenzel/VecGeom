@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <utility>
 #include <vector>
 
@@ -262,13 +263,13 @@ void CheckSurfaceDistanceToInEnteringBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckSurfaceConventions(&volume, view, vecgeom::kTolerance, MakeDistanceToOutCaller(),
                                                        sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kSurfaceDistanceToInEntering));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceDistanceToInEntering));
   VECGEOM_ASSERT(result.CountErrors() == 1);
   VECGEOM_ASSERT(result.CountViolationTypes() == 1);
 
@@ -314,12 +315,12 @@ void CheckInsideDistanceToInBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckInsideConventions(&volume, view, MakeDistanceToOutCaller(), sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kInsideDistanceToIn));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kInsideDistanceToIn));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "DistanceToIn for Inside Point should be Negative (-1.) (Wrong side)");
@@ -344,12 +345,12 @@ void CheckOutsideDistanceToInBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckOutsideConventions(&volume, view, MakeDistanceToOutCaller(), sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kOutsideDistanceToIn));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kOutsideDistanceToIn));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "DistanceToIn for Outside Point should be > 0.");
@@ -402,8 +403,9 @@ void CheckAggregatedSummaryAcrossFamilies()
   VECGEOM_ASSERT(!summary.inside_points_passed);
   VECGEOM_ASSERT(!summary.outside_points_passed);
 
-  const int expected_score = (1 << vecgeom::test::kSurfaceDistanceToInEntering) |
-                             (1 << vecgeom::test::kInsideDistanceToIn) | (1 << vecgeom::test::kOutsideDistanceToIn);
+  const std::uint64_t expected_score = (std::uint64_t(1) << vecgeom::test::kSurfaceDistanceToInEntering) |
+                                       (std::uint64_t(1) << vecgeom::test::kInsideDistanceToIn) |
+                                       (std::uint64_t(1) << vecgeom::test::kOutsideDistanceToIn);
   VECGEOM_ASSERT(summary.score == expected_score);
   VECGEOM_ASSERT(result.CountErrors() == 3);
   VECGEOM_ASSERT(result.CountViolationTypes() == 3);
@@ -427,13 +429,13 @@ void CheckSurfaceRayNotBothZeroBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed =
       vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0., MakeDistanceToOutCaller(), sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kSurfaceRayNotBothZero));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceRayNotBothZero));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "DistanceToIn and DistanceToOut cannot both be zero for Surface ray.");
@@ -457,13 +459,13 @@ void CheckSurfaceGrazingNotBothZeroBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0.,
                                                   MakeGrazingSurfaceDistanceToOutCaller(), sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kSurfaceGrazingNotBothZero));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceGrazingNotBothZero));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation =
@@ -491,7 +493,7 @@ void CheckSurfaceGrazingToleranceTiltsRay()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, kGrazingTolerance,
                                                   MakeGrazingSurfaceDistanceToOutCaller(), sink, score);
@@ -559,12 +561,12 @@ void CheckSurfaceNormalValidityBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckSurfaceNormals(&volume, view, vecgeom::kTolerance, sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kNormalSurfaceValid));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kNormalSurfaceValid));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "Normal for Surface Point should be valid.");
@@ -597,12 +599,12 @@ void CheckSurfaceNormalUnitLengthBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckSurfaceNormals(&volume, view, vecgeom::kTolerance, sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kNormalSurfaceUnitLength));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kNormalSurfaceUnitLength));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "Normal for Surface Point should have unit length.");
@@ -644,13 +646,13 @@ void CheckInsideExitNormalOrientationBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed =
       vecgeom::test::CheckInsideExitNormals(&volume, view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kNormalInsideExitOutward));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kNormalInsideExitOutward));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation =
@@ -695,12 +697,12 @@ void CheckOutsideEntryNormalOrientationBit()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed = vecgeom::test::CheckOutsideEntryNormals(&volume, view, vecgeom::kTolerance, sink, score);
 
   VECGEOM_ASSERT(!passed);
-  VECGEOM_ASSERT(score == (1 << vecgeom::test::kNormalOutsideEntryInward));
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kNormalOutsideEntryInward));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation =
@@ -726,7 +728,7 @@ void CheckOutsideBoundingBoxMissSkipsInfinitePropagation()
 
   vecgeom::test::ShapeCheckResult result;
   vecgeom::test::ShapeContractViolationSink sink(result, 1);
-  int score = 0;
+  std::uint64_t score = 0;
 
   bool passed =
       vecgeom::test::CheckOutsideConventions(&volume, view, MakeBoundingBoxMissDistanceToOutCaller(), sink, score);
@@ -767,7 +769,7 @@ void CheckDistanceToOutPositiveBit()
       vecgeom::test::RunShapeDistanceToOutChecks(&volume, view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
 
   VECGEOM_ASSERT(!summary.Passed());
-  VECGEOM_ASSERT(summary.score == (1 << vecgeom::test::kDistanceToOutPositive));
+  VECGEOM_ASSERT(summary.score == (std::uint64_t(1) << vecgeom::test::kDistanceToOutPositive));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(result, "DistanceToOut for Inside Point should be > 0.");
@@ -812,7 +814,7 @@ void CheckDistanceToOutSafetyBit()
       vecgeom::test::RunShapeDistanceToOutChecks(&volume, view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
 
   VECGEOM_ASSERT(!summary.Passed());
-  VECGEOM_ASSERT(summary.score == (1 << vecgeom::test::kDistanceToOutAboveSafety));
+  VECGEOM_ASSERT(summary.score == (std::uint64_t(1) << vecgeom::test::kDistanceToOutAboveSafety));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation =
@@ -852,7 +854,7 @@ void CheckDistanceToOutOnSurfaceBitAndReplay()
       vecgeom::test::RunShapeDistanceToOutChecks(&volume, view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
 
   VECGEOM_ASSERT(!summary.Passed());
-  VECGEOM_ASSERT(summary.score == (1 << vecgeom::test::kDistanceToOutOnSurface));
+  VECGEOM_ASSERT(summary.score == (std::uint64_t(1) << vecgeom::test::kDistanceToOutOnSurface));
   VECGEOM_ASSERT(result.CountErrors() == 1);
 
   auto const *violation = FindViolation(
