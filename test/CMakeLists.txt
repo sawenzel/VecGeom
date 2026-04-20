@@ -2,6 +2,15 @@
 ## TESTING
 ################################################################################
 # Helper Macros/Functions
+################################################################################
+# - Build and CTest a GTest-based VecGeom test
+function(vecgeom_add_test EXECUTABLE)
+  get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
+  add_executable(${TARGET_NAME} ${EXECUTABLE})
+  cuda_rdc_target_link_libraries(${TARGET_NAME} PRIVATE vecgeom GTest::gtest_main)
+  add_test(${TARGET_NAME} ${TARGET_NAME})
+endfunction()
+################################################################################
 
 add_definitions(-UNDEBUG) # ensure asserts are enabled in all tests
 
@@ -158,8 +167,10 @@ endif()
 
 ################################################################################
 # - Core Tests
+vecgeom_add_test(core/TestVector.cpp)
+vecgeom_add_test(core/TestVoxelHashMap.cpp)
+
 set(TEST_EXECUTABLES_CORE
-  core/TestVoxelHashMap.cpp
   core/RNGTest.cpp
   core/SafetyEstimatorTest.cpp
   core/ShapeCheckResultTest.cpp
@@ -188,7 +199,6 @@ set(TEST_EXECUTABLES_CORE
   #  services/CompNavStatePools.cpp
   core/TestMaskedAssign.cpp
   core/TestOvershoot.cpp
-  core/TestVector.cpp
   core/TestHybridBVH.cpp
   core/TestEarlyReturns.cpp
   core/CreateTessels.cpp
