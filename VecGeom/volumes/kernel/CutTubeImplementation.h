@@ -106,7 +106,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Inside(
     return;
   }
 
-  TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v, Inside_t>(unplaced.GetTubeStruct(), point, inside);
+  TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v>(unplaced.GetTubeStruct(), point, inside);
 
   if (inside_cutplanes == EInside::kSurface && inside != EInside::kOutside) inside = inside_cutplanes;
 }
@@ -147,7 +147,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
   unplaced.GetCutPlanes().Inside<Real_v>(point, cutplane_state);
 
   Inside_t tube_state = EInside::kOutside;
-  TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v, Inside_t>(unplaced.GetTubeStruct(), point, tube_state);
+  TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v>(unplaced.GetTubeStruct(), point, tube_state);
 
   if (cutplane_state == EInside::kOutside || (cutplane_state == EInside::kSurface && tube_state != EInside::kOutside)) {
     tube_state = cutplane_state;
@@ -170,8 +170,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
     unplaced.GetCutPlanes().Inside<Real_v>(propagated, cutplane_state);
     if (cutplane_state == EInside::kOutside) return;
 
-    TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v, Inside_t>(unplaced.GetTubeStruct(), propagated,
-                                                                           tube_state);
+    TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v>(unplaced.GetTubeStruct(), propagated, tube_state);
     if (tube_state != EInside::kOutside) {
       distance = vecCore::math::Abs(dplanes) < Real_v(kTolerance) ? Real_v(0.) : dplanes;
       return;
@@ -250,8 +249,7 @@ VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::NormalKernel(UnplacedStruct_
   TubeImplementation<TubeTypes::UniversalTube>::SafetyToOut<Real_v>(unplaced.GetTubeStruct(), point, saftube);
 
   if (vecCore::math::Abs(saftube) < vecCore::math::Abs(safcut)) {
-    TubeImplementation<TubeTypes::UniversalTube>::NormalKernel<Real_v, bool>(unplaced.GetTubeStruct(), point, normal,
-                                                                             valid);
+    TubeImplementation<TubeTypes::UniversalTube>::NormalKernel<Real_v>(unplaced.GetTubeStruct(), point, normal, valid);
     return;
   }
 

@@ -181,7 +181,7 @@ VECCORE_ATT_HOST_DEVICE
 bool UnplacedTube::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const
 {
   bool valid = true;
-  TubeImplementation<TubeTypes::UniversalTube>::NormalKernel<Precision, bool>(fTube, point, norm, valid);
+  TubeImplementation<TubeTypes::UniversalTube>::NormalKernel<Precision>(fTube, point, norm, valid);
   return valid;
 }
 
