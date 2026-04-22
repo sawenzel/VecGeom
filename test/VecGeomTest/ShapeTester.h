@@ -63,6 +63,7 @@ public:
   inline int GetMaxPoints() const { return fMaxPoints; }
   inline Vec_t GetPoint(int index) { return fPoints[index]; }
   inline void SetNumberOfScans(int num) { fGNumberOfScans = num; }
+  void SetCheckConventions(bool flag) { fCheckConventions = flag; }
 
   /* Keeping this Function as public to allow, if somebody just want
    * to do the Convention Check
@@ -234,8 +235,8 @@ private:
 
   // Added data member required for convention checker
   std::vector<std::string> fConventionMessage; // STL vector for convention error messages.
-  int fScore;      // an error code generate if conventions not followed, 0 mean convenetion followed.
-  int fNumDisp;    // number of points to be displayed in case a shape is not following conventions.
+  int fScore{0};   // an error code generate if conventions not followed, 0 means convention followed.
+  int fNumDisp{0}; // number of points to be displayed in case a shape is not following conventions.
   bool fVisualize; // Flag to be set or unset by EnableDebugger() function that user will
   // call with true parameter if want to see visualization in case of some mismatch
   Precision fSolidTolerance; // Tolerance on boundary declared by solid (default kTolerance)
@@ -248,6 +249,7 @@ private:
   vecgeom::RNG fRNG;
   bool fStat;  // data member to show the statistic visualtion if set to true
   bool fDebug; // data member to visualized the shape and first mismatched point with directions
+  bool fCheckConventions{true};
 };
 
 #endif

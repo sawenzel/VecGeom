@@ -316,7 +316,7 @@ int ShapeTester<ImplT>::ShapeNormal()
     // Initial point is inside
     Vec_t point = fPoints[i + fOffsetInside];
     Vec_t dir   = fDirections[i + fOffsetInside];
-    Vec_t norm  = false;
+    Vec_t norm;
     bool convex = false;
 
     Inside_t inside;
@@ -588,7 +588,8 @@ int ShapeTester<ImplT>::TestNormalSolids()
 
   for (int i = 0; i < fMaxPoints; i++) {
     point = fPoints[i];
-    // bool valid = fVolume->Normal(point, normal);
+    bool valid = fVolume->Normal(point, normal);
+    (void)valid;
     if (fIfSaveAllData) {
       fResultVector[i].Set(normal.x(), normal.y(), normal.z());
       std::cout << " fResultsVU[ " << i << "] = " << fResultVector[i] << "\n";
@@ -711,8 +712,8 @@ int ShapeTester<ImplT>::TestDistanceToOutSolids()
       fResultPrecision[i] = res;
       fResultVector[i]    = normal;
     }
+    SaveResultsToFile("DistanceToOut");
   }
-  SaveResultsToFile("DistanceToOut");
 
   return errCode;
 }
@@ -952,14 +953,6 @@ int ShapeTester<ImplT>::TestInsidePoint()
 
       return errCode;
     }
-    // Safety from wrong side should be negative
-    Precision safeDistanceFromOut = fVolume->SafetyToIn(point);
-    if (safeDistanceFromOut >= 0.0) {
-      std::string message("TI: SafetyFromOutside(p) should be Negative value (-1.) for Points Inside");
-      Vec_t zero(0);
-      ReportError(&nError, point, zero, safeDistanceFromOut, message.c_str());
-      continue;
-    }
 
     // Check values of Extent
     // Every point inside should be also within the extent
@@ -1007,13 +1000,7 @@ int ShapeTester<ImplT>::TestInsidePoint()
           continue;
         }
       }
-      // DistanceToIn from point on wrong side has to be negative
-      Precision distIn = fVolume->DistanceToIn(point, v);
-      if (distIn >= 0.) {
-        std::string message("TI: DistanceToIn(p,v) has to be negative (-1) for Inside points.");
-        ReportError(&nError, point, v, distIn, message.c_str());
-        continue;
-      }
+
       // Move to the boundary and check
       Vec_t p = point + v * dist;
 
@@ -1074,15 +1061,6 @@ int ShapeTester<ImplT>::TestOutsidePoint()
       if (CountErrors()) errCode = 2; // errCode: 0000 0000 0010
 
       return errCode;
-    }
-
-    Precision safeDistanceFromInside = fVolume->SafetyToOut(point);
-    // Safety from wrong side point has to be negative
-    if (safeDistanceFromInside >= 0.0) {
-      std::string msg("TO: SafetyToOut(p) should be Negative value (-1.) for points Outside (VecGeom conv)");
-      Vec_t zero(0);
-      // disable this message as it is part of ConventionChecker
-      ReportError(&nError, point, zero, safeDistanceFromInside, msg.c_str());
     }
 
     for (i = 0; i < n; i++) {
@@ -1352,7 +1330,7 @@ int ShapeTester<ImplT>::TestAccuracyDistanceToIn(Precision dist)
         // Test for consistency for fPoints situated Outside
         for (int j = 0; j < 1000; j++) {
           vec          = GetRandomDirection();
-          Vec_t invdir = Vec_t(1. / NonZero(v.x()), 1. / NonZero(v.y()), 1. / NonZero(v.z()));
+          Vec_t invdir = Vec_t(1. / NonZero(vec.x()), 1. / NonZero(vec.y()), 1. / NonZero(vec.z()));
 
           distBB  = fVolume->GetUnplacedVolume()->ApproachSolid(point, invdir);
           distBB  = (distBB > toleranceBB) ? distBB - toleranceBB : 0.;
@@ -1512,7 +1490,7 @@ int ShapeTester<ImplT>::ShapeSafetyFromOutside(int max)
   Vec_t point, temp, dir, pointSphere, normal;
   Precision res, error;
   int count = 0, count1 = 0;
-  int nError;
+  int nError{0};
   ClearErrors();
 #ifdef VECGEOM_ROOT
   // visualisation
@@ -2072,7 +2050,9 @@ int ShapeTester<ImplT>::Run(ImplT const *testVolume)
   if (testVolume) fVolume = testVolume;
 
   // Running Convention first before running any ShapeTester tests
-  RunConventionChecker(testVolume);
+  if (fCheckConventions) {
+    RunConventionChecker(testVolume);
+  }
   fNumDisp    = 5;
   int errCode = 0;
   stringstream ss;
