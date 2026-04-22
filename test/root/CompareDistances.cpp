@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
     G4VSolid const *g4solid = vecgeomplaced->ConvertToGeant4();
     if (g4solid != NULL) {
-      std::cout << "G4 CONTAINS " << g4solid->Inside(g4p) << "\n";
+      std::cout << "G4 CONTAINS " << G4InsideToString(g4solid->Inside(g4p)) << "\n";
       auto distg4 = g4solid->DistanceToIn(g4p, g4d);
       std::cout << "G4 DI " << distg4 << "\n";
       // check status of boundary point
