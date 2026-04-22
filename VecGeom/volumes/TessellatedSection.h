@@ -11,10 +11,6 @@
 
 #include "VecGeom/volumes/TessellatedCluster.h"
 
-#include "VecGeom/management/HybridManager2.h"
-#include "VecGeom/navigation/HybridNavigator2.h"
-#include "VecGeom/management/ABBoxManager.h"
-
 namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {

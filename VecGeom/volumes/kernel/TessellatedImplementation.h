@@ -1,7 +1,7 @@
 //===-- kernel/TessellatedImplementation.h ----------------------------------*- C++ -*-===//
 //===--------------------------------------------------------------------------===//
 /// @file TessellatedImplementation.h
-/// @author mihaela.gheata@cern.ch
+/// @author mihaela.gheata@cern.ch, sandro.wenzel@cern.ch
 
 #ifndef VECGEOM_VOLUMES_KERNEL_TESSELLATEDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TESSELLATEDIMPLEMENTATION_H_
@@ -29,50 +29,74 @@ class UnplacedTessellated;
 struct TessellatedImplementation {
 
   using PlacedShape_t    = PlacedTessellated;
-  using UnplacedStruct_t = TessellatedStruct<3, Precision>;
+  using UnplacedStruct_t = TessellatedRuntimeStruct<Precision>;
   using UnplacedVolume_t = UnplacedTessellated;
 
   template <typename Real_v, typename Bool_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &tessellated,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, Bool_v &contains)
   {
-    inside = Bool_v(false);
-    int isurfOut, isurfIn;
-    Real_v distOut, distIn;
-    DistanceToSolid<Real_v, false>(tessellated, point, tessellated.fTestDir, InfinityLength<Real_v>(), distOut,
-                                   isurfOut, distIn, isurfIn);
-    if (isurfOut >= 0) inside = Bool_v(true);
-    /*
-        DistanceToSolid<Real_v, true>(tessellated, point, tessellated.fTestDir, stepMax, distIn, isurf);
-        // If distance to out is finite and less than distance to in, the point is inside
-        if (distOut < distIn) inside = Bool_v(true);
-    */
+    // quick check against bounding box
+    contains = false;
+    ABBoxImplementation::ABBoxContainsKernel(tessellated.fMinExtent, tessellated.fMaxExtent, point, contains);
+    if (!contains) {
+      return;
+    }
+
+    // more expensive check involving intersection with the BVH
+    int parity_counter = 0;
+    auto userhook_bvh  = [&](BVHIntersectContext<float> &ctx) {
+      const auto primID    = ctx.primID;
+      const auto &facet    = tessellated.fFacets[primID];
+      const auto this_dist = facet.Distance(point, tessellated.fTestDir /*, CAN GIVE EPSILON*/);
+      if (this_dist < InfinityLength<Real_v>()) {
+        parity_counter++;
+      }
+      return false; // do not stop here because we might see another triangle at
+    };
+    tessellated.fBVH->Intersect<false>(point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh);
+    contains = (parity_counter % 2 == 1);
   }
 
   template <typename Real_v, typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &tessellated,
                                                                   Vector3D<Real_v> const &point, Inside_v &inside)
   {
-    inside = Inside_v(kOutside);
-    int isurfOut, isurfIn;
-    Real_v distOut, distIn;
-    DistanceToSolid<Real_v, false>(tessellated, point, tessellated.fTestDir, InfinityLength<Real_v>(), distOut,
-                                   isurfOut, distIn, isurfIn);
-    // If no surface is hit then the point is outside
-    if (isurfOut < 0) return;
-    if (distOut < 0 || distOut * tessellated.fTestDir.Dot(tessellated.fFacets[isurfOut]->fNormal) < kTolerance) {
-      inside = Inside_v(kSurface);
+    // quick check against (tolerance enlarged) bounding box
+    bool contains = false;
+    ABBoxImplementation::ABBoxContainsKernel(tessellated.fMinExtent - Vector3D<Real_v>(kHalfTolerance),
+                                             tessellated.fMaxExtent + Vector3D<Real_v>(kHalfTolerance), point,
+                                             contains);
+    if (!contains) {
+      inside = kOutside;
       return;
     }
 
-    // DistanceToSolid<Real_v, true>(tessellated, point, tessellated.fTestDir, stepMax, distIn, isurf);
-    // If distance to out is finite and less than distance to in, the point is inside
-    if (isurfIn < 0 || distOut < distIn) {
-      inside = Inside_v(kInside);
+    int parity_counter = 0;
+    bool onSurface     = false;
+    auto userhook_bvh  = [&](BVHIntersectContext<float> &ctx) {
+      const auto primID    = ctx.primID;
+      const auto &facet    = tessellated.fFacets[primID];
+      const auto this_dist = facet.Distance(point, tessellated.fTestDir, -kHalfTolerance);
+      if (this_dist < InfinityLength<Real_v>()) {
+        parity_counter++;
+        // Check uniform surface thickness via perpendicular projection
+        const auto sp     = facet.fNormal.Dot(tessellated.fTestDir);
+        const auto d_perp = this_dist * std::abs(sp);
+        if (d_perp < kHalfTolerance) {
+          onSurface = true;
+          return true; // stop BVH search here: early exit
+        }
+      }
+      return false; // do not stop here because we might see another triangle at
+    };
+    tessellated.fBVH->Intersect<false>(point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh);
+    if (onSurface) {
+      inside = kSurface;
       return;
     }
-    if (distIn < 0 || distIn * tessellated.fTestDir.Dot(tessellated.fFacets[isurfIn]->fNormal) > -kTolerance)
-      inside = Inside_v(kSurface);
+    contains = (parity_counter % 2 == 1);
+    inside   = contains ? Inside_v(kInside) : Inside_v(kOutside);
   }
 
   template <typename Real_v>
@@ -81,9 +105,28 @@ struct TessellatedImplementation {
                                                                         Vector3D<Real_v> const &direction,
                                                                         Real_v const &stepMax, Real_v &distance)
   {
-    int isurf, isurfOut;
-    Real_v distOut;
-    DistanceToSolid<Real_v, true>(tessellated, point, direction, stepMax, distance, isurf, distOut, isurfOut);
+    distance = InfinityLength<Real_v>();
+
+    // NOTE: a quick intersection check against the outer bounding box is already done as part of the BVH
+    // intersection and does not need to be done in addition here
+    auto userhook_bvh = [&](BVHIntersectContext<float> &ctx) {
+      const auto primID = ctx.primID;
+      const auto &facet = tessellated.fFacets[primID];
+      // we are checking a triangle. Rule out early by a simple normal check
+      const auto sp                = (facet.fNormal).Dot(direction);
+      const bool wrong_orientation = sp > 0.; // coming from outside the dot product must be negative
+      if (wrong_orientation) {
+        return false;
+      }
+      const auto this_dist = facet.Distance(point, direction, -kHalfTolerance);
+      if (this_dist < distance) {
+        // update stuff
+        distance     = vecCore::math::Max(this_dist, 0.);
+        ctx.step_max = this_dist; // important for bvh culling (double to float conversion)
+      }
+      return false; // do not stop here
+    };
+    tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
   }
 
   template <typename Real_v>
@@ -92,41 +135,105 @@ struct TessellatedImplementation {
                                                                          Vector3D<Real_v> const &direction,
                                                                          Real_v const &stepMax, Real_v &distance)
   {
-    int isurf, isurfIn;
-    Real_v distIn;
-    DistanceToSolid<Real_v, false>(tessellated, point, direction, stepMax, distance, isurf, distIn, isurfIn);
+    distance = InfinityLength<Real_v>();
+
+    auto userhook_bvh = [&](BVHIntersectContext<float> &ctx) {
+      const auto primID = ctx.primID;
+      const auto &facet = tessellated.fFacets[primID];
+      // we are checking a triangle. Rule out early by a simple normal check
+      const auto sp                = (facet.fNormal).Dot(direction);
+      const bool wrong_orientation = sp < 0.; // coming from inside the dot product must be positive
+      if (wrong_orientation) {
+        return false;
+      }
+      // the -kHalfTolerance is to get 0 if we are on surface
+      const auto this_dist = facet.Distance(point, direction, -kHalfTolerance); // /*, CAN GIVE EPSILON*/);
+      if (this_dist < distance) {
+        // update stuff
+        distance     = vecCore::math::Max(this_dist, 0.);
+        ctx.step_max = this_dist; // important for bvh culling (double to float conversion)
+      }
+      return false; // do not stop here because we might see triangles
+    };
+    tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
   }
 
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &tessellated,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v inside;
-    TessellatedImplementation::Contains<Real_v, Bool_v>(tessellated, point, inside);
-    if (inside) {
-      safety = -1.;
-      return;
-    }
     int isurf;
-    Real_v safetysq = SafetySq<Real_v, true>(tessellated, point, isurf);
+
+    // get a quick upper limit from the min-distance to fixed set of anchor points on the surface
+    // --> this limits BVH search from the start
+    // TODO: this should also be vectorizable on the CPU
+    float upper_limit_sq = InfinityLength<float>();
+    const float px = point.x(), py = point.y(), pz = point.z();
+    for (int i = 0; i < TessellatedRuntimeStruct<float>::N; ++i) {
+      float dx       = tessellated.fTestPoints_x[i] - px;
+      float dy       = tessellated.fTestPoints_y[i] - py;
+      float dz       = tessellated.fTestPoints_z[i] - pz;
+      float dist2    = dx * dx + dy * dy + dz * dz;
+      upper_limit_sq = vecCore::math::Min(dist2, upper_limit_sq);
+    }
+
+    constexpr bool approxSafety = true; // can return early (without detailed safety, but never 0)
+    const Real_v safetysq       = SafetySq<Real_v, approxSafety, double>(tessellated, point, isurf, upper_limit_sq);
     safety          = vecCore::math::Sqrt(safetysq);
+
+    // if a best surface was identified, we can check if we are on the wrong side
+    // to satisfy VecGeom shape conventions. Works for points close the the surface but not deeply wrong
+    if (isurf != -1) {
+      const auto &v0  = tessellated.fFacets[isurf].fVertices[0];
+      const auto &n   = tessellated.fFacets[isurf].fNormal;
+      bool wrong_side = n.Dot(point - v0) < 0;
+      if (wrong_side) {
+        safety = -1.;
+      }
+    }
+
+    // safety on boundary should be zero --> see ShapeTester
+    if (safety < kTolerance) {
+      safety = 0.;
+    }
   }
 
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &tessellated,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v inside;
-    TessellatedImplementation::Contains<Real_v, Bool_v>(tessellated, point, inside);
-    if (!inside) {
-      safety = -1.;
-      return;
-    }
     int isurf;
-    Real_v safetysq = SafetySq<Real_v, false>(tessellated, point, isurf);
+    // Real_v upper_limit_sq = InfinityLength<Real_v>();
+    // get a quick upper limit from the min-distance to fixed set of anchor points on the surface
+    // --> this limits BVH search from the start
+    // TODO: this should also be vectorizable on the CPU
+
+    float upper_limit_sq = InfinityLength<float>(); // std::numeric_limits<float>::max();
+    const float px = point.x(), py = point.y(), pz = point.z();
+    for (int i = 0; i < TessellatedRuntimeStruct<float>::N; ++i) {
+      float dx       = tessellated.fTestPoints_x[i] - px;
+      float dy       = tessellated.fTestPoints_y[i] - py;
+      float dz       = tessellated.fTestPoints_z[i] - pz;
+      float dist2    = dx * dx + dy * dy + dz * dz;
+      upper_limit_sq = vecCore::math::Min(dist2, upper_limit_sq);
+    }
+
+    constexpr bool approxSafety = true;
+    Real_v safetysq             = SafetySq<Real_v, approxSafety, double>(tessellated, point, isurf, upper_limit_sq);
     safety          = vecCore::math::Sqrt(safetysq);
+
+    if (isurf != -1) {
+      const auto &v0  = tessellated.fFacets[isurf].fVertices[0];
+      const auto &n   = tessellated.fFacets[isurf].fNormal;
+      bool wrong_side = n.Dot(point - v0) > 0.;
+      if (wrong_side) {
+        safety = -1.;
+      }
+    }
+    // safety on boundary should be zero --> see ShapeTester
+    if (safety < kTolerance) {
+      safety = 0.;
+    }
   }
 
   template <typename Real_v>
@@ -134,155 +241,48 @@ struct TessellatedImplementation {
       UnplacedStruct_t const &tessellated, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
   {
     // Computes the normal on a surface and returns it as a unit vector
-    valid = true;
-    int isurf;
-    // We may need to check the value of safety to declare the validity of the normal
-    SafetySq<Real_v, false>(tessellated, point, isurf);
-    return tessellated.fFacets[isurf]->fNormal;
+    int isurf = -1;
+
+    // TODO: should constrain search space !
+    SafetySq<Real_v, false, double>(tessellated, point, isurf);
+    if (isurf != -1) {
+      valid = true;
+      return tessellated.fFacets[isurf].fNormal;
+    }
+    valid = false;
+    return Vector3D<Real_v>(0., 0., 0.);
   }
 
-  template <typename Real_v, bool ToIn>
-  VECCORE_ATT_HOST_DEVICE static void DistanceToSolid(UnplacedStruct_t const &tessellated,
-                                                      Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction,
-                                                      Real_v const &stepMax, Real_v &distance, int &isurf,
-                                                      Real_v &distother, int &isurfother)
-  {
-// Common method providing DistanceToIn/Out functionality
-// Real_v here is scalar, we need to pass vector point/direction
-#ifndef VECGEOM_ENABLE_CUDA
-    using Float_v = vecgeom::VectorBackend::Real_v;
-#else
-    using Float_v             = vecgeom::ScalarBackend::Real_v;
-#endif
-    isurf      = -1;
-    isurfother = -1;
-    if (ToIn) {
-      // Check if the bounding box is hit
-      const Vector3D<Real_v> invdir(Real_v(1.0) / NonZero(direction.x()), Real_v(1.0) / NonZero(direction.y()),
-                                    Real_v(1.0) / NonZero(direction.z()));
-      Vector3D<int> sign;
-      sign[0]  = invdir.x() < 0;
-      sign[1]  = invdir.y() < 0;
-      sign[2]  = invdir.z() < 0;
-      distance = BoxImplementation::IntersectCachedKernel2<Real_v, Real_v>(
-          &tessellated.fMinExtent, point, invdir, sign.x(), sign.y(), sign.z(), -kTolerance, InfinityLength<Real_v>());
-      if (distance >= stepMax) return;
-    }
-
-    // Define the user hook calling DistanceToIn for the cluster with the same
-    // index as the bounding box
-    Vector3D<Float_v> pointv(point);
-    Vector3D<Float_v> dirv(direction);
-    distance             = InfinityLength<Real_v>();
-    distother            = InfinityLength<Real_v>();
-    Real_v distanceToIn  = InfinityLength<Real_v>();
-    Real_v distanceToOut = InfinityLength<Real_v>();
-    int isurfToIn        = -1;
-    int isurfToOut       = -1;
-    auto userhook        = [&](HybridManager2::BoxIdDistancePair_t hitbox) {
-      // Stop searching if the distance to the current box is bigger than the
-      // requested limit or than the current distance
-      if (hitbox.second > vecCore::math::Min(stepMax, distance)) return true;
-      // Compute distance to the cluster (in both ToIn or ToOut assumptions)
-      Real_v clusterToIn, clusterToOut;
-      int icrtToIn, icrtToOut;
-      tessellated.fClusters[hitbox.first]->DistanceToCluster(pointv, dirv, clusterToIn, clusterToOut, icrtToIn,
-                                                                    icrtToOut);
-
-      // Update distanceToIn/Out
-      if (icrtToIn >= 0 && clusterToIn < distanceToIn) {
-        distanceToIn = clusterToIn;
-        isurfToIn    = icrtToIn;
-        if (ToIn) {
-          isurf    = isurfToIn;
-          distance = distanceToIn;
-        } else {
-          isurfother = isurfToIn;
-          distother  = distanceToIn;
-        }
-      }
-
-      if (icrtToOut >= 0 && clusterToOut < distanceToOut) {
-        distanceToOut = clusterToOut;
-        isurfToOut    = icrtToOut;
-        if (!ToIn) {
-          isurf    = isurfToOut;
-          distance = distanceToOut;
-        } else {
-          isurfother = isurfToOut;
-          distother  = distanceToOut;
-        }
-      }
-      return false;
-    };
-
-#ifdef USEEMBREE
-    EmbreeNavigator<> *boxNav = (EmbreeNavigator<> *)EmbreeNavigator<>::Instance();
-    // intersect ray with the BVH structure and use hook
-    boxNav->BVHSortedIntersectionsLooper(*tessellated.fNavHelper2, point, direction, 1E20, userhook);
-#else
-    HybridNavigator<> *boxNav = (HybridNavigator<> *)HybridNavigator<>::Instance();
-    boxNav->BVHSortedIntersectionsLooper(*tessellated.fNavHelper2, point, direction, stepMax, userhook);
-#endif
-
-    // Treat special cases
-    if (ToIn) {
-      if (isurfToIn < 0) {
-        if (isurfToOut >= 0 && distanceToOut * direction.Dot(tessellated.fFacets[isurfToOut]->fNormal) > kTolerance)
-          distance = -1.; // point inside or on boundary
-        // else not hitting, distance already inf
-      } else {
-        if (isurfToOut >= 0 && distanceToOut > kTolerance && distanceToOut < distanceToIn)
-          distance = -1.; // point inside exiting first then re-entering
-        // else valid entry point, distance already set
-      }
-    } else {
-      if (isurfToOut < 0)
-        distance = -1.; // point outside
-      else {
-        if (isurfToIn >= 0 && distanceToIn < distanceToOut &&
-            distanceToIn * direction.Dot(tessellated.fFacets[isurfToIn]->fNormal) < -kTolerance) {
-          distance = -1.; // point outside (first entering then exiting)
-          isurf    = -1;
-        }
-      }
-    }
-  }
-
-  template <typename Real_v, bool ToIn>
+  template <typename Real_v, bool ToIn, typename T = float>
   VECCORE_ATT_HOST_DEVICE static Real_v SafetySq(UnplacedStruct_t const &tessellated, Vector3D<Real_v> const &point,
-                                                 int &isurf)
+                                                 int &isurf, Real_v limit_sq = InfinityLength<Real_v>())
   {
-#ifndef VECGEOM_ENABLE_CUDA
-    using Float_v = vecgeom::VectorBackend::Real_v;
-#else
-    using Float_v = vecgeom::ScalarBackend::Real_v;
-#endif
-    Real_v safetysq = InfinityLength<Real_v>();
+    T safetysq      = limit_sq;
     isurf           = -1;
-    Vector3D<Float_v> pointv(point);
+    Vector3D<T> pointv(point);
 
-    auto userhook = [&](HybridManager2::BoxIdDistancePair_t hitbox) {
-      // Stop searching if the safety to the current cluster is bigger than the
-      // current safety
-      if (hitbox.second > safetysq) return true;
-      // Compute distance to the cluster
-      int isurfcrt;
-      Real_v safetycrt = tessellated.fClusters[hitbox.first]->template SafetySq<ToIn>(pointv, isurfcrt);
-      if (safetycrt < safetysq) {
-        safetysq = safetycrt;
-        isurf    = isurfcrt;
+    auto userhook = [&](BVHPointQueryContext<float> &ctx) {
+      const T this_safety_sq = tessellated.fFacets[ctx.primID].template SafetySq<T>(pointv);
+      if (this_safety_sq < safetysq) {
+        safetysq = this_safety_sq;
+        isurf    = ctx.primID;
       }
-      return false;
+      ctx.safetySqr =
+          vecCore::math::Min((float)this_safety_sq,
+                             ctx.safetySqr); // for culling bvh --> need to round up (this one is definitely in float)
     };
 
-    HybridSafetyEstimator *safEstimator = (HybridSafetyEstimator *)HybridSafetyEstimator::Instance();
-    // Use the BVH structure and connect hook
-    safEstimator->BVHSortedSafetyLooper(*tessellated.fNavHelper, point, userhook, safetysq);
-    return safetysq;
-  }
+    const auto safety_estimated_sq = tessellated.fBVH->PointQuery<ToIn>(point, userhook, limit_sq);
+    // if (isurf != -1) {
+    //  this is the best value
+    //   return safetysq;
+    // }
+    // Somehow we'll need to know the safety was estimated or correct
 
+    return safety_estimated_sq; // an estimate
+  }
 }; // end TessellatedImplementation
+
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 

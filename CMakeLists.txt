@@ -754,13 +754,8 @@ if(VECGEOM_ENABLE_CUDA)
     MarchingCubes
     NavigationSpecializer
     ResultComparator
-    UnplacedTessellated
     UnplacedMultiUnion
-    PlacedTessellated
     PlacedMultiUnion
-    TessellatedCluster
-    TessellatedHelpers
-    Tile
     UnplacedExtruded
     PlacedExtruded
     SolidMesh)

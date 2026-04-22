@@ -415,9 +415,9 @@ public:
   template void ConstructManyOnGpu<cuda::PlacedVol>(                                                       \
       std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs,                                \
       DevicePtr<cuda::LogicalVolume> const *logical, DevicePtr<cuda::Transformation3D> const *trafo,       \
-      decltype(std::declval<VPlacedVolume>().id()) const *ids,                                             \
-      decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,                                  \
-      decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);                               \
+      decltype(std::declval<cuda::VPlacedVolume>().id()) const *ids,                                       \
+      decltype(std::declval<cuda::VPlacedVolume>().GetCopyNo()) const *copyNos,                            \
+      decltype(std::declval<cuda::VPlacedVolume>().GetChildId()) const *childIds);                         \
   }
 
 /**
@@ -433,9 +433,9 @@ public:
   template void ConstructManyOnGpu<cuda::PlacedVol, Extra>(                                                       \
       std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs,                                       \
       DevicePtr<cuda::LogicalVolume> const *logical, DevicePtr<cuda::Transformation3D> const *trafo,              \
-      decltype(std::declval<VPlacedVolume>().id()) const *ids,                                                    \
-      decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,                                         \
-      decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);                                      \
+      decltype(std::declval<cuda::VPlacedVolume>().id()) const *ids,                                              \
+      decltype(std::declval<cuda::VPlacedVolume>().GetCopyNo()) const *copyNos,                                   \
+      decltype(std::declval<cuda::VPlacedVolume>().GetChildId()) const *childIds);                                \
   }
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC(PlacedVol) VECGEOM_DEVICE_INST_PLACED_VOLUME(PlacedVol)
@@ -473,9 +473,9 @@ public:
   template void ConstructManyOnGpu<cuda::PlacedVol<cuda::Type>>(                                                       \
       std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs,                                            \
       DevicePtr<cuda::LogicalVolume> const *logical, DevicePtr<cuda::Transformation3D> const *trafo,                   \
-      decltype(std::declval<VPlacedVolume>().id()) const *ids,                                                         \
-      decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,                                              \
-      decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);                                           \
+      decltype(std::declval<cuda::VPlacedVolume>().id()) const *ids,                                                   \
+      decltype(std::declval<cuda::VPlacedVolume>().GetCopyNo()) const *copyNos,                                        \
+      decltype(std::declval<cuda::VPlacedVolume>().GetChildId()) const *childIds);                                     \
   }
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_3(PlacedVol, Type) \
@@ -492,9 +492,9 @@ public:
   template void ConstructManyOnGpu<cuda::PlacedVol<radii, phi>>(                                                       \
       std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs,                                            \
       DevicePtr<cuda::LogicalVolume> const *logical, DevicePtr<cuda::Transformation3D> const *trafo,                   \
-      decltype(std::declval<VPlacedVolume>().id()) const *ids,                                                         \
-      decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,                                              \
-      decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);                                           \
+      decltype(std::declval<cuda::VPlacedVolume>().id()) const *ids,                                                   \
+      decltype(std::declval<cuda::VPlacedVolume>().GetCopyNo()) const *copyNos,                                        \
+      decltype(std::declval<cuda::VPlacedVolume>().GetChildId()) const *childIds);                                     \
   }
 
 #if defined(VECGEOM_NO_SPECIALIZATION) || !defined(VECGEOM_CUDA_VOLUME_SPECIALIZATION)
@@ -528,9 +528,9 @@ public:
   template void ConstructManyOnGpu<cuda::PlacedVol>(                                                       \
       std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs,                                \
       DevicePtr<cuda::LogicalVolume> const *logical, DevicePtr<cuda::Transformation3D> const *trafo,       \
-      decltype(std::declval<VPlacedVolume>().id()) const *ids,                                             \
-      decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,                                  \
-      decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);                               \
+      decltype(std::declval<cuda::VPlacedVolume>().id()) const *ids,                                       \
+      decltype(std::declval<cuda::VPlacedVolume>().GetCopyNo()) const *copyNos,                            \
+      decltype(std::declval<cuda::VPlacedVolume>().GetChildId()) const *childIds);                         \
   }
 
 #define VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC_BOOLEAN(PlacedVol, Op) \

@@ -200,10 +200,12 @@ set(TEST_EXECUTABLES_CORE
   core/TestMaskedAssign.cpp
   core/TestOvershoot.cpp
   core/TestHybridBVH.cpp
+  core/TestBVH.cpp
   core/TestEarlyReturns.cpp
-  core/CreateTessels.cpp
+  # core/CreateTessels.cpp //--> To be adapted to new struct
   core/CreateExtruded.cpp
   core/TestGeoManager.cpp
+  core/TestTriangularFacet.cpp
   )
 
 if(VECGEOM_USE_INDEXEDNAVSTATES)
@@ -585,11 +587,11 @@ set(TEST_EXECUTABLES_SHAPES
   unit_tests/TestReducedPolycone.cpp
   unit_tests/TestUtils3D.cpp
   unit_tests/TestMarchingCubes.cpp
+  unit_tests/TestTessellated.cpp
   unit_tests/TestVECGEOM-601.cpp)
 
 if(NOT VECGEOM_ENABLE_CUDA)
   list(APPEND TEST_EXECUTABLES_SHAPES
-    unit_tests/TestTessellated.cpp
     unit_tests/TestMesh.cpp)
 endif()
 
@@ -659,16 +661,14 @@ set(TEST_EXECUTABLES_SHAPETESTER
   shape_tester/shape_testTorus2.cpp
   shape_tester/shape_testCutTube.cpp
   shape_tester/shape_testExtruded.cpp
-  shape_tester/shape_testMultiUnion.cpp)
+  shape_tester/shape_testMultiUnion.cpp
+  shape_tester/shape_testTessellated.cpp
+)
 
 if(VECGEOM_ROOT)
   list(APPEND TEST_EXECUTABLES_SHAPETESTER
     shape_tester/shape_testFromROOTFile.cpp
     shape_tester/shape_debugFromROOTFile.cpp)
-endif()
-
-if(NOT VECGEOM_ENABLE_CUDA)
-  list(APPEND TEST_EXECUTABLES_SHAPETESTER shape_tester/shape_testTessellated.cpp)
 endif()
 
 if(VECGEOM_TEST_BENCHMARK)

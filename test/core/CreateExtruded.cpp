@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
 
     // Visualize facets
 
-    for (size_t i = 0; i < xtru.GetStruct().fTslHelper.fFacets.size(); ++i)
-      AddFacetToVisualizer(xtru.GetStruct().fTslHelper.fFacets[i], visualizer);
+    // for (size_t i = 0; i < xtru.GetStruct().fTslHelper.fNFacets; ++i)
+    //   AddFacetToVisualizer(xtru.GetStruct().fTslHelper.fFacets[i], visualizer);
 
     // Visualize clusters
     //    for (unsigned icluster = 0; icluster < tsl.fClusters.size(); ++icluster)

@@ -16,27 +16,15 @@
 #include <vector>
 
 #include "VecGeom/base/Stopwatch.h"
-#include "VecGeom/management/HybridManager2.h"
-#include "VecGeom/navigation/HybridNavigator2.h"
-
-#ifdef VECGEOM_EMBREE
-#include "VecGeom/management/EmbreeManager.h"
-#include "VecGeom/navigation/EmbreeNavigator.h"
-#endif
-
 #include "VecGeom/management/ABBoxManager.h"
+#include "VecGeom/base/BVH.h"
 
 namespace vecgeom {
 
 // VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(class, TessellatedStruct, typename);
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_1v_1t(class, TessellatedStruct, size_t, typename);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
-
-// Structure used for vectorizing queries on groups of triangles
-
-#ifdef VECGEOM_EMBREE
-#define USEEMBREE 1
-#endif
 
 /** Templated class holding the data structures for the tessellated solid.
 
@@ -62,14 +50,6 @@ class TessellatedStruct {
   // Here we should be able to use vecgeom::Vector
   template <typename U>
   using vector_t = vecgeom::Vector<U>;
-
-  using BVHStructure = HybridManager2::HybridBoxAccelerationStructure;
-
-#ifdef USEEMBREE
-  using BVHStructure2 = EmbreeManager::EmbreeAccelerationStructure;
-#else
-  using BVHStructure2 = HybridManager2::HybridBoxAccelerationStructure; // EmbreeManager::EmbreeAccelerationStructure;
-#endif
 
   /** Structure representing a cell of a uniform grid embedding the tessellated solid bounding volume.
 
@@ -105,9 +85,11 @@ class TessellatedStruct {
     vector_t<Vector3D<T>> fAllVert; ///< Full list of vertices
 
     /// Default constructor for the grid helper structure.
+    VECCORE_ATT_HOST_DEVICE
     GridHelper() {}
 
     /// Destructor of the grid helper, deleting the cells and their content.
+    VECCORE_ATT_HOST_DEVICE
     ~GridHelper()
     {
       if (fGrid) {
@@ -174,11 +156,8 @@ public:
   Vector3D<T> fMaxExtent;               ///< Maximum extent
   Vector3D<T> fInvExtSize;              ///< Inverse extent size
   Vector3D<T> fTestDir;                 ///< Test direction for Inside function
-  BVHStructure *fNavHelper   = nullptr; ///< Navigation helper using bounding boxes
-  BVHStructure2 *fNavHelper2 = nullptr; ///< Navigation helper using bounding boxes
 
-  // Here we have a pointer to the aligned bbox structure
-  // ABBoxanager *fABBoxManager;
+  BVH<float> *fBVH = nullptr; ///< The BVH structure
 
   vector_t<int> fCluster;                                  ///< Cluster of facets storing just the indices
   vector_t<int> fCandidates;                               ///< Candidates for the current cluster
@@ -192,7 +171,6 @@ private:
   /// Creates the navigation acceleration structure based ob the pre-computed clusters of facets.
   void CreateABBoxes()
   {
-    using Boxes_t           = ABBoxManager<Precision>::ABBoxContainer_t;
     using BoxCorner_t       = ABBoxManager<Precision>::ABBox_s;
     int nclusters           = fClusters.size();
     BoxCorner_t *boxcorners = new BoxCorner_t[2 * nclusters];
@@ -200,19 +178,13 @@ private:
       boxcorners[2 * i]     = fClusters[i]->fMinExtent;
       boxcorners[2 * i + 1] = fClusters[i]->fMaxExtent;
     }
-    Boxes_t boxes = &boxcorners[0];
-    fNavHelper    = HybridManager2::Instance().BuildStructure(boxes, nclusters);
-#ifdef USEEMBREE
-    fNavHelper2 = EmbreeManager::Instance().BuildStructureFromBoundingBoxes(boxes, nclusters);
-#else
-    fNavHelper2 = fNavHelper;
-#endif
+    fBVH = new BVH<float>(0, boxcorners, nclusters);
+    // delete boxcorners;
   }
 
 public:
   /// Default constructor.
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   TessellatedStruct()
   {
     fMinExtent = InfinityLength<T>();
@@ -222,7 +194,6 @@ public:
 
   /// Destructor.
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   ~TessellatedStruct()
   {
     delete fHelper;
@@ -235,7 +206,6 @@ public:
     @param facet Pre-computed facet to be added
   */
   VECCORE_ATT_HOST_DEVICE
-  VECGEOM_FORCE_INLINE
   void AddFacet(Facet_t *facet)
   {
     using vecCore::math::Max;
@@ -375,15 +345,9 @@ public:
       }
     }
 
-    // time = timer.Stop();
-    // std::cerr << "Clusterizer: " << time << " sec\n";
+    CreateABBoxes();
 
-    // Create navigation helper to be used in TessellatedImplementation
-    // timer.Start();
-    CreateABBoxes(); // to navigate, see: TestHybridBVH.cpp/HybridNavigator2.h/HybridSafetyEstimator.h
-    // time = timer.Stop();
-    // std::cerr << "Create AABoxes: " << time << " sec\n";
-    // Generate random direction non-parallel to any of the surfaces
+    // Generate a random direction non-parallel to any of the surfaces
     constexpr T tolerance(1.e-8);
     while (1) {
       RandomDirection(fTestDir);
@@ -674,8 +638,117 @@ public:
     }
     return false;
   }
-
 }; // end class
+
+// Lighter weight structure holding minimal data for tessellated navigation queries
+// TODO: at some point this could completely replace TessellatedStruct
+template <typename T = Precision>
+struct TessellatedRuntimeStruct {
+  constexpr static int N = 64;
+
+  // pointers are used here for easier copy to GPU and allocation from existing buffers
+  // TODO: treat compact memory layout
+  VECCORE_ATT_HOST_DEVICE
+  TessellatedRuntimeStruct(size_t ntriangles, TriangularTile<double> *t, BVH<float> *b)
+      : fTestDir(1., 1., 1.), fNFacets(ntriangles), fFacets(t), fBVH(b)
+  {
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  TessellatedRuntimeStruct() : fFacets(nullptr), fBVH(nullptr) {}
+
+  Vector3D<Precision> fTestDir;
+  Vector3D<Precision> fMinExtent;
+  Vector3D<Precision> fMaxExtent;
+  Vector3D<Precision> fExtremePoints[6]; // these points are extreme points actually on the surface of the tessellated;
+                                         // Can be used for quick safety upper limit calculations
+
+  float fTestPoints_x[N]; // safety test points in SOA mode --> target vectorized use
+  float fTestPoints_y[N]; //
+  float fTestPoints_z[N];
+
+  size_t fNFacets{0}; // number of facets;
+
+  // pointer data follows
+  TriangularTile<T> *fFacets; //
+  BVH<float> *fBVH;           // the BVH acceleration structure
+
+  // fill from a TessellatedStruct
+  void InitFrom(TessellatedStruct<3, T> const &tsl)
+  {
+    fFacets  = new TriangularTile<double>[tsl.fFacets.size()];
+    fNFacets = tsl.fFacets.size();
+
+    double minX = InfinityLength<double>();
+    double maxX = -InfinityLength<double>();
+    double minY = InfinityLength<double>();
+    double maxY = -InfinityLength<double>();
+    double minZ = InfinityLength<double>();
+    double maxZ = -InfinityLength<double>();
+    int minX_i  = -1;
+    int maxX_i  = -1;
+    int minY_i  = -1;
+    int maxY_i  = -1;
+    int minZ_i  = -1;
+    int maxZ_i  = -1;
+
+    for (size_t i = 0; i < tsl.fFacets.size(); ++i) {
+      const auto &facet = *(tsl.fFacets[i]);
+      TriangularTile<double> t(facet.fVertices[0], facet.fVertices[1], facet.fVertices[2]);
+      fFacets[i] = t;
+      for (int k = 0; k < 3; ++k) {
+        if (facet.fVertices[k][0] < minX) {
+          minX_i = i;
+          minX   = facet.fVertices[0][0];
+        }
+        if (facet.fVertices[k][0] > maxX) {
+          maxX_i = i;
+          maxX   = facet.fVertices[k][0];
+        }
+        if (facet.fVertices[k][1] < minY) {
+          minY_i = i;
+          minY   = facet.fVertices[k][1];
+        }
+        if (facet.fVertices[k][1] > maxY) {
+          maxY_i = i;
+          maxY   = facet.fVertices[k][1];
+        }
+        if (facet.fVertices[k][2] < minZ) {
+          minZ_i = i;
+          minZ   = facet.fVertices[k][2];
+        }
+        if (facet.fVertices[k][2] > maxZ) {
+          maxZ_i = i;
+          maxZ   = facet.fVertices[k][2];
+        }
+      }
+    }
+    fExtremePoints[0] = (*(tsl.fFacets[minX_i])).fVertices[0];
+    fExtremePoints[1] = (*(tsl.fFacets[maxX_i])).fVertices[0];
+    fExtremePoints[2] = (*(tsl.fFacets[minY_i])).fVertices[0];
+    fExtremePoints[3] = (*(tsl.fFacets[maxY_i])).fVertices[0];
+    fExtremePoints[4] = (*(tsl.fFacets[minZ_i])).fVertices[0];
+    fExtremePoints[5] = (*(tsl.fFacets[maxZ_i])).fVertices[0];
+
+    // fill N random surface points --> can be used for quick upper limit
+    // estimation for safety
+    for (int k = 0; k < TessellatedRuntimeStruct<float>::N; ++k) {
+      //      auto tp = SamplePointOnSurface(); // random index
+      // for now just a random triangle --> replace by true surface point
+      auto facet_index = (int)(RNG::Instance().uniform(0.0, 1.0) * fNFacets);
+      auto &tp         = (*(tsl.fFacets[facet_index])).fVertices[0];
+      fTestPoints_x[k] = static_cast<float>(tp[0]);
+      fTestPoints_y[k] = static_cast<float>(tp[1]);
+      fTestPoints_z[k] = static_cast<float>(tp[2]);
+    }
+    fTestDir   = tsl.fTestDir;
+    fMinExtent = tsl.fMinExtent;
+    fMaxExtent = tsl.fMaxExtent;
+
+    fBVH = tsl.fBVH;
+  }
+};
+
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 

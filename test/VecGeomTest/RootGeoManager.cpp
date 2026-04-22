@@ -36,6 +36,7 @@
 #include "VecGeom/volumes/PlanarPolygon.h"
 #include "VecGeom/volumes/UnplacedAssembly.h"
 #include "VecGeom/volumes/UnplacedCutTube.h"
+#include "VecGeom/volumes/UnplacedTessellated.h"
 
 #include "TGeoManager.h"
 #include "TGeoNode.h"
@@ -59,6 +60,7 @@
 #include "TGeoShapeAssembly.h"
 #include "TGeoScaledShape.h"
 #include "TGeoEltu.h"
+#include "TGeoTessellated.h"
 
 #include <iostream>
 #include <list>
@@ -657,6 +659,37 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
         kDegToRad * (ctube->GetPhi2() - ctube->GetPhi1()),
         Vector3D<Precision>(ctube->GetNlow()[0], ctube->GetNlow()[1], ctube->GetNlow()[2]),
         Vector3D<Precision>(ctube->GetNhigh()[0], ctube->GetNhigh()[1], ctube->GetNhigh()[2]));
+  }
+
+  // THE TESSELATED
+  if (shape->IsA() == TGeoTessellated::Class()) {
+    TGeoTessellated *tes = (TGeoTessellated *)(shape);
+    unplaced_volume      = GeoManager::MakeInstance<UnplacedTessellated>();
+    auto unplaced_tes    = dynamic_cast<UnplacedTessellated *>(unplaced_volume);
+
+    int nfacets{tes->GetNfacets()};
+    for (int i = 0; i < nfacets; ++i) {
+      auto &facet = tes->GetFacet(i);
+      // for now only support the purely triangular case
+      if (facet.GetNvert() != 3) {
+        std::cerr << "Found unsupported facet in Tessellated conversion";
+      }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6, 32, 0)
+      auto &v1 = tes->GetVertex(facet[0]);
+      auto &v2 = tes->GetVertex(facet[1]);
+      auto &v3 = tes->GetVertex(facet[2]);
+#else
+      auto &v1 = tes->GetVertex(facet.GetVertexIndex(0));
+      auto &v2 = tes->GetVertex(facet.GetVertexIndex(1));
+      auto &v3 = tes->GetVertex(facet.GetVertexIndex(2));
+#endif
+      Vector3D<Precision> v1_v(v1[0], v1[1], v1[2]);
+      Vector3D<Precision> v2_v(v2[0], v2[1], v2[2]);
+      Vector3D<Precision> v3_v(v3[0], v3[1], v3[2]);
+
+      unplaced_tes->AddTriangularFacet(v1_v, v2_v, v3_v, true);
+    }
+    unplaced_tes->Close();
   }
 
   // New volumes should be implemented here...

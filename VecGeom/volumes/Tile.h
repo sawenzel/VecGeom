@@ -10,8 +10,12 @@
 namespace vecgeom {
 
 enum TileType { kTriangle = 3, kQuadrilateral = 4 };
-
+namespace cuda {
+template <typename Real_t>
+class TriangularTile;
+}
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_1v_1t(struct, Tile, size_t, typename);
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(struct, TriangularTile, typename);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
@@ -23,6 +27,166 @@ using TriangleFacet = Tile<3, T>;
 
 template <typename T>
 using QuadrilateralFacet = Tile<4, T>;
+
+// a shorter, memory saving tile cmp to Tile
+template <typename T>
+struct TriangularTile {
+  Vector3D<T> fVertices[3];
+  Vector3D<T> fNormal;
+
+  Vector3D<T> CalculateNormal()
+  {
+    const auto e1 = fVertices[1] - fVertices[0];
+    const auto e2 = fVertices[2] - fVertices[0];
+    auto n        = Vector3D<T>::Cross(e1, e2);
+    n.Normalize();
+    return n; //
+  }
+
+  // construct this from 3 vertices
+  TriangularTile(Vector3D<T> v0, Vector3D<T> v1, Vector3D<T> v2) : fVertices{v0, v1, v2}
+  {
+    fNormal = CalculateNormal();
+  }
+
+  TriangularTile() = default;
+
+  VECCORE_ATT_HOST_DEVICE
+  T Distance(Vector3D<T> const &origin, Vector3D<T> const &dir, T rayEPS = 1e-8) const
+  {
+    // Moeller-Trumbore ray-triangle intersection
+    using Vertex_t    = Vector3D<T>;
+    constexpr T EPS   = 1e-8;
+    const auto &v0    = fVertices[0];
+    const auto &v1    = fVertices[1];
+    const auto &v2    = fVertices[2];
+    const T INF       = InfinityLength<T>();
+    const Vertex_t e1 = v1 - v0; //
+    const Vertex_t e2 = v2 - v0;
+    auto p            = dir.Cross(e2);
+    auto det          = e1.Dot(p);
+    if (vecCore::math::Abs(det) <= EPS) {
+      return INF;
+    }
+
+    const auto tvec = origin - v0;
+    auto invDet     = 1.0 / det;
+    auto u          = tvec.Dot(p) * invDet;
+    if (u < T(0.0) || u > T(1.0)) {
+      return INF;
+    }
+    auto q = tvec.Cross(e1);
+    auto v = dir.Dot(q) * invDet;
+    if (v < T(0.0) || u + v > T(1.0)) {
+      return INF;
+    }
+    auto t = e2.Dot(q) * invDet;
+    return (t > rayEPS) ? t : INF;
+  }
+
+  // calculate squared safety, possibly in a different precision that the storage precision
+  template <typename P = float>
+  VECCORE_ATT_HOST_DEVICE P SafetySq(Vector3D<P> const &p) const
+  {
+    using Vec3 = Vector3D<P>;
+    const Vec3 a(fVertices[0]);
+    const Vec3 b(fVertices[1]);
+    const Vec3 c(fVertices[2]);
+
+    // Edges in precision P ... constructed from original vertices in precision T
+    const Vec3 ab = b - a;
+    const Vec3 ac = c - a;
+    const Vec3 ap = p - a;
+
+    const P d1 = ab.Dot(ap);
+    const P d2 = ac.Dot(ap);
+    if (d1 <= P(0.0) && d2 <= P(0.0)) {
+      return ap.Dot(ap); // barycentric (1,0,0)
+    }
+
+    const Vec3 bp = p - b;
+    const P d3    = ab.Dot(bp);
+    const P d4    = ac.Dot(bp);
+    if (d3 >= P(0.0) && d4 <= d3) {
+      return bp.Dot(bp); // (0,1,0)
+    }
+
+    const P vc = d1 * d4 - d3 * d2;
+    if (vc <= P(0.0) && d1 >= P(0.0) && d3 <= P(0.0)) {
+      const P v       = d1 / (d1 - d3);
+      const Vec3 proj = a + v * ab;
+      const Vec3 d    = p - proj;
+      return d.Dot(d); // edge AB
+    }
+
+    const Vec3 cp = p - c;
+    const P d5    = ab.Dot(cp);
+    const P d6    = ac.Dot(cp);
+    if (d6 >= P(0.0f) && d5 <= d6) {
+      return cp.Dot(cp); // (0,0,1)
+    }
+
+    const P vb = d5 * d2 - d1 * d6;
+    if (vb <= P(0.0) && d2 >= P(0.0) && d6 <= P(0.0)) {
+      const P w = d2 / (d2 - d6);
+      Vec3 proj = a + w * ac;
+      Vec3 d    = p - proj;
+      return d.Dot(d); // edge AC
+    }
+
+    const P va = d3 * d6 - d5 * d4;
+    if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+      const P w     = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+      const Vec3 bc = c - b;
+      Vec3 proj     = b + w * bc;
+      Vec3 d        = p - proj;
+      return d.Dot(d); // edge BC
+    }
+
+    // Inside face region
+    const P denom = P(1.0) / (va + vb + vc);
+    const P v     = vb * denom;
+    const P w     = vc * denom;
+
+    Vec3 proj = a;
+    proj += v * ab;
+    proj += w * ac;
+    const Vec3 d = p - proj;
+    return d.Dot(d);
+  }
+
+  // Is the point inside this triangle ?
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  bool Contains(Vector3D<T> const &point) const
+  {
+    constexpr int NVERT = 3;
+    bool inside         = true;
+    for (size_t i = 0; i < NVERT; ++i) {
+      const auto sideVector = fVertices[(i + 1) % NVERT] - fVertices[i];
+      T saf                 = (point - fVertices[i]).Dot(sideVector);
+      inside &= saf > -kTolerance;
+      if (inside) {
+        break;
+      }
+    }
+    return inside;
+  }
+
+  VECGEOM_FORCE_INLINE
+  VECCORE_ATT_HOST_DEVICE
+  T SurfaceArea() const
+  {
+    T area{0.};
+    constexpr int NVERT = 3;
+    for (size_t i = 1; i < NVERT - 1; ++i) {
+      Vector3D<T> e1 = fVertices[i] - fVertices[0];
+      Vector3D<T> e2 = fVertices[i + 1] - fVertices[0];
+      area += 0.5 * (e1.Cross(e2)).Mag();
+    }
+    return area;
+  }
+};
 
 //______________________________________________________________________________
 // Basic facet tile structure having NVERT vertices making a convex polygon.
@@ -86,7 +250,7 @@ struct Tile {
     }
 
     if (nvert < 3) {
-      std::cerr << "Tile degenerated: Length of sides of facet are too small." << std::endl;
+      // std::cerr << "Tile degenerated: Length of sides of facet are too small." << std::endl;
       return false;
     }
 
@@ -110,7 +274,7 @@ struct Tile {
     }
 
     if (degenerated) {
-      std::cerr << "Tile degenerated 2: Length of sides of facet are too small." << std::endl;
+      // std::cerr << "Tile degenerated 2: Length of sides of facet are too small." << std::endl;
       return false;
     }
 

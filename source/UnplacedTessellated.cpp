@@ -7,8 +7,20 @@
 #include "VecGeom/base/RNG.h"
 
 #include "VecGeom/management/VolumeFactory.h"
+#include <cstddef> // offsetof
 
 namespace vecgeom {
+
+#ifdef VECCORE_CUDA
+inline
+#endif
+    namespace cuda {
+
+// forward declare a function impl in BVHManager.cu
+template <typename Real_t>
+BVH<Real_t> *AllocateDeviceBVHBuffer(size_t n);
+} // namespace cuda
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 void UnplacedTessellated::Print() const
@@ -65,6 +77,64 @@ int UnplacedTessellated::ChooseSurface() const
   return choice;
 }
 
+size_t UnplacedTessellated::FillFromObjFile(std::string const &objfilename, bool close)
+{
+  using Vec3      = vecgeom::Vector3D<double>;
+  auto parseIndex = [](const std::string &token) -> int {
+    // Handles "v", "v/t", "v//n", "v/t/n"
+    return std::stoi(token.substr(0, token.find('/'))) - 1;
+  };
+
+  std::ifstream in(objfilename);
+  if (!in) return 0;
+
+  std::vector<Vec3> vertices;
+  std::string line;
+
+  int nfacets = 0;
+  while (std::getline(in, line)) {
+    std::istringstream ss(line);
+    std::string tag;
+    ss >> tag;
+
+    if (tag == "v") {
+      double x, y, z;
+      ss >> x >> y >> z;
+      vertices.push_back(Vec3(x, y, z));
+    } else if (tag == "f") {
+      std::string a, b, c;
+      ss >> a >> b >> c;
+
+      int i0 = parseIndex(a);
+      int i1 = parseIndex(b);
+      int i2 = parseIndex(c);
+
+      AddTriangularFacet(vertices[i0], vertices[i1], vertices[i2], true);
+      nfacets++;
+    }
+  }
+  if (close) {
+    Close();
+  }
+  return nfacets;
+}
+
+UnplacedTessellated *UnplacedTessellated::CreateFromObjFile(std::string const &objfilename, bool close)
+{
+  auto tsl = new UnplacedTessellated();
+  /*auto nfacets = */ tsl->FillFromObjFile(objfilename, close);
+  // error handling?
+  return tsl;
+}
+
+void UnplacedTessellated::Close()
+{
+  ComputeBBox();
+  fTessellated.Close();
+  // we can now fill the runtime tessellated struct from fTessellated
+  fTessellatedRuntime.InitFrom(fTessellated);
+}
+
 Vector3D<Precision> UnplacedTessellated::SamplePointOnSurface() const
 {
   int surface  = ChooseSurface();
@@ -84,20 +154,21 @@ bool UnplacedTessellated::Normal(Vector3D<Precision> const &point, Vector3D<Prec
 {
   // Redirect to normal implementation
   bool valid = false;
-  norm       = TessellatedImplementation::NormalKernel<Precision>(fTessellated, point, valid);
+  norm       = TessellatedImplementation::NormalKernel<Precision>(GetStruct(), point, valid);
   return valid;
 }
 
 #ifdef VECCORE_CUDA
 VECCORE_ATT_DEVICE VPlacedVolume *UnplacedTessellated::Create(LogicalVolume const *const logical_volume,
                                                               Transformation3D const *const transformation,
-                                                              const int id, VPlacedVolume *const placement)
+                                                              const int id, const int copy_no, const int child_id,
+                                                              VPlacedVolume *const placement)
 {
   if (placement) {
-    new (placement) SpecializedTessellated(logical_volume, transformation, id);
+    new (placement) SpecializedTessellated(logical_volume, transformation, id, copy_no, child_id);
     return placement;
   }
-  return new SpecializedTessellated(logical_volume, transformation, id);
+  return new SpecializedTessellated(logical_volume, transformation, id, copy_no, child_id);
 }
 #else
 VPlacedVolume *UnplacedTessellated::Create(LogicalVolume const *const logical_volume,
@@ -115,14 +186,14 @@ VECCORE_ATT_DEVICE
 VPlacedVolume *UnplacedTessellated::SpecializedVolume(LogicalVolume const *const volume,
                                                       Transformation3D const *const transformation,
 #ifdef VECCORE_CUDA
-                                                      const int id,
+                                                      const int id, const int copy_no, const int child_id,
 #endif
                                                       VPlacedVolume *const placement) const
 {
 
   return VolumeFactory::CreateByTransformation<UnplacedTessellated>(volume, transformation,
 #ifdef VECCORE_CUDA
-                                                                    id,
+                                                                    id, copy_no, child_id,
 #endif
                                                                     placement);
 }
@@ -144,50 +215,33 @@ std::ostream &UnplacedTessellated::StreamInfo(std::ostream &os) const
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
 {
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-  return CopyToGpuImpl<UnplacedTessellated>(in_gpu_ptr);
-#else
-  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
-  return DevicePtr<cuda::VUnplacedVolume>(nullptr);
-#endif
+  // we need essentially: the constructed BVH, the container of triangles, and some other data from
+  // tessellatedruntimestruct
+
+  // (a) copy the bvh
+  auto gpu_bvh_ptr = cuda::AllocateDeviceBVHBuffer<float>(1);
+  this->GetStruct().fBVH->CopyToGpu(gpu_bvh_ptr);
+
+  // (b) copy the triangles
+  size_t nfacets      = this->GetStruct().fNFacets;
+  auto gpu_facets_ptr = AllocateOnGpu<cuda::TriangularTile<double>>(sizeof(TriangularTile<double>) * nfacets);
+  vecgeom::CopyToGpu((char *)this->GetStruct().fFacets, (char *)gpu_facets_ptr,
+                     sizeof(TriangularTile<double>) * nfacets);
+
+  // construct the instance on the GPU using these 2 pointer data
+  auto final_gpu_ptr = CopyToGpuImpl<UnplacedTessellated>(in_gpu_ptr, nfacets, gpu_facets_ptr, gpu_bvh_ptr);
+
+  // (c) finally copy the non-pointer data of TessellatedRuntimestruct (do not want to initialize on GPU)
+  constexpr std::size_t tsl_struct_offset = offsetof(UnplacedTessellated, fTessellatedRuntime);
+  constexpr std::size_t bvh_offset_in_tsl =
+      offsetof(decltype(UnplacedTessellated::fTessellatedRuntime), fBVH); // offset to first pointer data
+  vecgeom::CopyToGpu((char *)this + tsl_struct_offset, (char *)(in_gpu_ptr.GetPtr()) + tsl_struct_offset,
+                     bvh_offset_in_tsl);
+
+  return final_gpu_ptr;
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu() const
-{
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-  return CopyToGpuImpl<UnplacedTessellated>();
-#else
-  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedTessellated to GPU.  This is not yet supported.");
-  return DevicePtr<cuda::VUnplacedVolume>(nullptr);
-#endif
-}
-
-#ifndef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-template <>
-size_t DevicePtr<vecgeom::cuda::SpecializedVolImplHelper<vecgeom::cuda::TessellatedImplementation>>::SizeOf()
-{
-  return 0;
-}
-
-template <>
-template <>
-void DevicePtr<cuda::SpecializedVolImplHelper<cuda::TessellatedImplementation>>::Construct(
-    DevicePtr<vecgeom::cuda::LogicalVolume>, DevicePtr<vecgeom::cuda::Transformation3D>, unsigned int, int, int) const
-{
-  return;
-}
-
-template <>
-void ConstructManyOnGpu<cuda::SpecializedVolImplHelper<cuda::TessellatedImplementation>
-                        /*, ... inferred from arguments */>(
-    std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs, DevicePtr<cuda::LogicalVolume> const *logical,
-    DevicePtr<cuda::Transformation3D> const *trafo, decltype(std::declval<VPlacedVolume>().id()) const *ids,
-    decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,
-    decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds)
-{
-}
-
-#endif
+DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu() const { return CopyToGpuImpl<UnplacedTessellated>(); }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
@@ -199,11 +253,12 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedTessellated>::SizeOf();
 template void DevicePtr<cuda::UnplacedTessellated>::Construct() const;
-template void ConstructManyOnGpu<cuda::UnplacedTessellated /*, ... inferred from arguments */>(
-    std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs, DevicePtr<cuda::LogicalVolume> const *logical,
-    DevicePtr<cuda::Transformation3D> const *trafo, decltype(std::declval<VPlacedVolume>().id()) const *ids,
-    decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,
-    decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);
+template void DevicePtr<cuda::UnplacedTessellated>::Construct(size_t, TriangularTile<double> *, BVH<float> *) const;
+
+template void ConstructManyOnGpu<vecgeom::cuda::SpecializedVolImplHelper<vecgeom::cuda::TessellatedImplementation>>(
+    unsigned long, vecgeom::cxx::DevicePtr<vecgeom::cuda::VPlacedVolume> const *,
+    vecgeom::cxx::DevicePtr<vecgeom::cuda::LogicalVolume> const *,
+    vecgeom::cxx::DevicePtr<vecgeom::cuda::Transformation3D> const *, unsigned int const *, int const *, int const *);
 
 } // namespace cxx
 

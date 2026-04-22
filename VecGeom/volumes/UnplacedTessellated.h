@@ -37,15 +37,19 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 */
 class UnplacedTessellated : public UnplacedVolumeImplHelper<TessellatedImplementation>, public AlignedBase {
 protected:
+  TessellatedRuntimeStruct<Precision> fTessellatedRuntime;
   mutable TessellatedStruct<3, Precision> fTessellated; ///< Structure with Tessellated parameters
 
 public:
   /// Default constructor for the unplaced tessellated shape class.
   VECCORE_ATT_HOST_DEVICE
-  UnplacedTessellated() : fTessellated()
+  UnplacedTessellated() : fTessellated() { fGlobalConvexity = false; }
+
+  /// Special constructor where we can inject existing tesselated data. Useful for GPU instanteation
+  VECCORE_ATT_HOST_DEVICE
+  UnplacedTessellated(size_t ntriangles, TriangularTile<double> *triangle_ptr, BVH<float> *bvh)
+      : fTessellatedRuntime(ntriangles, triangle_ptr, bvh), fTessellated()
   {
-    fGlobalConvexity = false;
-    ComputeBBox();
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -55,7 +59,7 @@ public:
   /// Getter for the TessellatedStruct object containing the actual data (facets, vertices, clusters of facets)
   /** @return The tessellatedStruct object */
   VECCORE_ATT_HOST_DEVICE
-  TessellatedStruct<3, Precision> const &GetStruct() const { return fTessellated; }
+  TessellatedRuntimeStruct<Precision> const &GetStruct() const { return fTessellatedRuntime; }
 
   /// Method for adding a new triangular facet, delegated to TessellatedStruct
   /** @param vt0      First vertex
@@ -70,7 +74,6 @@ public:
                           Vector3D<Precision> const &vt2, bool absolute = true)
   {
     bool result = fTessellated.AddTriangularFacet(vt0, vt1, vt2, absolute);
-    ComputeBBox();
     return result;
   }
 
@@ -89,7 +92,6 @@ public:
                              Vector3D<Precision> const &vt2, Vector3D<Precision> const &vt3, bool absolute = true)
   {
     bool result = fTessellated.AddQuadrilateralFacet(vt0, vt1, vt2, vt3, absolute);
-    ComputeBBox();
     return result;
   }
 
@@ -107,12 +109,16 @@ public:
   TriangleFacet<Precision> *GetFacet(int ifacet) const { return fTessellated.fFacets[ifacet]; }
 
   /// Closing method to be called mandatory by the user once all facets are defined.
-  VECCORE_ATT_HOST_DEVICE
-  void Close() { fTessellated.Close(); }
+  void Close();
 
   /// Check if the tessellated solid is closed.
   VECCORE_ATT_HOST_DEVICE
   bool IsClosed() const { return fTessellated.fSolidClosed; }
+
+  /// static factory method returning a closed tessellated solid, constructed from an OBJ file
+  static UnplacedTessellated *CreateFromObjFile(std::string const &, bool close = true);
+  /// fill an existing tessellated object with triangles from OBJ file --> returns number of facets filled
+  size_t FillFromObjFile(std::string const &, bool close = true);
 
   virtual int memory_size() const { return sizeof(*this); }
 
@@ -128,7 +134,7 @@ public:
 
   /// Randomly chose a facet with a probability proportional to its surface area. Scales like O(N).
   /** @return Facet index */
-  VECCORE_ATT_HOST_DEVICE
+  // VECCORE_ATT_HOST_DEVICE
   int ChooseSurface() const;
 
   Vector3D<Precision> SamplePointOnSurface() const override;
@@ -143,19 +149,25 @@ public:
   /** @return Name of the solid type as string*/
   std::string GetEntityType() const { return "Tessellated"; }
 
+  int MemorySize() const override { return sizeof(*this); }
+
   VECCORE_ATT_DEVICE
   static VPlacedVolume *Create(LogicalVolume const *const logical_volume, Transformation3D const *const transformation,
 #ifdef VECCORE_CUDA
-                               const int id,
+                               const int id, const int copy_no, const int child_id,
 #endif
                                VPlacedVolume *const placement = NULL);
 
-#ifdef VECGEOM_CUDA_INTERFACE
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-  virtual size_t DeviceSizeOf() const override { return DevicePtr<cuda::UnplacedTessellated>::SizeOf(); }
-#else
-  virtual size_t DeviceSizeOf() const override { return 0; }
+  VECCORE_ATT_DEVICE
+  virtual VPlacedVolume *SpecializedVolume(LogicalVolume const *const volume,
+                                           Transformation3D const *const transformation,
+#ifdef VECCORE_CUDA
+                                           const int id, const int copy_no, const int child_id,
 #endif
+                                           VPlacedVolume *const placement = NULL) const override;
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  virtual size_t DeviceSizeOf() const override { return DevicePtr<cuda::UnplacedTessellated>::SizeOf(); }
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const override;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const override;
 #endif
@@ -166,13 +178,6 @@ public:
   virtual void Print(std::ostream &os) const override;
 
 private:
-  VECCORE_ATT_DEVICE
-  virtual VPlacedVolume *SpecializedVolume(LogicalVolume const *const volume,
-                                           Transformation3D const *const transformation,
-#ifdef VECCORE_CUDA
-                                           const int id,
-#endif
-                                           VPlacedVolume *const placement = NULL) const override;
 };
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
