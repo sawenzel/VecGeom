@@ -93,6 +93,22 @@ public:
   }
 
   /**
+   * Computes the exact min squared distance of point to this AABB.
+   * @param[in] p Input point.
+   * @remark Returns 0. if point is inside AABB or on surface.
+   */
+  VECCORE_ATT_HOST_DEVICE
+  Real_t SafetySqr(Vector3D<Real_t> p) const
+  {
+    // branchless and unrolled
+    using vecCore::math::Max;
+    Real_t dx = Max(Max(fMin[0] - p[0], Real_t(0)), p[0] - fMax[0]);
+    Real_t dy = Max(Max(fMin[1] - p[1], Real_t(0)), p[1] - fMax[1]);
+    Real_t dz = Max(Max(fMin[2] - p[2], Real_t(0)), p[2] - fMax[2]);
+    return dx * dx + dy * dy + dz * dz;
+  }
+
+  /**
    * Compute distance from a point to AABB's surface along the given direction.
    * @param[in] point Starting point for input ray.
    * @param[in] direction Direction of the input ray.
@@ -146,6 +162,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void ComputeIntersectionInvDir(Vector3D<Real_t> point, Vector3D<Real_t> invdir, Real_t &tmin, Real_t &tmax) const
   {
+#ifdef OLD
     auto swap = [](Real_t &a, Real_t &b) {
       Real_t tmp = a;
       a          = b;
@@ -158,9 +175,19 @@ public:
     if (t0[0] > t1[0]) swap(t0[0], t1[0]);
     if (t0[1] > t1[1]) swap(t0[1], t1[1]);
     if (t0[2] > t1[2]) swap(t0[2], t1[2]);
-
     tmin = t0.Max();
     tmax = t1.Min() * (static_cast<Real_t>(1.) + vecgeom::kToleranceDist<Real_t>); // The 2 epsilon prevent false misses
+#else
+    using vecCore::Max;
+    using vecCore::Min;
+    Vector3D<Real_t> t0 = (fMin - point) * invdir;
+    Vector3D<Real_t> t1 = (fMax - point) * invdir;
+    Vector3D<Real_t> tmin_v(Min(t0[0], t1[0]), Min(t0[1], t1[1]), Min(t0[2], t1[2]));
+    Vector3D<Real_t> tmax_v(Max(t0[0], t1[0]), Max(t0[1], t1[1]), Max(t0[2], t1[2]));
+
+    tmin = tmin_v.Max();
+    tmax = tmax_v.Min() * (static_cast<Real_t>(1.) + vecgeom::kToleranceDist<Real_t>);
+#endif
   }
 
   /**

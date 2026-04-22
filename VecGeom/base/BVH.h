@@ -5,6 +5,7 @@
 #define VECGEOM_BASE_BVH_H_
 
 #include "VecGeom/base/AABB.h"
+#include "VecGeom/base/PriorityQueue.h"
 #include "VecGeom/base/Config.h"
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/navigation/NavStateIndex.h"
@@ -31,6 +32,24 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class LogicalVolume;
 class VPlacedVolume;
+
+/**
+ * @brief A struct of hit information that is passed into leaf_function intersection hooks.
+ */
+template <typename Real_t>
+struct BVHIntersectContext {
+  int primID;      ///< id of the current primitive in a leaf node
+  int nLeafPrims;  ///< the number of leaf primitives in this node
+  Real_t tnear;    ///< min distance to bounding box
+  Real_t step_max; /// the current step max. Can be modified in hook to prune search;
+};
+
+template <typename Real_t>
+struct BVHPointQueryContext {
+  int primID;       ///< id of the current primitive in a leaf node
+  int nLeafPrims;   ///< the number of leaf primitives in this node
+  Real_t safetySqr; /// the current best known SafetySqr. Can be modified in hook to prune search;
+};
 
 /**
  * @brief Bounding Volume Hierarchy class to represent an axis-aligned bounding volume hierarchy.
@@ -77,6 +96,16 @@ public:
    * When a fixed depth is chosen, it cannot be larger than @p BVH_MAX_DEPTH.
    */
   BVH(LogicalVolume const &volume, Vector3D<Precision> *ptrAABB, int nChild, int depth = 0);
+
+  /**
+   * Constructor.
+   * @param ptrAABB Container of AABBs for this volume
+   * @param nChild Number of bounding boxes
+   * @param depth Depth of the BVH binary tree. Defaults to zero, in which case
+   * the actual depth will be chosen dynamically based on the number of child volumes.
+   * When a fixed depth is chosen, it cannot be larger than @p BVH_MAX_DEPTH.
+   */
+  BVH(int rootID, Vector3D<Precision> *ptrAABB, int nChild, int depth = 0);
 
   /** Destructor. */
   ~BVH() { Clear(); }
@@ -289,6 +318,103 @@ public:
     } while (ptr > stack);
   }
 
+  struct IgnoreArgs {
+    template <typename... Args>
+    VECCORE_ATT_HOST_DEVICE void operator()(Args &&...) const
+    {
+    }
+  };
+
+  /*
+   * BVH::Intersect() intersects the BVH with a ray and calls a user-defined hook when intersecting
+   * leaf nodes. Intersection tests is done no futher than `step` or when the user hook returns true.
+   * TODO: ability to provide external stack
+   */
+  template <bool check_leaf_bb = true, typename Real_i, typename leaf_function, typename inner_function = IgnoreArgs>
+  VECCORE_ATT_HOST_DEVICE void Intersect(const Vector3D<Real_i> &localpoint, const Vector3D<Real_i> &localdir,
+                                         Real_i step, leaf_function &&intersect_hook, inner_function &&inner = {}) const
+  {
+    unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
+    stack[0] = 0;
+
+    /* Calculate and reuse inverse direction to save on divisions */
+    Vector3D<Real_t> binvdir(static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[0]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[1]),
+                             static_cast<Real_t>(1.0) / vecgeom::NonZero(localdir[2]));
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+    Vector3D<Real_t> blocaldir(static_cast<Real_t>(localdir[0]), static_cast<Real_t>(localdir[1]),
+                               static_cast<Real_t>(localdir[2]));
+    Real_t bstep = static_cast<Real_t>(step);
+
+    BVHIntersectContext<Real_t> hitcontext{-1, 0, -1., bstep};
+
+    do {
+      const unsigned int id = *--ptr; /* pop next node id to be checked from the stack */
+
+      // If the current distance is shorter than the distance to the node we can safely ignore it
+      Real_t tmin{vecgeom::InfinityLength<Real_t>()}, tmax{-vecgeom::InfinityLength<Real_t>()};
+      fNodes[id].ComputeIntersectionInvDir(blocalpoint, binvdir, tmin, tmax);
+      if (tmin > tmax || tmax < Real_t{0.} || tmin >= bstep) {
+        continue;
+      }
+
+      if (fNChild[id] >= 0) {
+
+        hitcontext.nLeafPrims = fNChild[id];
+
+        /* For leaf nodes, loop over children */
+        for (int i = 0; i < fNChild[id]; ++i) {
+          const int prim = fPrimId[fOffset[id] + i];
+          Real_t approach;
+          if ((check_leaf_bb && fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) ||
+              !check_leaf_bb) {
+            hitcontext.primID   = prim;
+            hitcontext.step_max = bstep;
+            hitcontext.tnear    = approach;
+            // Here we hit the bounding box of a leaf child/primitive and call the user-provided intersection_hook for
+            // further
+            // treatment
+            const auto stop_here = intersect_hook(hitcontext);
+            if (stop_here) {
+              break;
+            }
+            // update max step for possible pruning
+            // should be set by user in BVHIntersectContext
+            bstep = hitcontext.step_max;
+          }
+        }
+      } else {
+        const unsigned int childL = 2 * id + 1;
+        const unsigned int childR = 2 * id + 2;
+
+        inner();
+
+        /* For internal nodes, check AABBs to know if we need to traverse left and right children */
+        Real_t tminL = vecgeom::InfinityLength<Real_t>(), tmaxL = -vecgeom::InfinityLength<Real_t>(),
+               tminR = vecgeom::InfinityLength<Real_t>(), tmaxR = -vecgeom::InfinityLength<Real_t>();
+
+        fNodes[childL].ComputeIntersectionInvDir(blocalpoint, binvdir, tminL, tmaxL);
+        fNodes[childR].ComputeIntersectionInvDir(blocalpoint, binvdir, tminR, tmaxR);
+
+        const bool traverseL = tminL <= tmaxL && tmaxL >= static_cast<Real_t>(0.0) && tminL < bstep;
+        const bool traverseR = tminR <= tmaxR && tmaxR >= static_cast<Real_t>(0.0) && tminR < bstep;
+
+        /*
+         * If both left and right nodes need to be checked, check closest one first.
+         * This ensures step gets short as fast as possible so we can skip more nodes without checking.
+         */
+        if (tminR < tminL) {
+          if (traverseL) *ptr++ = childL;
+          if (traverseR) *ptr++ = childR;
+        } else {
+          if (traverseR) *ptr++ = childR;
+          if (traverseL) *ptr++ = childL;
+        }
+      }
+    } while (ptr > stack);
+  }
+
   /**
    * Compute safety against children of the root element associated with the BVH.
    * @param[in] localpoint Point in the local coordinates of the root element.
@@ -311,7 +437,7 @@ public:
       const unsigned int id = *--ptr;
 
       // We can safely ignore nodes that are farther than the current safety
-      if (fNodes[id].Safety(localpoint) > safety) continue;
+      if (fNodes[id].SafetySqr(localpoint) > safety) continue;
 
       if (fNChild[id] >= 0) {
         for (int i = 0; i < fNChild[id]; ++i) {
@@ -354,6 +480,156 @@ public:
     } while (ptr > stack);
 
     return safety;
+  }
+
+  /**
+   * Compute safety against children of the root element associated with the BVH.
+   * @param[in] localpoint Point in the local coordinates of the root element.
+   * @param[in] safety Maximum safety. Elements further than this are not checked.
+   * @returns Minimum between safety to the closest child of root element and input @p safety.
+   */
+  template <bool return_top_estimate, typename leaf_function>
+  VECCORE_ATT_HOST_DEVICE Precision PointQuery(Vector3D<Precision> localpoint, leaf_function &&primitive_hook,
+                                               Precision limit_sq = InfinityLength<Precision>()) const
+  {
+    struct StackItem {
+      unsigned int prim; // id of bounding box
+      Real_t safetySq;   // safety square of this bounding box
+    };
+    StackItem stack[BVH_MAX_DEPTH], *ptr = &stack[1];
+
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+
+    Real_t safetySqr = static_cast<Real_t>(limit_sq);
+    // initialize stack for ROOT node
+    stack[0].prim     = 0;
+    stack[0].safetySq = fNodes[0].SafetySqr(blocalpoint);
+
+    if (return_top_estimate) {
+      if (stack[0].safetySq > 0.) {
+        // this is the test against the entire bounding box; useful for safetyToIn
+        // if we are positive here, it means we are outside of this box and can just return
+        return stack[0].safetySq;
+      }
+    }
+
+    do {
+      // pop from the stack
+      const auto top        = *--ptr;
+      const unsigned int id = top.prim;
+      // We can safely ignore nodes that are farther than the current safety
+      if (top.safetySq > safetySqr) continue;
+
+      if (fNChild[id] >= 0) {
+        // this is a leaf node
+        for (int i = 0; i < fNChild[id]; ++i) {
+          const int prim = fPrimId[fOffset[id] + i];
+          BVHPointQueryContext<Real_t> ctx{prim, fNChild[id], safetySqr};
+          primitive_hook(ctx);
+          // update safety square
+          safetySqr = vecCore::math::Min(safetySqr, ctx.safetySqr);
+        }
+      } else {
+        // this is an indermediate node
+        const unsigned int childL = 2 * id + 1;
+        const unsigned int childR = 2 * id + 2;
+        const Real_t safetySqrL   = fNodes[childL].SafetySqr(blocalpoint);
+        const Real_t safetySqrR   = fNodes[childR].SafetySqr(blocalpoint);
+        bool traverseL            = safetySqrL < safetySqr;
+        bool traverseR            = safetySqrR < safetySqr;
+
+        // If we are just interested in quick estimates ... we do not
+        // need to traverse further if the safety to intermediate bounding box
+        // is already positive (and above a certain threshold).
+        // Could be very efficient BVH culling
+        if (return_top_estimate) {
+          constexpr float threshold = 0.1;
+          if (traverseL && safetySqrL > threshold) {
+            traverseL = false;
+            safetySqr = vecCore::math::Min(safetySqr, safetySqrL);
+          }
+          if (traverseR && safetySqrR > threshold) {
+            traverseR = false;
+            safetySqr = vecCore::math::Min(safetySqr, safetySqrR);
+          }
+        }
+        if (safetySqrR < safetySqrL) {
+          if (traverseR) *ptr++ = StackItem{childR, safetySqrR};
+          if (traverseL) *ptr++ = StackItem{childL, safetySqrL};
+        } else {
+          if (traverseL) *ptr++ = StackItem{childL, safetySqrL};
+          if (traverseR) *ptr++ = StackItem{childR, safetySqrR};
+        }
+      }
+    } while (ptr > stack);
+
+    return safetySqr;
+  }
+
+  // a special version for safety queries using a priority queue
+  template <bool return_top_estimate, typename leaf_function>
+  VECCORE_ATT_HOST_DEVICE Precision PointQueryPQ(Vector3D<Precision> localpoint, leaf_function &&primitive_hook,
+                                                 Precision limit_sq = InfinityLength<Precision>()) const
+  {
+    Vector3D<Real_t> blocalpoint(static_cast<Real_t>(localpoint[0]), static_cast<Real_t>(localpoint[1]),
+                                 static_cast<Real_t>(localpoint[2]));
+
+    Real_t safetySqr = static_cast<Real_t>(limit_sq);
+
+    const Real_t rootSafetySq = fNodes[0].SafetySqr(blocalpoint);
+    if (return_top_estimate) {
+      if (rootSafetySq > 0.) return rootSafetySq;
+    }
+    PriorityQueue<int, Real_t> pq;
+    pq.push(0, rootSafetySq);
+
+    while (!pq.empty()) {
+      // Skip stale entries that are now beyond current safety
+      if (pq.peek_priority() > safetySqr) break; // min-heap: if top is too far, all others are too
+
+      const unsigned int id = pq.pop();
+
+      if (fNChild[id] >= 0) {
+        // Leaf node
+        for (int i = 0; i < fNChild[id]; ++i) {
+          const int prim = fPrimId[fOffset[id] + i];
+          BVHPointQueryContext<Real_t> ctx{prim, fNChild[id], safetySqr};
+          primitive_hook(ctx);
+          safetySqr = vecCore::math::Min(safetySqr, ctx.safetySqr);
+          pq.trim(safetySqr);
+        }
+      } else {
+        // Internal node
+        const unsigned int childL = 2 * id + 1;
+        const unsigned int childR = 2 * id + 2;
+
+        const Real_t safetySqrL = fNodes[childL].SafetySqr(blocalpoint);
+        const Real_t safetySqrR = fNodes[childR].SafetySqr(blocalpoint);
+
+        // If we are just interested in quick estimates ... we do not
+        // need to traverse further if the safety to intermediate bounding box
+        // is already positive (and above a certain threshold).
+        // Could be very efficient BVH culling
+        bool traverseL = safetySqrL < safetySqr;
+        bool traverseR = safetySqrR < safetySqr;
+        if (return_top_estimate) {
+          constexpr float threshold =
+              0.1; // <--- could depend on the shape and the material (typical radiation length etc)
+          if (safetySqrL > threshold) {
+            traverseL = false;
+            safetySqr = vecCore::math::Min(safetySqr, safetySqrL);
+          }
+          if (safetySqrR > threshold) {
+            traverseR = false;
+            safetySqr = vecCore::math::Min(safetySqr, safetySqrR);
+          }
+        }
+        if (traverseL) pq.push(childL, safetySqrL);
+        if (traverseR) pq.push(childR, safetySqrR);
+      }
+    }
+    return safetySqr;
   }
 
   /**

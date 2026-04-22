@@ -52,8 +52,7 @@ enum class BVH<Real_t>::ConstructionAlgorithm : unsigned int {
  * the original child number (i.e. the id stored in fPrimId, not by a node id of the tree itself).
  */
 template <typename Real_t>
-BVH<Real_t>::BVH(LogicalVolume const &volume, Vector3D<Precision> *ptrAABB, int nChild, int depth)
-    : fRootId(volume.id())
+BVH<Real_t>::BVH(int rootID, Vector3D<Precision> *ptrAABB, int nChild, int depth) : fRootId(rootID)
 {
   VECGEOM_VALIDATE(nChild > 0, << "Cannot construct BVH for volume with no children!");
 
@@ -89,6 +88,12 @@ BVH<Real_t>::BVH(LogicalVolume const &volume, Vector3D<Precision> *ptrAABB, int 
   /* Mark internal nodes with a negative number of children to simplify traversal */
   for (unsigned int id = 0; id < nodes / 2; ++id)
     if (fNChild[id] > 8 && (fNChild[id] == fNChild[2 * id + 1] + fNChild[2 * id + 2])) fNChild[id] = -1;
+}
+
+template <typename Real_t>
+BVH<Real_t>::BVH(LogicalVolume const &vol, Vector3D<Precision> *ptrAABB, int nChild, int depth)
+    : BVH(vol.id(), ptrAABB, nChild, depth)
+{
 }
 
 #ifdef VECGEOM_ENABLE_CUDA
