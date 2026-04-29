@@ -175,7 +175,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains<Precision,
 {
   for (; i < n - kVectorSize; i += kVectorSize) {
     VcBool inside = VcPrecision(normals.x() + i) * point[0] + VcPrecision(normals.y() + i) * point[1] +
-                        VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <
+                        VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <=
                     kTolerance;
     // Early return if not inside all planes (convex case)
     result = vecCore::MaskFull(inside);
@@ -193,7 +193,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedContains<Precision,
 {
   for (; i < n - kVectorSize; i += kVectorSize) {
     VcBool inside = VcPrecision(normals.x() + i) * point[0] + VcPrecision(normals.y() + i) * point[1] +
-                        VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <
+                        VcPrecision(normals.z() + i) * point[2] + VcPrecision(&distances[0] + i) <=
                     kTolerance;
     // Early return ifinside any planes (non-convex case)
     result = !vecCore::MaskEmpty(inside);

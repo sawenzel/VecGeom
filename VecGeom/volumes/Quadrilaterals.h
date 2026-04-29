@@ -1,4 +1,5 @@
 /// \file Quadrilaterals.h
+/// \brief Storage and intersection helpers for convex quadrilateral shells.
 /// \author Johannes de Fine Licht (johannes.definelicht@cern.ch)
 
 #ifndef VECGEOM_VOLUMES_QUADRILATERALS_H_
@@ -36,11 +37,17 @@ private:
                                 ///  for bounds checking.
 
 public:
+  /// @brief Alias for the four supporting side-plane arrays.
   typedef Planes Sides_t[4];
+  /// @brief Alias for the four corner coordinate arrays.
   typedef AOS3D<Precision> Corners_t[4];
 
+  /// @brief Construct an empty quadrilateral container.
   Quadrilaterals() = default;
 
+  /// @brief Construct storage for a fixed number of quadrilaterals.
+  /// @param size Number of quadrilaterals to allocate.
+  /// @param convex Whether the shell will be used as a convex surface set.
   VECCORE_ATT_HOST_DEVICE
   Quadrilaterals(int size, bool convex = true);
 
@@ -52,64 +59,103 @@ public:
   VECCORE_ATT_HOST_DEVICE
   Quadrilaterals(int size, AlignedAllocator &a, bool convex = true);
 
+  /// @brief Destroy owned storage.
   VECCORE_ATT_HOST_DEVICE
   ~Quadrilaterals();
 
+  /// @brief Copy-construct a quadrilateral container.
+  /// @param other Source container.
   VECCORE_ATT_HOST_DEVICE
   Quadrilaterals(Quadrilaterals const &other);
 
+  /// @brief Copy-assign a quadrilateral container.
+  /// @param other Source container.
+  /// @return Reference to `*this`.
   VECCORE_ATT_HOST_DEVICE
   Quadrilaterals &operator=(Quadrilaterals const &other);
 
-  // returns the number of quadrilaterals ( planes ) stored in this container
+  /// @brief Return the number of stored quadrilaterals.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   int size() const;
 
+  /// @brief Return the aligned byte size needed for the internal arrays.
+  /// @param initSize Number of quadrilaterals to store.
+  /// @return Required aligned byte count.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   static size_t aligned_sizeof_data(const size_t initSize);
 
+  /// @brief Return the backing plane set.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Planes const &GetPlanes() const;
 
+  /// @brief Return the plane normals of all quadrilaterals.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   SOA3D<Precision> const &GetNormals() const;
 
+  /// @brief Return the outward normal of one quadrilateral.
+  /// @param i Quadrilateral index.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Vector3D<Precision> GetNormal(int i) const;
 
+  /// @brief Return the signed plane distances of all quadrilaterals.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Array<Precision> const &GetDistances() const;
 
+  /// @brief Return the signed plane distance of one quadrilateral.
+  /// @param i Quadrilateral index.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Precision GetDistance(int i) const;
 
+  /// @brief Return the supporting side-plane vectors for all quadrilaterals.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Sides_t const &GetSideVectors() const;
 
+  /// @brief Return the corner storage for all quadrilaterals.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Corners_t const &GetCorners() const;
 
+  /// @brief Compute the area of one triangle in a quadrilateral split.
+  /// @param index Quadrilateral index.
+  /// @param iCorner1 Second triangle corner.
+  /// @param iCorner2 Third triangle corner.
+  /// @return Triangle area.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Precision GetTriangleArea(int index, int iCorner1, int iCorner2) const;
 
+  /// @brief Compute the area of one quadrilateral.
+  /// @param index Quadrilateral index.
+  /// @return Quadrilateral area.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   Precision GetQuadrilateralArea(int index) const;
 
+  /// @brief Sample one uniformly random point on a triangle of a quadrilateral.
+  /// @param index Quadrilateral index.
+  /// @param iCorner0 First triangle corner.
+  /// @param iCorner1 Second triangle corner.
+  /// @param iCorner2 Third triangle corner.
+  /// @return Random surface point on the requested triangle.
   inline Vector3D<Precision> GetPointOnTriangle(int index, int iCorner0, int iCorner1, int iCorner2) const;
 
+  /// @brief Sample one random point on a quadrilateral face.
+  /// @param index Quadrilateral index.
+  /// @return Random surface point on the selected face.
   inline Vector3D<Precision> GetPointOnFace(int index) const;
 
+  /// @brief Check whether an intersection point lies within one quadrilateral.
+  /// @param index Quadrilateral index.
+  /// @param intersection Candidate intersection point.
+  /// @return `true` when the point is within the quadrilateral bounds.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool RayHitsQuadrilateral(int index, Vector3D<Precision> const &intersection) const
@@ -123,46 +169,56 @@ public:
     return valid;
   }
 
-  /// Sets the corners of a pre-existing quadrilateral.
-  /// \param corner0 First corner in counterclockwise order.
-  /// \param corner1 Second corner in counterclockwise order.
-  /// \param corner2 Third corner in counterclockwise order.
-  /// \param corner3 Fourth corner in counterclockwise order.
+  /// @brief Set the corners of one quadrilateral.
+  /// @param index Quadrilateral index to overwrite.
+  /// @param corner0 First corner in counterclockwise order.
+  /// @param corner1 Second corner in counterclockwise order.
+  /// @param corner2 Third corner in counterclockwise order.
+  /// @param corner3 Fourth corner in counterclockwise order.
   VECCORE_ATT_HOST_DEVICE
   void Set(int index, Vector3D<Precision> const &corner0, Vector3D<Precision> const &corner1,
            Vector3D<Precision> const &corner2, Vector3D<Precision> const &corner3);
 
-  /// Flips the sign of the normal and distance of the specified quadrilateral.
+  /// @brief Flip the orientation of one quadrilateral plane.
+  /// @param index Quadrilateral index to flip.
   VECCORE_ATT_HOST_DEVICE
   void FlipSign(int index);
 
+  /// @brief Check whether a point is behind every supporting plane.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecCore::Mask_v<Real_v> Contains(Vector3D<Real_v> const &point) const;
 
+  /// @brief Classify a point against the whole quadrilateral shell.
   template <typename Real_v, typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Inside_v Inside(Vector3D<Real_v> const &point) const;
 
+  /// @brief Classify a point against one quadrilateral.
   template <typename Real_v, typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Inside_v Inside(Vector3D<Real_v> const &point, int i) const;
 
+  /// @brief Compute the first valid entry distance to a convex shell.
   template <typename Real_v, bool behindPlanesT>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToIn(Vector3D<Real_v> const &point,
                                                                    Vector3D<Real_v> const &direction) const;
 
+  /// @brief Compute the first valid exit distance constrained to a z interval.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToOut(Vector3D<Real_v> const &point,
                                                                     Vector3D<Real_v> const &direction, Precision zMin,
                                                                     Precision zMax) const;
 
+  /// @brief Compute the first valid exit distance without z clipping.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Real_v DistanceToOut(Vector3D<Real_v> const &point,
                                                                     Vector3D<Real_v> const &direction) const;
 
-  /// \param index Quadrilateral to compute distance to.
+  /// @brief Compute the exact squared distance from a point to one quadrilateral.
+  /// @param index Quadrilateral index to evaluate.
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   Precision ScalarDistanceSquared(int index, Vector3D<Precision> const &point) const;
 
+  /// @brief Print the stored quadrilateral data for debugging.
   VECCORE_ATT_HOST_DEVICE
   void Print() const;
 
@@ -310,7 +366,9 @@ struct AcceleratedDistanceToIn<Precision> {
       if (vecCore::MaskEmpty(valid)) continue;
 
       VcPrecision directionProjection = plane.Dot(direction);
-      valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > 0;
+      // Match the scalar path: reject grazing rays with only numerical
+      // wrong-side projection so DistanceToIn does not report a zero hit.
+      valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > kTolerance;
       if (vecCore::MaskEmpty(valid)) continue;
       VcPrecision tiny = Vc::copysign(VcPrecision(1E-20), directionProjection);
       distanceTest /= -(directionProjection + tiny);
@@ -358,8 +416,6 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToIn(Vector3D<Real_v> con
   // per Z-segment in Polyhedron case. If used in other contexts, a template
   // parameter would have to be added to make a distinction.
 
-  using Bool_v = vecCore::Mask_v<Real_v>;
-
   Real_v bestDistance = InfinityLength<Real_v>();
 
   int i       = 0;
@@ -368,26 +424,52 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToIn(Vector3D<Real_v> con
                                                                       bestDistance);
 
   // TODO: IN CASE QUADRILATERALS ARE PERPENDICULAR TO Z WE COULD SAVE MANY DIVISIONS
-  for (; i < n; ++i) {
-    Vector3D<Precision> normal = fPlanes.GetNormal(i);
-    Real_v distance            = point.Dot(normal) + fPlanes.GetDistance(i);
-    // Check if the point is in front of/behind the plane according to the
-    // template parameter
-    Bool_v valid = Flip<behindPlanesT>::FlipSign(distance) > -kTolerance;
-    if (vecCore::MaskEmpty(valid)) continue;
-    Real_v directionProjection = direction.Dot(normal);
-    valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > kTolerance;
-    if (vecCore::MaskEmpty(valid)) continue;
-    distance /= -(directionProjection + CopySign(Real_v(1E-20), directionProjection));
-    Vector3D<Real_v> intersection = point + direction * distance;
-    for (int j = 0; j < 4; ++j) {
-      valid &= intersection.Dot(fSideVectors[j].GetNormal(i)) + fSideVectors[j].GetDistances()[i] >= -kTolerance;
-      if (vecCore::MaskEmpty(valid)) break;
+  if constexpr (vecCore::VectorSize<Real_v>() == 1) {
+    for (; i < n; ++i) {
+      Vector3D<Precision> normal = fPlanes.GetNormal(i);
+      Real_v distance            = point.Dot(normal) + fPlanes.GetDistance(i);
+      // Check if the point is in front of/behind the plane according to the
+      // template parameter
+      bool valid = Flip<behindPlanesT>::FlipSign(distance) > -kTolerance;
+      if (!valid) continue;
+      Real_v directionProjection = direction.Dot(normal);
+      valid                      = Flip<!behindPlanesT>::FlipSign(directionProjection) > kTolerance;
+      if (!valid) continue;
+      distance /= -(directionProjection + CopySign(Real_v(1E-20), directionProjection));
+      Vector3D<Real_v> intersection = point + direction * distance;
+      for (int j = 0; j < 4; ++j) {
+        valid = intersection.Dot(fSideVectors[j].GetNormal(i)) + fSideVectors[j].GetDistances()[i] >= -kTolerance;
+        if (!valid) break;
+      }
+      if (!valid) continue;
+      bestDistance = distance;
+      // If a hit is found, the algorithm can return, since only one side can
+      // be hit for a convex set of quadrilaterals
+      break;
     }
-    vecCore::MaskedAssign(bestDistance, valid, distance);
-    // If all hits are found, the algorithm can return, since only one side can
-    // be hit for a convex set of quadrilaterals
-    if (vecCore::MaskFull(bestDistance < InfinityLength<Real_v>())) break;
+  } else {
+    using Bool_v = vecCore::Mask_v<Real_v>;
+    for (; i < n; ++i) {
+      Vector3D<Precision> normal = fPlanes.GetNormal(i);
+      Real_v distance            = point.Dot(normal) + fPlanes.GetDistance(i);
+      // Check if the point is in front of/behind the plane according to the
+      // template parameter
+      Bool_v valid = Flip<behindPlanesT>::FlipSign(distance) > -kTolerance;
+      if (vecCore::MaskEmpty(valid)) continue;
+      Real_v directionProjection = direction.Dot(normal);
+      valid &= Flip<!behindPlanesT>::FlipSign(directionProjection) > kTolerance;
+      if (vecCore::MaskEmpty(valid)) continue;
+      distance /= -(directionProjection + CopySign(Real_v(1E-20), directionProjection));
+      Vector3D<Real_v> intersection = point + direction * distance;
+      for (int j = 0; j < 4; ++j) {
+        valid &= intersection.Dot(fSideVectors[j].GetNormal(i)) + fSideVectors[j].GetDistances()[i] >= -kTolerance;
+        if (vecCore::MaskEmpty(valid)) break;
+      }
+      vecCore::MaskedAssign(bestDistance, valid, distance);
+      // If all hits are found, the algorithm can return, since only one side can
+      // be hit for a convex set of quadrilaterals
+      if (vecCore::MaskFull(bestDistance < InfinityLength<Real_v>())) break;
+    }
   }
 
   return Max(Real_v(0.), bestDistance);
@@ -424,10 +506,11 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut<Preci
     VcPrecision directionProjection = plane.Dot(direction);
     // Because the point is behind the plane, the direction must be along the
     // normal
-    valid &= directionProjection > 0;
+    // Keep the accelerated path aligned with the scalar tail for grazing rays.
+    valid &= directionProjection > kTolerance;
     if (vecCore::MaskEmpty(valid)) continue;
     distanceTest /= -NonZero(directionProjection);
-    valid &= distanceTest < distance;
+    valid &= distanceTest < distance && distanceTest > -kTolerance / NonZero(directionProjection);
     if (vecCore::MaskEmpty(valid)) continue;
 
     if (zMin == zMax) { // need a careful treatment in case of degenerate Z planes
@@ -444,7 +527,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut<Preci
       }
     } else {
       VcPrecision zProjection = distanceTest * direction[2] + point[2];
-      valid &= zProjection >= zMin && zProjection < zMax;
+      valid &= zProjection >= zMin - kTolerance && zProjection < zMax + kTolerance;
     }
   distanceToOutVcContinueOuter:
     if (vecCore::MaskEmpty(valid)) continue;
@@ -472,43 +555,75 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToOut(Vector3D<Real_v> co
   // If used for another purpose than Polyhedron, DistanceToIn should be used if
   // the set of quadrilaterals is not convex.
 
-  using Bool_v = vecCore::Mask_v<Real_v>;
-
   Real_v bestDistance = InfinityLength<Real_v>();
 
   int i       = 0;
   const int n = size();
   AcceleratedDistanceToOut<Real_v>(i, n, fPlanes, fSideVectors, zMin, zMax, point, direction, bestDistance);
 
-  for (; i < n; ++i) {
-    Vector3D<Precision> normal = fPlanes.GetNormal(i);
-    Real_v distanceTest        = point.Dot(normal) + fPlanes.GetDistance(i);
-    // Check if the point is behind the plane
-    Bool_v valid = distanceTest < kTolerance;
-    if (vecCore::MaskEmpty(valid)) continue;
-    Real_v directionProjection = direction.Dot(normal);
-    // Because the point is behind the plane, the direction must be along the
-    // normal
-    valid &= directionProjection > kTolerance;
-    if (vecCore::MaskEmpty(valid)) continue;
-    distanceTest /= -directionProjection;
-    valid &= distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
-    if (vecCore::MaskEmpty(valid)) continue;
+  if constexpr (vecCore::VectorSize<Real_v>() == 1) {
+    for (; i < n; ++i) {
+      Vector3D<Precision> normal = fPlanes.GetNormal(i);
+      Real_v distanceTest        = point.Dot(normal) + fPlanes.GetDistance(i);
+      // Check if the point is behind the plane
+      bool valid = distanceTest < kTolerance;
+      if (!valid) continue;
+      Real_v directionProjection = direction.Dot(normal);
+      // Because the point is behind the plane, the direction must be along the
+      // normal
+      valid = directionProjection > kTolerance;
+      if (!valid) continue;
+      distanceTest /= -directionProjection;
+      valid = distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
+      if (!valid) continue;
 
-    // this is a tricky test when zMin == zMax ( degenerate planes )
-    if (zMin == zMax) {
-      // in this case need proper hit detection
-      // valid &= zProjection >= zMin-1E-10 && zProjection <= zMax+1E-10;
-      Vector3D<Real_v> intersection = point + distanceTest * direction;
+      // this is a tricky test when zMin == zMax ( degenerate planes )
+      if (zMin == zMax) {
+        // in this case need proper hit detection
+        // valid &= zProjection >= zMin-1E-10 && zProjection <= zMax+1E-10;
+        Vector3D<Real_v> intersection = point + distanceTest * direction;
 
-      valid = RayHitsQuadrilateral(i, intersection);
+        valid = RayHitsQuadrilateral(i, intersection);
 
-    } else {
-      Real_v zProjection = point[2] + distanceTest * direction[2];
-      valid &= (zProjection >= zMin - kTolerance) && (zProjection < zMax + kTolerance);
+      } else {
+        Real_v zProjection = point[2] + distanceTest * direction[2];
+        valid              = (zProjection >= zMin - kTolerance) && (zProjection < zMax + kTolerance);
+      }
+      if (!valid) continue;
+      bestDistance = distanceTest;
     }
-    if (vecCore::MaskEmpty(valid)) continue;
-    vecCore::MaskedAssign(bestDistance, valid, distanceTest);
+  } else {
+    using Bool_v = vecCore::Mask_v<Real_v>;
+    for (; i < n; ++i) {
+      Vector3D<Precision> normal = fPlanes.GetNormal(i);
+      Real_v distanceTest        = point.Dot(normal) + fPlanes.GetDistance(i);
+      // Check if the point is behind the plane
+      Bool_v valid = distanceTest < kTolerance;
+      if (vecCore::MaskEmpty(valid)) continue;
+      Real_v directionProjection = direction.Dot(normal);
+      // Because the point is behind the plane, the direction must be along the
+      // normal
+      valid &= directionProjection > kTolerance;
+      if (vecCore::MaskEmpty(valid)) continue;
+      distanceTest /= -directionProjection;
+      valid &= distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
+      if (vecCore::MaskEmpty(valid)) continue;
+
+      // this is a tricky test when zMin == zMax ( degenerate planes )
+      if (zMin == zMax) {
+        // in this case need proper hit detection
+        // valid &= zProjection >= zMin-1E-10 && zProjection <= zMax+1E-10;
+        Vector3D<Real_v> intersection = point + distanceTest * direction;
+
+        valid = RayHitsQuadrilateral(i, intersection);
+
+      } else {
+        Real_v zProjection = point[2] + distanceTest * direction[2];
+        valid &= (zProjection >= zMin - kTolerance) && (zProjection < zMax + kTolerance);
+      }
+      if (vecCore::MaskEmpty(valid)) continue;
+      vecCore::MaskedAssign(bestDistance, valid, distanceTest);
+    }
   }
 
   if (bestDistance > -kTolerance) bestDistance = Max(bestDistance, Precision(0.));
