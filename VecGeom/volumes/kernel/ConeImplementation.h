@@ -86,6 +86,44 @@ struct ConeImplementation {
   }
 
   template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnDegenerateClosingRing(UnplacedStruct_t const &cone,
+                                                                                     Vector3D<Real_v> const &point)
+  {
+    using namespace ConeTypes;
+    if (!checkRminTreatment<coneTypeT>(cone)) return false;
+    if (Abs(Abs(point.z()) - cone.fDz) > Real_v(kTolerance)) return false;
+
+    const bool onUpperEnd = point.z() >= Real_v(0.);
+    const Precision rmin  = onUpperEnd ? cone._frmin2 : cone._frmin1;
+    const Precision rmax  = onUpperEnd ? cone._frmax2 : cone._frmax1;
+    if (vecCore::math::Abs(rmax - rmin) >= kTolerance) return false;
+
+    const Real_v rsq = point.Perp2();
+    return (rsq <= MakePlusTolerantSquare<true>(rmax, cone.fOuterTolerance)) &&
+           (rsq >= MakeMinusTolerantSquare<true>(rmax, cone.fOuterTolerance));
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsEnteringDegenerateClosingRing(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir)
+  {
+    if (!IsOnDegenerateClosingRing(cone, point)) return false;
+
+    return (dir.Dot(ConeUtilities::GetNormal<Real_v, false>(cone, point)) < -kHalfTolerance) &&
+           (dir.Dot(ConeUtilities::GetNormal<Real_v, true>(cone, point)) < -kHalfTolerance);
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool RejectDegenerateClosingRingDistanceToInCandidate(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir, Real_v const &distance)
+  {
+    if (!(distance >= Real_v(0.)) || !(distance < Real_v(kInfLength))) return false;
+
+    const Vector3D<Real_v> hit = point + distance * dir;
+    return IsOnDegenerateClosingRing(cone, hit) && !IsEnteringDegenerateClosingRing(cone, hit, dir);
+  }
+
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &cone,
                                                                     Vector3D<Real_v> const &point,
                                                                     typename vecCore::Mask_v<Real_v> &inside)
@@ -120,8 +158,8 @@ struct ConeImplementation {
 
     // outside of Z range and going away?
     Real_v distz         = Abs(point.z()) - cone.fDz; // avoid a division for now
-    bool outZAndGoingOut = (distz > kConeTolerance && (point.z() * dir.z()) >= zero) ||
-                           (Abs(distz) < kConeTolerance && (point.z() * dir.z()) > zero);
+    bool outZAndGoingOut = (distz > kTolerance && (point.z() * dir.z()) >= zero) ||
+                           (Abs(distz) < kTolerance && (point.z() * dir.z()) > zero);
     if (outZAndGoingOut) return;
 
     // outside or *on* outer cone and going away?
@@ -135,7 +173,7 @@ struct ConeImplementation {
     distance = Real_v(-1.0);
 
     // For points inside z-range, return -1
-    bool inside = distz < -kConeTolerance;
+    bool inside = distz < -kTolerance;
 
     inside &= rsq < MakeMinusTolerantSquare<true>(outerRad, cone.fOuterTolerance);
 
@@ -156,11 +194,16 @@ struct ConeImplementation {
     // intersections.
     distance = Real_v(kInfLength);
 
-    if (distz >= -kConeTolerance && dir.z() != zero) {
+    if (IsOnDegenerateClosingRing(cone, point) && IsEnteringDegenerateClosingRing(cone, point, dir)) {
+      distance = zero;
+      return;
+    }
+
+    if (distz >= -kTolerance && dir.z() != zero) {
       Real_v distToZ = distz / NonZero(Abs(dir.z()));
 
 #ifdef EDGE_POINTS
-      bool onZsurf  = (Abs(point.z()) - cone.fDz) < Real_v(kConeTolerance);
+      bool onZsurf  = (Abs(point.z()) - cone.fDz) < Real_v(kTolerance);
       bool onLoZSrf = onZsurf && point.z() < zero;
       bool onHiZSrf = onZsurf && point.z() > zero;
       bool loZcond  = onLoZSrf && (IsOnRing<Real_v, false, true>(cone, point));
@@ -193,6 +236,7 @@ struct ConeImplementation {
         PointInCyclicalSector<Real_v, coneTypeT, false>(cone, hitx, hity, insector);
         okz = insector;
       }
+      if (okz && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, distToZ)) okz = false;
       if (okz) {
         distance = distToZ;
         return;
@@ -203,6 +247,9 @@ struct ConeImplementation {
     bool ok_outerCone =
         ConeHelpers<Real_v, coneTypeT>::template DetectIntersectionAndCalculateDistanceToConicalSurface<true, false>(
             cone, point, dir, dist_rOuter);
+    if (ok_outerCone && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, dist_rOuter)) {
+      ok_outerCone = false;
+    }
     if (ok_outerCone && dist_rOuter < distance) {
       distance = dist_rOuter;
       return;
@@ -213,6 +260,9 @@ struct ConeImplementation {
       bool ok_innerCone =
           ConeHelpers<Real_v, coneTypeT>::template DetectIntersectionAndCalculateDistanceToConicalSurface<true, true>(
               cone, point, dir, dist_rInner);
+      if (ok_innerCone && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, dist_rInner)) {
+        ok_innerCone = false;
+      }
       if (ok_innerCone && dist_rInner < distance) distance = dist_rInner;
     }
 
@@ -281,9 +331,17 @@ struct ConeImplementation {
     if (outside) return;
 
     // rejection of points on surface and exiting
+    const bool onDegenerateClosingRing = IsOnDegenerateClosingRing(cone, point);
+    const bool enteringDegenerateClosingRing =
+        onDegenerateClosingRing && IsEnteringDegenerateClosingRing(cone, point, direction);
+    if (onDegenerateClosingRing && !enteringDegenerateClosingRing) {
+      distance = zero;
+      return;
+    }
+
     bool onSurfaceAndExiting = (rsq > MakeMinusTolerantSquare<true>(outerRad, cone.fOuterTolerance)) &&
                                (direction.Dot(GetNormal<Real_v, false>(cone, point)) > -kHalfTolerance);
-    if (onSurfaceAndExiting) {
+    if (!onDegenerateClosingRing && onSurfaceAndExiting) {
       distance = zero;
       return;
     }
@@ -296,7 +354,7 @@ struct ConeImplementation {
       // rejection of points on surface and exiting
       bool onInnerSurface = rsq < MakePlusTolerantSquare<true>(innerRad, cone.fInnerTolerance);
       onSurfaceAndExiting = onInnerSurface && (direction.Dot(GetNormal<Real_v, true>(cone, point)) >= kHalfTolerance);
-      if (onSurfaceAndExiting) {
+      if (!onDegenerateClosingRing && onSurfaceAndExiting) {
         distance = zero;
         return;
       }
@@ -313,8 +371,8 @@ struct ConeImplementation {
 
     bool isGoingUp       = direction.z() > zero;
     bool isGoingDown     = direction.z() < zero;
-    bool onUpperZSurface = point.z() > zero && Abs(distz) < kConeTolerance;
-    bool onLowerZSurface = point.z() < zero && Abs(distz) < kConeTolerance;
+    bool onUpperZSurface = !onDegenerateClosingRing && point.z() > zero && Abs(distz) < kTolerance;
+    bool onLowerZSurface = !onDegenerateClosingRing && point.z() < zero && Abs(distz) < kTolerance;
     bool leavingTopZ     = isGoingUp && onUpperZSurface;
     bool leavingBottomZ  = isGoingDown && onLowerZSurface;
     bool enteringThroughTopZEdge(false);
@@ -426,7 +484,7 @@ struct ConeImplementation {
     }
     Real_v safetyPhi(-kInfLength);
     if (checkPhiTreatment<coneTypeT>(cone) && inside) {
-      safetyPhi = cone.fPhiWedge.SafetyToIn<Real_v>(point);
+      safetyPhi = cone.fPhiWedge.SafetyToIn(point);
       inside    = safetyPhi < Real_v(0.);
     }
     if (inside) return;
@@ -483,7 +541,7 @@ struct ConeImplementation {
 
     Real_v safetyPhi(kInfLength);
     if (checkPhiTreatment<coneTypeT>(cone) && !outside) {
-      safetyPhi = cone.fPhiWedge.SafetyToOut<Real_v>(point);
+      safetyPhi = cone.fPhiWedge.SafetyToOut(point);
       outside |= safetyPhi < Real_v(0.);
     }
     if (outside) return;

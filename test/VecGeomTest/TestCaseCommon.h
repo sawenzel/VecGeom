@@ -28,7 +28,9 @@ namespace test {
  *
  * Each entry binds a stable case name, a factory that constructs a standalone
  * placed solid, a debugger-oriented implementation type hint, and the default
- * fast/medium/slow sampling profiles used by ShapeContractTest.
+ * fast/medium/slow sampling profiles used by ShapeContractTest, together with
+ * the solid-specific contract tolerance inherited from the legacy ShapeTester
+ * coverage for the same family.
  */
 struct TestCaseSolid {
   const char *name = "";
@@ -52,6 +54,10 @@ struct TestCaseSolid {
   // sample count. Set this flag when a solid needs a dedicated slow-only
   // profile with different outside tuning or a different seed/stream pair.
   bool use_independent_slow_sampling = false;
+  // Contract tolerance associated with this solid family. Keep this at or
+  // above vecgeom::kTolerance; curved second-order families typically use
+  // vecgeom::kConeTolerance.
+  Precision solid_tolerance = vecgeom::kTolerance;
 };
 
 /**

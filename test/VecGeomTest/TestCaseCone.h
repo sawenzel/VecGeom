@@ -43,6 +43,12 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakeConeAlmostFullPhiTestSolid()
       new vecgeom::SimpleCone("test-cone-almost-full-phi", 1., 6., 4., 9., 12., 0.2, vecgeom::kTwoPi - 1.e-4));
 }
 
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakeConeClosingRingTestSolid()
+{
+  return std::unique_ptr<vecgeom::VPlacedVolume>(
+      new vecgeom::SimpleCone("test-cone-closing-ring", 1238.0, 1455.22, 1455.22, 1455.22, 178.65, 0., vecgeom::kTwoPi));
+}
+
 } // namespace test
 } // namespace vecgeom
 

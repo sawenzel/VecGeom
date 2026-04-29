@@ -14,6 +14,8 @@
 #include "VecGeomTest/ApproxEqual.h"
 #include "VecGeomTest/ShapeContractChecks.h"
 #include "VecGeomTest/ShapeSampleSet.h"
+#include "VecGeomTest/TestCaseCone.h"
+#include "VecGeomTest/TestCaseSolids.h"
 #include "VecGeomTest/TestCaseSphere.h"
 #include "VecGeomTest/TestCaseTube.h"
 
@@ -204,6 +206,13 @@ auto MakeGrazingSurfaceDistanceToOutCaller()
   return [](GrazingSurfaceVolume const *volume, const Vec_t &point, const Vec_t &direction, Vec_t &normal) {
     return volume->DistanceToOut(point, direction, normal);
   };
+}
+
+Precision SolidToleranceForCase(const char *case_name)
+{
+  auto const *solid_case = vecgeom::test::FindTestCaseSolid(case_name);
+  VECGEOM_ASSERT(solid_case != nullptr);
+  return solid_case->solid_tolerance;
 }
 
 vecgeom::test::ShapeSampleSet MakeManualSamples(const std::vector<std::pair<Vec_t, Vec_t>> &inside_samples,
@@ -511,7 +520,8 @@ void CheckSurfaceGrazingToleranceTiltsRay()
 
 void CheckCurvedSurfaceDetectorReprojectsSphereAndTubeTangentialProbes()
 {
-  auto check_curved_surface = [](const vecgeom::VPlacedVolume &volume, const Vec_t &surface_point) {
+  auto check_curved_surface = [](const vecgeom::VPlacedVolume &volume, const Vec_t &surface_point,
+                                 Precision solid_tolerance) {
     VECGEOM_ASSERT(volume.Inside(surface_point) == vecgeom::EnumInside::kSurface);
 
     Vec_t normal(0., 0., 0.);
@@ -521,7 +531,7 @@ void CheckCurvedSurfaceDetectorReprojectsSphereAndTubeTangentialProbes()
 
     std::vector<vecgeom::EnumInside> probe_results;
     std::vector<vecgeom::test::ShapeTangentialProbeReplay> probe_details;
-    auto kind = vecgeom::test::DetectSurfaceKind(&volume, surface_point, normal, vecgeom::kTolerance, &probe_results,
+    auto kind = vecgeom::test::DetectSurfaceKind(&volume, surface_point, normal, solid_tolerance, &probe_results,
                                                  &probe_details);
 
     VECGEOM_ASSERT(kind == vecgeom::test::ShapeSurfaceKind::kSmooth);
@@ -537,10 +547,41 @@ void CheckCurvedSurfaceDetectorReprojectsSphereAndTubeTangentialProbes()
   };
 
   auto sphere = vecgeom::test::MakeSphereThinShellTestSolid();
-  check_curved_surface(*sphere, Vec_t(100., 0., 0.));
+  check_curved_surface(*sphere, Vec_t(100., 0., 0.), SolidToleranceForCase("sphere_thin_shell"));
 
   auto tube = vecgeom::test::MakeTubeFullPhiTestSolid();
-  check_curved_surface(*tube, Vec_t(10., 0., 0.));
+  check_curved_surface(*tube, Vec_t(10., 0., 0.), SolidToleranceForCase("tube_fullphi"));
+}
+
+void CheckConeClosingRingSurfaceNormalReplay()
+{
+  auto cone = vecgeom::test::MakeConeClosingRingTestSolid();
+
+  const Vec_t point(-68.594588934506035, -1453.6024322171252, 178.65000000000009);
+  const Vec_t direction(0.76816543155439787, 0.6314785050975541, -0.10562559994908471);
+
+  VECGEOM_ASSERT(cone->Inside(point) == vecgeom::EnumInside::kSurface);
+
+  auto samples = MakeManualSamples({}, {{point, direction}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+
+  auto distance_to_out = [](const vecgeom::VPlacedVolume *volume, const Vec_t &sample_point, const Vec_t &sample_dir,
+                            Vec_t &normal) { return volume->DistanceToOut(sample_point, sample_dir, normal); };
+
+  bool passed = vecgeom::test::CheckSurfaceNormals(cone.get(), view, vecgeom::kConeTolerance, sink, score);
+
+  VECGEOM_ASSERT(passed);
+  VECGEOM_ASSERT(score == 0);
+  VECGEOM_ASSERT(result.CountErrors() == 0);
+
+  auto replay = vecgeom::test::ReplayShapeNormalSample(cone.get(), view, samples.offset_surface, vecgeom::kConeTolerance,
+                                                       distance_to_out);
+  VECGEOM_ASSERT(replay.Passed());
+  VECGEOM_ASSERT(replay.valid_normal);
 }
 
 void CheckSurfaceNormalValidityBit()
@@ -1438,6 +1479,7 @@ void CheckHitConsistencyInsideExitSurfaceBit()
 
   ScriptedProfile exit_profile;
   exit_profile.inside_result = vecgeom::EnumInside::kOutside;
+  exit_profile.safety_to_in  = 0.5;
   volume.SetProfile(1, exit_profile);
 
   auto samples = MakeManualSamples({{Vec_t(0., 0., 0.), Vec_t(1., 0., 0.)}}, {}, {});
@@ -1555,6 +1597,7 @@ void CheckHitConsistencyOutsideEntrySurfaceBit()
 
   ScriptedProfile boundary_profile;
   boundary_profile.inside_result = vecgeom::EnumInside::kOutside;
+  boundary_profile.safety_to_in  = 0.5;
   volume.SetProfile(3, boundary_profile);
 
   auto samples =
@@ -1707,6 +1750,7 @@ int main()
   CheckSurfaceGrazingNotBothZeroBit();
   CheckSurfaceGrazingToleranceTiltsRay();
   CheckCurvedSurfaceDetectorReprojectsSphereAndTubeTangentialProbes();
+  CheckConeClosingRingSurfaceNormalReplay();
   CheckSurfaceNormalValidityBit();
   CheckSurfaceNormalUnitLengthBit();
   CheckInsideExitNormalOrientationBit();

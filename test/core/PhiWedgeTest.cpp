@@ -59,6 +59,13 @@ int main()
 
     VECGEOM_ASSERT(!wedge.Contains<kScalar>(Vector3D_t(-1., 0., 0.)));
 
+    // scalar boundary-inclusive contains should accept the tolerance band on
+    // both phi planes even when plain Contains() stays false there.
+    VECGEOM_ASSERT(wedge.ContainsWithBoundary<kScalar>(Vector3D_t(1., -0.5 * kTolerance, 0.)));
+    VECGEOM_ASSERT(wedge.ContainsWithBoundary<kScalar>(
+        Vector3D_t(std::cos(kPi / 3.) + 0.5 * kTolerance * std::sin(kPi / 3.),
+                   std::sin(kPi / 3.) - 0.5 * kTolerance * std::cos(kPi / 3.), 0.)));
+
     // tests on inside
     VECGEOM_ASSERT(wedge.Inside<kScalar>(Vector3D_t(1., 0., 0.)) == EInside::kSurface);
     VECGEOM_ASSERT(wedge.Inside<kScalar>(Vector3D_t(1., -0.5 * kTolerance, 0.)) == EInside::kSurface);

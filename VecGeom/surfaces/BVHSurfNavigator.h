@@ -187,7 +187,8 @@ public:
     bool flipped = framed_surface->fLogicId < 0;
     can_compute  = unplaced_surface.Safety(surface_point, exiting ^ flipped, surfdata, safety_surf, onsurf_crt);
 
-    if (!can_compute || safety_surf >= limit) return safety_surf;
+    // Keep invalid or wrong-side support-surface safeties out of the BVH reduction.
+    if (!can_compute || safety_surf < -vecgeom::kToleranceDist<Real_t> || safety_surf >= limit) return limit;
 
     // Now compute the safety from the projection of the point on the surface to the frame
     safety_frame = safety_surf;

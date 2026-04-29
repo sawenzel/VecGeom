@@ -131,6 +131,15 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        Vec_t(-0.59316595886414847, 0.71320369634116421, -0.37348980276585314), false, Vec_t(0., 0., 0.), 0.,
        "Surface-family replay ray on the narrow-phi cone where DistanceToIn and DistanceToOut both collapse to zero "
        "in the 10M-point stress run."},
+      {"polycone_nearly_repeated_z_inside_exit_shared_plane", "polycone_nearly_repeated_z", "normals",
+       ShapeSampleCategory::kInside, Vec_t(5.4792351593165733, -34.959087641413987, 34.407379510600208),
+       Vec_t(0.54113638620723326, 0.66772399699134932, -0.51119084045439689), false, Vec_t(0., 0., 0.), 0.,
+       "Inside-exit replay ray from the 10M stress run where DistanceToOut lands on the nearly repeated shared-z "
+       "plane but the propagated boundary point is still classified inside."},
+      {"polycone_two_section_sharp_jump_surface_exit_exposed_annulus", "polycone_two_section_sharp_jump", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(20., 0., -20.), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
+       "Surface-exit ray on the exposed annulus of a repeated-z transition where the boundary point belongs only to "
+       "the upper section and DistanceToOut must still return zero instead of wrong-side -1."},
   };
   return cases;
 }
