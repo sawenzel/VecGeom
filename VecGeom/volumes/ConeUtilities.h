@@ -776,8 +776,7 @@ public:
     if (ConeTypes::checkPhiTreatment<coneTypeT>(cone)) {
       bool completelyoutsidephi(false);
       bool completelyinsidephi(false);
-      cone.fPhiWedge.GenericKernelForContainsAndInside<Precision, ForInside>(point, completelyinsidephi,
-                                                                             completelyoutsidephi);
+      cone.fPhiWedge.GenericKernelForContainsAndInside<ForInside>(point, completelyinsidephi, completelyoutsidephi);
       completelyoutside |= completelyoutsidephi;
       if (ForInside) completelyinside &= completelyinsidephi;
     }

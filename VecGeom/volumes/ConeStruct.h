@@ -249,11 +249,17 @@ struct ConeStruct {
     }
 
     if (inside && distZ <= kHalfTolerance) {
-      noSurfaces++;
-      if (p.z() >= 0.)
-        sumnorm += nZ;
-      else
-        sumnorm.Set(0, 0, -1.);
+      const bool onUpperEnd = p.z() >= 0.;
+      const bool degenerateEndRing =
+          onUpperEnd ? (vecCore::math::Abs(_frmax2 - _frmin2) < kTolerance)
+                     : (vecCore::math::Abs(_frmax1 - _frmin1) < kTolerance);
+      if (!degenerateEndRing) {
+        noSurfaces++;
+        if (onUpperEnd)
+          sumnorm += nZ;
+        else
+          sumnorm.Set(0, 0, -1.);
+      }
     }
 
     if (inside && distRMax <= fOuterTolerance) {

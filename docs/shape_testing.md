@@ -43,6 +43,11 @@ The existing `ShapeTester` and `shape_test*` executables still exist. This docum
 
 The tables below describe the public shape-level rules checked by the helper suite. They are written as API-level conventions, not as the internal implementation steps used by the tests. Failure reports still print an internal `convention_bit` from `ShapeConventionBit`, but that bitset is only the lower-level breakdown used to report which supporting check failed.
 
+`solid_tolerance` is resolved per configured sampled solid. The default is
+`vecgeom::kTolerance`. Planar-only solid families use `vecgeom::kTolerance`,
+while second-order families use `vecgeom::kConeTolerance`. Larger values should
+only be configured explicitly for a family that demonstrably needs them.
+
 ### 1. Classification and Wrong-Side Rules
 
 | API / topology | Convention |
@@ -63,20 +68,27 @@ The tables below describe the public shape-level rules checked by the helper sui
 | `DistanceToIn(point, dir)` on a surface point with exiting direction | positive |
 | `DistanceToOut(point, dir)` on a surface point with exiting direction | zero within tolerance |
 | `DistanceToOut(point, dir)` on a surface point with entering direction | positive |
-| any tested direction on a surface point | `DistanceToIn` and `DistanceToOut` are not both zero |
+| any tested direction on a surface point | `DistanceToIn` and `DistanceToOut` are not both `<= kTolerance` |
 
-The last rule is general. Grazing directions are just one important subset used by the tests to probe it.
+The last rule is general. It is intentionally evaluated against `kTolerance`,
+not the per-solid `solid_tolerance`, because it checks whether the tested ray
+actually advances. Grazing directions are one important subset used by the
+tests to probe it.
 
 ### 3. Safety Rules
 
 | API / topology | Convention |
 | --- | --- |
-| `SafetyToIn(point)` on a surface point | within surface tolerance |
-| `SafetyToOut(point)` on a surface point | within surface tolerance |
+| `SafetyToIn(point)` on a surface point | `<= solid_tolerance` |
+| `SafetyToOut(point)` on a surface point | `<= solid_tolerance` |
 | `SafetyToOut(point)` from inside | positive |
 | `SafetyToIn(point)` from outside | positive |
 | positive safety from the correct side | does not exceed the corresponding distance within tolerance |
 | safety sphere grown from the correct side | does not cross the boundary |
+
+For surface points, the helper checks keep the historical upper-bound rule:
+surface safety must not exceed `solid_tolerance`. The checks do not require an
+exact zero just to prove a surface classification.
 
 ### 4. Normal Rules
 

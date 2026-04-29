@@ -127,15 +127,24 @@ public:
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Contains(Vector3D<Real_v> const &point) const;
 
+  VECCORE_ATT_HOST_DEVICE bool Contains(Vector3D<Precision> const &point) const;
+
   // GL note: for tubes, use of TubeImpl::PointInCyclicalSector outperformed next two methods in vector mode
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> ContainsWithBoundary(Vector3D<Real_v> const &point) const;
 
+  VECCORE_ATT_HOST_DEVICE bool ContainsWithBoundary(Vector3D<Precision> const &point) const;
+
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> ContainsWithoutBoundary(Vector3D<Real_v> const &point) const;
 
+  VECCORE_ATT_HOST_DEVICE bool ContainsWithoutBoundary(Vector3D<Precision> const &point) const;
+
   template <typename Real_v, typename Inside_t>
   VECCORE_ATT_HOST_DEVICE Inside_t Inside(Vector3D<Real_v> const &point) const;
+
+  template <typename Inside_t>
+  VECCORE_ATT_HOST_DEVICE Inside_t Inside(Vector3D<Precision> const &point) const;
 
   // static function determining if input points are on a plane surface which is part of a wedge
   // ( given by along and normal )
@@ -143,6 +152,10 @@ public:
   VECCORE_ATT_HOST_DEVICE static vecCore::Mask_v<Real_v> IsOnSurfaceGeneric(Vector3D<Precision> const &alongVector,
                                                                             Vector3D<Precision> const &normalVector,
                                                                             Vector3D<Real_v> const &point);
+
+  VECCORE_ATT_HOST_DEVICE static bool IsOnSurfaceGeneric(Vector3D<Precision> const &alongVector,
+                                                         Vector3D<Precision> const &normalVector,
+                                                         Vector3D<Precision> const &point);
 
   /* Function Name :  IsOnSurfaceGeneric<Real_v, ForStartPhi>()
    *
@@ -197,12 +210,16 @@ public:
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v SafetyToIn(Vector3D<Real_v> const &point) const;
 
+  VECCORE_ATT_HOST_DEVICE Precision SafetyToIn(Vector3D<Precision> const &point) const;
+
   /**
    * estimate of the smallest distance to the Wedge boundary when
    * the point is located inside the Wedge ( within the defining phi angle )
    */
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v SafetyToOut(Vector3D<Real_v> const &point) const;
+
+  VECCORE_ATT_HOST_DEVICE Precision SafetyToOut(Vector3D<Precision> const &point) const;
 
   /**
    * estimate of the distance to the Wedge boundary with given direction
@@ -222,6 +239,10 @@ public:
   VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(
       Vector3D<Real_v> const &localPoint, typename vecCore::Mask_v<Real_v> &completelyinside,
       typename vecCore::Mask_v<Real_v> &completelyoutside) const;
+
+  template <bool ForInside>
+  VECCORE_ATT_HOST_DEVICE void GenericKernelForContainsAndInside(Vector3D<Precision> const &localPoint,
+                                                                 bool &completelyinside, bool &completelyoutside) const;
 
 }; // end of class Wedge
 
@@ -271,6 +292,18 @@ VECCORE_ATT_HOST_DEVICE Inside_t Wedge::Inside(Vector3D<Real_v> const &point) co
   return inside;
 }
 
+template <typename Inside_t>
+VECCORE_ATT_HOST_DEVICE Inside_t Wedge::Inside(Vector3D<Precision> const &point) const
+{
+  bool completelyinside  = false;
+  bool completelyoutside = false;
+  GenericKernelForContainsAndInside<true>(point, completelyinside, completelyoutside);
+  Inside_t inside(EInside::kSurface);
+  if (completelyoutside) inside = EInside::kOutside;
+  if (completelyinside) inside = EInside::kInside;
+  return inside;
+}
+
 template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::ContainsWithBoundary(
     Vector3D<Real_v> const &point) const
@@ -278,6 +311,16 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::ContainsWithBoun
   typedef typename vecCore::Mask_v<Real_v> Bool_v;
   Bool_v completelyinside, completelyoutside;
   GenericKernelForContainsAndInside<Real_v, true>(point, completelyinside, completelyoutside);
+  return !completelyoutside;
+}
+
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::ContainsWithBoundary(Vector3D<Precision> const &point) const
+{
+  bool completelyinside  = false;
+  bool completelyoutside = false;
+  // Boundary-inclusive contains must use the same on-surface handling as the
+  // vector overload.
+  GenericKernelForContainsAndInside<true>(point, completelyinside, completelyoutside);
   return !completelyoutside;
 }
 
@@ -291,6 +334,15 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::ContainsWithoutB
   return completelyinside;
 }
 
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::ContainsWithoutBoundary(
+    Vector3D<Precision> const &point) const
+{
+  bool completelyinside  = false;
+  bool completelyoutside = false;
+  GenericKernelForContainsAndInside<true>(point, completelyinside, completelyoutside);
+  return completelyinside;
+}
+
 template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::Contains(Vector3D<Real_v> const &point) const
 {
@@ -298,6 +350,14 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::Contains(Vector3
   Bool_v unused(false);
   Bool_v outside(false);
   GenericKernelForContainsAndInside<Real_v, false>(point, unused, outside);
+  return !outside;
+}
+
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::Contains(Vector3D<Precision> const &point) const
+{
+  bool unused  = false;
+  bool outside = false;
+  GenericKernelForContainsAndInside<false>(point, unused, outside);
   return !outside;
 }
 
@@ -336,6 +396,50 @@ VECCORE_ATT_HOST_DEVICE void Wedge::GenericKernelForContainsAndInside(
   }
 }
 
+template <bool ForInside>
+VECCORE_ATT_HOST_DEVICE void Wedge::GenericKernelForContainsAndInside(Vector3D<Precision> const &localPoint,
+                                                                      bool &completelyinside,
+                                                                      bool &completelyoutside) const
+{
+  Precision x(localPoint.x());
+  Precision y(localPoint.y());
+  Precision startx(fAlongVector1.x());
+  Precision starty(fAlongVector1.y());
+  Precision endx(fAlongVector2.x());
+  Precision endy(fAlongVector2.y());
+
+  Precision startCheck = (-x * starty + y * startx);
+  Precision endCheck   = (-endx * y + endy * x);
+
+  completelyoutside = startCheck < Precision(0.);
+  if (fDPhi < kPi)
+    completelyoutside |= endCheck < Precision(0.);
+  else
+    completelyoutside &= endCheck < Precision(0.);
+
+  if (!ForInside) return;
+
+  const bool nearStartSurface = Abs(startCheck) < Precision(kTolerance);
+  const bool nearEndSurface   = Abs(endCheck) < Precision(kTolerance);
+  if (!nearStartSurface && !nearEndSurface) {
+    completelyinside = !completelyoutside;
+    return;
+  }
+
+  bool onSurface = false;
+  if (nearStartSurface) {
+    const Precision startAlong = x * startx + y * starty;
+    onSurface                  = startAlong >= Precision(0.);
+  }
+  if (!onSurface && nearEndSurface) {
+    const Precision endAlong = x * endx + y * endy;
+    onSurface                = endAlong >= Precision(0.);
+  }
+
+  completelyoutside &= !onSurface;
+  completelyinside = !onSurface && !completelyoutside;
+}
+
 template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::IsOnSurfaceGeneric(
     Vector3D<Precision> const &alongVector, Vector3D<Precision> const &normalVector, Vector3D<Real_v> const &point)
@@ -349,6 +453,15 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::IsOnSurfaceGener
   return condition1 && condition2;
 }
 
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::IsOnSurfaceGeneric(
+    Vector3D<Precision> const &alongVector, Vector3D<Precision> const &normalVector, Vector3D<Precision> const &point)
+{
+  bool condition1 = alongVector.x() * point.x() + alongVector.y() * point.y() >= Precision(0.);
+  if (!condition1) return false;
+  bool condition2 = Abs(normalVector.x() * point.x() + normalVector.y() * point.y()) < kTolerance;
+  return condition2;
+}
+
 template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE Real_v Wedge::SafetyToOut(Vector3D<Real_v> const &point) const
 {
@@ -359,6 +472,18 @@ VECCORE_ATT_HOST_DEVICE Real_v Wedge::SafetyToOut(Vector3D<Real_v> const &point)
   // assuming that we have z wedge and the planes pass through the origin
   Real_v dist1 = point.x() * fNormalVector1.x() + point.y() * fNormalVector1.y();
   Real_v dist2 = point.x() * fNormalVector2.x() + point.y() * fNormalVector2.y();
+
+  if (fDPhi < kPi) {
+    return Min(dist1, dist2);
+  } else {
+    return Max(dist1, dist2);
+  }
+}
+
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Precision Wedge::SafetyToOut(Vector3D<Precision> const &point) const
+{
+  Precision dist1 = point.x() * fNormalVector1.x() + point.y() * fNormalVector1.y();
+  Precision dist2 = point.x() * fNormalVector2.x() + point.y() * fNormalVector2.y();
 
   if (fDPhi < kPi) {
     return Min(dist1, dist2);
@@ -384,6 +509,18 @@ VECCORE_ATT_HOST_DEVICE Real_v Wedge::SafetyToIn(Vector3D<Real_v> const &point) 
     return Max(-1 * dist1, -1 * dist2);
   } else {
     return Min(-1 * dist1, -1 * dist2);
+  }
+}
+
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Precision Wedge::SafetyToIn(Vector3D<Precision> const &point) const
+{
+  Precision dist1 = point.x() * fNormalVector1.x() + point.y() * fNormalVector1.y();
+  Precision dist2 = point.x() * fNormalVector2.x() + point.y() * fNormalVector2.y();
+
+  if (fDPhi < kPi) {
+    return Max(-dist1, -dist2);
+  } else {
+    return Min(-dist1, -dist2);
   }
 }
 

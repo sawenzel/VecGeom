@@ -714,6 +714,11 @@ Precision ResolveGrazingTolerance(const ShapeContractOptions &options)
                                                                  : static_cast<Precision>(0.);
 }
 
+Precision ResolveSolidTolerance(const vecgeom::test::TestCaseSolid &solid_case)
+{
+  return solid_case.solid_tolerance >= vecgeom::kTolerance ? solid_case.solid_tolerance : vecgeom::kTolerance;
+}
+
 void ValidateBenchmarkOptions(const ShapeContractOptions &options)
 {
   VECGEOM_VALIDATE(options.benchmark_repetitions > 0, << "Use -benchmark_repetitions with a positive integer.");
@@ -821,13 +826,15 @@ public:
   ShapeContractExecutionCache(const vecgeom::test::TestCaseSolid &solid_case, ShapeContractTier tier,
                               const ShapeContractOptions &options)
       : fSolidCase(solid_case), fTier(tier), fConfig(ResolveSamplingConfig(solid_case, tier, options)),
-        fGrazingTolerance(ResolveGrazingTolerance(options)), fShape(solid_case.make_shape())
+        fSolidTolerance(ResolveSolidTolerance(solid_case)), fGrazingTolerance(ResolveGrazingTolerance(options)),
+        fShape(solid_case.make_shape())
   {
   }
 
   const vecgeom::test::TestCaseSolid &SolidCase() const { return fSolidCase; }
   ShapeContractTier Tier() const { return fTier; }
   const vecgeom::test::ShapeSamplingConfig &Config() const { return fConfig; }
+  Precision SolidTolerance() const { return fSolidTolerance; }
   Precision GrazingTolerance() const { return fGrazingTolerance; }
   vecgeom::VPlacedVolume const *Shape() const { return fShape.get(); }
   std::uint64_t Fingerprint()
@@ -847,7 +854,7 @@ public:
     if (!fContractOutcomeReady) {
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fContractOutcome.result, ViolationDisplayLimit(fTier));
-      fContractOutcome.summary = vecgeom::test::RunShapeConventionChecks(fShape.get(), view, vecgeom::kTolerance,
+      fContractOutcome.summary = vecgeom::test::RunShapeConventionChecks(fShape.get(), view, fSolidTolerance,
                                                                          MakeDistanceToOutCaller(), sink);
       fContractOutcomeReady    = true;
     }
@@ -860,7 +867,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fNormalOutcome.result, ViolationDisplayLimit(fTier));
       fNormalOutcome.summary =
-          vecgeom::test::RunShapeNormalChecks(fShape.get(), view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
+          vecgeom::test::RunShapeNormalChecks(fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
       fNormalOutcomeReady = true;
     }
     return fNormalOutcome;
@@ -872,7 +879,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fSurfaceOutcome.result, ViolationDisplayLimit(fTier));
       fSurfaceOutcome.summary = vecgeom::test::RunShapeSurfaceChecks(
-          fShape.get(), view, vecgeom::kTolerance, fGrazingTolerance, MakeDistanceToOutCaller(), sink);
+          fShape.get(), view, fSolidTolerance, fGrazingTolerance, MakeDistanceToOutCaller(), sink);
       fSurfaceOutcomeReady = true;
     }
     return fSurfaceOutcome;
@@ -884,7 +891,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fDistanceToOutOutcome.result, ViolationDisplayLimit(fTier));
       fDistanceToOutOutcome.summary = vecgeom::test::RunShapeDistanceToOutChecks(
-          fShape.get(), view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
+          fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
       fDistanceToOutOutcomeReady = true;
     }
     return fDistanceToOutOutcome;
@@ -896,7 +903,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fDistanceToInOutcome.result, ViolationDisplayLimit(fTier));
       fDistanceToInOutcome.summary =
-          vecgeom::test::RunShapeDistanceToInChecks(fShape.get(), view, vecgeom::kTolerance, sink);
+          vecgeom::test::RunShapeDistanceToInChecks(fShape.get(), view, fSolidTolerance, sink);
       fDistanceToInOutcomeReady = true;
     }
     return fDistanceToInOutcome;
@@ -908,7 +915,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fSafetyOutcome.result, ViolationDisplayLimit(fTier));
       fSafetyOutcome.summary =
-          vecgeom::test::RunShapeSafetyChecks(fShape.get(), view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
+          vecgeom::test::RunShapeSafetyChecks(fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
       fSafetyOutcomeReady = true;
     }
     return fSafetyOutcome;
@@ -920,7 +927,7 @@ public:
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fHitConsistencyOutcome.result, ViolationDisplayLimit(fTier));
       fHitConsistencyOutcome.summary = vecgeom::test::RunShapeHitConsistencyChecks(
-          fShape.get(), view, vecgeom::kTolerance, MakeDistanceToOutCaller(), sink);
+          fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
       fHitConsistencyOutcomeReady = true;
     }
     return fHitConsistencyOutcome;
@@ -942,6 +949,7 @@ private:
   const vecgeom::test::TestCaseSolid &fSolidCase;
   ShapeContractTier fTier;
   vecgeom::test::ShapeSamplingConfig fConfig;
+  Precision fSolidTolerance   = vecgeom::kTolerance;
   Precision fGrazingTolerance = 0.;
   std::unique_ptr<vecgeom::VPlacedVolume> fShape;
   vecgeom::test::ShapeSampleSet fSamples;
@@ -1424,6 +1432,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
   auto view                         = vecgeom::test::MakeShapeContractSampleView(samples);
   const int sample_index            = ManualEdgeCasePrimarySampleIndex(samples, manual_case);
   const auto target_family          = ParseTestFamilySelection(manual_case.target_family_name);
+  const Precision solid_tolerance   = ResolveSolidTolerance(*solid_case);
   const Precision grazing_tolerance = ResolveManualGrazingTolerance(options, manual_case);
 
   VECGEOM_VALIDATE(sample_index >= 0 && sample_index < view.TotalPoints(),
@@ -1431,7 +1440,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
 
   switch (target_family) {
   case ShapeContractTestFamily::kContracts: {
-    auto replay = vecgeom::test::ReplayShapeConventionSample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeConventionSample(shape.get(), view, sample_index, solid_tolerance,
                                                              MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1446,7 +1455,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kNormals: {
-    auto replay = vecgeom::test::ReplayShapeNormalSample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeNormalSample(shape.get(), view, sample_index, solid_tolerance,
                                                          MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1461,7 +1470,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kSurface: {
-    auto replay = vecgeom::test::ReplayShapeSurfaceSample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeSurfaceSample(shape.get(), view, sample_index, solid_tolerance,
                                                           grazing_tolerance, MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1476,7 +1485,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kDistanceToOut: {
-    auto replay = vecgeom::test::ReplayShapeDistanceToOutSample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeDistanceToOutSample(shape.get(), view, sample_index, solid_tolerance,
                                                                 MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1491,7 +1500,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kDistanceToIn: {
-    auto replay = vecgeom::test::ReplayShapeDistanceToInSample(shape.get(), view, sample_index, vecgeom::kTolerance);
+    auto replay = vecgeom::test::ReplayShapeDistanceToInSample(shape.get(), view, sample_index, solid_tolerance);
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
                               << manual_case.solid_case_name << "' failed.\n"
@@ -1505,7 +1514,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kSafeties: {
-    auto replay = vecgeom::test::ReplayShapeSafetySample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeSafetySample(shape.get(), view, sample_index, solid_tolerance,
                                                          MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1520,7 +1529,7 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     break;
   }
   case ShapeContractTestFamily::kHitConsistency: {
-    auto replay = vecgeom::test::ReplayShapeHitConsistencySample(shape.get(), view, sample_index, vecgeom::kTolerance,
+    auto replay = vecgeom::test::ReplayShapeHitConsistencySample(shape.get(), view, sample_index, solid_tolerance,
                                                                  MakeDistanceToOutCaller());
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
@@ -1596,7 +1605,7 @@ void ReplayContractsSample(ShapeContractExecutionCache &cache, const ShapeContra
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
   auto replay = vecgeom::test::ReplayShapeConventionSample(cache.Shape(), view, options.replay_index,
-                                                           vecgeom::kTolerance, MakeDistanceToOutCaller());
+                                                           cache.SolidTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeContractRayReplay(replay) << std::endl;
 }
 
@@ -1608,7 +1617,8 @@ void ReplayNormalsSample(ShapeContractExecutionCache &cache, const ShapeContract
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay = vecgeom::test::ReplayShapeNormalSample(cache.Shape(), view, options.replay_index, vecgeom::kTolerance,
+  auto replay = vecgeom::test::ReplayShapeNormalSample(cache.Shape(), view, options.replay_index,
+                                                       cache.SolidTolerance(),
                                                        MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeNormalRayReplay(replay) << std::endl;
 }
@@ -1621,8 +1631,9 @@ void ReplaySurfaceSample(ShapeContractExecutionCache &cache, const ShapeContract
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay = vecgeom::test::ReplayShapeSurfaceSample(cache.Shape(), view, options.replay_index, vecgeom::kTolerance,
-                                                        cache.GrazingTolerance(), MakeDistanceToOutCaller());
+  auto replay = vecgeom::test::ReplayShapeSurfaceSample(cache.Shape(), view, options.replay_index,
+                                                        cache.SolidTolerance(), cache.GrazingTolerance(),
+                                                        MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeSurfaceRayReplay(replay) << std::endl;
 }
 
@@ -1635,7 +1646,7 @@ void ReplayDistanceToOutSample(ShapeContractExecutionCache &cache, const ShapeCo
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
   auto replay = vecgeom::test::ReplayShapeDistanceToOutSample(cache.Shape(), view, options.replay_index,
-                                                              vecgeom::kTolerance, MakeDistanceToOutCaller());
+                                                              cache.SolidTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeDistanceToOutRayReplay(replay) << std::endl;
 }
 
@@ -1647,8 +1658,8 @@ void ReplayDistanceToInSample(ShapeContractExecutionCache &cache, const ShapeCon
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay =
-      vecgeom::test::ReplayShapeDistanceToInSample(cache.Shape(), view, options.replay_index, vecgeom::kTolerance);
+  auto replay = vecgeom::test::ReplayShapeDistanceToInSample(cache.Shape(), view, options.replay_index,
+                                                             cache.SolidTolerance());
   std::cout << vecgeom::test::DescribeShapeDistanceToInRayReplay(replay) << std::endl;
 }
 
@@ -1660,7 +1671,8 @@ void ReplaySafetySample(ShapeContractExecutionCache &cache, const ShapeContractO
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay = vecgeom::test::ReplayShapeSafetySample(cache.Shape(), view, options.replay_index, vecgeom::kTolerance,
+  auto replay = vecgeom::test::ReplayShapeSafetySample(cache.Shape(), view, options.replay_index,
+                                                       cache.SolidTolerance(),
                                                        MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeSafetyRayReplay(replay) << std::endl;
 }
@@ -1674,7 +1686,7 @@ void ReplayHitConsistencySample(ShapeContractExecutionCache &cache, const ShapeC
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
   auto replay = vecgeom::test::ReplayShapeHitConsistencySample(cache.Shape(), view, options.replay_index,
-                                                               vecgeom::kTolerance, MakeDistanceToOutCaller());
+                                                               cache.SolidTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeHitConsistencyRayReplay(replay) << std::endl;
 }
 

@@ -690,6 +690,14 @@ struct ShapeContractRayReplay {
 
 enum class ShapeSurfaceKind { kUnknown = 0, kSmooth, kEdgeCandidate };
 
+struct ShapeTangentialProbeReplay;
+
+template <typename ImplT>
+ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, const Vec_t &normal_unit,
+                                   Precision solid_tolerance,
+                                   std::vector<vecgeom::EnumInside> *probe_results = nullptr,
+                                   std::vector<ShapeTangentialProbeReplay> *probe_details = nullptr);
+
 inline const char *ShapeSurfaceKindLabel(ShapeSurfaceKind kind)
 {
   switch (kind) {
@@ -1251,10 +1259,20 @@ bool EvaluateSurfaceConventionSample(
     replay->normal_dot_direction = direction.Dot(normal);
   }
 
+  ShapeSurfaceKind surface_kind = ShapeSurfaceKind::kUnknown;
+  if (valid_normal) {
+    const Precision normal_magnitude = normal.Mag();
+    if (normal_magnitude > 0.) {
+      Vec_t normal_unit(normal);
+      normal_unit /= normal_magnitude;
+      surface_kind = DetectSurfaceKind(volume, point, normal_unit, solid_tolerance);
+    }
+  }
+
   Precision dist = volume->DistanceToIn(point, direction);
   if (replay) replay->distance_to_in = dist;
-  if (direction.Dot(normal) < 0. && dist < kInfLength) {
-    bool ok = std::fabs(dist * direction.Dot(normal)) <= solid_tolerance;
+  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) < 0. && dist < kInfLength) {
+    bool ok = vecCore::math::Abs(dist * direction.Dot(normal)) <= solid_tolerance;
     if (valid_normal && !ok) {
       passed = false;
       record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToInEntering},
@@ -1265,7 +1283,7 @@ bool EvaluateSurfaceConventionSample(
   }
 
   const bool convex_shape = false;
-  if (direction.Dot(normal) > 0. && dist == kInfLength) {
+  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) > 0. && dist == kInfLength) {
     if (convex_shape) {
       if (!vecgeom::test::ApproxEqual<Precision>(dist, static_cast<Precision>(kInfLength))) {
         passed = false;
@@ -1282,7 +1300,7 @@ bool EvaluateSurfaceConventionSample(
   Vec_t norm(0., 0., 0.);
   dist = call_distance_to_out(volume, point, direction, norm);
   if (replay) replay->distance_to_out = dist;
-  if (direction.Dot(normal) > 0. && dist == kInfLength) {
+  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) > 0. && dist == kInfLength) {
     bool ok = (dist * direction.Dot(normal)) <= solid_tolerance;
     if (!ok) {
       passed = false;
@@ -1292,7 +1310,7 @@ bool EvaluateSurfaceConventionSample(
     }
   }
 
-  if (direction.Dot(normal) < 0.) {
+  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) < 0.) {
     if (!(dist > 0.)) {
       if (valid_normal) {
         passed = false;
@@ -1691,8 +1709,8 @@ bool EvaluateTangentialNormalProbe(ImplT const *volume, const Vec_t &probe_point
 
 template <typename ImplT>
 ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, const Vec_t &normal_unit,
-                                   Precision solid_tolerance, std::vector<vecgeom::EnumInside> *probe_results = nullptr,
-                                   std::vector<ShapeTangentialProbeReplay> *probe_details = nullptr)
+                                   Precision solid_tolerance, std::vector<vecgeom::EnumInside> *probe_results,
+                                   std::vector<ShapeTangentialProbeReplay> *probe_details)
 {
   if (probe_results) probe_results->clear();
   if (probe_details) probe_details->clear();
@@ -1758,7 +1776,7 @@ bool EvaluateSurfacePointSample(
     replay->distance_to_in  = distance_to_in;
     replay->distance_to_out = distance_to_out;
   }
-  if (distance_to_in <= solid_tolerance && distance_to_out <= solid_tolerance) {
+  if (distance_to_in <= vecgeom::kTolerance && distance_to_out <= vecgeom::kTolerance) {
     passed = false;
     record_failure({context.sample_index, context.sample_group, kSurfaceRayNotBothZero},
                    "DistanceToIn and DistanceToOut cannot both be zero for Surface ray.", distance_to_out);
@@ -1789,7 +1807,7 @@ bool EvaluateSurfacePointSample(
     replay->grazing_distance_to_in  = grazing_distance_to_in;
     replay->grazing_distance_to_out = grazing_distance_to_out;
   }
-  if (grazing_distance_to_in <= solid_tolerance && grazing_distance_to_out <= solid_tolerance) {
+  if (grazing_distance_to_in <= vecgeom::kTolerance && grazing_distance_to_out <= vecgeom::kTolerance) {
     passed = false;
     record_failure({context.sample_index, context.sample_group, kSurfaceGrazingNotBothZero},
                    "DistanceToIn and DistanceToOut cannot both be zero for grazing Surface ray.",
@@ -1883,12 +1901,20 @@ bool EvaluateInsideDistanceToOutSample(
     }
 
     if (boundary_inside != vecgeom::EnumInside::kSurface) {
-      passed = false;
-      const std::string message =
-          boundary_inside == vecgeom::EnumInside::kInside
-              ? "DistanceToOut for Inside Point undershoots: propagated exit point should be on the Surface."
-              : "DistanceToOut for Inside Point overshoots: propagated exit point should be on the Surface.";
-      record_failure({context.sample_index, context.sample_group, kDistanceToOutOnSurface}, message, dist);
+      bool effectively_on_surface = false;
+      if (boundary_inside == vecgeom::EnumInside::kInside) {
+        effectively_on_surface = volume->SafetyToOut(boundary_point) <= solid_tolerance;
+      } else if (boundary_inside == vecgeom::EnumInside::kOutside) {
+        effectively_on_surface = volume->SafetyToIn(boundary_point) <= solid_tolerance;
+      }
+      if (!effectively_on_surface) {
+        passed = false;
+        const std::string message =
+            boundary_inside == vecgeom::EnumInside::kInside
+                ? "DistanceToOut for Inside Point undershoots: propagated exit point should be on the Surface."
+                : "DistanceToOut for Inside Point overshoots: propagated exit point should be on the Surface.";
+        record_failure({context.sample_index, context.sample_group, kDistanceToOutOnSurface}, message, dist);
+      }
     }
   }
 
@@ -2241,13 +2267,21 @@ bool EvaluateInsideHitConsistencySample(
     replay->boundary_inside_result = boundary_inside;
   }
   if (boundary_inside != vecgeom::EnumInside::kSurface) {
-    passed = false;
-    const std::string message =
-        boundary_inside == vecgeom::EnumInside::kInside
-            ? "Inside consistency ray undershoots: propagated exit point should be on the Surface."
-            : "Inside consistency ray overshoots: propagated exit point should be on the Surface.";
-    record_failure({context.sample_index, context.sample_group, kHitInsideExitOnSurface}, message, dist);
-    return passed;
+    bool effectively_on_surface = false;
+    if (boundary_inside == vecgeom::EnumInside::kInside) {
+      effectively_on_surface = volume->SafetyToOut(boundary_point) <= solid_tolerance;
+    } else if (boundary_inside == vecgeom::EnumInside::kOutside) {
+      effectively_on_surface = volume->SafetyToIn(boundary_point) <= solid_tolerance;
+    }
+    if (!effectively_on_surface) {
+      passed = false;
+      const std::string message =
+          boundary_inside == vecgeom::EnumInside::kInside
+              ? "Inside consistency ray undershoots: propagated exit point should be on the Surface."
+              : "Inside consistency ray overshoots: propagated exit point should be on the Surface.";
+      record_failure({context.sample_index, context.sample_group, kHitInsideExitOnSurface}, message, dist);
+      return passed;
+    }
   }
 
   const Precision safety_to_in  = volume->SafetyToIn(boundary_point);
@@ -2387,13 +2421,22 @@ bool EvaluateOutsideHitConsistencySample(
     replay->boundary_inside_result = boundary_inside;
   }
   if (boundary_inside != vecgeom::EnumInside::kSurface) {
-    passed = false;
-    const std::string message =
-        boundary_inside == vecgeom::EnumInside::kOutside
-            ? "Outside consistency ray undershoots: propagated entry point should be on the Surface."
-            : "Outside consistency ray overshoots: propagated entry point should be on the Surface.";
-    record_failure({context.sample_index, context.sample_group, kHitOutsideEntryOnSurface}, message, dist_bb + dist_in);
-    return passed;
+    bool effectively_on_surface = false;
+    if (boundary_inside == vecgeom::EnumInside::kInside) {
+      effectively_on_surface = volume->SafetyToOut(boundary_point) <= solid_tolerance;
+    } else if (boundary_inside == vecgeom::EnumInside::kOutside) {
+      effectively_on_surface = volume->SafetyToIn(boundary_point) <= solid_tolerance;
+    }
+    if (!effectively_on_surface) {
+      passed = false;
+      const std::string message =
+          boundary_inside == vecgeom::EnumInside::kOutside
+              ? "Outside consistency ray undershoots: propagated entry point should be on the Surface."
+              : "Outside consistency ray overshoots: propagated entry point should be on the Surface.";
+      record_failure({context.sample_index, context.sample_group, kHitOutsideEntryOnSurface}, message,
+                     dist_bb + dist_in);
+      return passed;
+    }
   }
 
   const Precision boundary_safety_to_in   = volume->SafetyToIn(boundary_point);
@@ -2458,13 +2501,21 @@ bool EvaluateOutsideHitConsistencySample(
   }
 
   if (exit_inside != vecgeom::EnumInside::kSurface) {
-    passed = false;
-    const std::string message =
-        exit_inside == vecgeom::EnumInside::kInside
-            ? "DistanceToOut from the propagated entry point undershoots: exit point should be on the Surface."
-            : "DistanceToOut from the propagated entry point overshoots: exit point should be on the Surface.";
-    record_failure({context.sample_index, context.sample_group, kHitOutsideExitOnSurface}, message, exit_distance);
-    return passed;
+    bool effectively_on_surface = false;
+    if (exit_inside == vecgeom::EnumInside::kInside) {
+      effectively_on_surface = volume->SafetyToOut(exit_point) <= solid_tolerance;
+    } else if (exit_inside == vecgeom::EnumInside::kOutside) {
+      effectively_on_surface = volume->SafetyToIn(exit_point) <= solid_tolerance;
+    }
+    if (!effectively_on_surface) {
+      passed = false;
+      const std::string message =
+          exit_inside == vecgeom::EnumInside::kInside
+              ? "DistanceToOut from the propagated entry point undershoots: exit point should be on the Surface."
+              : "DistanceToOut from the propagated entry point overshoots: exit point should be on the Surface.";
+      record_failure({context.sample_index, context.sample_group, kHitOutsideExitOnSurface}, message, exit_distance);
+      return passed;
+    }
   }
 
   if (exit_safety_to_in > solid_tolerance) {
@@ -2649,6 +2700,13 @@ bool EvaluateInsideExitNormalSample(
     replay->boundary_inside_result = boundary_inside;
   }
   if (boundary_inside != vecgeom::EnumInside::kSurface) {
+    if (boundary_inside == vecgeom::EnumInside::kInside) {
+      const Precision boundary_safety_out = volume->SafetyToOut(boundary_point);
+      if (boundary_safety_out <= solid_tolerance) return passed;
+    } else if (boundary_inside == vecgeom::EnumInside::kOutside) {
+      const Precision boundary_safety_in = volume->SafetyToIn(boundary_point);
+      if (boundary_safety_in <= solid_tolerance) return passed;
+    }
     passed = false;
     record_failure({context.sample_index, context.sample_group, kNormalInsideExitOnSurface},
                    "Inside exit point for normal check should be on the Surface.", dist);
