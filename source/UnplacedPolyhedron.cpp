@@ -463,9 +463,8 @@ VECCORE_ATT_HOST_DEVICE
 bool UnplacedPolyhedron::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &normal) const
 {
   // Compute normal vector to closest surface
-  return (
-      PolyhedronImplementation<Polyhedron::EInnerRadii::kGeneric, Polyhedron::EPhiCutout::kGeneric>::ScalarNormalKernel(
-          *fPoly, point, normal));
+  return (PolyhedronImplementation<Polyhedron::EInnerRadii::kGeneric, Polyhedron::EPhiCutout::kGeneric>::NormalKernel(
+      *fPoly, point, normal));
 }
 
 VECCORE_ATT_HOST_DEVICE

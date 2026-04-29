@@ -170,13 +170,26 @@ option(VECGEOM_BVH_SINGLE "Use single precision for BVH traversal" ${_default_bv
 option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
 
-# Quad acceleration requires VC
-cmake_dependent_option(VECGEOM_QUADRILATERAL_ACCELERATION
-  "Enable SIMD vectorization when looping over quadrilaterals (in Polyhedron)."
-  ON
-  "VECGEOM_VC"
-  OFF
+# Quad acceleration requires the Vc backend. Keep the cache option as the user
+# request, then derive the effective macro from VECGEOM_BACKEND so switching a
+# build tree from scalar to vc re-enables the default.
+set(_VECGEOM_QUAD_ACCEL_DOC
+  "Enable SIMD vectorization when looping over quadrilaterals (in Polyhedron) for Vc builds."
 )
+get_property(_VECGEOM_QUAD_ACCEL_CACHE_TYPE CACHE VECGEOM_QUADRILATERAL_ACCELERATION PROPERTY TYPE)
+if(VECGEOM_BACKEND STREQUAL "vc" AND _VECGEOM_QUAD_ACCEL_CACHE_TYPE STREQUAL "INTERNAL")
+  set(VECGEOM_QUADRILATERAL_ACCELERATION ON CACHE BOOL "${_VECGEOM_QUAD_ACCEL_DOC}" FORCE)
+endif()
+option(VECGEOM_QUADRILATERAL_ACCELERATION
+  "${_VECGEOM_QUAD_ACCEL_DOC}"
+  ON
+)
+set(_VECGEOM_QUAD_ACCEL_REQUESTED ${VECGEOM_QUADRILATERAL_ACCELERATION})
+if(NOT VECGEOM_BACKEND STREQUAL "vc")
+  set(VECGEOM_QUADRILATERAL_ACCELERATION OFF)
+elseif(_VECGEOM_QUAD_ACCEL_REQUESTED)
+  set(VECGEOM_QUADRILATERAL_ACCELERATION ON)
+endif()
 
 # Special cuda-dependent volume specialization
 cmake_dependent_option(VECGEOM_CUDA_VOLUME_SPECIALIZATION
