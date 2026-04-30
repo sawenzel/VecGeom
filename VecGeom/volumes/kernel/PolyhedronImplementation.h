@@ -860,7 +860,9 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
   {
     bool inBounds;
     // The bounding tube is intentionally slightly enlarged to keep the fast
-    // reject compatible with the tolerance-sensitive inside checks below.
+    // reject compatible with the tolerance-sensitive inside checks below. The
+    // old ideal tube was too tight for early rejection because this path must
+    // preserve the same tolerance envelope as the detailed segment checks.
     HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template Contains<>(
         unplaced.fBoundingTube,
         Vector3D<Precision>(localPoint[0], localPoint[1], localPoint[2] - unplaced.fBoundingTubeOffset), inBounds);
@@ -870,6 +872,10 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
     }
   }
 
+  // For two consecutive planes with identical Z, FindZSegment must prefer the
+  // first segment so the degenerate border segment is checked before its
+  // neighbor. The enlarged bounding tube can still accept points outside the
+  // actual Z range, so the explicit segment-range rejection remains necessary.
   int zIndex = FindZSegment<Precision>(unplaced, localPoint[2]);
   if (zIndex < 0 || zIndex > (unplaced.fZSegments.size() - 1)) {
     inside = EInside::kOutside;
@@ -910,6 +916,8 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
     }
   }
 
+  // After the radial and phi checks, the point can still be on the global Z
+  // endcap boundary. Classify that tolerance band as surface rather than inside.
   Precision dz = vecCore::math::Abs(vecCore::math::Abs(localPoint[2] - unplaced.fBoundingTubeOffset) -
                                     0.5 * (unplaced.fZPlanes[unplaced.fZSegments.size()] - unplaced.fZPlanes[0]));
   inside       = dz < kTolerance ? EInside::kSurface : EInside::kInside;
@@ -934,6 +942,8 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
     return;
   }
 
+  // Explicitly detect wrong-side points. Without this guard, a point already
+  // inside the solid could be reported as having a normal entry distance.
   Inside_t insideState;
   Inside(unplaced, localPoint, insideState);
   if (insideState == kInside) {
@@ -946,7 +956,12 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
   {
     Vector3D<Precision> boundsPoint(localPoint[0], localPoint[1], localPoint[2] - unplaced.fBoundingTubeOffset);
     HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template Contains<>(unplaced.fBoundingTube, boundsPoint, inBounds);
+    // If the point is inside the bounding tube, its DistanceToIn value is not
+    // reliable for rejecting the ray; the tube can report a forward boundary
+    // even though the polyhedron entry must be decided by the detailed segments.
     if (!inBounds) {
+      // When the point is outside the bounding tube, a missed tube entry is a
+      // valid early rejection for the whole polyhedron.
       HasInnerRadiiTraits<innerRadiiT>::TubeKernels::template DistanceToIn<>(
           unplaced.fBoundingTube, boundsPoint, localDirection, localStepMax, tubeDistance);
       if (tubeDistance == InfinityLength<Precision>()) {
@@ -958,7 +973,9 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
 
   int zIndex     = FindZSegment<Precision>(unplaced, localPoint[2]);
   const int zMax = unplaced.fZSegments.size();
-  zIndex         = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax - 1 : zIndex);
+  // Clamp only after FindZSegment: the first or last Z segment still has to be
+  // checked even when the start point is outside the nominal Z range.
+  zIndex = zIndex < 0 ? 0 : (zIndex >= zMax ? zMax - 1 : zIndex);
 
   bool goingRight = localDirection[2] >= 0;
 
@@ -966,15 +983,22 @@ VECCORE_ATT_HOST_DEVICE void PolyhedronImplementation<innerRadiiT, phiCutoutT>::
   if (goingRight) {
     for (int zSegCount = unplaced.fZSegments.size(); zIndex < zSegCount; ++zIndex) {
       result = DistanceToInZSegment<Precision>(unplaced, zIndex, localPoint, localDirection);
+      // Once a valid segment hit is found, farther Z segments cannot provide a
+      // shorter entry; only the endcaps still need to be minimized.
       if (result >= 0 && result < InfinityLength<Precision>()) break;
     }
   } else {
     for (; zIndex >= 0; --zIndex) {
       result = DistanceToInZSegment<Precision>(unplaced, zIndex, localPoint, localDirection);
+      // Once a valid segment hit is found, farther Z segments cannot provide a
+      // shorter entry; only the endcaps still need to be minimized.
       if (result >= 0 && result < InfinityLength<Precision>()) break;
     }
   }
 
+  // Endcaps are not part of the Z-segment side traversal, so minimize them
+  // explicitly. The final tube comparison is only a sanity check against the
+  // coarse bounding volume, not the geometry algorithm that finds the entry.
   DistanceToEndcaps<false>(unplaced, goingRight, localPoint, localDirection, result);
   result   = (result >= tubeDistance - 1E-6) ? result : vecgeom::InfinityLength<Precision>();
   distance = result;
