@@ -366,18 +366,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   generic_polycone_irregular:contracts
   generic_polycone_irregular:distance_to_in
   generic_polycone_irregular:hit_consistency
-  polycone_two_section_sharp_jump:distance_to_in
-  polycone_two_section_sharp_jump:hit_consistency
-  polycone_two_section_sharp_jump:safeties
-  polycone_many_section_alternating:distance_to_in
-  polycone_many_section_alternating:hit_consistency
-  polycone_many_section_alternating:safeties
-  polycone_nearly_repeated_z:contracts
-  polycone_nearly_repeated_z:normals
-  polycone_nearly_repeated_z:distance_to_in
-  polycone_nearly_repeated_z:distance_to_out
-  polycone_nearly_repeated_z:safeties
-  polycone_nearly_repeated_z:hit_consistency
   generic_polycone_zigzag_profile:contracts
   generic_polycone_zigzag_profile:normals
   generic_polycone_zigzag_profile:surface
@@ -399,8 +387,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   boolean_intersection_box_tube:hit_consistency
   boolean_subtraction_box_tube:contracts
   boolean_subtraction_box_tube:normals
-  trd_boxlike:surface
-  trd_extreme_aspect:surface
   hype:distance_to_in
   hype:hit_consistency
   hype:surface
