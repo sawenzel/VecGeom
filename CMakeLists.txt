@@ -169,6 +169,9 @@ option(VECGEOM_BVH_SINGLE "Use single precision for BVH traversal" ${_default_bv
 # Precision and accuracy
 option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
+option(VECGEOM_NO_WRONGSIDE_CONV
+  "Disable signed wrong-side distance/safety conventions in selected kernels"
+  OFF)
 
 # Quad acceleration requires the Vc backend. Keep the cache option as the user
 # request, then derive the effective macro from VECGEOM_BACKEND so switching a
@@ -767,13 +770,8 @@ if(VECGEOM_ENABLE_CUDA)
     MarchingCubes
     NavigationSpecializer
     ResultComparator
-    UnplacedTessellated
     UnplacedMultiUnion
-    PlacedTessellated
     PlacedMultiUnion
-    TessellatedCluster
-    TessellatedHelpers
-    Tile
     UnplacedExtruded
     PlacedExtruded
     SolidMesh)

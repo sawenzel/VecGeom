@@ -31,6 +31,8 @@
 #include "VecGeom/navigation/SimpleABBoxNavigator.h"
 #include "VecGeom/navigation/HybridNavigator2.h"
 
+#include "VecGeom/volumes/utilities/ResultComparator.h"
+
 // #define CALLGRIND
 #ifdef CALLGRIND
 #include <valgrind/callgrind.h>
@@ -608,6 +610,7 @@ int main(int argc, char *argv[])
 
   unsigned int cutatlevel = 1000;
   bool cutlevel           = false;
+  std::string imagePrefix{};
   for (auto i = 5; i < argc; i++) {
     if (!strcmp(argv[i], "--novoxel")) voxelize = false;
     if (!strcmp(argv[i], "--noassembly")) assemblies = false;
@@ -616,6 +619,10 @@ int main(int argc, char *argv[])
       cutlevel   = true;
       cutatlevel = atoi(argv[i + 1]);
       std::cout << "Cutting geometry at level " << cutatlevel << "\n";
+    }
+    if (!strcmp(argv[i], "--prefix")) {
+      imagePrefix = std::string(argv[i + 1]);
+      std::cout << "imagePrefix set to " << imagePrefix << "\n";
     }
     if (!strcmp(argv[i], "--zerosteplimit")) {
       kZeroStepLimit = atof(argv[i + 1]);
@@ -807,7 +814,7 @@ int main(int argc, char *argv[])
 
     // Make bitmap file; generate filename
     std::stringstream imagenamebase;
-    imagenamebase << "volumeImage_" << testvolume;
+    imagenamebase << (imagePrefix.size() ? imagePrefix : "volumeImage_") << testvolume;
     if (axis == 1) imagenamebase << "x";
     if (axis == 2) imagenamebase << "y";
     if (axis == 3) imagenamebase << "z";
@@ -818,35 +825,37 @@ int main(int argc, char *argv[])
     make_bmp(volume_result, ROOTimage.str().c_str(), data_size_x, data_size_y);
 
 #ifdef VECGEOM_GEANT4
-    // int errorROOTG4(0);
-    G4VPhysicalVolume *world(vecgeom::G4GeoManager::Instance().GetG4GeometryFromROOT());
-    if (world != nullptr) G4GeoManager::Instance().LoadG4Geometry(world);
+    if (getenv("XRAY_GEANT4")) {
+      // int errorROOTG4(0);
+      G4VPhysicalVolume *world(vecgeom::G4GeoManager::Instance().GetG4GeometryFromROOT());
+      if (world != nullptr) G4GeoManager::Instance().LoadG4Geometry(world);
 
-    timer.Start();
-    if (world != nullptr) {
-      if (trackverbose) {
-        XRayWithGeant4<true>(world, axis, Vector3D<Precision>(origin[0], origin[1], origin[2]),
-                             Vector3D<Precision>(dx, dy, dz), dir, axis1_start, axis1_end, axis2_start, axis2_end,
-                             data_size_x, data_size_y, pixel_axis, volume_result_Geant4);
-      } else {
-        XRayWithGeant4<false>(world, axis, Vector3D<Precision>(origin[0], origin[1], origin[2]),
-                              Vector3D<Precision>(dx, dy, dz), dir, axis1_start, axis1_end, axis2_start, axis2_end,
-                              data_size_x, data_size_y, pixel_axis, volume_result_Geant4);
+      timer.Start();
+      if (world != nullptr) {
+        if (trackverbose) {
+          XRayWithGeant4<true>(world, axis, Vector3D<Precision>(origin[0], origin[1], origin[2]),
+                               Vector3D<Precision>(dx, dy, dz), dir, axis1_start, axis1_end, axis2_start, axis2_end,
+                               data_size_x, data_size_y, pixel_axis, volume_result_Geant4);
+        } else {
+          XRayWithGeant4<false>(world, axis, Vector3D<Precision>(origin[0], origin[1], origin[2]),
+                                Vector3D<Precision>(dx, dy, dz), dir, axis1_start, axis1_end, axis2_start, axis2_end,
+                                data_size_x, data_size_y, pixel_axis, volume_result_Geant4);
+        }
       }
-    }
-    timer.Stop();
+      timer.Stop();
 
-    std::stringstream G4image;
-    G4image << imagenamebase.str();
-    G4image << "_Geant4.bmp";
-    make_bmp(volume_result_Geant4, G4image.str().c_str(), data_size_x, data_size_y);
-    std::cout << std::endl;
-    std::cout << " Geant4 Elapsed time : " << timer.Elapsed() << std::endl;
-    std::stringstream G4diffimage;
-    G4diffimage << imagenamebase.str();
-    G4diffimage << "_diffROOTG4.bmp";
-    // errorROOTG4 =
-    make_diff_bmp(volume_result, volume_result_Geant4, G4diffimage.str().c_str(), data_size_x, data_size_y);
+      std::stringstream G4image;
+      G4image << imagenamebase.str();
+      G4image << "_Geant4.bmp";
+      make_bmp(volume_result_Geant4, G4image.str().c_str(), data_size_x, data_size_y);
+      std::cout << std::endl;
+      std::cout << " Geant4 Elapsed time : " << timer.Elapsed() << std::endl;
+      std::stringstream G4diffimage;
+      G4diffimage << imagenamebase.str();
+      G4diffimage << "_diffROOTG4.bmp";
+      // errorROOTG4 =
+      make_diff_bmp(volume_result, volume_result_Geant4, G4diffimage.str().c_str(), data_size_x, data_size_y);
+    }
 #endif
 
     // convert current gGeoManager to a VecGeom geometry

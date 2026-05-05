@@ -634,6 +634,10 @@ int Benchmarker::RunInsideBenchmark()
         if (fVerbosity > 2) mismatchOutput << " / " << containsRoot[i];
       }
 #endif
+#ifdef VECGEOM_GEANT4
+      if (fOkToRunG4 && fVerbosity > 2)
+        mismatchOutput << " / " << (insideGeant4[i] == EInside::kInside || insideGeant4[i] == EInside::kSurface);
+#endif
 #ifdef VECGEOM_ENABLE_CUDA
       if (containsSpecialized[i] != containsCuda[i]) mismatch = true;
       if (fVerbosity > 2) mismatchOutput << " / " << containsCuda[i];

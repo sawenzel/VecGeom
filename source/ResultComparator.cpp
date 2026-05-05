@@ -114,12 +114,14 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
 #endif
 
 #ifdef VECGEOM_ROOT
+  bool mismatch = false;
   auto rootshape = LookupROOT(vol);
   if (rootshape != nullptr) {
     rootresult = rootshape->DistFromOutside((double *)&tpoint[0], (double *)&tdirection[0], 3, stepMax);
 
     if (Abs(rootresult - vecgeomresult) > kTolerance * rootresult && Abs(rootresult - vecgeomresult) < 1e30) {
-      std::cerr << "## WARNING ## DI VecGeom  " << vecgeomresult;
+      mismatch = true;
+      std::cerr << "## WARNING ## DI VecGeom  " << tpoint << " " << tdirection << " " << vecgeomresult;
       std::cerr << " ROOT: " << rootresult << "Delta(" << rootresult - vecgeomresult << ")\n";
     }
   }
@@ -131,7 +133,7 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
   if (g4shape != nullptr) {
     Precision g4result = g4shape->DistanceToIn(G4ThreeVector(tpoint[0], tpoint[1], tpoint[2]),
                                                G4ThreeVector(tdirection[0], tdirection[1], tdirection[2]));
-    if (Abs(g4result - vecgeomresult) > kTolerance * g4result && Abs(rootresult - vecgeomresult) < 1e30) {
+    if (mismatch || (Abs(g4result - vecgeomresult) > kTolerance * g4result && Abs(rootresult - vecgeomresult) < 1e30)) {
       std::cerr << "## WARNING ## DI VecGeom  " << vecgeomresult;
       std::cerr << " G4: " << g4result << "Delta(" << g4result - vecgeomresult << ")\n";
     }

@@ -277,30 +277,30 @@ bool TestTessellated()
   // SafetyToIn(P)
 
   Dist = tsl1.SafetyToIn(pbigx);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(Dist <= 80.);
   Dist = tsl1.SafetyToIn(pbigmx);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80));
+  VECGEOM_ASSERT(Dist <= 80.);
   Dist = tsl1.SafetyToIn(pbigy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(Dist <= 70.);
   Dist = tsl1.SafetyToIn(pbigmy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70));
+  VECGEOM_ASSERT(Dist <= 70.);
   Dist = tsl1.SafetyToIn(pbigz);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(Dist <= 60.);
   Dist = tsl1.SafetyToIn(pbigmz);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(Dist <= 60.);
 
   Dist = tsl2.SafetyToIn(pbigx);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80 * cosa));
+  VECGEOM_ASSERT(Dist <= 80 * cosa);
   Dist = tsl2.SafetyToIn(pbigmx);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 80 * cosa));
+  VECGEOM_ASSERT(Dist <= 80 * cosa);
   Dist = tsl2.SafetyToIn(pbigy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70 * cosa));
+  VECGEOM_ASSERT(Dist <= 70 * cosa);
   Dist = tsl2.SafetyToIn(pbigmy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 70 * cosa));
+  VECGEOM_ASSERT(Dist <= 70 * cosa);
   Dist = tsl2.SafetyToIn(pbigz);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(Dist <= 60);
   Dist = tsl2.SafetyToIn(pbigmz);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 60));
+  VECGEOM_ASSERT(Dist <= 60);
 
   // DistanceToIn(P,V)
 

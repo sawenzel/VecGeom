@@ -49,7 +49,7 @@ public:
   mutable Precision fCubicVolume = 0.;        ///< Cubic volume
   mutable Precision fSurfaceArea = 0.;        ///< Surface area
   PolygonalShell fSxtruHelper;                ///< Sxtru helper
-  TessellatedStruct<3, Precision> fTslHelper; ///< Tessellated helper
+  TessellatedRuntimeStruct<Precision> fTslHelper; ///< The tessellated helper for navigation
 #ifndef VECGEOM_ENABLE_CUDA
   bool fUseTslSections = false;                           ///< Use tessellated section helper
   vector_t<TessellatedSection<Precision> *> fTslSections; ///< Tessellated sections
@@ -162,6 +162,8 @@ public:
       }
     };
 
+    TessellatedStruct<3, Precision> tsl_builder_struct;
+
     // Store sections
     for (size_t isect = 0; isect < nsections; ++isect)
       fSections.push_back(sections[isect]);
@@ -237,15 +239,15 @@ public:
       i1 = facets[i].ind1;
       i2 = facets[i].ind2;
       i3 = facets[i].ind3;
-      fTslHelper.AddTriangularFacet(VertexToSection(i1, 0), VertexToSection(i2, 0), VertexToSection(i3, 0));
+      tsl_builder_struct.AddTriangularFacet(VertexToSection(i1, 0), VertexToSection(i2, 0), VertexToSection(i3, 0));
     }
     // Sections
     for (size_t isect = 0; isect < nsections - 1; ++isect) {
       for (size_t i = 0; i < (size_t)nvertices; ++i) {
         size_t j = (i + 1) % nvertices;
         // Quadrilateral isect:(j, i)  isect+1: (i, j)
-        fTslHelper.AddQuadrilateralFacet(VertexToSection(j, isect), VertexToSection(i, isect),
-                                         VertexToSection(i, isect + 1), VertexToSection(j, isect + 1));
+        tsl_builder_struct.AddQuadrilateralFacet(VertexToSection(j, isect), VertexToSection(i, isect),
+                                                 VertexToSection(i, isect + 1), VertexToSection(j, isect + 1));
 #ifndef VECGEOM_ENABLE_CUDA
         if (fUseTslSections)
           fTslSections[isect]->AddQuadrilateralFacet(VertexToSection(j, isect), VertexToSection(i, isect),
@@ -258,11 +260,18 @@ public:
       i1 = facets[i].ind1;
       i2 = facets[i].ind2;
       i3 = facets[i].ind3;
-      fTslHelper.AddTriangularFacet(VertexToSection(i1, nsections - 1), VertexToSection(i3, nsections - 1),
-                                    VertexToSection(i2, nsections - 1));
+      tsl_builder_struct.AddTriangularFacet(VertexToSection(i1, nsections - 1), VertexToSection(i3, nsections - 1),
+                                            VertexToSection(i2, nsections - 1));
     }
     // Now close the tessellated structure
-    fTslHelper.Close();
+    tsl_builder_struct.Close();
+    fTslHelper.InitFrom(tsl_builder_struct);
+#ifndef VECGEOM_ENABLE_CUDA
+    if (getenv("NOTSLSECTIONS")) {
+      // convenience mode to compare tsl sections against pure tessellated
+      fUseTslSections = false;
+    }
+#endif
   }
 
   /** @brief Get the number of sections */

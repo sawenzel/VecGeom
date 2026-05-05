@@ -157,10 +157,12 @@ void UnplacedExtruded::Print(std::ostream &os) const
 
 void UnplacedExtruded::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const
 {
+  // TODO: this differentiated treatment seems not to be needed
   if (fXtru.fIsSxtru) {
     fXtru.fSxtruHelper.Extent(aMin, aMax);
   } else {
-    fXtru.fTslHelper.Extent(aMin, aMax);
+    aMin = fXtru.fTslHelper.fMinExtent;
+    aMax = fXtru.fTslHelper.fMaxExtent;
   }
 }
 
@@ -172,10 +174,10 @@ Precision UnplacedExtruded::Capacity() const
     fXtru.fCubicVolume =
         fXtru.fSxtruHelper.GetPolygon().Area() * (fXtru.fSxtruHelper.GetUpperZ() - fXtru.fSxtruHelper.GetLowerZ());
   } else {
-    int size = fXtru.fTslHelper.fFacets.size();
+    int size = fXtru.fTslHelper.fNFacets;
     for (int i = 0; i < size; ++i) {
-      TriangleFacet<Precision> &facet = *fXtru.fTslHelper.fFacets[i];
-      Precision area                  = facet.fSurfaceArea;
+      const auto &facet = fXtru.fTslHelper.fFacets[i];
+      Precision area    = facet.SurfaceArea();
       fXtru.fCubicVolume += area * (facet.fVertices[0].Dot(facet.fNormal));
     }
     fXtru.fCubicVolume /= 3.;
@@ -190,10 +192,10 @@ Precision UnplacedExtruded::SurfaceArea() const
   if (fXtru.fIsSxtru) {
     fXtru.fSurfaceArea = fXtru.fSxtruHelper.SurfaceArea() + 2. * fXtru.fSxtruHelper.GetPolygon().Area();
   } else {
-    int size = fXtru.fTslHelper.fFacets.size();
+    int size = fXtru.fTslHelper.fNFacets;
     for (int i = 0; i < size; ++i) {
-      TriangleFacet<Precision> *facet = fXtru.fTslHelper.fFacets[i];
-      fXtru.fSurfaceArea += facet->fSurfaceArea;
+      const auto &facet = fXtru.fTslHelper.fFacets[i];
+      fXtru.fSurfaceArea += facet.SurfaceArea();
     }
   }
   return fXtru.fSurfaceArea;
@@ -207,8 +209,8 @@ int UnplacedExtruded::ChooseSurface() const
   // random value to choose surface to place the point
   Precision rand = RNG::Instance().uniform() * Stotal;
 
-  while (rand > fXtru.fTslHelper.fFacets[choice]->fSurfaceArea)
-    rand -= fXtru.fTslHelper.fFacets[choice]->fSurfaceArea, choice++;
+  while (rand > fXtru.fTslHelper.fFacets[choice].SurfaceArea())
+    rand -= fXtru.fTslHelper.fFacets[choice].SurfaceArea(), choice++;
 
   return choice;
 }
@@ -222,9 +224,9 @@ Vector3D<Precision> UnplacedExtruded::SamplePointOnSurface() const
     r1 = 1. - r1;
     r2 = 1. - r2;
   }
-  auto facet = fXtru.fTslHelper.fFacets[surface];
-  return (facet->fVertices[0] + r1 * (facet->fVertices[1] - facet->fVertices[0]) +
-          r2 * (facet->fVertices[2] - facet->fVertices[0]));
+  const auto &facet = fXtru.fTslHelper.fFacets[surface];
+  return (facet.fVertices[0] + r1 * (facet.fVertices[1] - facet.fVertices[0]) +
+          r2 * (facet.fVertices[2] - facet.fVertices[0]));
 }
 
 bool UnplacedExtruded::Normal(Vector3D<Precision> const &point, Vector3D<Precision> &norm) const
