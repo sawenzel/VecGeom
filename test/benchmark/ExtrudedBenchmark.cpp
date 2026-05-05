@@ -1,6 +1,6 @@
 #include "VecGeom/base/Config.h"
 
-#ifndef VECGEOM_ENABLE_CUDA
+// #ifndef VECGEOM_ENABLE_CUDA
 
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeomTest/Benchmarker.h"
@@ -15,11 +15,11 @@
 
 using namespace vecgeom;
 
-#endif
+// #endif
 
 int main(int argc, char *argv[])
 {
-#ifndef VECGEOM_ENABLE_CUDA
+  // #ifndef VECGEOM_ENABLE_CUDA
   OPTION_INT(npoints, 1024);
   OPTION_INT(nrep, 4);
   OPTION_INT(nvert, 8);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
   //  tester.RunToInBenchmark();
   //  tester.RunToOutBenchmark();
   return tester.RunBenchmark();
-#else
-  return 0;
-#endif
+  // #else
+  //   return 0;
+  // #endif
 }

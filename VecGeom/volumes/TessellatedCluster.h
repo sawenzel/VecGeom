@@ -66,8 +66,12 @@ public:
   bool CalculateConvexity()
   {
     bool convex = true;
-    for (size_t i = 0; i < kVecSize; ++i)
+    for (size_t i = 0; i < kVecSize; ++i) {
       convex &= fFacets[i]->fConvex;
+      if (!convex) {
+        break;
+      }
+    }
     return convex;
   }
 

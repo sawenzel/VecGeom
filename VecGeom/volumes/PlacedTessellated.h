@@ -52,8 +52,8 @@ public:
 #else
   /// CUDA version of constructor
   __device__ PlacedTessellated(LogicalVolume const *const logicalVolume, Transformation3D const *const transformation,
-                               const int id)
-      : Base(logicalVolume, transformation, id)
+                               const int id, const int copy_no, const int child_id)
+      : Base(logicalVolume, transformation, id, copy_no, child_id)
   {
   }
 #endif
@@ -73,15 +73,14 @@ public:
     return static_cast<UnplacedTessellated const *>(GetLogicalVolume()->GetUnplacedVolume());
   }
 
-#ifndef VECCORE_CUDA
   /** @brief Memory size in bytes */
-  VECGEOM_FORCE_INLINE
-  virtual int MemorySize() const override { return sizeof(*this); }
+  int MemorySize() const override { return sizeof(*this); }
 
+#ifndef VECCORE_CUDA
   virtual VPlacedVolume const *ConvertToUnspecialized() const override;
 
 #ifdef VECGEOM_ROOT
-  virtual TGeoShape const *ConvertToRoot() const override { return nullptr; }
+  virtual TGeoShape const *ConvertToRoot() const override;
 #endif
 #ifdef VECGEOM_GEANT4
   G4VSolid const *ConvertToGeant4() const override;

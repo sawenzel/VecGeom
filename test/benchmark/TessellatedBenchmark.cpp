@@ -1,7 +1,5 @@
 #include "VecGeom/base/Config.h"
 
-#ifndef VECGEOM_ENABLE_CUDA
-
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeomTest/Benchmarker.h"
 #include "VecGeom/management/GeoManager.h"
@@ -11,14 +9,13 @@
 #include "VecGeom/volumes/Tessellated.h"
 #include "VecGeom/volumes/Box.h"
 #include "test/core/TessellatedOrb.h"
+#include <string>
 
 #ifdef VECGEOM_EMBREE
 #include <embree3/rtcore.h>
 #endif
 
 using namespace vecgeom;
-
-#endif
 
 #ifdef VECGEOM_EMBREE
 //> An meshed shape which uses the Embree data structures and layout
@@ -124,25 +121,33 @@ void EmbreeMeshShape::InitMeshFromTesselatedSolid(const UnplacedTessellated &tsl
 
 int main(int argc, char *argv[])
 {
-#ifndef VECGEOM_ENABLE_CUDA
   OPTION_INT(npoints, 1024);
   OPTION_INT(nrep, 4);
   OPTION_DOUBLE(ngrid, 100);
+  OPTION_STRING(obj, {""}); // tesselated from object file
+  OPTION_INT(verbose, 1);
   double r = 10. * ngrid;
 
   UnplacedBox worldUnplaced = UnplacedBox(2. * r, 2. * r, 2. * r);
 
   UnplacedTessellated tsl;
-  // Create the tessellated solid
-  size_t nfacets = TessellatedOrb(r, ngrid, tsl);
+  size_t nfacets{0};
+  if (obj.size() > 0) {
+    // load object to benchmark from .obj file
+    nfacets = tsl.FillFromObjFile(obj);
+  } else {
+    // Create the tessellated solid
+    nfacets = TessellatedOrb(r, ngrid, tsl);
+    tsl.Close();
+  }
 
   Stopwatch timer;
   timer.Start();
-  tsl.Close();
+
   auto elapsed = timer.Stop();
   std::cout << "SETUP TOOK " << elapsed << " s\n";
 
-  std::cout << "Benchmarking tessellated sphere having " << nfacets << " facets\n";
+  std::cout << "Benchmarking tessellated solid having " << nfacets << " facets\n";
 
   LogicalVolume world("world", &worldUnplaced);
   LogicalVolume tessellated("tessellated", &tsl);
@@ -155,18 +160,16 @@ int main(int argc, char *argv[])
 
   GeoManager::Instance().SetWorldAndClose(worldPlaced);
 
-  // testing tesselated with Embree
-  // retrieve tessels first of all
-  VECGEOM_ASSERT(nfacets == tsl.GetNFacets());
-
   Benchmarker tester(GeoManager::Instance().GetWorld());
-  tester.SetVerbosity(1);
+  tester.SetVerbosity(verbose);
   tester.SetRepetitions(nrep);
   tester.SetPointCount(npoints);
   tester.SetToInBias(0.8);
   tester.SetPoolMultiplier(1);
+  tester.SetTolerance(1E-4);
 
-  tester.RunToInBenchmark();
+  // tester.RunToInBenchmark();
+  tester.RunBenchmark();
 
   auto &rays = tester.GetProblematicRays();
   std::cerr << "have " << rays.size() << "rays\n";
@@ -179,13 +182,17 @@ int main(int argc, char *argv[])
   elapsed = timer.Stop();
   std::cout << "EMBREE SETUP TOOK " << elapsed << " s\n";
 
+  auto &pointPool = tester.GetPointPool();
+  auto &dirPool   = tester.GetDirectionPool();
+
   // Stopwatch timer;
   timer.Start();
   double s = 0;
-  for (int i = 0; i < rays.size(); ++i) {
-    const auto &p = rays[i].first;
-    const auto &d = rays[i].second;
-    auto dist     = mesh.DistanceToIn(p.x(), p.y(), p.z(), d.x(), d.y(), d.z());
+  for (int i = 0; i < pointPool.size(); ++i) {
+    const auto &p = pointPool[i];
+    const auto &d = dirPool[i];
+    auto dist     = mesh.DistanceToIn(p[0], p[1], p[2], d[0], d[1], d[2]);
+
     // std::cerr << "EMBREE " << dist << "\n";
     s += dist;
   }
@@ -195,8 +202,4 @@ int main(int argc, char *argv[])
 #endif
   //  tester.RunToOutBenchmark();
   return 0; // tester.RunBenchmark();
-
-#else
-  return 0;
-#endif
 }

@@ -200,10 +200,12 @@ set(TEST_EXECUTABLES_CORE
   core/TestMaskedAssign.cpp
   core/TestOvershoot.cpp
   core/TestHybridBVH.cpp
+  core/TestBVH.cpp
   core/TestEarlyReturns.cpp
-  core/CreateTessels.cpp
+  # core/CreateTessels.cpp //--> To be adapted to new struct
   core/CreateExtruded.cpp
   core/TestGeoManager.cpp
+  core/TestTriangularFacet.cpp
   )
 
 if(VECGEOM_USE_INDEXEDNAVSTATES)
@@ -399,7 +401,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   sphere_section:distance_to_in
   sphere_section:hit_consistency
   sphere_section:surface
-  tessellated_orb:surface
   torus2_general:hit_consistency
   torus2_general:surface
   extruded_multilayer:surface
@@ -571,11 +572,11 @@ set(TEST_EXECUTABLES_SHAPES
   unit_tests/TestReducedPolycone.cpp
   unit_tests/TestUtils3D.cpp
   unit_tests/TestMarchingCubes.cpp
+  unit_tests/TestTessellated.cpp
   unit_tests/TestVECGEOM-601.cpp)
 
 if(NOT VECGEOM_ENABLE_CUDA)
   list(APPEND TEST_EXECUTABLES_SHAPES
-    unit_tests/TestTessellated.cpp
     unit_tests/TestMesh.cpp)
 endif()
 
@@ -597,9 +598,7 @@ add_test(NAME TestTrap COMMAND TestTrap)
 add_test(NAME TestTrd COMMAND TestTrd)
 add_test(NAME TestTube COMMAND TestTube)
 add_test(NAME TestVECGEOM-601 COMMAND TestVECGEOM-601)
-if(NOT VECGEOM_ENABLE_CUDA)
-  add_test(NAME TestTessellated COMMAND TestTessellated)
-endif()
+add_test(NAME TestTessellated COMMAND TestTessellated)
 
 ################################################################################
 # - CUDA tests
@@ -645,16 +644,14 @@ set(TEST_EXECUTABLES_SHAPETESTER
   shape_tester/shape_testTorus2.cpp
   shape_tester/shape_testCutTube.cpp
   shape_tester/shape_testExtruded.cpp
-  shape_tester/shape_testMultiUnion.cpp)
+  shape_tester/shape_testMultiUnion.cpp
+  shape_tester/shape_testTessellated.cpp
+)
 
 if(VECGEOM_ROOT)
   list(APPEND TEST_EXECUTABLES_SHAPETESTER
     shape_tester/shape_testFromROOTFile.cpp
     shape_tester/shape_debugFromROOTFile.cpp)
-endif()
-
-if(NOT VECGEOM_ENABLE_CUDA)
-  list(APPEND TEST_EXECUTABLES_SHAPETESTER shape_tester/shape_testTessellated.cpp)
 endif()
 
 if(VECGEOM_TEST_BENCHMARK)

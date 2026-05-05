@@ -1,6 +1,7 @@
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/Box.h"
 #include "VecGeom/volumes/Polyhedron.h"
+#include "VecGeom/volumes/Tessellated.h"
 #include "VecGeomTest/Benchmarker.h"
 #include "VecGeom/management/GeoManager.h"
 #include "ArgParser.h"
@@ -63,6 +64,22 @@ UnplacedPolyhedron *SameZsection()
   return new UnplacedPolyhedron(15 * kDegToRad, 340 * kDegToRad, 5, nPlanes, zPlanes, rInner, rOuter);
 };
 
+vecgeom::UnplacedTessellated *toTessellated(UnplacedPolyhedron const &p)
+{
+  auto mesh    = p.CreateMesh3D(Transformation3D(), 1);
+  auto &polies = mesh->GetPolygons();
+  auto tsl     = new vecgeom::UnplacedTessellated();
+
+  for (auto &p : polies) {
+    auto &v0 = mesh->GetVertices()[p.fInd[0]];
+    auto &v1 = mesh->GetVertices()[p.fInd[1]];
+    auto &v2 = mesh->GetVertices()[p.fInd[2]];
+    tsl->AddTriangularFacet(v0, v1, v2);
+  }
+  tsl->Close();
+  return tsl;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -76,12 +93,15 @@ int main(int argc, char *argv[])
   //   4=ManySegments
   //   5=SameZsection
   OPTION_INT(type, 3);
+  OPTION_INT(tsl, 0); // benchmark polyhedron as tessellated implementation
 
   UnplacedBox worldUnplaced = UnplacedBox(5, 5, 10);
 
-  auto RunBenchmark = [&worldUnplaced](UnplacedPolyhedron const *shape, char const *label, int npoints,
-                                       int nrep) -> int {
-    LogicalVolume logical("pgon", shape);
+  auto RunBenchmark = [&worldUnplaced, tsl](UnplacedPolyhedron const *shape, char const *label, int npoints,
+                                            int nrep) -> int {
+    auto vol = tsl > 0 ? static_cast<const VUnplacedVolume *>(toTessellated(*shape))
+                       : static_cast<const VUnplacedVolume *>(shape);
+    LogicalVolume logical("pgon", vol);
     LogicalVolume worldLogical(&worldUnplaced);
     Transformation3D transformation(0, 0, 0);
     worldLogical.PlaceDaughter("pgonplaced", &logical, &transformation);
