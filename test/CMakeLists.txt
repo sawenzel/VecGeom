@@ -192,6 +192,8 @@ set(TEST_EXECUTABLES_CORE
   unit_tests/TestVecGeomPolycone.cpp
   unit_tests/TestNavStateIndex.cpp
   core/TestSExtru.cpp
+  core/TestExtrudedMesh.cpp
+  core/TestTessellatedMesh.cpp
   # to be enabled when running cleanly
   unit_tests/TestBooleans.cpp
   core/AssemblyTest.cpp

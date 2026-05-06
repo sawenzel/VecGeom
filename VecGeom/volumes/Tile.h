@@ -12,7 +12,7 @@ namespace vecgeom {
 enum TileType { kTriangle = 3, kQuadrilateral = 4 };
 namespace cuda {
 template <typename Real_t>
-class TriangularTile;
+struct TriangularTile;
 }
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_1v_1t(struct, Tile, size_t, typename);
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(struct, TriangularTile, typename);

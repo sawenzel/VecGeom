@@ -274,7 +274,7 @@ public:
           const int prim = fPrimId[fOffset[id] + i];
           if (last_exited_id >= 0 && Navigator::SkipItem(fRootId, prim, last_exited_id)) continue;
           /* Check AABB first, then the element itself if needed */
-          Real_t approach;
+          Real_t approach{Real_t(0.)};
           if (fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) {
             auto dist = Navigator::CandidateDistanceToIn(
                 fRootId, prim, localpoint + static_cast<Real_i>(approach) * localdir, localdir, step);
@@ -366,7 +366,7 @@ public:
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
-          Real_t approach;
+          Real_t approach{Real_t(0.)};
           if ((check_leaf_bb && fAABBs[prim].IntersectInvDirApproach(blocalpoint, binvdir, bstep, approach)) ||
               !check_leaf_bb) {
             hitcontext.primID   = prim;

@@ -81,6 +81,8 @@ public:
   VECGEOM_FORCE_INLINE
   size_t GetNVertices() const { return fXtru.GetNVertices(); }
 
+  auto GetMeshHelper() const { return fXtru.GetMeshHelper(); }
+
   /** @brief Get the polygone vertex i */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE

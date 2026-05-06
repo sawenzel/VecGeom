@@ -161,8 +161,8 @@ void UnplacedExtruded::Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aM
   if (fXtru.fIsSxtru) {
     fXtru.fSxtruHelper.Extent(aMin, aMax);
   } else {
-    aMin = fXtru.fTslHelper.fMinExtent;
-    aMax = fXtru.fTslHelper.fMaxExtent;
+    aMin = fXtru.fTslRuntimeHelper.fMinExtent;
+    aMax = fXtru.fTslRuntimeHelper.fMaxExtent;
   }
 }
 
@@ -174,9 +174,9 @@ Precision UnplacedExtruded::Capacity() const
     fXtru.fCubicVolume =
         fXtru.fSxtruHelper.GetPolygon().Area() * (fXtru.fSxtruHelper.GetUpperZ() - fXtru.fSxtruHelper.GetLowerZ());
   } else {
-    int size = fXtru.fTslHelper.fNFacets;
+    int size = fXtru.fTslRuntimeHelper.fNFacets;
     for (int i = 0; i < size; ++i) {
-      const auto &facet = fXtru.fTslHelper.fFacets[i];
+      const auto &facet = fXtru.fTslRuntimeHelper.fFacets[i];
       Precision area    = facet.SurfaceArea();
       fXtru.fCubicVolume += area * (facet.fVertices[0].Dot(facet.fNormal));
     }
@@ -192,9 +192,9 @@ Precision UnplacedExtruded::SurfaceArea() const
   if (fXtru.fIsSxtru) {
     fXtru.fSurfaceArea = fXtru.fSxtruHelper.SurfaceArea() + 2. * fXtru.fSxtruHelper.GetPolygon().Area();
   } else {
-    int size = fXtru.fTslHelper.fNFacets;
+    int size = fXtru.fTslRuntimeHelper.fNFacets;
     for (int i = 0; i < size; ++i) {
-      const auto &facet = fXtru.fTslHelper.fFacets[i];
+      const auto &facet = fXtru.fTslRuntimeHelper.fFacets[i];
       fXtru.fSurfaceArea += facet.SurfaceArea();
     }
   }
@@ -209,8 +209,8 @@ int UnplacedExtruded::ChooseSurface() const
   // random value to choose surface to place the point
   Precision rand = RNG::Instance().uniform() * Stotal;
 
-  while (rand > fXtru.fTslHelper.fFacets[choice].SurfaceArea())
-    rand -= fXtru.fTslHelper.fFacets[choice].SurfaceArea(), choice++;
+  while (rand > fXtru.fTslRuntimeHelper.fFacets[choice].SurfaceArea())
+    rand -= fXtru.fTslRuntimeHelper.fFacets[choice].SurfaceArea(), choice++;
 
   return choice;
 }
@@ -224,7 +224,7 @@ Vector3D<Precision> UnplacedExtruded::SamplePointOnSurface() const
     r1 = 1. - r1;
     r2 = 1. - r2;
   }
-  const auto &facet = fXtru.fTslHelper.fFacets[surface];
+  const auto &facet = fXtru.fTslRuntimeHelper.fFacets[surface];
   return (facet.fVertices[0] + r1 * (facet.fVertices[1] - facet.fVertices[0]) +
           r2 * (facet.fVertices[2] - facet.fVertices[0]));
 }
@@ -236,7 +236,7 @@ bool UnplacedExtruded::Normal(Vector3D<Precision> const &point, Vector3D<Precisi
   if (fXtru.fIsSxtru) {
     norm = SExtruImplementation::NormalKernel(fXtru.fSxtruHelper, point, valid);
   } else {
-    norm = TessellatedImplementation::NormalKernel<Precision>(fXtru.fTslHelper, point, valid);
+    norm = TessellatedImplementation::NormalKernel<Precision>(fXtru.fTslRuntimeHelper, point, valid);
   }
   return valid;
 }

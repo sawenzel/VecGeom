@@ -41,6 +41,28 @@ protected:
   mutable TessellatedStruct<3, Precision> fTessellated; ///< Structure with Tessellated parameters
 
 public:
+  class TessellatedMeshHelper {
+  private:
+    TessellatedStruct<3, Precision> const &fMesh;
+
+  public:
+    // Temporary API view for visualization/export code; compact runtime triangles remain private.
+    explicit TessellatedMeshHelper(TessellatedStruct<3, Precision> const &mesh) : fMesh(mesh) {}
+
+    size_t GetNvertices() const { return fMesh.fVertices.size(); }
+
+    Vector3D<Precision> const &GetVertex(size_t index) const { return fMesh.fVertices[index]; }
+
+    size_t GetNfacets() const { return fMesh.fFacets.size(); }
+
+    void GetFacetVertices(size_t ifacet, size_t (&indices)[3]) const
+    {
+      const auto *facet = fMesh.fFacets[ifacet];
+      for (size_t i = 0; i < 3; ++i)
+        indices[i] = facet->fIndices[i];
+    }
+  };
+
   /// Default constructor for the unplaced tessellated shape class.
   VECCORE_ATT_HOST_DEVICE
   UnplacedTessellated() : fTessellated() { fGlobalConvexity = false; }
@@ -107,6 +129,8 @@ public:
   VECGEOM_FORCE_INLINE
   VECCORE_ATT_HOST_DEVICE
   TriangleFacet<Precision> *GetFacet(int ifacet) const { return fTessellated.fFacets[ifacet]; }
+
+  TessellatedMeshHelper GetMeshHelper() const { return TessellatedMeshHelper(fTessellated); }
 
   /// Closing method to be called mandatory by the user once all facets are defined.
   void Close();
