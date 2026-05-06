@@ -8,13 +8,17 @@
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/volumes/BooleanStruct.h"
+#include <VecCore/VecCore>
 
 namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
- * partial template specialization for UNION implementation
+ * @brief Kernel implementation for Boolean union volumes.
+ * @details The implementation delegates geometric queries to the two placed
+ * constituent volumes and combines their answers using the union convention:
+ * a point belongs to the solid if it belongs to either constituent.
  */
 template <>
 struct BooleanImplementation<kUnion> {
@@ -22,18 +26,30 @@ struct BooleanImplementation<kUnion> {
   using UnplacedVolume_t = UnplacedBooleanVolume<kUnion>;
   using UnplacedStruct_t = BooleanStruct;
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Test whether a point is contained in either constituent.
+   * @details The left constituent is queried first and the right query is
+   * skipped when the point is already contained in the left constituent.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(BooleanStruct const &unplaced,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
     inside = unplaced.fLeftVolume->Contains(point);
-    if (vecCore::MaskFull(inside)) return;
+    if (inside) return;
     inside |= unplaced.fRightVolume->Contains(point);
   }
 
-  template <typename Real_v, typename Inside_t>
+  /**
+   * @brief Classify a point with the Boolean union inside convention.
+   * @details A point strictly inside either constituent is inside the union.
+   * Surface points are classified as surface, except for touching constituents
+   * with opposite normals, where the local contact is interior to the union.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(BooleanStruct const &unplaced,
-                                                                  Vector3D<Real_v> const &point, Inside_t &inside)
+                                                                  Vector3D<Real_v> const &point,
+                                                                  vecgeom::Inside_t &inside)
   {
     // now use the Inside functionality of left and right components
     // algorithm taken from Geant4 implementation
@@ -53,14 +69,12 @@ struct BooleanImplementation<kUnion> {
     }
 
     if ((positionA == EInside::kSurface) && (positionB == EInside::kSurface)) {
-      Vector3D<Precision> normalA, normalB, localPoint, localNorm;
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normalA);
-
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      fPtrSolidB->Normal(localPoint, localNorm);
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normalB);
+      Vector3D<Precision> normalA, normalB;
+      // VPlacedVolume::Normal expects the Boolean-local point and applies the
+      // constituent transform internally. Passing pre-transformed local points
+      // double-transforms placed touching constituents.
+      fPtrSolidA->Normal(point, normalA);
+      fPtrSolidB->Normal(point, normalB);
 
       if (normalA.Dot(normalB) < 0)
         inside = EInside::kInside; // touching solids -)(-
@@ -78,6 +92,11 @@ struct BooleanImplementation<kUnion> {
     }
   }
 
+  /**
+   * @brief Compute the distance from outside to enter the union.
+   * @details Entering either constituent enters the union, so the result is the
+   * minimum of the two constituent DistanceToIn answers.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &point,
@@ -89,6 +108,13 @@ struct BooleanImplementation<kUnion> {
     distance      = Min(d1, d2);
   }
 
+  /**
+   * @brief Compute the distance from inside the union to leave it.
+   * @details The ray may pass from one constituent into the other before
+   * leaving the union. The algorithm advances through connected constituents
+   * with small pushes across boundaries, then subtracts the final push so the
+   * returned distance corresponds to the physical boundary.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(BooleanStruct const &unplaced,
                                                                          Vector3D<Real_v> const &point,
@@ -99,7 +125,10 @@ struct BooleanImplementation<kUnion> {
     VPlacedVolume const *const ptrSolidB = unplaced.fRightVolume;
 
     Real_v dist = 0.;
-    Real_v pushdist(kPushTolerance);
+    // Keep the union handoff push close to the surface: kPushTolerance can jump
+    // across a nearby connected constituent boundary before the existing
+    // connectivity check sees it.
+    Real_v pushdist(kTolerance);
     // size_t push          = 0;
     const auto positionA = ptrSolidA->Inside(point);
     Vector3D<Real_v> nextp(point);
@@ -142,6 +171,12 @@ struct BooleanImplementation<kUnion> {
     return;
   }
 
+  /**
+   * @brief Compute the safety from an outside point to the union.
+   * @details The closest way to enter a union is to enter either constituent,
+   * so this returns the minimum constituent SafetyToIn. Negative wrong-side
+   * values are intentionally preserved for convention checks.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(BooleanStruct const &unplaced,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -152,9 +187,14 @@ struct BooleanImplementation<kUnion> {
     const auto distB                      = fPtrSolidB->SafetyToIn(point);
     safety                                = Min(distA, distB);
     // If safety is negative it should not be made 0 (convention)
-    // vecCore::MaskedAssign(safety, safety < 0.0, 0.0);
   }
 
+  /**
+   * @brief Compute the safety from a point in the union to leave it.
+   * @details Points outside both constituents are on the wrong side and keep a
+   * negative safety. Points inside both constituents must clear both surfaces,
+   * while points inside only one constituent use that constituent's SafetyToOut.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(BooleanStruct const &unplaced,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
@@ -172,7 +212,9 @@ struct BooleanImplementation<kUnion> {
 
     if (insideA != kOutside && insideB != kOutside) /* in both */
     {
-      safety = Max(fPtrSolidA->SafetyToOut(point),
+      // Placed-volume SafetyToOut expects constituent-local coordinates for
+      // both operands; do not assume the left operand has identity placement.
+      safety = Max(fPtrSolidA->SafetyToOut(fPtrSolidA->GetTransformation()->Transform(point)),
                    fPtrSolidB->SafetyToOut(fPtrSolidB->GetTransformation()->Transform(point)));
     } else {
       if (insideA == kSurface || insideB == kSurface) return;
@@ -180,19 +222,27 @@ struct BooleanImplementation<kUnion> {
       if (insideA == kOutside) {
         safety = fPtrSolidB->SafetyToOut(fPtrSolidB->GetTransformation()->Transform(point));
       } else {
-        safety = fPtrSolidA->SafetyToOut(point);
+        // Placed-volume SafetyToOut expects constituent-local coordinates for
+        // both operands; do not assume the left operand has identity placement.
+        safety = fPtrSolidA->SafetyToOut(fPtrSolidA->GetTransformation()->Transform(point));
       }
     }
   }
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Compute an outward normal for the closest union surface.
+   * @details If the point is contained by one constituent, that constituent
+   * owns the union surface locally. If the point is outside both constituents,
+   * the closest constituent surface is selected using SafetyToIn. Constituent
+   * normal calls receive the Boolean-local point because VPlacedVolume applies
+   * the constituent placement internally.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void NormalKernel(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &point,
-                                                                        Vector3D<Real_v> &normal, Bool_v &valid)
+                                                                        Vector3D<Real_v> &normal, bool &valid)
   {
-    Vector3D<Real_v> localNorm;
-    Vector3D<Real_v> localPoint;
-    valid = false; // Backend::kFalse;
+    valid = false;
 
     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
@@ -201,37 +251,27 @@ struct BooleanImplementation<kUnion> {
     // intersection between A and B cannot be on surface, or if they are they
     // are on a common surface and the normal can be computer for A or B)
     if (fPtrSolidA->Contains(point)) {
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      // VPlacedVolume::Normal expects the point in the Boolean-local frame and
+      // performs the constituent transform internally.
+      valid = fPtrSolidA->Normal(point, normal);
       return;
     }
     // Same for points inside B
     if (fPtrSolidB->Contains(point)) {
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidB->Normal(localPoint, localNorm);
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      valid = fPtrSolidB->Normal(point, normal);
       return;
     }
     // Points outside both A and B can be on any surface. We use the safety.
     const auto safetyA = fPtrSolidA->SafetyToIn(point);
     const auto safetyB = fPtrSolidB->SafetyToIn(point);
-    auto onA           = safetyA < safetyB;
-    if (vecCore::MaskFull(onA)) {
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normal);
+    const bool onA     = safetyA < safetyB;
+    if (onA) {
+      valid = fPtrSolidA->Normal(point, normal);
       return;
     } else {
-      //  if (vecCore::MaskEmpty(onA)) {  // to use real mask operation when supporting vectors
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidB->Normal(localPoint, localNorm);
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      valid = fPtrSolidB->Normal(point, normal);
       return;
     }
-    // Some particles are on A, some on B. We never arrive here in the scalar case
-    // If the interface to Normal will support the vector case, we have to write code here.
-    return;
   }
 
 }; // End struct BooleanImplementation

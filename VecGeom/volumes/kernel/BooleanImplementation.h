@@ -31,10 +31,11 @@ struct BooleanImplementation {
 };
 
 /**
- * an ordinary (non-templated) implementation of a Boolean solid
- * using the virtual function interface of its constituents
- *
- * TEMPLATE SPECIALIZATION FOR SUBTRACTION
+ * @brief Kernel implementation for Boolean subtraction volumes.
+ * @details The implementation represents `left - right` using the virtual
+ * interfaces of the two placed constituents. Points in the right constituent
+ * are excluded from the result, and normals on the right constituent are
+ * inverted because they bound a removed volume.
  */
 template <>
 struct BooleanImplementation<kSubtraction> {
@@ -42,21 +43,31 @@ struct BooleanImplementation<kSubtraction> {
   using UnplacedVolume_t = UnplacedBooleanVolume<kSubtraction>;
   using UnplacedStruct_t = BooleanStruct;
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Test whether a point is contained in the subtraction result.
+   * @details The point must be contained by the left constituent and not
+   * contained by the subtracted right constituent.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(BooleanStruct const &unplaced,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
-    Vector3D<Real_v> tmp;
     inside = unplaced.fLeftVolume->Contains(point);
-    if (vecCore::MaskEmpty(inside)) return;
+    if (!inside) return;
 
-    auto rightInside = unplaced.fRightVolume->Contains(point);
+    const bool rightInside = unplaced.fRightVolume->Contains(point);
     inside &= !rightInside;
   }
 
-  template <typename Real_v, typename Inside_t>
+  /**
+   * @brief Classify a point with the Boolean subtraction inside convention.
+   * @details A point is inside only when it is inside the left constituent and
+   * outside the right constituent. Surface cases include the outer left surface
+   * and the inner surface introduced by subtracting the right constituent.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(BooleanStruct const &unplaced,
-                                                                  Vector3D<Real_v> const &p, Inside_t &inside)
+                                                                  Vector3D<Real_v> const &p, vecgeom::Inside_t &inside)
   {
 
     // now use the Inside functionality of left and right components
@@ -76,14 +87,62 @@ struct BooleanImplementation<kSubtraction> {
       inside = EInside::kInside;
       return;
     } else {
+      bool surfaceSurfaceBoundary = false;
+      if (positionA == EInside::kSurface && positionB == EInside::kSurface) {
+        Vector3D<Real_v> normalA, normalB;
+        bool validNormalA = fPtrSolidA->Normal(p, normalA);
+        bool validNormalB = fPtrSolidB->Normal(p, normalB);
+        if (validNormalA && validNormalB) {
+          // Different surface normals still define a Boolean boundary.
+          if ((normalA - normalB).Mag2() > Real_v(1000.) * kToleranceDist<Real_v>) {
+            surfaceSurfaceBoundary = true;
+          }
+        }
+        if (!surfaceSurfaceBoundary) {
+          const Real_v zero(0.);
+          const Real_v probeStep = Real_v(4.) * kToleranceCone<Real_v>;
+          bool foundMaterial     = false;
+          bool foundVoid         = false;
+
+          const auto xPlus       = p + Vector3D<Real_v>(probeStep, zero, zero);
+          const bool xPlusInside = fPtrSolidA->Contains(xPlus) && !fPtrSolidB->Contains(xPlus);
+          foundMaterial |= xPlusInside;
+          foundVoid |= !xPlusInside;
+
+          const auto xMinus       = p - Vector3D<Real_v>(probeStep, zero, zero);
+          const bool xMinusInside = fPtrSolidA->Contains(xMinus) && !fPtrSolidB->Contains(xMinus);
+          foundMaterial |= xMinusInside;
+          foundVoid |= !xMinusInside;
+
+          const auto yPlus       = p + Vector3D<Real_v>(zero, probeStep, zero);
+          const bool yPlusInside = fPtrSolidA->Contains(yPlus) && !fPtrSolidB->Contains(yPlus);
+          foundMaterial |= yPlusInside;
+          foundVoid |= !yPlusInside;
+
+          const auto yMinus       = p - Vector3D<Real_v>(zero, probeStep, zero);
+          const bool yMinusInside = fPtrSolidA->Contains(yMinus) && !fPtrSolidB->Contains(yMinus);
+          foundMaterial |= yMinusInside;
+          foundVoid |= !yMinusInside;
+
+          const auto zPlus       = p + Vector3D<Real_v>(zero, zero, probeStep);
+          const bool zPlusInside = fPtrSolidA->Contains(zPlus) && !fPtrSolidB->Contains(zPlus);
+          foundMaterial |= zPlusInside;
+          foundVoid |= !zPlusInside;
+
+          const auto zMinus       = p - Vector3D<Real_v>(zero, zero, probeStep);
+          const bool zMinusInside = fPtrSolidA->Contains(zMinus) && !fPtrSolidB->Contains(zMinus);
+          foundMaterial |= zMinusInside;
+          foundVoid |= !zMinusInside;
+
+          // Equal or unavailable operand normals can be an exact cancellation
+          // or just a tolerance-shell section seam. Local Boolean membership
+          // distinguishes the two without adding a general Inside call.
+          surfaceSurfaceBoundary = foundMaterial && foundVoid;
+        }
+      }
+
       if ((positionA == EInside::kInside && positionB == EInside::kSurface) ||
-          (positionB == EInside::kOutside && positionA == EInside::kSurface)
-          /*
-           ||( positionA == EInside::kSurface && positionB == EInside::kSurface &&
-             (   fPtrSolidA->Normal(p) -
-               fPtrSolidB->Normal(p) ).mag2() >
-             1000.0*G4GeometryTolerance::GetInstance()->GetRadialTolerance() ) )
-          */) {
+          (positionB == EInside::kOutside && positionA == EInside::kSurface) || surfaceSurfaceBoundary) {
         inside = EInside::kSurface;
         return;
       } else {
@@ -94,73 +153,151 @@ struct BooleanImplementation<kSubtraction> {
     // going to be a bit more complicated due to Surface states
   }
 
+  /**
+   * @brief Compute the distance from outside to enter `left - right`.
+   * @details The ray alternates between entering the left constituent and
+   * exiting the subtracted right constituent. The upfront wrong-side guard is
+   * required because a point strictly inside the subtraction result is already
+   * in the solid, and the walking algorithm can otherwise clamp the left
+   * constituent's negative entry distance into a false zero hit.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &p,
                                                                         Vector3D<Real_v> const &dir,
                                                                         Real_v const &stepMax, Real_v &distance)
   {
-    Real_v dist_right, dist_left, advance = 0.;
-    Real_v limit = stepMax;
+    Real_v dist_right, dist_left, workDistance = 0.;
+    Real_v limit                  = stepMax;
+    const Real_v overlapTolerance = kToleranceCone<Real_v>;
     Vector3D<Real_v> hitpoint(p);
+    // `workDistance`/`hitpoint` include small numerical pushes used to avoid
+    // re-hitting the same B surface. `lastBoundaryDistance` is the unpushed
+    // geometric boundary just crossed and is the only value returned for such
+    // boundary entries.
+    Real_v lastBoundaryDistance(0.);
+    bool hasPushedBoundary      = false;
+    const auto insideLeftState  = unplaced.fLeftVolume->Inside(p);
+    const auto insideRightState = unplaced.fRightVolume->Inside(p);
+    if (insideLeftState == kInside && insideRightState == kOutside) {
+      // A point already inside the subtraction result is on the wrong side for
+      // DistanceToIn; do not let the walking algorithm turn A's negative entry
+      // distance into a zero hit.
+      distance = Real_v(-1.);
+      return;
+    }
     // check if inside '-'
-    auto insideRight = unplaced.fRightVolume->Inside(p) != kOutside;
-    // epsil is used to push across boundaries, push records the actual push
-    Precision epsil(0.), push(0.);
+    auto insideRight = insideRightState != kOutside;
     while (1) {
       if (insideRight) {
-        //    // propagate to outside of '- / RightShape'
-        dist_right = unplaced.fRightVolume->PlacedDistanceToOut(hitpoint, dir, limit);
-        if (dist_right >= 0.) {
-          advance += dist_right + push;
-          limit = stepMax - advance;
-          epsil = kRelTolerance(hitpoint + dist_right * dir);
-          // Push point across the boundary and record push
-          hitpoint += (dist_right + epsil) * dir;
-          push = epsil;
-        } else {
-          push = 0.;
+        // While inside B, the next possible entry into A-B is the B exit, but
+        // only if A continues beyond that exit. Compare the local B exit with
+        // the local A exit before applying any push to the working point.
+        const auto leftStateBeforeRightExit = unplaced.fLeftVolume->Inside(hitpoint);
+        const auto rightStateAtHit          = unplaced.fRightVolume->Inside(hitpoint);
+        const Real_v dist_left_out          = leftStateBeforeRightExit != kOutside
+                                                  ? unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir, limit)
+                                                  : Real_v(kInfLength);
+        dist_right                          = unplaced.fRightVolume->PlacedDistanceToOut(hitpoint, dir, limit);
+
+        if (rightStateAtHit == kSurface && dist_right >= Real_v(0.) && dist_right <= overlapTolerance) {
+          const Real_v epsil                 = kRelTolerance<Real_v>(hitpoint);
+          const auto rightStateAfterZeroExit = unplaced.fRightVolume->Inside(hitpoint + epsil * dir);
+          if (rightStateAfterZeroExit == kOutside) {
+            // A zero cutter exit from a surface point can be a ray already on the
+            // outside side of B. Do not push and keep walking as if still inside
+            // the removed volume.
+            insideRight = false;
+          }
         }
 
-        // now master outside 'B'; check if inside 'A'
-        if (unplaced.fLeftVolume->Inside(hitpoint) != kOutside) {
-          auto check = unplaced.fLeftVolume->PlacedDistanceToOut(hitpoint, dir);
-          if (check > epsil) {
-            distance = advance;
+        if (!insideRight) continue;
+
+        if (leftStateBeforeRightExit != kOutside && dist_right >= Real_v(0.) &&
+            dist_right < dist_left_out - overlapTolerance) {
+          // Exiting B before exiting A is a real entry into A-B. Coincident
+          // A/B exits cancel and must be skipped.
+          distance = workDistance + dist_right;
+          return;
+        }
+
+        if (dist_right < Real_v(0.) || dist_right >= limit) {
+          if (rightStateAtHit == kSurface) {
+            // A B-surface point can already be on the outside side for this
+            // ray. Do not force an infinite hit; let the outside-B ordering
+            // below decide whether A is entered at zero distance.
+            insideRight = false;
+          } else {
+            distance = kInfLength;
             return;
           }
+        } else {
+          // The B exit is not a physical entry yet, so record its exact distance
+          // and move only the loop state across B. A following zero A hit should
+          // return `lastBoundaryDistance`, not the pushed `workDistance`.
+          lastBoundaryDistance = workDistance + dist_right;
+          const Real_v epsil   = kRelTolerance<Real_v>(hitpoint + dist_right * dir);
+          // Push only the working point to avoid seeing the same B surface again;
+          // the physical boundary distance is kept separately for returns.
+          hitpoint += (dist_right + epsil) * dir;
+          workDistance      = lastBoundaryDistance + epsil;
+          limit             = stepMax - workDistance;
+          hasPushedBoundary = true;
         }
       }
 
-      // master outside '-' and outside '+' ;  find distances to both
+      // Outside B, an A entry is valid only if it happens strictly before the
+      // next B entry. Near-coincident A/B entries are treated as canceled or
+      // grazing cutter boundaries, not as material entries.
       dist_left = unplaced.fLeftVolume->DistanceToIn(hitpoint, dir, limit);
-      dist_left = vecCore::math::Max(dist_left, 0.);
+      dist_left = Max(dist_left, Real_v(0.));
       if (dist_left >= limit) {
         distance = kInfLength;
         return;
       }
 
       dist_right = unplaced.fRightVolume->DistanceToIn(hitpoint, dir, limit);
-      if (dist_left < dist_right - kTolerance) {
-        advance += dist_left + push;
-        distance = advance;
+      if (dist_left < dist_right - overlapTolerance) {
+        // If the previous step just crossed B and the pushed point is already
+        // inside A, the zero left distance refers to the B boundary we crossed.
+        // Return the geometric boundary, not the internally pushed point.
+        distance =
+            (hasPushedBoundary && dist_left <= overlapTolerance) ? lastBoundaryDistance : workDistance + dist_left;
+        return;
+      }
+      if (dist_right <= overlapTolerance) {
+        // A zero-distance B touch that is not preceded by A is a grazing or
+        // canceled A/B boundary; walking it would not make progress, and a
+        // later A hit may still be hidden by B.
+        distance = kInfLength;
+        return;
+      }
+      if (dist_right >= limit) {
+        distance = kInfLength;
         return;
       }
 
-      //        // propagate to '-'
-      if (dist_right >= 0. && dist_right < kInfLength) {
-        advance += dist_right + push;
-        limit = stepMax - advance;
-        epsil = kRelTolerance(hitpoint + dist_right * dir);
+      // B is reached before A, so the ray enters the subtracted volume. Walk
+      // the working point across B and continue looking for the following B
+      // exit, preserving the exact B-entry distance separately.
+      if (dist_right >= 0.) {
+        lastBoundaryDistance = workDistance + dist_right;
+        const Real_v epsil   = kRelTolerance<Real_v>(hitpoint + dist_right * dir);
         hitpoint += (dist_right + epsil) * dir;
-        push = epsil;
-      } else {
-        push = 0.;
+        workDistance      = lastBoundaryDistance + epsil;
+        limit             = stepMax - workDistance;
+        hasPushedBoundary = true;
       }
       insideRight = true;
     } // end while
   }
 
+  /**
+   * @brief Compute the distance from inside `left - right` to leave it.
+   * @details The ray leaves the subtraction result either by exiting the left
+   * constituent or by entering the removed right constituent, so the result is
+   * the smaller of those two distances.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(BooleanStruct const &unplaced,
                                                                          Vector3D<Real_v> const &point,
@@ -173,6 +310,12 @@ struct BooleanImplementation<kSubtraction> {
     return;
   }
 
+  /**
+   * @brief Compute the safety from outside to enter `left - right`.
+   * @details The legacy implementation is intentionally approximate: if the
+   * point is in both constituents, entry is controlled by leaving the right
+   * constituent; otherwise it uses the left constituent SafetyToIn.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(BooleanStruct const &unplaced,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -190,66 +333,71 @@ struct BooleanImplementation<kSubtraction> {
     }
   }
 
+  /**
+   * @brief Compute the safety from inside `left - right` to leave it.
+   * @details The closest exit is either the outer surface of the left
+   * constituent or the inner surface of the removed right constituent.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(BooleanStruct const &unplaced,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
-    const auto safetyleft  = unplaced.fLeftVolume->SafetyToOut(point);
+    // Placed-volume SafetyToOut expects constituent-local coordinates; this
+    // also matters for subtraction nodes used as transformed Boolean operands.
+    const auto safetyleft =
+        unplaced.fLeftVolume->SafetyToOut(unplaced.fLeftVolume->GetTransformation()->Transform(point));
     const auto safetyright = unplaced.fRightVolume->SafetyToIn(point);
     safety                 = Min(safetyleft, safetyright);
   }
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Compute an outward normal for the subtraction surface.
+   * @details Points on the removed right constituent use that constituent's
+   * normal with reversed sign. Points on the left outer boundary use the left
+   * normal directly. Ambiguous points inside the left and outside the right are
+   * resolved by comparing the two relevant safeties.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void NormalKernel(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &point,
-                                                                        Vector3D<Real_v> &normal, Bool_v &valid)
+                                                                        Vector3D<Real_v> &normal, bool &valid)
   {
-    Vector3D<Real_v> localNorm;
-    Vector3D<Real_v> localPoint;
-    valid = false; // Backend::kFalse;
+    valid = false;
 
     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
 
     // If point is inside B, then it must be on a surface of B
     if (fPtrSolidB->Contains(point)) {
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidB->Normal(localPoint, localNorm);
-      // The normal to the subtracted solid has to be inverted and transformed back
-      localNorm *= -1.;
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      // VPlacedVolume::Normal expects the point in the Boolean-local frame and
+      // performs the constituent transform internally.
+      valid = fPtrSolidB->Normal(point, normal);
+      // The normal to the subtracted solid has to be inverted.
+      normal *= -1.;
       return;
     }
 
     // If point is outside A, then it must be on a surface of A
     if (!fPtrSolidA->Contains(point)) {
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      valid = fPtrSolidA->Normal(point, normal);
       return;
     }
 
     // Point is inside A and outside B, check safety
+    Vector3D<Real_v> localPoint;
     fPtrSolidA->GetTransformation()->Transform(point, localPoint);
     Real_v safetyA = fPtrSolidA->SafetyToOut(localPoint);
     Real_v safetyB = fPtrSolidB->SafetyToIn(point);
-    Bool_v onA     = safetyA < safetyB;
-    if (vecCore::MaskFull(onA)) {
-      valid = fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normal);
+    const bool onA = safetyA < safetyB;
+    if (onA) {
+      valid = fPtrSolidA->Normal(point, normal);
       return;
     } else {
-      //  if (vecCore::MaskEmpty(onA)) {  // to use real mask operation when supporting vectors
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidB->Normal(localPoint, localNorm);
-      // The normal to the subtracted solid has to be inverted and transformed back
-      localNorm *= -1.;
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      valid = fPtrSolidB->Normal(point, normal);
+      // The normal to the subtracted solid has to be inverted.
+      normal *= -1.;
       return;
     }
-    // Some particles are on A, some on B. We never arrive here in the scalar case
-    // If the interface to Normal will support the vector case, we have to write code here.
-    return;
   }
 
 }; // End struct BooleanImplementation
