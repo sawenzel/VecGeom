@@ -1,10 +1,7 @@
 #ifndef VECGEOM_BASE_PRIOQUEUE_H_
 #define VECGEOM_BASE_PRIOQUEUE_H_
 
-#ifdef NDEBUG
-#undef NDEBUG
-#endif
-#include <cassert>
+#include "VecGeom/base/Assert.h"
 
 /**
  * @brief A simple implementation of a small priority queue, compilable under CPU + GPU
@@ -24,7 +21,7 @@ struct PriorityQueue {
   VECCORE_ATT_HOST_DEVICE void push(T val, Priority p)
   {
     int i = size++;
-    assert(i < MaxN);
+    VECGEOM_ASSERT(i < MaxN);
     data[i] = {val, p};
     // Sift up (min-heap on priority)
     while (i > 0) {
@@ -42,7 +39,7 @@ struct PriorityQueue {
   T pop()
   {
     T top = data[0].value;
-    assert(size > 0);
+    VECGEOM_ASSERT(size > 0);
     data[0] = data[--size];
     // Sift down
     int i = 0;
