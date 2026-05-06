@@ -8,6 +8,7 @@
 
 #include "VecGeom/volumes/PolygonalShell.h"
 #include "VecGeom/volumes/TessellatedStruct.h"
+#include <vector>
 
 #ifndef VECGEOM_ENABLE_CUDA
 #include "VecGeom/volumes/TessellatedSection.h"
@@ -42,14 +43,124 @@ class ExtrudedStruct {
   template <typename U>
   using vector_t = vecgeom::Vector<U>;
 
+  struct FacetInd {
+    size_t ind1{0}, ind2{0}, ind3{0};
+
+    FacetInd() = default;
+    VECCORE_ATT_HOST_DEVICE
+    FacetInd(size_t i1, size_t i2, size_t i3) : ind1(i1), ind2(i2), ind3(i3) {}
+  };
+
+  template <typename Facets_t>
+  VECCORE_ATT_HOST_DEVICE
+  void TriangulatePolygon(Facets_t &facets) const
+  {
+    const size_t nvertices = GetNVertices();
+    vector_t<size_t> vtx;
+    for (size_t i = 0; i < nvertices; ++i)
+      vtx.push_back(i);
+
+    size_t i1 = 0;
+    size_t i2 = 1;
+    size_t i3 = 2;
+
+    while (vtx.size() > 2) {
+      size_t counter = 0;
+      while (!IsConvexSide(vtx[i1], vtx[i2], vtx[i3])) {
+        i1 = (i1 + 1) % vtx.size();
+        i2 = (i2 + 1) % vtx.size();
+        i3 = (i3 + 1) % vtx.size();
+        counter++;
+        VECGEOM_VALIDATE(counter < nvertices, << "Triangulation failed");
+        (void)counter; // silence unused variable warnings in release builds
+      }
+
+      bool good = true;
+      for (auto i : vtx) {
+        if (i == vtx[i1] || i == vtx[i2] || i == vtx[i3]) continue;
+        if (IsPointInside(vtx[i1], vtx[i2], vtx[i3], i)) {
+          good = false;
+          i1   = (i1 + 1) % vtx.size();
+          i2   = (i2 + 1) % vtx.size();
+          i3   = (i3 + 1) % vtx.size();
+          break;
+        }
+      }
+
+      if (good) {
+        facets.push_back(FacetInd(vtx[i1], vtx[i2], vtx[i3]));
+        vtx.erase(vtx.begin() + i2);
+        i1 = 0;
+        i2 = 1;
+        i3 = 2;
+      }
+    }
+  }
+
 public:
+  struct DeprecatedTslHelper {
+    // TODO(VecGeom-release-transition): remove these public compatibility fields
+    // after a VecGeom release has given Geant4 time to switch to GetMeshHelper().
+    // They emulate the old ExtrudedStruct::fTslHelper.fVertices/fFacets[*]->fIndices
+    // export layout only; navigation must use fTslRuntimeHelper instead.
+    vector_t<Vector3D<Precision>> fVertices;
+    vector_t<TriangleFacet<Precision>> fFacetStorage;
+    vector_t<TriangleFacet<Precision> *> fFacets;
+
+    // TODO(VecGeom-release-transition): remove together with the compatibility
+    // fields above. New visualization/export code should use GetMeshHelper().
+    VECCORE_ATT_HOST_DEVICE
+    void FillFrom(TessellatedStruct<3, Precision> const &tsl)
+    {
+      fVertices.clear();
+      fFacetStorage.clear();
+      fFacets.clear();
+
+      fVertices.reserve(tsl.fVertices.size());
+      for (size_t i = 0; i < tsl.fVertices.size(); ++i)
+        fVertices.push_back(tsl.fVertices[i]);
+
+      fFacetStorage.reserve(tsl.fFacets.size());
+      fFacets.reserve(tsl.fFacets.size());
+      for (size_t i = 0; i < tsl.fFacets.size(); ++i) {
+        const auto *facet = tsl.fFacets[i];
+        fFacetStorage.push_back(*facet);
+        fFacets.push_back(&fFacetStorage[fFacetStorage.size() - 1]);
+      }
+    }
+  };
+
+  class ExtrudedMeshHelper {
+  private:
+    ExtrudedStruct const &fXtru;
+    std::vector<FacetInd> fCapFacets;
+
+    size_t MeshVertexIndex(size_t ivert, size_t isect) const;
+
+  public:
+    // Temporary API view for visualization/export code; navigation keeps using fTslRuntimeHelper.
+    explicit ExtrudedMeshHelper(ExtrudedStruct const &xtru);
+
+    size_t GetNvertices() const;
+
+    Vector3D<Precision> GetVertex(size_t index) const;
+
+    size_t GetNfacets() const;
+
+    void GetFacetVertices(size_t ifacet, size_t (&indices)[3]) const;
+  };
+
   bool fIsSxtru                  = false;     ///< Flag for sxtru representation
   bool fInitialized              = false;     ///< Flag for initialization
   Precision *fZPlanes            = nullptr;   ///< Z position of planes
   mutable Precision fCubicVolume = 0.;        ///< Cubic volume
   mutable Precision fSurfaceArea = 0.;        ///< Surface area
   PolygonalShell fSxtruHelper;                ///< Sxtru helper
-  TessellatedRuntimeStruct<Precision> fTslHelper; ///< The tessellated helper for navigation
+  TessellatedRuntimeStruct<Precision> fTslRuntimeHelper; ///< The tessellated helper for navigation
+  // TODO(VecGeom-release-transition): remove this old-layout export shim after
+  // a VecGeom release. Geant4 and other visualization/export users should use
+  // GetMeshHelper(), not the internal tessellated navigation representation.
+  DeprecatedTslHelper fTslHelper;
 #ifndef VECGEOM_ENABLE_CUDA
   bool fUseTslSections = false;                           ///< Use tessellated section helper
   vector_t<TessellatedSection<Precision> *> fTslSections; ///< Tessellated sections
@@ -150,18 +261,6 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void CreateTessellated(size_t nvertices, XtruVertex2 const *vertices, size_t nsections, XtruSection const *sections)
   {
-    struct FacetInd {
-      size_t ind1{0}, ind2{0}, ind3{0};
-
-      FacetInd() = default;
-      FacetInd(int i1, int i2, int i3)
-      {
-        ind1 = i1;
-        ind2 = i2;
-        ind3 = i3;
-      }
-    };
-
     TessellatedStruct<3, Precision> tsl_builder_struct;
 
     // Store sections
@@ -187,58 +286,15 @@ public:
       }
     }
 #endif
-    // TRIANGULATE POLYGON
-
     VectorBase<FacetInd> facets(nvertices);
-    // Fill a vector of vertex indices
-    vector_t<size_t> vtx;
-    for (size_t i = 0; i < nvertices; ++i)
-      vtx.push_back(i);
-
-    size_t i1 = 0;
-    size_t i2 = 1;
-    size_t i3 = 2;
-
-    while (vtx.size() > 2) {
-      // Find convex parts of the polygon (ears)
-      size_t counter = 0;
-      while (!IsConvexSide(vtx[i1], vtx[i2], vtx[i3])) {
-        i1++;
-        i2++;
-        i3 = (i3 + 1) % vtx.size();
-        counter++;
-        VECGEOM_VALIDATE(counter < nvertices, << "Triangulation failed");
-        (void)counter; // silence unused variable warnings in release builds
-      }
-      bool good = true;
-      // Check if any of the remaining vertices are in the ear
-      for (auto i : vtx) {
-        if (i == vtx[i1] || i == vtx[i2] || i == vtx[i3]) continue;
-        if (IsPointInside(vtx[i1], vtx[i2], vtx[i3], i)) {
-          good = false;
-          i1++;
-          i2++;
-          i3 = (i3 + 1) % vtx.size();
-          break;
-        }
-      }
-
-      if (good) {
-        // Make triangle
-        facets.push_back(FacetInd(vtx[i1], vtx[i2], vtx[i3]));
-        // Remove the middle vertex of the ear and restart
-        vtx.erase(vtx.begin() + i2);
-        i1 = 0;
-        i2 = 1;
-        i3 = 2;
-      }
-    }
+    // TRIANGULATE POLYGON
+    TriangulatePolygon(facets);
     // We have all index facets, create now the real facets
     // Bottom (normals pointing down)
     for (size_t i = 0; i < facets.size(); ++i) {
-      i1 = facets[i].ind1;
-      i2 = facets[i].ind2;
-      i3 = facets[i].ind3;
+      size_t i1 = facets[i].ind1;
+      size_t i2 = facets[i].ind2;
+      size_t i3 = facets[i].ind3;
       tsl_builder_struct.AddTriangularFacet(VertexToSection(i1, 0), VertexToSection(i2, 0), VertexToSection(i3, 0));
     }
     // Sections
@@ -257,15 +313,16 @@ public:
     }
     // Top (normals pointing up)
     for (size_t i = 0; i < facets.size(); ++i) {
-      i1 = facets[i].ind1;
-      i2 = facets[i].ind2;
-      i3 = facets[i].ind3;
+      size_t i1 = facets[i].ind1;
+      size_t i2 = facets[i].ind2;
+      size_t i3 = facets[i].ind3;
       tsl_builder_struct.AddTriangularFacet(VertexToSection(i1, nsections - 1), VertexToSection(i3, nsections - 1),
                                             VertexToSection(i2, nsections - 1));
     }
     // Now close the tessellated structure
     tsl_builder_struct.Close();
-    fTslHelper.InitFrom(tsl_builder_struct);
+    fTslHelper.FillFrom(tsl_builder_struct);
+    fTslRuntimeHelper.InitFrom(tsl_builder_struct);
 #ifndef VECGEOM_ENABLE_CUDA
     if (getenv("NOTSLSECTIONS")) {
       // convenience mode to compare tsl sections against pure tessellated
@@ -293,6 +350,8 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   size_t GetNVertices() const { return fPolygon.GetNVertices(); }
+
+  ExtrudedMeshHelper GetMeshHelper() const { return ExtrudedMeshHelper(*this); }
 
   /** @brief Get the polygone vertex i */
   VECCORE_ATT_HOST_DEVICE
@@ -372,7 +431,7 @@ public:
   /** @brief Check if the polygone segments (i0, i1) and (i1, i2) make a convex side */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  bool IsConvexSide(size_t i0, size_t i1, size_t i2)
+  bool IsConvexSide(size_t i0, size_t i1, size_t i2) const
   {
     const Precision *x = fPolygon.GetVertices().x();
     const Precision *y = fPolygon.GetVertices().y();
@@ -398,6 +457,76 @@ public:
     return vert;
   }
 };
+
+inline size_t ExtrudedStruct::ExtrudedMeshHelper::MeshVertexIndex(size_t ivert, size_t isect) const
+{
+  return isect * fXtru.GetNVertices() + ivert;
+}
+
+inline ExtrudedStruct::ExtrudedMeshHelper::ExtrudedMeshHelper(ExtrudedStruct const &xtru) : fXtru(xtru)
+{
+  const size_t nvertices = fXtru.GetNVertices();
+  // Rebuild only the 2D cap triangulation; 3D vertices are redirected through VertexToSection().
+  VectorBase<FacetInd> capFacets(nvertices);
+  fXtru.TriangulatePolygon(capFacets);
+  fCapFacets.reserve(capFacets.size());
+  for (size_t i = 0; i < capFacets.size(); ++i)
+    fCapFacets.push_back(capFacets[i]);
+}
+
+inline size_t ExtrudedStruct::ExtrudedMeshHelper::GetNvertices() const
+{
+  return fXtru.GetNVertices() * fXtru.GetNSections();
+}
+
+inline Vector3D<Precision> ExtrudedStruct::ExtrudedMeshHelper::GetVertex(size_t index) const
+{
+  const size_t nvertices = fXtru.GetNVertices();
+  return fXtru.VertexToSection(index % nvertices, index / nvertices);
+}
+
+inline size_t ExtrudedStruct::ExtrudedMeshHelper::GetNfacets() const
+{
+  const size_t nsideFacets = 2 * fXtru.GetNVertices() * (fXtru.GetNSections() - 1);
+  return 2 * fCapFacets.size() + nsideFacets;
+}
+
+inline void ExtrudedStruct::ExtrudedMeshHelper::GetFacetVertices(size_t ifacet, size_t (&indices)[3]) const
+{
+  const size_t nvertices     = fXtru.GetNVertices();
+  const size_t nsections     = fXtru.GetNSections();
+  const size_t ncapFacets    = fCapFacets.size();
+  const size_t nsideFacets   = 2 * nvertices * (nsections - 1);
+  const size_t firstTopFacet = ncapFacets + nsideFacets;
+
+  if (ifacet < ncapFacets) {
+    const auto &facet = fCapFacets[ifacet];
+    indices[0]        = MeshVertexIndex(facet.ind1, 0);
+    indices[1]        = MeshVertexIndex(facet.ind2, 0);
+    indices[2]        = MeshVertexIndex(facet.ind3, 0);
+    return;
+  }
+
+  if (ifacet < firstTopFacet) {
+    // Match the side-face split used by the navigation tessellation: (j,i,i+1) and (j,i+1,j+1).
+    const size_t sideFacet = ifacet - ncapFacets;
+    const size_t isect     = sideFacet / (2 * nvertices);
+    const size_t rem       = sideFacet % (2 * nvertices);
+    const size_t i         = rem / 2;
+    const size_t j         = (i + 1) % nvertices;
+    const bool secondTri   = (rem % 2) != 0;
+
+    indices[0] = MeshVertexIndex(j, isect);
+    indices[1] = secondTri ? MeshVertexIndex(i, isect + 1) : MeshVertexIndex(i, isect);
+    indices[2] = secondTri ? MeshVertexIndex(j, isect + 1) : MeshVertexIndex(i, isect + 1);
+    return;
+  }
+
+  const auto &facet = fCapFacets[ifacet - firstTopFacet];
+  indices[0]        = MeshVertexIndex(facet.ind1, nsections - 1);
+  indices[1]        = MeshVertexIndex(facet.ind3, nsections - 1);
+  indices[2]        = MeshVertexIndex(facet.ind2, nsections - 1);
+}
 
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom

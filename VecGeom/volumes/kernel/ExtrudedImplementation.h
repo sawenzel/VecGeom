@@ -51,7 +51,7 @@ struct ExtrudedImplementation {
       return;
     }
 #endif
-    TessellatedImplementation::Contains<Real_v, Bool_v>(extruded.fTslHelper, point, inside);
+    TessellatedImplementation::Contains<Real_v, Bool_v>(extruded.fTslRuntimeHelper, point, inside);
   }
 
   template <typename Real_v, typename Inside_v>
@@ -84,7 +84,7 @@ struct ExtrudedImplementation {
       return;
     }
 #endif
-    TessellatedImplementation::Inside<Real_v, Inside_v>(extruded.fTslHelper, point, inside);
+    TessellatedImplementation::Inside<Real_v, Inside_v>(extruded.fTslRuntimeHelper, point, inside);
   }
 
   template <typename Real_v>
@@ -103,7 +103,7 @@ struct ExtrudedImplementation {
       sign[0]  = invdir.x() < 0;
       sign[1]  = invdir.y() < 0;
       sign[2]  = invdir.z() < 0;
-      distance = BoxImplementation::IntersectCachedKernel2<Real_v, Real_v>(&extruded.fTslHelper.fMinExtent, point,
+      distance = BoxImplementation::IntersectCachedKernel2<Real_v, Real_v>(&extruded.fTslRuntimeHelper.fMinExtent, point,
                                                                            invdir, sign.x(), sign.y(), sign.z(),
                                                                            -kTolerance, InfinityLength<Real_v>());
       if (distance >= stepMax) return;
@@ -154,7 +154,7 @@ struct ExtrudedImplementation {
     if (extruded.fIsSxtru)
       SExtruImplementation::DistanceToIn<Real_v>(extruded.fSxtruHelper, point, direction, stepMax, distance);
     else
-      TessellatedImplementation::DistanceToIn<Real_v>(extruded.fTslHelper, point, direction, stepMax, distance);
+      TessellatedImplementation::DistanceToIn<Real_v>(extruded.fTslRuntimeHelper, point, direction, stepMax, distance);
   }
 
   template <typename Real_v>
@@ -166,7 +166,7 @@ struct ExtrudedImplementation {
     if (extruded.fIsSxtru)
       SExtruImplementation::DistanceToOut<Real_v>(extruded.fSxtruHelper, point, direction, stepMax, distance);
     else
-      TessellatedImplementation::DistanceToOut<Real_v>(extruded.fTslHelper, point, direction, stepMax, distance);
+      TessellatedImplementation::DistanceToOut<Real_v>(extruded.fTslRuntimeHelper, point, direction, stepMax, distance);
   }
 
   template <typename Real_v>
@@ -176,7 +176,7 @@ struct ExtrudedImplementation {
     if (extruded.fIsSxtru)
       SExtruImplementation::SafetyToIn<Real_v>(extruded.fSxtruHelper, point, safety);
     else
-      TessellatedImplementation::SafetyToIn<Real_v>(extruded.fTslHelper, point, safety);
+      TessellatedImplementation::SafetyToIn<Real_v>(extruded.fTslRuntimeHelper, point, safety);
   }
 
   template <typename Real_v>
@@ -186,7 +186,7 @@ struct ExtrudedImplementation {
     if (extruded.fIsSxtru)
       SExtruImplementation::SafetyToOut<Real_v>(extruded.fSxtruHelper, point, safety);
     else
-      TessellatedImplementation::SafetyToOut<Real_v>(extruded.fTslHelper, point, safety);
+      TessellatedImplementation::SafetyToOut<Real_v>(extruded.fTslRuntimeHelper, point, safety);
   }
 
   template <typename Real_v>
@@ -195,7 +195,7 @@ struct ExtrudedImplementation {
   {
     // Computes the normal on a surface and returns it as a unit vector
     if (extruded.fIsSxtru) return SExtruImplementation::NormalKernel<Real_v>(extruded.fSxtruHelper, point, valid);
-    return TessellatedImplementation::NormalKernel<Real_v>(extruded.fTslHelper, point, valid);
+    return TessellatedImplementation::NormalKernel<Real_v>(extruded.fTslRuntimeHelper, point, valid);
   }
 
 }; // end ExtrudedImplementation
