@@ -8,14 +8,16 @@
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/volumes/BooleanStruct.h"
-#include <VecCore/VecCore>
 
 namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /**
- * partial template specialization for UNION implementation
+ * @brief Kernel implementation for Boolean intersection volumes.
+ * @details The implementation delegates to the two placed constituents and
+ * combines their answers using the intersection convention: a point belongs to
+ * the solid only when it belongs to both constituents.
  */
 template <>
 struct BooleanImplementation<kIntersection> {
@@ -23,18 +25,31 @@ struct BooleanImplementation<kIntersection> {
   using UnplacedVolume_t = UnplacedBooleanVolume<kIntersection>;
   using UnplacedStruct_t = BooleanStruct;
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Test whether a point is contained in both constituents.
+   * @details Contains is boundary-inclusive for the constituent queries, so a
+   * point on a constituent boundary can still be contained by the intersection.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(BooleanStruct const &unplaced,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
-    const auto insideA = unplaced.fLeftVolume->Contains(point);
-    const auto insideB = unplaced.fRightVolume->Contains(point);
+    const bool insideA = unplaced.fLeftVolume->Contains(point);
+    const bool insideB = unplaced.fRightVolume->Contains(point);
     inside             = insideA && insideB;
   }
 
-  template <typename Real_v, typename Inside_t>
+  /**
+   * @brief Classify a point with the Boolean intersection inside convention.
+   * @details A point outside either constituent is outside the intersection.
+   * It is strictly inside only if both constituents classify it as inside; any
+   * inside/surface combination that is not outside is on the intersection
+   * surface.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(BooleanStruct const &unplaced,
-                                                                  Vector3D<Real_v> const &point, Inside_t &inside)
+                                                                  Vector3D<Real_v> const &point,
+                                                                  vecgeom::Inside_t &inside)
   {
     // now use the Inside functionality of left and right components
     // algorithm taken from Geant4 implementation
@@ -65,6 +80,14 @@ struct BooleanImplementation<kIntersection> {
     }
   }
 
+  /**
+   * @brief Compute the distance from outside to enter the intersection.
+   * @details The boundary-walking algorithm follows alternating constituent
+   * entries until the ray is inside both constituents. A strict-inside guard is
+   * kept before the walk because DistanceToIn is a wrong-side query for points
+   * already inside the intersection, while surface cases are left to the legacy
+   * boundary precheck so entering surface rays still return zero.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &point,
@@ -73,11 +96,23 @@ struct BooleanImplementation<kIntersection> {
   {
     Vector3D<Real_v> hitpoint = point;
 
-    auto inleft  = unplaced.fLeftVolume->Contains(hitpoint);
-    auto inright = unplaced.fRightVolume->Contains(hitpoint);
     Real_v d1    = 0.;
     Real_v d2    = 0.;
     Real_v snext = 0.0;
+
+    const auto insideLeftState  = unplaced.fLeftVolume->Inside(point);
+    const auto insideRightState = unplaced.fRightVolume->Inside(point);
+    // For DistanceToIn, constituent surface starts must be re-entered through
+    // the normal walking path; otherwise outside approach points on one
+    // constituent and inside the other return a false zero for the intersection.
+    auto inleft  = insideLeftState == kInside;
+    auto inright = insideRightState == kInside;
+    if (insideLeftState == kInside && insideRightState == kInside) {
+      // Strictly inside both constituents means strictly inside the
+      // intersection, so DistanceToIn is called from the wrong side.
+      distance = Real_v(-1.0);
+      return;
+    }
 
     // just a pre-check before entering main algorithm
     if (inleft && inright) {
@@ -85,12 +120,11 @@ struct BooleanImplementation<kIntersection> {
       d2 = unplaced.fRightVolume->PlacedDistanceToOut(hitpoint, dir, stepMax);
 
       // if we are close to a boundary continue
-      if (d1 < 2 * kTolerance) inleft = false;  // Backend::kFalse;
-      if (d2 < 2 * kTolerance) inright = false; // Backend::kFalse;
+      if (d1 < 2 * kTolerance) inleft = false;
+      if (d2 < 2 * kTolerance) inright = false;
 
       // otherwise exit
       if (inleft && inright) {
-        // TODO: WE are inside both so should return a negative number
         distance = 0.0;
         return;
       }
@@ -101,7 +135,10 @@ struct BooleanImplementation<kIntersection> {
       d1 = d2 = 0;
       if (!inleft) {
         d1 = unplaced.fLeftVolume->DistanceToIn(hitpoint, dir);
-        d1 = Max(d1, kTolerance);
+        // Use only half tolerance for artificial zero-hit progress: it is
+        // positive for outside-entry contracts but keeps the reported Boolean
+        // entry point on the surface.
+        d1 = Max(d1, Real_v(kHalfTolerance));
         if (d1 > 1E20) {
           distance = kInfLength;
           return;
@@ -109,7 +146,8 @@ struct BooleanImplementation<kIntersection> {
       }
       if (!inright) {
         d2 = unplaced.fRightVolume->DistanceToIn(hitpoint, dir);
-        d2 = Max(d2, kTolerance);
+        // Keep the same small progress convention for either constituent.
+        d2 = Max(d2, Real_v(kHalfTolerance));
         if (d2 > 1E20) {
           distance = kInfLength;
           return;
@@ -119,7 +157,7 @@ struct BooleanImplementation<kIntersection> {
       if (d1 > d2) {
         // propagate to left shape
         snext += d1;
-        inleft = true; // Backend::kTrue;
+        inleft = true;
         hitpoint += d1 * dir;
 
         // check if propagated point is inside right shape
@@ -133,7 +171,7 @@ struct BooleanImplementation<kIntersection> {
       } else {
         // propagate to right shape
         snext += d2;
-        inright = true; // Backend::kTrue;
+        inright = true;
         hitpoint += d2 * dir;
 
         // check if propagated point is inside left shape
@@ -149,16 +187,27 @@ struct BooleanImplementation<kIntersection> {
     return;
   }
 
+  /**
+   * @brief Compute the distance from inside the intersection to leave it.
+   * @details Leaving either constituent leaves the intersection, so the result
+   * is the minimum of the two constituent DistanceToOut answers.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(BooleanStruct const &unplaced,
                                                                          Vector3D<Real_v> const &point,
                                                                          Vector3D<Real_v> const &direction,
                                                                          Real_v const &stepMax, Real_v &distance)
   {
-    distance = Min(unplaced.fLeftVolume->DistanceToOut(point, direction),
-                   unplaced.fRightVolume->PlacedDistanceToOut(point, direction));
+    distance = Min(unplaced.fLeftVolume->PlacedDistanceToOut(point, direction, stepMax),
+                   unplaced.fRightVolume->PlacedDistanceToOut(point, direction, stepMax));
   }
 
+  /**
+   * @brief Compute the safety from outside to enter the intersection.
+   * @details If the point is already inside one constituent, only the other
+   * constituent can block entry. Otherwise the closer constituent entry safety
+   * is used, following the Geant4-style approximation kept by the legacy code.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(BooleanStruct const &unplaced,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -180,61 +229,80 @@ struct BooleanImplementation<kIntersection> {
     return;
   }
 
+  /**
+   * @brief Compute the safety from inside the intersection to leave it.
+   * @details A point outside either constituent is outside the intersection and
+   * therefore on the wrong side for SafetyToOut. Otherwise, leaving the closest
+   * constituent surface leaves the intersection. Negative constituent values
+   * are clamped to zero for the historical inside-side convention.
+   */
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(BooleanStruct const &unplaced,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
-    safety = Min(
-        // TODO: could fail if left volume is placed shape
-        unplaced.fLeftVolume->SafetyToOut(point),
+    const auto insideA = unplaced.fLeftVolume->Inside(point);
+    if (insideA == kOutside) {
+      // Outside either constituent is outside the intersection, which is the
+      // wrong side for SafetyToOut.
+      safety = Real_v(-1.0);
+      return;
+    }
+    const auto insideB = unplaced.fRightVolume->Inside(point);
+    if (insideB == kOutside) {
+      // Outside either constituent is outside the intersection, which is the
+      // wrong side for SafetyToOut.
+      safety = Real_v(-1.0);
+      return;
+    }
 
-        // TODO: consider introducing PlacedSafetyToOut function
-        unplaced.fRightVolume->SafetyToOut(unplaced.fRightVolume->GetTransformation()->Transform(point)));
-    vecCore::MaskedAssign(safety, safety < Real_v(0.), Real_v(0.));
+    // Placed-volume SafetyToOut expects constituent-local coordinates for both
+    // operands; do not assume the left operand has identity placement.
+    safety = Min(unplaced.fLeftVolume->SafetyToOut(unplaced.fLeftVolume->GetTransformation()->Transform(point)),
+                 unplaced.fRightVolume->SafetyToOut(unplaced.fRightVolume->GetTransformation()->Transform(point)));
+    if (safety < Real_v(0.)) safety = Real_v(0.);
   }
 
-  template <typename Real_v, typename Bool_v>
+  /**
+   * @brief Compute an outward normal for the closest intersection surface.
+   * @details The selected constituent is the one with the smaller safety to the
+   * relevant boundary. `SafetyToOut` follows the unplaced/local-coordinate
+   * convention even on placed volumes, while `SafetyToIn` and `Normal` apply
+   * the constituent placement internally.
+   */
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void NormalKernel(BooleanStruct const &unplaced,
                                                                         Vector3D<Real_v> const &point,
-                                                                        Vector3D<Real_v> &normal, Bool_v &valid)
+                                                                        Vector3D<Real_v> &normal, bool &valid)
   {
-    Vector3D<Real_v> localNorm;
-    Vector3D<Real_v> localPoint;
-    valid = false; // Backend::kFalse;
+    valid = false;
 
     VPlacedVolume const *const fPtrSolidA = unplaced.fLeftVolume;
     VPlacedVolume const *const fPtrSolidB = unplaced.fRightVolume;
     Real_v safetyA, safetyB;
 
     if (fPtrSolidA->Contains(point)) {
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      safetyA = fPtrSolidA->SafetyToOut(localPoint);
+      // Placed-volume SafetyToOut expects the point already in constituent-local
+      // coordinates; only SafetyToIn and Normal apply placement internally.
+      safetyA = fPtrSolidA->SafetyToOut(fPtrSolidA->GetTransformation()->Transform(point));
     } else {
       safetyA = fPtrSolidA->SafetyToIn(point);
     }
 
     if (fPtrSolidB->Contains(point)) {
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      safetyB = fPtrSolidB->SafetyToOut(localPoint);
+      // Placed-volume SafetyToOut expects the point already in constituent-local
+      // coordinates; only SafetyToIn and Normal apply placement internally.
+      safetyB = fPtrSolidB->SafetyToOut(fPtrSolidB->GetTransformation()->Transform(point));
     } else {
       safetyB = fPtrSolidB->SafetyToIn(point);
     }
-    const auto onA = safetyA < safetyB;
-    if (vecCore::MaskFull(onA)) {
-      fPtrSolidA->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidA->Normal(localPoint, localNorm);
-      fPtrSolidA->GetTransformation()->InverseTransformDirection(localNorm, normal);
+    const bool onA = safetyA < safetyB;
+    if (onA) {
+      valid = fPtrSolidA->Normal(point, normal);
       return;
     } else {
-      //  if (vecCore::MaskEmpty(onA)) {  // to use real mask operation when supporting vectors
-      fPtrSolidB->GetTransformation()->Transform(point, localPoint);
-      valid = fPtrSolidB->Normal(localPoint, localNorm);
-      fPtrSolidB->GetTransformation()->InverseTransformDirection(localNorm, normal);
+      valid = fPtrSolidB->Normal(point, normal);
       return;
     }
-    // Some particles are on A, some on B. We never arrive here in the scalar case
-    // If the interface to Normal will support the vector case, we have to write code here.
-    return;
   }
 }; // End struct BooleanImplementation
 

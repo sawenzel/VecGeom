@@ -113,6 +113,43 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+
+      // Boolean
+      {"boolean_intersection_rotated_boxes_rotated_face_normal", "boolean_intersection_rotated_boxes", "normals",
+       ShapeSampleCategory::kSurface, Vec_t(0.20710678118654757, -0.79289321881345243, 0.),
+       Vec_t(0.70710678118654757, 0.70710678118654757, 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Surface point on the rotated right constituent of an intersection; normal selection must compute "
+       "SafetyToOut in constituent-local coordinates."},
+      {"boolean_nested_transformed_subtraction_inner_cut_grazing",
+       "boolean_nested_transformed_subtraction", "surface", ShapeSampleCategory::kSurface, Vec_t(2.8, 0., 0.),
+       Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the transformed cutter inner face that remains as the nested subtraction boundary."},
+      // These polyhedron-left subtraction probes complement random sampling by
+      // hitting edge starts, shared planes, and grazing rays that are otherwise
+      // zero-measure topologies.
+      {"boolean_subtraction_polyhedron_z_slab_shared_edge_grazing", "boolean_subtraction_polyhedron_exact_z_slab",
+       "surface", ShapeSampleCategory::kEdge, Vec_t(5., 0., 2.), Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the shared z-slab cut and outer polyhedron side, then grazes along the edge-like boundary."},
+      {"boolean_subtraction_polyhedron_z_slab_shared_plane_entering", "boolean_subtraction_polyhedron_exact_z_slab",
+       "contracts", ShapeSampleCategory::kSurface, Vec_t(0., 0., 2.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the shared z-slab cut plane and enters the remaining upper polyhedron component."},
+      {"boolean_subtraction_polyhedron_radial_shell_top_edge_grazing",
+       "boolean_subtraction_polyhedron_exact_radial_shell", "surface", ShapeSampleCategory::kEdge, Vec_t(3., 0., 5.),
+       Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the top edge of the inner prism left after subtracting the exactly matching radial shell."},
+      {"boolean_subtraction_polyhedron_side_cut_tube_edge_grazing",
+       "boolean_subtraction_polyhedron_side_cut_tube", "surface", ShapeSampleCategory::kEdge,
+       Vec_t(5., 0.714142842854285, 0.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the intersection edge between the left polyhedron side and the subtracted tube opening."},
+      {"boolean_subtraction_polyhedron_phi_seam_rotated_top_edge_grazing",
+       "boolean_subtraction_polyhedron_phi_seam_rotated", "surface", ShapeSampleCategory::kEdge,
+       Vec_t(2.2275163104709197, 1.1349762493488669, 5.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the rotated cutter phi seam where it meets the shared top z plane."},
+      {"boolean_subtraction_polyhedron_near_coincident_cut_plane_grazing",
+       "boolean_subtraction_polyhedron_near_coincident", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(2., 0., -20. * vecgeom::kConeTolerance), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the near-coincident cutter top plane and grazes along that Boolean boundary."},
+
       {"cuttube_section_inner_cut_plane_grazing", "cuttube_section_inner", "surface", ShapeSampleCategory::kSurface,
        Vec_t(4.1438716887445688, 0., -0.20947942872035785),
        Vec_t(0.46997756897067333, 0.5375170920854937, 0.70014031478009531), false, Vec_t(0., 0., 0.), 0.,

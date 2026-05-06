@@ -355,8 +355,26 @@ set(SHAPE_CONTRACT_SOLID_CASES
 
   # Boolean
   boolean_union_offset_boxes
+  boolean_union_rotated_touching_boxes
+  boolean_union_overlapping_tube_cone
+  boolean_union_disjoint_tubes
   boolean_intersection_box_tube
+  boolean_intersection_rotated_boxes
+  boolean_intersection_rotated_tube_cone
+  boolean_intersection_nested_union
   boolean_subtraction_box_tube
+  boolean_subtraction_tube_from_cone
+  boolean_subtraction_union_from_box
+  boolean_subtraction_exact_phi_wedge
+  boolean_union_of_subtractions
+  boolean_intersection_of_subtractions
+  boolean_nested_transformed_subtraction
+  boolean_subtraction_exact_polycone_sections
+  boolean_subtraction_polyhedron_exact_z_slab
+  boolean_subtraction_polyhedron_exact_radial_shell
+  boolean_subtraction_polyhedron_side_cut_tube
+  boolean_subtraction_polyhedron_phi_seam_rotated
+  boolean_subtraction_polyhedron_near_coincident
   )
 
 # this list should be resolved and go away
@@ -383,12 +401,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   multiunion_boxes:normals
   multiunion_boxes:distance_to_in
   multiunion_boxes:hit_consistency
-  boolean_union_offset_boxes:normals
-  boolean_intersection_box_tube:contracts
-  boolean_intersection_box_tube:distance_to_in
-  boolean_intersection_box_tube:hit_consistency
-  boolean_subtraction_box_tube:contracts
-  boolean_subtraction_box_tube:normals
   hype:distance_to_in
   hype:hit_consistency
   hype:surface
@@ -425,6 +437,13 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES
 
 set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   box
+  boolean_intersection_rotated_boxes
+  boolean_nested_transformed_subtraction
+  boolean_subtraction_polyhedron_exact_z_slab
+  boolean_subtraction_polyhedron_exact_radial_shell
+  boolean_subtraction_polyhedron_side_cut_tube
+  boolean_subtraction_polyhedron_phi_seam_rotated
+  boolean_subtraction_polyhedron_near_coincident
   cuttube_section_inner
   cone_narrow_phi
   tube_fullphi

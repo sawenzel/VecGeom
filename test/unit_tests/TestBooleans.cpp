@@ -90,6 +90,80 @@ int TestBooleans()
     bool c = placedholes1->Contains(Vec3D_t(L / 4, L / 4, 0.));
     VECGEOM_ASSERT(c);
   }
+  {
+    UnplacedBox leftBox(1., 1., 1.);
+    UnplacedBox rightBox(0.95, 1., 1.);
+    LogicalVolume leftLogical("rotated_touch_left", &leftBox);
+    LogicalVolume rightLogical("rotated_touch_right", &rightBox);
+    auto *left = leftLogical.Place();
+    Transformation3D rightTransform(2., -0.9, 0., 90., 0., 0.);
+    auto *right = rightLogical.Place(&rightTransform);
+    UnplacedBooleanVolume<kUnion> touchingUnion(kUnion, left, right);
+    LogicalVolume touchLogical("rotated_touch_union", &touchingUnion);
+    auto *placedTouchingUnion = touchLogical.Place();
+
+    // The shared face is internal to the union; the surface/surface normal
+    // comparison must use VPlacedVolume::Normal with the Boolean-local point.
+    VECGEOM_ASSERT(placedTouchingUnion->Inside(Vec3D_t(1., 0., 0.)) == EInside::kInside);
+  }
+  {
+    UnplacedBox leftBox(0.6, 1., 1.);
+    UnplacedBox rightBox(1., 2., 1.);
+    LogicalVolume leftLogical("rotated_intersection_left", &leftBox);
+    LogicalVolume rightLogical("rotated_intersection_right", &rightBox);
+    auto *left = leftLogical.Place();
+    Transformation3D rightTransform(-0.5, -1.5, 0., 45., 0., 0.);
+    auto *right = rightLogical.Place(&rightTransform);
+    UnplacedBooleanVolume<kIntersection> rotatedIntersection(kIntersection, left, right);
+    LogicalVolume intersectionLogical("rotated_intersection", &rotatedIntersection);
+    auto *placedIntersection = intersectionLogical.Place();
+
+    const Precision invSqrt2 = 1. / std::sqrt(2.);
+    const Vec3D_t point(invSqrt2 - 0.5, invSqrt2 - 1.5, 0.);
+    Vec3D_t normal;
+    bool valid = placedIntersection->Normal(point, normal);
+
+    // The point lies on the rotated right constituent only; selecting the
+    // surface by SafetyToOut requires transforming the point to constituent
+    // local coordinates before comparing safeties.
+    VECGEOM_ASSERT(placedIntersection->Inside(point) == EInside::kSurface);
+    VECGEOM_ASSERT(valid);
+    VECGEOM_ASSERT(normal.Dot(Vec3D_t(invSqrt2, invSqrt2, 0.)) > 1. - 1.e-12);
+  }
+  {
+    UnplacedBox hostBox(2., 2., 2.);
+    UnplacedBox slabBox(1., 1., 1.);
+    LogicalVolume hostLogical("subtraction_removed_common_face_host", &hostBox);
+    LogicalVolume slabLogical("subtraction_removed_common_face_slab", &slabBox);
+    auto *host = hostLogical.Place();
+    Transformation3D slabTransform(1., 0., 0.);
+    auto *slab = slabLogical.Place(&slabTransform);
+    UnplacedBooleanVolume<kSubtraction> subtraction(kSubtraction, host, slab);
+    LogicalVolume subtractionLogical("subtraction_removed_common_face", &subtraction);
+    auto *placedSubtraction = subtractionLogical.Place();
+
+    // The +X face is common to host and cutter, but the cutter removes all
+    // material adjacent to that face. It is a rejection candidate for Boolean
+    // surface sampling, not a valid surface point of the subtraction result.
+    VECGEOM_ASSERT(placedSubtraction->Inside(Vec3D_t(2., 0., 0.)) != EInside::kSurface);
+  }
+  {
+    UnplacedBox hostBox(2., 2., 2.);
+    GenericUnplacedTube tangentTube(0., 1., 3., 0., vecgeom::kTwoPi);
+    LogicalVolume hostLogical("subtraction_tangent_contact_host", &hostBox);
+    LogicalVolume tubeLogical("subtraction_tangent_contact_tube", &tangentTube);
+    auto *host = hostLogical.Place();
+    Transformation3D tubeTransform(1., 0., 0.);
+    auto *tube = tubeLogical.Place(&tubeTransform);
+    UnplacedBooleanVolume<kSubtraction> subtraction(kSubtraction, host, tube);
+    LogicalVolume subtractionLogical("subtraction_tangent_contact", &subtraction);
+    auto *placedSubtraction = subtractionLogical.Place();
+
+    // Exact tangency leaves a zero-angle contact with no well-defined outward
+    // Boolean normal. The surface sampler filters with Inside()==kSurface, so
+    // this singular candidate must not be accepted as a result surface point.
+    VECGEOM_ASSERT(placedSubtraction->Inside(Vec3D_t(2., 0., 0.)) != EInside::kSurface);
+  }
 
   {
     double d = placedholes1->DistanceToIn(Vec3D_t(0., 0., 0.), Vec3D_t(0., 0., 1.));
