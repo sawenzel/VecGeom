@@ -76,6 +76,20 @@ bool TestGenericPolycone()
   VECGEOM_ASSERT(Simple.Inside(Vec_t(1., 0., 3.)) == vecgeom::EInside::kSurface);
   VECGEOM_ASSERT(Simple.Inside(Vec_t(5., 0., 3.)) == vecgeom::EInside::kSurface);
 
+  {
+    GenericPolycone_t partialPhi("GenericPolyconePartialPhi", startPhi, vecgeom::kPi / 2., numRz, r, z);
+    const Vec_t phiOutsideSharedZ(-3., -3., 2.);
+    VECGEOM_ASSERT(partialPhi.Inside(phiOutsideSharedZ) == vecgeom::EInside::kOutside);
+    VECGEOM_ASSERT(partialPhi.DistanceToIn(phiOutsideSharedZ, Vec_t(-1., 0., 0.)) == kInfLength);
+  }
+
+  for (int i = 0; i < 1000; ++i) {
+    // Direct sampling must not expose section-local z caps hidden by adjacent
+    // sections as full generic-polycone surface points.
+    const auto sample = Simple.GetUnplacedVolume()->SamplePointOnSurface();
+    VECGEOM_ASSERT(Simple.GetUnplacedVolume()->Inside(sample) == vecgeom::EInside::kSurface);
+  }
+
   // DistanceToIn tests
   VECGEOM_ASSERT(Simple.DistanceToIn(Vec_t(3., 0., 1.5), Vec_t(0., 0., 1.)) == 0.5);
 
@@ -127,6 +141,14 @@ bool TestGenericPolycone()
   VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(5., 0., 2.5), Vec_t(-1., 0., 0.)) == 4.);
   VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(4.5, 0., 2.), Vec_t(0., 0., 1.)) == 1.);
   VECGEOM_ASSERT(Simple.DistanceToOut(Vec_t(4.5, 0., 1.9), Vec_t(0., 0., 1.)) == 1.1);
+  {
+    const Vec_t sharedZInside(4.5, 0., 2.);
+    VECGEOM_ASSERT(Simple.Inside(sharedZInside) == vecgeom::EInside::kInside);
+    VECGEOM_ASSERT(ApproxEqual(Simple.DistanceToOut(sharedZInside, Vec_t(1., 0., 0.)), Precision(0.5)));
+    VECGEOM_ASSERT(ApproxEqual(Simple.DistanceToOut(sharedZInside, Vec_t(0., 0., 1.)), Precision(1.)));
+    VECGEOM_ASSERT(ApproxEqual(Simple.SafetyToOut(sharedZInside), Precision(0.35355339059327379)));
+    VECGEOM_ASSERT(Simple.DistanceToIn(sharedZInside, Vec_t(1., 0., 0.)) < 0.);
+  }
   VECGEOM_ASSERT(Simple.DistanceToOut(outPt1, Vec_t(0., 0., 1.)) < 0.);
   VECGEOM_ASSERT(Simple.DistanceToOut(outPt2, Vec_t(0., 0., 1.)) < 0.);
   VECGEOM_ASSERT(Simple.DistanceToOut(outPt3, Vec_t(0., 0., 1.)) < 0.);

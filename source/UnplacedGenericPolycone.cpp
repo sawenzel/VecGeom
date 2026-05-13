@@ -84,7 +84,7 @@ bool UnplacedGenericPolycone::Normal(Vector3D<Precision> const &point, Vector3D<
   int index  = fGenericPolycone.GetSectionIndex(point.z() - kTolerance);
 
   if (index < 0) {
-    valid = false;
+    // Match Polycone: global z end-cap normals are valid surface normals.
     if (index == -1) norm = Vector3D<Precision>(0., 0., -1.);
     if (index == -2) norm = Vector3D<Precision>(0., 0., 1.);
     return valid;
@@ -94,7 +94,7 @@ bool UnplacedGenericPolycone::Normal(Vector3D<Precision> const &point, Vector3D<
 
   // if point is within tolerance of a Z-plane between 2 sections, get normal from other section too
   if (size_t(index + 1) < fGenericPolycone.fSections.size() &&
-      std::abs(point.z() - fGenericPolycone.fZs[index + 1]) < kTolerance) {
+      vecCore::math::Abs(point.z() - fGenericPolycone.fZs[index + 1]) < kTolerance) {
     GenericPolyconeSection const &sec2 = fGenericPolycone.GetSection(index + 1);
     bool valid2                        = false;
     Vector3D<Precision> norm2;
@@ -125,7 +125,7 @@ bool UnplacedGenericPolycone::Normal(Vector3D<Precision> const &point, Vector3D<
       }
     }
   }
-  if (valid) norm /= norm.Mag();
+  if (valid) norm /= vecCore::math::Sqrt(norm.Mag2());
   return valid;
 }
 
@@ -135,16 +135,25 @@ Vector3D<Precision> UnplacedGenericPolycone::SamplePointOnSurface() const
    *        From the selected section select the cone
    *        Sample the point from selected cone and return the sampled point
    */
-  int sectionSelection                             = (int)RNG::Instance().uniform(0., fGenericPolycone.GetNSections());
-  const GenericPolyconeSection &section            = fGenericPolycone.GetSection(sectionSelection);
-  CoaxialConesStruct<Precision> *coaxialCones      = section.fCoaxialCones;
-  Vector<ConeStruct<Precision> *> coneStructVector = coaxialCones->fConeStructVector;
-  int coneSelection                                = (int)RNG::Instance().uniform(0., coneStructVector.size());
-  ConeStruct<Precision> *coneStruct                = coneStructVector[coneSelection];
-  SUnplacedCone<ConeTypes::UniversalCone> coneUnplaced(coneStruct->fRmin1, coneStruct->fRmax1, coneStruct->fRmin2,
-                                                       coneStruct->fRmax2, coneStruct->fDz, coneStruct->fSPhi,
-                                                       coneStruct->fDPhi);
-  return coneUnplaced.SamplePointOnSurface();
+  for (int attempt = 0; attempt < 1024; ++attempt) {
+    int sectionSelection                        = (int)RNG::Instance().uniform(0., fGenericPolycone.GetNSections());
+    const GenericPolyconeSection &section       = fGenericPolycone.GetSection(sectionSelection);
+    CoaxialConesStruct<Precision> *coaxialCones = section.fCoaxialCones;
+    Vector<ConeStruct<Precision> *> coneStructVector = coaxialCones->fConeStructVector;
+    int coneSelection                                = (int)RNG::Instance().uniform(0., coneStructVector.size());
+    ConeStruct<Precision> *coneStruct                = coneStructVector[coneSelection];
+    SUnplacedCone<ConeTypes::UniversalCone> coneUnplaced(coneStruct->fRmin1, coneStruct->fRmax1, coneStruct->fRmin2,
+                                                         coneStruct->fRmax2, coneStruct->fDz, coneStruct->fSPhi,
+                                                         coneStruct->fDPhi);
+    auto sample = coneUnplaced.SamplePointOnSurface();
+    sample.z() += section.fShift;
+
+    // Section-local cone surfaces may be internal shared z planes; the public
+    // sampler contract requires points on the full generic-polycone surface.
+    if (Inside(sample) == vecgeom::EInside::kSurface) return sample;
+  }
+
+  return VUnplacedVolume::SamplePointOnSurface();
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -152,8 +161,7 @@ void UnplacedGenericPolycone::Print() const
 {
   // Provided Elliptical Cone Parameters as done for Tube below
   // printf("GenericPolycone {%.2f, %.2f, %.2f}", fGenericPolycone.fDx, fGenericPolycone.fDy, fGenericPolycone.fDz);
-  printf("UnplacedGenericPolycone:  {StartPhi: %f   DeltaPhi: %f   N_RZpoints: %d}\n",
-     fSPhi, fDPhi, fNumRZ);
+  printf("UnplacedGenericPolycone:  {StartPhi: %f   DeltaPhi: %f   N_RZpoints: %d}\n", fSPhi, fDPhi, fNumRZ);
   printf("        -------------------------------------------\n");
   for (int i = 0; i < fNumRZ; i++) {
     printf("        RZpoint #%i:  %f, %f\n", i, fR[i], fZ[i]);

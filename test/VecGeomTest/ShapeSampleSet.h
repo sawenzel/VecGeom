@@ -3,6 +3,7 @@
 #ifndef VECGEOM_TEST_VECGEOMTEST_SHAPESAMPLESET_HH
 #define VECGEOM_TEST_VECGEOMTEST_SHAPESAMPLESET_HH
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -63,28 +64,59 @@ public:
       vecgeom::RNG::SeedStream(config.seed, config.stream_id);
     }
 
-    samples.max_points_inside  = static_cast<int>(config.max_points * (config.inside_percent / 100));
-    samples.max_points_outside = static_cast<int>(config.max_points * (config.outside_percent / 100));
-    samples.max_points_edge    = static_cast<int>(config.max_points * (config.edge_percent / 100));
-    samples.max_points_surface =
-        config.max_points - samples.max_points_inside - samples.max_points_outside - samples.max_points_edge;
+    const int requested_inside  = static_cast<int>(config.max_points * (config.inside_percent / 100));
+    const int requested_outside = static_cast<int>(config.max_points * (config.outside_percent / 100));
+    const int requested_edge    = static_cast<int>(config.max_points * (config.edge_percent / 100));
+    const int requested_surface = config.max_points - requested_inside - requested_outside - requested_edge;
 
-    samples.offset_inside  = 0;
-    samples.offset_surface = samples.max_points_inside;
-    samples.offset_edge    = samples.offset_surface + samples.max_points_surface;
-    samples.offset_outside = samples.offset_edge + samples.max_points_edge;
+    // Store only successfully generated samples so later views never iterate
+    // over default-filled points when a difficult shape cannot fill a bucket.
+    samples.offset_inside = 0;
+    samples.points.reserve(config.max_points);
+    samples.directions.reserve(config.max_points);
 
-    samples.points.resize(config.max_points);
-    samples.directions.resize(config.max_points);
+    samples.max_points_inside = CreateInsideSamples(volume, requested_inside, samples);
 
-    CreateOutsideSamples(volume, config, samples);
-    CreateInsideSamples(volume, samples);
-    CreateSurfaceSamples(volume, samples);
+    samples.offset_surface     = samples.TotalPoints();
+    samples.max_points_surface = CreateSurfaceSamples(volume, requested_surface, samples);
+
+    samples.offset_edge     = samples.TotalPoints();
+    samples.max_points_edge = 0;
+    if (requested_edge > 0) {
+      ReportPartialSampleGeneration("edge", 0, requested_edge, 0);
+    }
+
+    samples.offset_outside     = samples.TotalPoints();
+    samples.max_points_outside = CreateOutsideSamples(volume, config, requested_outside, samples);
 
     return samples;
   }
 
 private:
+  static int MaxConsecutiveRejectedAttempts(int requested)
+  {
+    // Rejection sampling is useful only while it keeps making progress; a
+    // long consecutive-rejection streak usually means the predicate is broken.
+    if (requested <= 0) return 0;
+    return std::min(100000, std::max(1000, requested / 100));
+  }
+
+  static long long MaxTotalRejectedAttempts(int requested)
+  {
+    // Also cap total rejections so a very low but non-zero acceptance rate
+    // cannot keep a test alive for minutes while occasionally resetting the
+    // consecutive-rejection streak. Successful samples must not consume this
+    // budget, otherwise high-statistics tests can be silently downsampled.
+    if (requested <= 0) return 0;
+    return std::max(1000LL, static_cast<long long>(requested) * 20);
+  }
+
+  static void ReportPartialSampleGeneration(const char *category, int generated, int requested, long long attempts)
+  {
+    std::cerr << "ShapeSampler generated only " << generated << "/" << requested << " " << category << " samples after "
+              << attempts << " attempts." << std::endl;
+  }
+
   template <typename Type>
   Type RandomRange(Type min, Type max)
   {
@@ -104,27 +136,38 @@ private:
   }
 
   template <typename ImplT>
-  void CreateSurfaceSamples(ImplT const *volume, ShapeSampleSet &samples)
+  int CreateSurfaceSamples(ImplT const *volume, int requested, ShapeSampleSet &samples)
   {
-    Vec_t point;
-    for (int i = 0; i < samples.max_points_surface; ++i) {
+    int generated                = 0;
+    long long attempts           = 0;
+    int consecutive_rejections   = 0;
+    const int max_rejections     = MaxConsecutiveRejectedAttempts(requested);
+    const long long max_rejected = MaxTotalRejectedAttempts(requested);
+
+    while (generated < requested && (attempts - generated) < max_rejected && consecutive_rejections < max_rejections) {
+      ++attempts;
       Vec_t pointU;
-      int retry = 100;
-      do {
-        pointU                                         = volume->GetUnplacedVolume()->SamplePointOnSurface();
-        samples.directions[i + samples.offset_surface] = RandomDirection();
-        point.Set(pointU.x(), pointU.y(), pointU.z());
-        samples.points[i + samples.offset_surface] = point;
-        if (retry-- == 0) {
-          std::cout << "Couldn't find point on surface in 100 trials, so skipping this point." << std::endl;
-          break;
-        }
-      } while (volume->Inside(pointU) != vecgeom::EInside::kSurface);
+      pointU = volume->GetUnplacedVolume()->SamplePointOnSurface();
+      if (volume->Inside(pointU) != vecgeom::EInside::kSurface) {
+        ++consecutive_rejections;
+        continue;
+      }
+
+      samples.points.emplace_back(pointU.x(), pointU.y(), pointU.z());
+      samples.directions.push_back(RandomDirection());
+      ++generated;
+      consecutive_rejections = 0;
     }
+
+    if (generated < requested) {
+      ReportPartialSampleGeneration("surface", generated, requested, attempts);
+    }
+    return generated;
   }
 
   template <typename ImplT>
-  void CreateOutsideSamples(ImplT const *volume, const ShapeSamplingConfig &config, ShapeSampleSet &samples)
+  int CreateOutsideSamples(ImplT const *volume, const ShapeSamplingConfig &config, int requested,
+                           ShapeSampleSet &samples)
   {
     Vec_t minExtent, maxExtent;
     volume->Extent(minExtent, maxExtent);
@@ -133,14 +176,22 @@ private:
     Precision maxZ = std::max(std::fabs(maxExtent.z()), std::fabs(minExtent.z()));
     Precision rOut = std::sqrt(maxX * maxX + maxY * maxY + maxZ * maxZ);
 
-    for (int i = 0; i < samples.max_points_outside; ++i) {
+    int generated                = 0;
+    long long attempts           = 0;
+    int consecutive_rejections   = 0;
+    const int max_rejections     = MaxConsecutiveRejectedAttempts(requested);
+    const long long max_rejected = MaxTotalRejectedAttempts(requested);
+    while (generated < requested && (attempts - generated) < max_rejected && consecutive_rejections < max_rejections) {
+      ++attempts;
       Vec_t vec, point;
-      do {
-        point.x() = -1 + 2 * fRNG.uniform();
-        point.y() = -1 + 2 * fRNG.uniform();
-        point.z() = -1 + 2 * fRNG.uniform();
-        point *= rOut * config.outside_max_radius_multiple;
-      } while (volume->Inside(point) != vecgeom::EInside::kOutside);
+      point.x() = -1 + 2 * fRNG.uniform();
+      point.y() = -1 + 2 * fRNG.uniform();
+      point.z() = -1 + 2 * fRNG.uniform();
+      point *= rOut * config.outside_max_radius_multiple;
+      if (volume->Inside(point) != vecgeom::EInside::kOutside) {
+        ++consecutive_rejections;
+        continue;
+      }
 
       Precision random = fRNG.uniform();
       if (random <= config.outside_random_direction_ratio / 100.) {
@@ -151,30 +202,49 @@ private:
         vec.Normalize();
       }
 
-      samples.points[i + samples.offset_outside]     = point;
-      samples.directions[i + samples.offset_outside] = vec;
+      samples.points.push_back(point);
+      samples.directions.push_back(vec);
+      ++generated;
+      consecutive_rejections = 0;
     }
+
+    if (generated < requested) {
+      ReportPartialSampleGeneration("outside", generated, requested, attempts);
+    }
+    return generated;
   }
 
   template <typename ImplT>
-  void CreateInsideSamples(ImplT const *volume, ShapeSampleSet &samples)
+  int CreateInsideSamples(ImplT const *volume, int requested, ShapeSampleSet &samples)
   {
     Vec_t minExtent, maxExtent;
     volume->Extent(minExtent, maxExtent);
-    int i = 0;
-    while (i < samples.max_points_inside) {
+    int generated                = 0;
+    long long attempts           = 0;
+    int consecutive_rejections   = 0;
+    const int max_rejections     = MaxConsecutiveRejectedAttempts(requested);
+    const long long max_rejected = MaxTotalRejectedAttempts(requested);
+    while (generated < requested && (attempts - generated) < max_rejected && consecutive_rejections < max_rejections) {
+      ++attempts;
       Precision x = RandomRange(minExtent.x(), maxExtent.x());
       Precision y = RandomRange(minExtent.y(), maxExtent.y());
       if (minExtent.y() == maxExtent.y()) y = RandomRange(-1000., +1000.);
       Precision z = RandomRange(minExtent.z(), maxExtent.z());
       Vec_t point0(x, y, z);
       if (volume->Inside(point0) == vecgeom::EInside::kInside) {
-        Vec_t point(x, y, z);
-        samples.points[i + samples.offset_inside]     = point;
-        samples.directions[i + samples.offset_inside] = RandomDirection();
-        ++i;
+        samples.points.emplace_back(x, y, z);
+        samples.directions.push_back(RandomDirection());
+        ++generated;
+        consecutive_rejections = 0;
+      } else {
+        ++consecutive_rejections;
       }
     }
+
+    if (generated < requested) {
+      ReportPartialSampleGeneration("inside", generated, requested, attempts);
+    }
+    return generated;
   }
 
   vecgeom::RNG &fRNG;
