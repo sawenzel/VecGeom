@@ -31,51 +31,45 @@ struct CoaxialConesImplementation {
   using UnplacedVolume_t = UnplacedCoaxialCones;
 
   template <typename Real_v, bool ForLowerZ>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v> IsOnRing(
-      UnplacedStruct_t const &coaxialcones, Vector3D<Real_v> const &point)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnRing(UnplacedStruct_t const &coaxialcones,
+                                                                    Vector3D<Real_v> const &point)
   {
-
-    using Bool_v = typename vecCore::Mask_v<Real_v>;
-    Bool_v onRing(false);
     for (unsigned int i = 0; i < coaxialcones.fConeStructVector.size(); i++) {
-      onRing |= (ConeImplementation<ConeTypes::UniversalCone>::template IsOnRing<Real_v, true, ForLowerZ>(
-                     *coaxialcones.fConeStructVector[i], point) ||
-                 ConeImplementation<ConeTypes::UniversalCone>::template IsOnRing<Real_v, false, ForLowerZ>(
-                     *coaxialcones.fConeStructVector[i], point));
+      if (ConeImplementation<ConeTypes::UniversalCone>::template IsOnRing<Real_v, true, ForLowerZ>(
+              *coaxialcones.fConeStructVector[i], point) ||
+          ConeImplementation<ConeTypes::UniversalCone>::template IsOnRing<Real_v, false, ForLowerZ>(
+              *coaxialcones.fConeStructVector[i], point)) {
+        return true;
+      }
     }
 
-    return onRing;
+    return false;
   }
 
-  template <typename Real_v, typename Bool_v>
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &coaxialcones,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
-    Bool_v unused(false), outside(false);
-    GenericKernelForContainsAndInside<Real_v, Bool_v, false>(coaxialcones, point, unused, outside);
+    bool unused(false), outside(false);
+    GenericKernelForContainsAndInside<Real_v, false>(coaxialcones, point, unused, outside);
     inside = !outside;
   }
 
-  // BIG QUESTION: DO WE WANT TO GIVE ALL 3 TEMPLATE PARAMETERS
-  // -- OR -- DO WE WANT TO DEDUCE Bool_v, Index_t from Real_v???
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &coaxialcones,
                                                                   Vector3D<Real_v> const &point, Inside_t &inside)
   {
-
-    using Bool_v       = vecCore::Mask_v<Real_v>;
-    using InsideBool_v = vecCore::Mask_v<Inside_t>;
-    Bool_v completelyinside, completelyoutside;
-    GenericKernelForContainsAndInside<Real_v, Bool_v, true>(coaxialcones, point, completelyinside, completelyoutside);
+    bool completelyinside(false), completelyoutside(false);
+    GenericKernelForContainsAndInside<Real_v, true>(coaxialcones, point, completelyinside, completelyoutside);
     inside = EInside::kSurface;
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyoutside, Inside_t(EInside::kOutside));
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyinside, Inside_t(EInside::kInside));
+    if (completelyoutside) inside = EInside::kOutside;
+    if (completelyinside) inside = EInside::kInside;
   }
 
-  template <typename Real_v, typename Bool_v, bool ForInside>
+  template <typename Real_v, bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      UnplacedStruct_t const &coaxialcones, Vector3D<Real_v> const &point, Bool_v &completelyinside,
-      Bool_v &completelyoutside)
+      UnplacedStruct_t const &coaxialcones, Vector3D<Real_v> const &point, bool &completelyinside,
+      bool &completelyoutside)
   {
     /* TODO : Logic to check where the point is inside or not.
     **
@@ -86,26 +80,24 @@ struct CoaxialConesImplementation {
     ** and if neither inside nor outside then it is on the surface.
     ** and is used by Inside function
     */
-    completelyinside  = Bool_v(false);
-    completelyoutside = Bool_v(true);
-    Bool_v onSurf(false);
+    completelyinside  = false;
+    completelyoutside = true;
 
     for (unsigned int i = 0; i < coaxialcones.fConeStructVector.size(); i++) {
-      Bool_v compIn(false);
-      Bool_v compOut(false);
+      bool compIn(false);
+      bool compOut(false);
 
       ConeHelpers<Real_v, ConeTypes::UniversalCone>::template GenericKernelForContainsAndInside<ForInside>(
           *coaxialcones.fConeStructVector[i], point, compIn, compOut);
       if (ForInside) {
-        completelyinside |= compIn;
-        if (vecCore::MaskFull(completelyinside)) {
-          completelyoutside = !completelyinside;
+        if (compIn) {
+          completelyinside  = true;
+          completelyoutside = false;
           return;
         }
 
-        onSurf |= (!compIn && !compOut);
-        if (vecCore::MaskFull(onSurf)) {
-          completelyoutside = !onSurf;
+        if (!compOut) {
+          completelyoutside = false;
           return;
         }
       } else {
@@ -129,7 +121,7 @@ struct CoaxialConesImplementation {
       ConeImplementation<ConeTypes::UniversalCone>::template DistanceToIn<Real_v>(*coaxialcones.fConeStructVector[i],
                                                                                   point, direction, stepMax, dist);
 
-      vecCore::MaskedAssign(distance, dist < distance, dist);
+      if (dist < distance) distance = dist;
     }
   }
 
@@ -146,7 +138,7 @@ struct CoaxialConesImplementation {
       ConeImplementation<ConeTypes::UniversalCone>::template DistanceToOut<Real_v>(*coaxialcones.fConeStructVector[i],
                                                                                    point, direction, stepMax, dist);
 
-      vecCore::MaskedAssign(distance, dist > distance, dist);
+      if (dist > distance) distance = dist;
     }
   }
 
@@ -161,7 +153,7 @@ struct CoaxialConesImplementation {
       ConeImplementation<ConeTypes::UniversalCone>::template SafetyToIn<Real_v>(*coaxialcones.fConeStructVector[i],
                                                                                 point, safeDist);
 
-      vecCore::MaskedAssign(safety, safeDist < safety, safeDist);
+      if (safeDist < safety) safety = safeDist;
     }
   }
 
@@ -176,7 +168,7 @@ struct CoaxialConesImplementation {
       ConeImplementation<ConeTypes::UniversalCone>::template SafetyToOut<Real_v>(*coaxialcones.fConeStructVector[i],
                                                                                  point, safeDist);
 
-      vecCore::MaskedAssign(safety, safeDist > safety, safeDist);
+      if (safeDist > safety) safety = safeDist;
     }
   }
 };

@@ -150,6 +150,42 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        Vec_t(2., 0., -20. * vecgeom::kConeTolerance), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
        "Ray starts on the near-coincident cutter top plane and grazes along that Boolean boundary."},
 
+      // Generic polycone
+      {"generic_polycone_irregular_surface_entering_outer_shell", "generic_polycone_irregular", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(2.2348126399610928, 8.7181198360926615, 0.5),
+       Vec_t(0.2898461953301249, -0.7252236297254806, 0.62453172052382588), false, Vec_t(0., 0., 0.), 0.,
+       "Surface-entering replay ray on the irregular generic polycone outer shell where DistanceToIn and SafetyToIn "
+       "previously stayed positive on a surface point."},
+      {"generic_polycone_irregular_outside_entry_outer_shell_upper", "generic_polycone_irregular", "distance_to_in",
+       ShapeSampleCategory::kOutside, Vec_t(-19.158840713111452, -33.920580785138945, 13.220637837805752),
+       Vec_t(0., 0., 0.), true, Vec_t(5.8765881963591688, -1.3579933407038025, 2.3590887344045499), 0.,
+       "Outside-to-inside replay ray whose ApproachSolid point landed near the upper outer shell and previously "
+       "collapsed to DistanceToIn == 0."},
+      {"generic_polycone_irregular_outside_entry_outer_shell_mid", "generic_polycone_irregular", "distance_to_in",
+       ShapeSampleCategory::kOutside, Vec_t(-43.620431324114101, 33.367883641868751, -47.743502220288306),
+       Vec_t(0., 0., 0.), true, Vec_t(-6.9768590480932753, -1.9493795535573799, 4.0939785634756207), 0.,
+       "Outside-to-inside replay ray whose ApproachSolid point landed near the mid outer shell and previously "
+       "collapsed to DistanceToIn == 0."},
+      {"generic_polycone_irregular_shallow_surface_entry_outer_shell", "generic_polycone_irregular", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(-5.1352140257766186, 7.391182482398392, 0.12297458592897575),
+       Vec_t(-0.18865236894158444, -0.13111298697105264, -0.97325210934282436), false, Vec_t(0., 0., 0.), 0.,
+       "Shallow inward ray from the exact outer shell where the section cone kernel reported the later crossing "
+       "instead of the zero DistanceToIn entry."},
+      {"generic_polycone_irregular_inside_near_outer_shell_safety_to_in", "generic_polycone_irregular", "contracts",
+      ShapeSampleCategory::kInside, Vec_t(7.9604176988052195, -2.9783436513347485, 0.30039621002943101),
+      Vec_t(-0.17271031333314549, 0.27234560960769244, 0.94657224584063371), false, Vec_t(0., 0., 0.), 0.,
+      "Inside point close to the irregular outer shell where SafetyToIn must keep the wrong-side negative "
+      "convention instead of being clamped to zero."},
+      {"generic_polycone_irregular_lower_corner_entering_to_out", "generic_polycone_irregular", "surface",
+       ShapeSampleCategory::kSurface, Vec_t(-0.037247392199863581, 0.99930607546347894, 0.),
+       Vec_t(0.5814130076837466, -0.20624047999702957, 0.78703480158550454), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the exposed lower RZ corner and points into the first section; DistanceToOut must skip the "
+       "current boundary and return the next exit."},
+      {"generic_polycone_zigzag_top_corner_entering_to_out", "generic_polycone_zigzag_profile", "surface",
+       ShapeSampleCategory::kSurface, Vec_t(-0.91076575325808495, 9.9584389218216582, 140.),
+       Vec_t(-0.75238141223081711, -0.57721172253262865, -0.3174095743680031), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the exposed top corner of the zig-zag contour and points into the last section; DistanceToOut "
+       "must not report the starting surface."},
       {"cuttube_section_inner_cut_plane_grazing", "cuttube_section_inner", "surface", ShapeSampleCategory::kSurface,
        Vec_t(4.1438716887445688, 0., -0.20947942872035785),
        Vec_t(0.46997756897067333, 0.5375170920854937, 0.70014031478009531), false, Vec_t(0., 0., 0.), 0.,

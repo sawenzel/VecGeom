@@ -385,16 +385,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   polycone_cms_like:contracts
   polycone_cms_like:normals
   polycone_cms_like:surface
-  generic_polycone_irregular:contracts
-  generic_polycone_irregular:distance_to_in
-  generic_polycone_irregular:hit_consistency
-  generic_polycone_zigzag_profile:contracts
-  generic_polycone_zigzag_profile:normals
-  generic_polycone_zigzag_profile:surface
-  generic_polycone_zigzag_profile:distance_to_out
-  generic_polycone_zigzag_profile:distance_to_in
-  generic_polycone_zigzag_profile:safeties
-  generic_polycone_zigzag_profile:hit_consistency
   paraboloid:contracts
   paraboloid:normals
   paraboloid:surface
@@ -448,6 +438,8 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   boolean_subtraction_polyhedron_near_coincident
   cuttube_section_inner
   cone_narrow_phi
+  generic_polycone_irregular
+  generic_polycone_zigzag_profile
   tube_fullphi
   )
 
@@ -609,6 +601,7 @@ add_test(NAME TestGenTrap COMMAND TestGenTrap)
 add_test(NAME TestHype COMMAND TestHype)
 #add_test(NAME TestLegendPolycone COMMAND TestLegendPolycone)
 add_test(NAME TestOrb COMMAND TestOrb)
+add_test(NAME TestGenericPolycone COMMAND TestGenericPolycone)
 add_test(NAME TestPolycone COMMAND TestPolycone)
 add_test(NAME TestPolyhedra COMMAND TestPolyhedra)
 add_test(NAME TestParallelepiped COMMAND TestParallelepiped)
