@@ -28,14 +28,14 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 // The following construct marks a logical volume as an assembly:
 
 // UnplacedAssembly *ass = new UnplacedAssembly
-// LogicalVolume *lv = new LogicalVolume("assembly", ass); // this will implicitely couple ass to lv
+// LogicalVolume *lv = new LogicalVolume("assembly", ass); // this will implicitly couple ass to lv
 // lv->PlacedDaughter(...)
 
 class UnplacedAssembly : public VUnplacedVolume, public AlignedBase {
 
 private:
   // back-reference to the logical volume
-  // this get automacially set upon instantiation of a logical volume with an UnplacedAssembly
+  // this gets automatically set upon instantiation of a logical volume with an UnplacedAssembly
   LogicalVolume *fLogicalVolume;
 
   // caching the extent (bounding box)
@@ -118,17 +118,23 @@ public:
   }
 
   using VUnplacedVolume::DistanceToOut;
-  // DistanceToOut does not make sense -- throw exeption
+  // DistanceToOut does not make sense -- throw exception
   VECCORE_ATT_HOST_DEVICE
   Precision DistanceToOut(Vector3D<Precision> const & /*p*/, Vector3D<Precision> const & /*d*/,
-                          Precision /*step_max*/              = kInfLength,
-                          SurfaceHitView<Precision> *hit_info = nullptr) const override
+                          Precision /*step_max*/ = kInfLength) const override
   {
-    if (hit_info) hit_info->Clear();
 #ifndef VECCORE_CUDA
     throw std::runtime_error("Forbidden DistanceToOut in Assembly called");
 #endif
     return -1.;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d, Precision step_max,
+                          SurfaceHitView<Precision> *hit_info) const override
+  {
+    if (hit_info) hit_info->Clear();
+    return DistanceToOut(p, d, step_max);
   }
 
   using VUnplacedVolume::SafetyToOut;
@@ -152,16 +158,22 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                 const Precision /*step_max*/        = kInfLength,
-                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
+                                 const Precision /*step_max*/ = kInfLength) const override
   {
-    if (hit_info) hit_info->Clear();
     if (!BoxImplementation::Intersect(&fLowerCorner, p, d, 0, kInfLength)) return kInfLength;
 
     Precision step(kInfLength);
     VPlacedVolume const *pv;
     fLogicalVolume->GetNavigator()->CheckDaughterIntersections(fLogicalVolume, p, d, nullptr, nullptr, step, pv);
     return step;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d, const Precision step_max,
+                                 SurfaceHitView<Precision> *hit_info) const override
+  {
+    if (hit_info) hit_info->Clear();
+    return DistanceToIn(p, d, step_max);
   }
 
   VECCORE_ATT_HOST_DEVICE

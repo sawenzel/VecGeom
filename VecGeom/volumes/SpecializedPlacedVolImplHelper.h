@@ -113,8 +113,23 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                                 const Precision stepMax             = kInfLength,
-                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
+                                 const Precision stepMax = kInfLength) const override
+  {
+    VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to DistanceToIn ");
+    Precision output(kInfLength);
+    Transformation3D const *tr = this->GetTransformation();
+    SurfaceHitDispatch::DistanceToIn<Specialization>(*this->GetUnplacedStruct(), tr->Transform(point),
+                                                     tr->TransformDirection(direction), stepMax, output,
+                                                     static_cast<SurfaceHitView<Precision> *>(nullptr));
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareDistanceToIn(this, output, point, direction, stepMax);
+#endif
+    return output;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
+                                 const Precision stepMax, SurfaceHitView<Precision> *hit_info) const override
   {
     VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to DistanceToIn ");
     Precision output(kInfLength);
@@ -142,8 +157,25 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                                        const Precision stepMax             = kInfLength,
-                                        SurfaceHitView<Precision> *hit_info = nullptr) const override
+                                        const Precision stepMax = kInfLength) const override
+  {
+    VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to PlacedDistanceToOut ");
+    Transformation3D const *tr = this->GetTransformation();
+    Precision output(-1.);
+    SurfaceHitDispatch::DistanceToOut<Specialization>(*this->GetUnplacedStruct(), tr->Transform(point),
+                                                      tr->TransformDirection(direction), stepMax, output,
+                                                      static_cast<SurfaceHitView<Precision> *>(nullptr));
+
+#ifdef VECGEOM_DISTANCE_DEBUG
+    DistanceComparator::CompareDistanceToOut(this, output, this->GetTransformation()->Transform(point),
+                                             this->GetTransformation()->TransformDirection(direction), stepMax);
+#endif
+    return output;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
+                                        const Precision stepMax, SurfaceHitView<Precision> *hit_info) const override
   {
     VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to PlacedDistanceToOut ");
     Transformation3D const *tr         = this->GetTransformation();
