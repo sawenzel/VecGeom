@@ -51,14 +51,7 @@ enum class ShapeContractTestFamily {
   kAll
 };
 
-enum class ShapeBenchmarkOperation {
-  kInside,
-  kNormal,
-  kDistanceToIn,
-  kDistanceToOut,
-  kSafetyToIn,
-  kSafetyToOut
-};
+enum class ShapeBenchmarkOperation { kInside, kNormal, kDistanceToIn, kDistanceToOut, kSafetyToIn, kSafetyToOut };
 
 // Parsed CLI state shared by the list, sampled-family, and manual-edge-case
 // execution paths.
@@ -296,6 +289,10 @@ std::string JoinConfiguredTestFamilyNames()
          "manual_edge_cases, all";
 }
 
+bool IsManualGrazingEntryMethod(const std::string &method) { return method == "grazing_entry"; }
+
+bool IsManualGrazingMissMethod(const std::string &method) { return method == "grazing_miss"; }
+
 // Print the full executable contract so `-help` is enough to discover every
 // runner feature without reading the source.
 void PrintUsage(const char *argv0)
@@ -313,7 +310,9 @@ void PrintUsage(const char *argv0)
       << "             [-benchmark] [-benchmark_repetitions <count>] [-benchmark_warmup <count>]\n"
       << "             [-benchmark_target_calls <count>]\n"
       << "             [-manual_case_name <name|all>] "
-         "[-manual_method <contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|all>]\n"
+         "[-manual_method "
+         "<contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|grazing_entry|"
+         "grazing_miss|all>]\n"
       << "             [-manual_topology <inside|surface|edge|outside|all>]\n"
       << "             [-grazing_tolerance <value>]\n"
       << "             [-list_cases] [-list_families] [-list_test_families] [-list_manual_cases] [-help]\n\n";
@@ -575,10 +574,12 @@ void PrintDefaultRunSummary(const ShapeContractOptions &options)
 void ValidateManualMethodSelection(const std::string &manual_method)
 {
   if (manual_method == "all") return;
+  if (IsManualGrazingEntryMethod(manual_method)) return;
+  if (IsManualGrazingMissMethod(manual_method)) return;
   const auto parsed = ParseTestFamilySelection(manual_method);
   VECGEOM_VALIDATE(parsed != ShapeContractTestFamily::kManualEdgeCases && parsed != ShapeContractTestFamily::kAll,
                    << "Use -manual_method contracts, normals, surface, distance_to_out, distance_to_in, safeties, "
-                   << "hit_consistency, or all.");
+                   << "hit_consistency, grazing_entry, grazing_miss, or all.");
 }
 
 void ValidateManualTopologySelection(const std::string &manual_topology)
@@ -854,9 +855,9 @@ public:
     if (!fContractOutcomeReady) {
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fContractOutcome.result, ViolationDisplayLimit(fTier));
-      fContractOutcome.summary = vecgeom::test::RunShapeConventionChecks(fShape.get(), view, fSolidTolerance,
-                                                                         MakeDistanceToOutCaller(), sink);
-      fContractOutcomeReady    = true;
+      fContractOutcome.summary =
+          vecgeom::test::RunShapeConventionChecks(fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
+      fContractOutcomeReady = true;
     }
     return fContractOutcome;
   }
@@ -890,9 +891,9 @@ public:
     if (!fDistanceToOutOutcomeReady) {
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fDistanceToOutOutcome.result, ViolationDisplayLimit(fTier));
-      fDistanceToOutOutcome.summary = vecgeom::test::RunShapeDistanceToOutChecks(
-          fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
-      fDistanceToOutOutcomeReady = true;
+      fDistanceToOutOutcome.summary = vecgeom::test::RunShapeDistanceToOutChecks(fShape.get(), view, fSolidTolerance,
+                                                                                 MakeDistanceToOutCaller(), sink);
+      fDistanceToOutOutcomeReady    = true;
     }
     return fDistanceToOutOutcome;
   }
@@ -926,9 +927,9 @@ public:
     if (!fHitConsistencyOutcomeReady) {
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fHitConsistencyOutcome.result, ViolationDisplayLimit(fTier));
-      fHitConsistencyOutcome.summary = vecgeom::test::RunShapeHitConsistencyChecks(
-          fShape.get(), view, fSolidTolerance, MakeDistanceToOutCaller(), sink);
-      fHitConsistencyOutcomeReady = true;
+      fHitConsistencyOutcome.summary = vecgeom::test::RunShapeHitConsistencyChecks(fShape.get(), view, fSolidTolerance,
+                                                                                   MakeDistanceToOutCaller(), sink);
+      fHitConsistencyOutcomeReady    = true;
     }
     return fHitConsistencyOutcome;
   }
@@ -1420,6 +1421,143 @@ bool ManualReplayPassed(const ReplayT &replay)
   return replay.Passed();
 }
 
+struct ManualGrazingEntryReplay {
+  Vec_t point;
+  Vec_t direction;
+  vecgeom::EnumInside point_inside_result = vecgeom::EnumInside::kOutside;
+  Precision distance_to_in                = vecgeom::kInfLength;
+  Vec_t entry_point;
+  vecgeom::EnumInside entry_inside_result = vecgeom::EnumInside::kOutside;
+  Precision entry_safety_to_in            = vecgeom::kInfLength;
+  Precision entry_safety_to_out           = vecgeom::kInfLength;
+  Precision distance_to_out               = vecgeom::kInfLength;
+  Vec_t exit_point;
+  vecgeom::EnumInside exit_inside_result = vecgeom::EnumInside::kOutside;
+  std::vector<std::string> failures;
+
+  bool Passed() const { return failures.empty(); }
+};
+
+std::string DescribeManualGrazingEntryReplay(const ManualGrazingEntryReplay &replay)
+{
+  std::ostringstream out;
+  out << "point=" << vecgeom::test::FormatVec(replay.point) << "\n";
+  out << "direction=" << vecgeom::test::FormatVec(replay.direction) << "\n";
+  out << "Inside(point)=" << vecgeom::test::InsideLabel(replay.point_inside_result) << "\n";
+  out << "DistanceToIn=" << replay.distance_to_in << "\n";
+  out << "entry_point=" << vecgeom::test::FormatVec(replay.entry_point) << "\n";
+  out << "Inside(entry_point)=" << vecgeom::test::InsideLabel(replay.entry_inside_result) << "\n";
+  out << "SafetyToIn(entry_point)=" << replay.entry_safety_to_in << "\n";
+  out << "SafetyToOut(entry_point)=" << replay.entry_safety_to_out << "\n";
+  out << "DistanceToOut(entry_point, direction)=" << replay.distance_to_out << "\n";
+  out << "exit_point=" << vecgeom::test::FormatVec(replay.exit_point) << "\n";
+  out << "Inside(exit_point)=" << vecgeom::test::InsideLabel(replay.exit_inside_result) << "\n";
+  if (replay.failures.empty()) {
+    out << "failing_contracts=none";
+    return out.str();
+  }
+  out << "failing_contracts:";
+  for (auto const &failure : replay.failures) {
+    out << "\n- " << failure;
+  }
+  return out.str();
+}
+
+bool ManualPointIsEffectivelyOnSurface(vecgeom::VPlacedVolume const *shape, const Vec_t &point,
+                                       vecgeom::EnumInside inside_result, Precision solid_tolerance)
+{
+  if (inside_result == vecgeom::EnumInside::kSurface) return true;
+  if (inside_result == vecgeom::EnumInside::kInside) return shape->SafetyToOut(point) <= solid_tolerance;
+  return shape->SafetyToIn(point) <= solid_tolerance;
+}
+
+ManualGrazingEntryReplay ReplayManualGrazingEntry(vecgeom::VPlacedVolume const *shape, const Vec_t &point,
+                                                  const Vec_t &direction, Precision solid_tolerance)
+{
+  ManualGrazingEntryReplay replay;
+  replay.point               = point;
+  replay.direction           = direction;
+  replay.point_inside_result = shape->Inside(point);
+
+  if (replay.point_inside_result != vecgeom::EnumInside::kOutside) {
+    replay.failures.push_back("grazing_entry requires the start point to be outside the solid");
+  }
+
+  replay.distance_to_in = shape->DistanceToIn(point, direction);
+  if (!(replay.distance_to_in > 0.) || !(replay.distance_to_in < vecgeom::kInfLength)) {
+    replay.failures.push_back("grazing_entry requires a finite positive DistanceToIn");
+    return replay;
+  }
+
+  replay.entry_point         = point + replay.distance_to_in * direction;
+  replay.entry_inside_result = shape->Inside(replay.entry_point);
+  replay.entry_safety_to_in  = shape->SafetyToIn(replay.entry_point);
+  replay.entry_safety_to_out = shape->SafetyToOut(replay.entry_point);
+  if (!ManualPointIsEffectivelyOnSurface(shape, replay.entry_point, replay.entry_inside_result, solid_tolerance)) {
+    replay.failures.push_back("propagated grazing entry point must be on the surface within tolerance");
+  }
+
+  replay.distance_to_out = shape->DistanceToOut(replay.entry_point, direction);
+  if (!(replay.distance_to_out > solid_tolerance) || !(replay.distance_to_out < vecgeom::kInfLength)) {
+    replay.failures.push_back("finite grazing DistanceToIn must be followed by a non-zero finite DistanceToOut");
+    return replay;
+  }
+
+  replay.exit_point         = replay.entry_point + replay.distance_to_out * direction;
+  replay.exit_inside_result = shape->Inside(replay.exit_point);
+  if (!ManualPointIsEffectivelyOnSurface(shape, replay.exit_point, replay.exit_inside_result, solid_tolerance)) {
+    replay.failures.push_back("grazing continuation exit point must be on the surface within tolerance");
+  }
+
+  return replay;
+}
+
+struct ManualGrazingMissReplay {
+  Vec_t point;
+  Vec_t direction;
+  vecgeom::EnumInside point_inside_result = vecgeom::EnumInside::kOutside;
+  Precision distance_to_in                = vecgeom::kInfLength;
+  std::vector<std::string> failures;
+
+  bool Passed() const { return failures.empty(); }
+};
+
+std::string DescribeManualGrazingMissReplay(const ManualGrazingMissReplay &replay)
+{
+  std::ostringstream out;
+  out << "point=" << vecgeom::test::FormatVec(replay.point) << "\n";
+  out << "direction=" << vecgeom::test::FormatVec(replay.direction) << "\n";
+  out << "Inside(point)=" << vecgeom::test::InsideLabel(replay.point_inside_result) << "\n";
+  out << "DistanceToIn=" << replay.distance_to_in << "\n";
+  if (replay.failures.empty()) {
+    out << "failing_contracts=none";
+    return out.str();
+  }
+  out << "failing_contracts:";
+  for (auto const &failure : replay.failures) {
+    out << "\n- " << failure;
+  }
+  return out.str();
+}
+
+ManualGrazingMissReplay ReplayManualGrazingMiss(vecgeom::VPlacedVolume const *shape, const Vec_t &point,
+                                                const Vec_t &direction)
+{
+  ManualGrazingMissReplay replay;
+  replay.point               = point;
+  replay.direction           = direction;
+  replay.point_inside_result = shape->Inside(point);
+  if (replay.point_inside_result != vecgeom::EnumInside::kOutside) {
+    replay.failures.push_back("grazing_miss requires the start point to be outside the solid");
+  }
+
+  replay.distance_to_in = shape->DistanceToIn(point, direction);
+  if (replay.distance_to_in < vecgeom::kInfLength) {
+    replay.failures.push_back("outward near-grazing cap ray must not report a DistanceToIn hit");
+  }
+  return replay;
+}
+
 void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, const ShapeContractOptions &options,
                             const std::string &executable_path, ShapeContractTier tier, bool verbose_on_success)
 {
@@ -1431,13 +1569,42 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
   auto samples                      = MakeManualEdgeCaseSamples(manual_case);
   auto view                         = vecgeom::test::MakeShapeContractSampleView(samples);
   const int sample_index            = ManualEdgeCasePrimarySampleIndex(samples, manual_case);
-  const auto target_family          = ParseTestFamilySelection(manual_case.target_family_name);
   const Precision solid_tolerance   = ResolveSolidTolerance(*solid_case);
   const Precision grazing_tolerance = ResolveManualGrazingTolerance(options, manual_case);
 
   VECGEOM_VALIDATE(sample_index >= 0 && sample_index < view.TotalPoints(),
                    << "Manual edge case '" << manual_case.name << "' did not build a valid sample index.");
 
+  if (IsManualGrazingEntryMethod(manual_case.target_family_name)) {
+    auto replay = ReplayManualGrazingEntry(shape.get(), samples.points[sample_index], samples.directions[sample_index],
+                                           solid_tolerance);
+    if (!ManualReplayPassed(replay)) {
+      VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
+                              << manual_case.solid_case_name << "' failed.\n"
+                              << DescribeManualEdgeCase(manual_case) << "\n"
+                              << DescribeManualGrazingEntryReplay(replay)
+                              << MakeManualEdgeCaseDebugHint(executable_path, tier, manual_case, grazing_tolerance));
+    }
+    if (verbose_on_success)
+      std::cout << DescribeManualEdgeCase(manual_case) << "\n" << DescribeManualGrazingEntryReplay(replay) << std::endl;
+    return;
+  }
+
+  if (IsManualGrazingMissMethod(manual_case.target_family_name)) {
+    auto replay = ReplayManualGrazingMiss(shape.get(), samples.points[sample_index], samples.directions[sample_index]);
+    if (!ManualReplayPassed(replay)) {
+      VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
+                              << manual_case.solid_case_name << "' failed.\n"
+                              << DescribeManualEdgeCase(manual_case) << "\n"
+                              << DescribeManualGrazingMissReplay(replay)
+                              << MakeManualEdgeCaseDebugHint(executable_path, tier, manual_case, grazing_tolerance));
+    }
+    if (verbose_on_success)
+      std::cout << DescribeManualEdgeCase(manual_case) << "\n" << DescribeManualGrazingMissReplay(replay) << std::endl;
+    return;
+  }
+
+  const auto target_family = ParseTestFamilySelection(manual_case.target_family_name);
   switch (target_family) {
   case ShapeContractTestFamily::kContracts: {
     auto replay = vecgeom::test::ReplayShapeConventionSample(shape.get(), view, sample_index, solid_tolerance,
@@ -1571,10 +1738,14 @@ void BenchmarkManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, c
   VECGEOM_VALIDATE(solid_case != nullptr, << "Manual edge case '" << manual_case.name << "' references unknown solid '"
                                           << manual_case.solid_case_name << "'.");
 
-  auto shape        = solid_case->make_shape();
-  auto samples      = MakeManualEdgeCaseSamples(manual_case);
-  auto view         = vecgeom::test::MakeShapeContractSampleView(samples);
-  const int index   = ManualEdgeCasePrimarySampleIndex(samples, manual_case);
+  auto shape      = solid_case->make_shape();
+  auto samples    = MakeManualEdgeCaseSamples(manual_case);
+  auto view       = vecgeom::test::MakeShapeContractSampleView(samples);
+  const int index = ManualEdgeCasePrimarySampleIndex(samples, manual_case);
+  VECGEOM_VALIDATE(!IsManualGrazingEntryMethod(manual_case.target_family_name),
+                   << "Manual grazing_entry cases are convention assertions, not benchmark workloads.");
+  VECGEOM_VALIDATE(!IsManualGrazingMissMethod(manual_case.target_family_name),
+                   << "Manual grazing_miss cases are convention assertions, not benchmark workloads.");
   const auto family = ParseTestFamilySelection(manual_case.target_family_name);
   auto workloads    = BuildReplayBenchmarkWorkloads(family, index);
 
@@ -1618,8 +1789,7 @@ void ReplayNormalsSample(ShapeContractExecutionCache &cache, const ShapeContract
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
   auto replay = vecgeom::test::ReplayShapeNormalSample(cache.Shape(), view, options.replay_index,
-                                                       cache.SolidTolerance(),
-                                                       MakeDistanceToOutCaller());
+                                                       cache.SolidTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeNormalRayReplay(replay) << std::endl;
 }
 
@@ -1631,9 +1801,9 @@ void ReplaySurfaceSample(ShapeContractExecutionCache &cache, const ShapeContract
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay = vecgeom::test::ReplayShapeSurfaceSample(cache.Shape(), view, options.replay_index,
-                                                        cache.SolidTolerance(), cache.GrazingTolerance(),
-                                                        MakeDistanceToOutCaller());
+  auto replay =
+      vecgeom::test::ReplayShapeSurfaceSample(cache.Shape(), view, options.replay_index, cache.SolidTolerance(),
+                                              cache.GrazingTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeSurfaceRayReplay(replay) << std::endl;
 }
 
@@ -1658,8 +1828,8 @@ void ReplayDistanceToInSample(ShapeContractExecutionCache &cache, const ShapeCon
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay = vecgeom::test::ReplayShapeDistanceToInSample(cache.Shape(), view, options.replay_index,
-                                                             cache.SolidTolerance());
+  auto replay =
+      vecgeom::test::ReplayShapeDistanceToInSample(cache.Shape(), view, options.replay_index, cache.SolidTolerance());
   std::cout << vecgeom::test::DescribeShapeDistanceToInRayReplay(replay) << std::endl;
 }
 
@@ -1672,8 +1842,7 @@ void ReplaySafetySample(ShapeContractExecutionCache &cache, const ShapeContractO
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
   auto replay = vecgeom::test::ReplayShapeSafetySample(cache.Shape(), view, options.replay_index,
-                                                       cache.SolidTolerance(),
-                                                       MakeDistanceToOutCaller());
+                                                       cache.SolidTolerance(), MakeDistanceToOutCaller());
   std::cout << vecgeom::test::DescribeShapeSafetyRayReplay(replay) << std::endl;
 }
 

@@ -437,9 +437,11 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   boolean_subtraction_polyhedron_phi_seam_rotated
   boolean_subtraction_polyhedron_near_coincident
   cuttube_section_inner
+  cone_fullphi
   cone_narrow_phi
   generic_polycone_irregular
   generic_polycone_zigzag_profile
+  polycone_two_section_sharp_jump
   tube_fullphi
   )
 

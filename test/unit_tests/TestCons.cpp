@@ -9,6 +9,7 @@
 #include "VecGeom/base/Vector3D.h"
 #include "ApproxEqual.h"
 #include "VecGeom/volumes/Cone.h"
+#include "VecGeom/volumes/ConeStruct.h"
 #include "VecGeom/base/Global.h"
 #include <cmath>
 #include "VecGeom/volumes/UnplacedTube.h"
@@ -246,6 +247,68 @@ bool TestCons()
     std::cout << "c3.Inside() mismatch: Line " << __LINE__ << ", p=" << ponphi1 << ", enumInside=" << aux << "\n";
   if ((aux = c3.Inside(ponphi2)) != vecgeom::EInside::kSurface)
     std::cout << "c3.Inside() mismatch: Line " << __LINE__ << ", p=" << ponphi2 << ", enumInside=" << aux << "\n";
+
+  {
+    // SurfaceHitView must be usable by clients including ConeStruct.h only; these checks cover the representative
+    // cone topology surfaces that polycone-like callers need to distinguish.
+    vecgeom::SurfaceHitView<Precision> hit_info;
+    Vec_t normal;
+    hit_info.fNormal = &normal;
+
+    Precision dist = c1.DistanceToIn(Vec_t(75, 0, -60), vz, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 10.));
+    VECGEOM_ASSERT(hit_info.fSurface == vecgeom::ConeSurfaceCode::kZMin);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(0, 0, -1)));
+
+    dist = c1.DistanceToIn(Vec_t(120, 0, 0), vmx, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 20.));
+    VECGEOM_ASSERT(hit_info.fSurface == vecgeom::ConeSurfaceCode::kOuter);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(1, 0, 0)));
+
+    dist = c1.DistanceToOut(Vec_t(60, 0, 0), vmx, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 10.));
+    VECGEOM_ASSERT(hit_info.fSurface == vecgeom::ConeSurfaceCode::kInner);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(-1, 0, 0)));
+
+    dist = c1.DistanceToOut(Vec_t(75, 0, 0), vz, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 50.));
+    VECGEOM_ASSERT(hit_info.fSurface == vecgeom::ConeSurfaceCode::kZMax);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(0, 0, 1)));
+
+    dist = c3.DistanceToOut(Vec_t(60, 0, 0), vmy, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 60. / std::sqrt(3.)));
+    VECGEOM_ASSERT(hit_info.fSurface == vecgeom::ConeSurfaceCode::kPhiStart);
+    VECGEOM_ASSERT(normal.Dot(vmy) > 0.);
+
+    const Precision edgeLen                 = std::sqrt(25. * 25. + 50. * 50.);
+    const vecgeom::SurfaceCode outerTopEdge = vecgeom::ConeSurfaceCode::kZMax | vecgeom::ConeSurfaceCode::kOuter;
+    Vec_t edgeEntryDir(-25. / edgeLen, 0., -50. / edgeLen);
+    dist = c1.DistanceToIn(Vec_t(125., 0., 100.), edgeEntryDir, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, edgeLen));
+    VECGEOM_ASSERT(hit_info.fSurface == outerTopEdge);
+
+    Vec_t edgeExitDir(25. / edgeLen, 0., 50. / edgeLen);
+    dist = c1.DistanceToOut(Vec_t(75., 0., 0.), edgeExitDir, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, edgeLen));
+    VECGEOM_ASSERT(hit_info.fSurface == outerTopEdge);
+
+    Cone_t closingRingCone("closing ring cone", 50., 50., 0., 100., 50., 0., 2 * VECGEOM_NAMESPACE::kPi);
+    const vecgeom::SurfaceCode lowerClosingRing =
+        vecgeom::ConeSurfaceCode::kZMin | vecgeom::ConeSurfaceCode::kInner | vecgeom::ConeSurfaceCode::kOuter;
+
+    // Zero-distance hits on degenerate end rings must still report the
+    // incident topology, otherwise callers cannot consume SurfaceHitView
+    // uniformly for all finite cone hits.
+    dist = closingRingCone.DistanceToIn(Vec_t(50., 0., -50.), vz, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 0.));
+    VECGEOM_ASSERT(hit_info.fSurface == lowerClosingRing);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(0, 0, -1)));
+
+    dist = closingRingCone.DistanceToOut(Vec_t(50., 0., -50.), vmz, kInfLength, &hit_info);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(dist, 0.));
+    VECGEOM_ASSERT(hit_info.fSurface == lowerClosingRing);
+    VECGEOM_ASSERT(!OutRange(normal.Normalized(), Vec_t(0, 0, -1)));
+  }
 
   if ((aux = c5.Inside(Vec_t(70, 1, 0))) != vecgeom::EInside::kInside)
     std::cout << "c5.Inside() mismatch: Line " << __LINE__ << ", p=" << Vec_t(10, 1, 0) << ", enumInside=" << aux

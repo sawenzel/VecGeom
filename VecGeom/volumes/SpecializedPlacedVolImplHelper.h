@@ -3,6 +3,7 @@
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/SOA3D.h"
+#include "VecGeom/volumes/SurfaceHitDispatch.h"
 
 #include <algorithm>
 #include "VecGeom/base/Assert.h"
@@ -112,13 +113,27 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                                 const Precision stepMax = kInfLength) const override
+                                 const Precision stepMax             = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
     VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to DistanceToIn ");
     Precision output(kInfLength);
-    Transformation3D const *tr = this->GetTransformation();
-    Specialization::DistanceToIn(*this->GetUnplacedStruct(), tr->Transform(point), tr->TransformDirection(direction),
-                                 stepMax, output);
+    Transformation3D const *tr         = this->GetTransformation();
+    Vector3D<Precision> localPoint     = tr->Transform(point);
+    Vector3D<Precision> localDirection = tr->TransformDirection(direction);
+    Vector3D<Precision> localNormal;
+    SurfaceHitView<Precision> localHitInfo;
+    SurfaceHitView<Precision> *kernelHitInfo = nullptr;
+    if (hit_info) {
+      localHitInfo.fNormal = hit_info->WantsNormal() ? &localNormal : nullptr;
+      kernelHitInfo        = &localHitInfo;
+    }
+    SurfaceHitDispatch::DistanceToIn<Specialization>(*this->GetUnplacedStruct(), localPoint, localDirection, stepMax,
+                                                     output, kernelHitInfo);
+    if (hit_info) {
+      hit_info->fSurface = localHitInfo.fSurface;
+      if (hit_info->WantsNormal()) hit_info->SetNormal(tr->InverseTransformDirection(localNormal));
+    }
 #ifdef VECGEOM_DISTANCE_DEBUG
     DistanceComparator::CompareDistanceToIn(this, output, point, direction, stepMax);
 #endif
@@ -127,17 +142,30 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                                        const Precision stepMax = kInfLength) const override
+                                        const Precision stepMax             = kInfLength,
+                                        SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
     VECGEOM_ASSERT(direction.IsNormalized() && " direction not normalized in call to PlacedDistanceToOut ");
-    Transformation3D const *tr = this->GetTransformation();
+    Transformation3D const *tr         = this->GetTransformation();
+    Vector3D<Precision> localPoint     = tr->Transform(point);
+    Vector3D<Precision> localDirection = tr->TransformDirection(direction);
+    Vector3D<Precision> localNormal;
+    SurfaceHitView<Precision> localHitInfo;
+    SurfaceHitView<Precision> *kernelHitInfo = nullptr;
+    if (hit_info) {
+      localHitInfo.fNormal = hit_info->WantsNormal() ? &localNormal : nullptr;
+      kernelHitInfo        = &localHitInfo;
+    }
     Precision output(-1.);
-    Specialization::template DistanceToOut<>(*this->GetUnplacedStruct(), tr->Transform(point),
-                                             tr->TransformDirection(direction), stepMax, output);
+    SurfaceHitDispatch::DistanceToOut<Specialization>(*this->GetUnplacedStruct(), localPoint, localDirection, stepMax,
+                                                      output, kernelHitInfo);
+    if (hit_info) {
+      hit_info->fSurface = localHitInfo.fSurface;
+      if (hit_info->WantsNormal()) hit_info->SetNormal(tr->InverseTransformDirection(localNormal));
+    }
 
 #ifdef VECGEOM_DISTANCE_DEBUG
-    DistanceComparator::CompareDistanceToOut(this, output, this->GetTransformation()->Transform(point),
-                                             this->GetTransformation()->TransformDirection(direction), stepMax);
+    DistanceComparator::CompareDistanceToOut(this, output, localPoint, localDirection, stepMax);
 #endif
     return output;
   }
@@ -146,8 +174,9 @@ public:
   virtual Precision SafetyToIn(Vector3D<Precision> const &point) const override
   {
     Precision output(kInfLength);
-    Transformation3D const *tr = this->GetTransformation();
-    Specialization::SafetyToIn(*this->GetUnplacedStruct(), tr->Transform(point), output);
+    Transformation3D const *tr     = this->GetTransformation();
+    Vector3D<Precision> localPoint = tr->Transform(point);
+    Specialization::SafetyToIn(*this->GetUnplacedStruct(), localPoint, output);
     return output;
   }
 

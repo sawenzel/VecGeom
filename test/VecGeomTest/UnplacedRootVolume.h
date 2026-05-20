@@ -45,14 +45,16 @@ public:
   }
 
   Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                         const Precision stepMax) const override
+                         const Precision stepMax, SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
     return GetRootShape()->DistFromOutside(&Vector3D<double>(position)[0], &Vector3D<double>(direction)[0], 3);
   }
 
   Precision DistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                          const Precision stepMax) const override
+                          const Precision stepMax, SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
     return GetRootShape()->DistFromInside(&Vector3D<double>(position)[0], &Vector3D<double>(direction)[0], 3);
   }
 

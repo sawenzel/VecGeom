@@ -12,6 +12,7 @@
 
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/UnplacedVolume.h"
+#include "VecGeom/volumes/SurfaceHitDispatch.h"
 #include "VecGeom/management/VolumeFactory.h"
 
 namespace vecgeom {
@@ -44,12 +45,13 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   virtual Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                  Precision step_max = kInfLength) const override
+                                  Precision step_max                  = kInfLength,
+                                  SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
     VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output = kInfLength;
-    Implementation::template DistanceToOut<>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max,
-                                             output);
+    SurfaceHitDispatch::DistanceToOut<Implementation>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d,
+                                                      step_max, output, hit_info);
 
 // detect -inf responses which are often an indication for a real bug
 #ifndef VECCORE_CUDA
@@ -78,11 +80,13 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                 const Precision step_max = kInfLength) const override
+                                 const Precision step_max            = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
     VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output(kInfLength);
-    Implementation::DistanceToIn(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d, step_max, output);
+    SurfaceHitDispatch::DistanceToIn<Implementation>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d,
+                                                     step_max, output, hit_info);
     return output;
   }
 
