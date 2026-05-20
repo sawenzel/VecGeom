@@ -121,8 +121,10 @@ public:
   // DistanceToOut does not make sense -- throw exeption
   VECCORE_ATT_HOST_DEVICE
   Precision DistanceToOut(Vector3D<Precision> const & /*p*/, Vector3D<Precision> const & /*d*/,
-                          Precision /*step_max*/ = kInfLength) const override
+                          Precision /*step_max*/              = kInfLength,
+                          SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
 #ifndef VECCORE_CUDA
     throw std::runtime_error("Forbidden DistanceToOut in Assembly called");
 #endif
@@ -150,8 +152,10 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                 const Precision /*step_max*/ = kInfLength) const override
+                                 const Precision /*step_max*/        = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
     if (!BoxImplementation::Intersect(&fLowerCorner, p, d, 0, kInfLength)) return kInfLength;
 
     Precision step(kInfLength);

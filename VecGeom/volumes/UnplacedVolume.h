@@ -13,6 +13,7 @@
 #include "VecGeom/base/Cuda.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Transformation3D.h"
+#include "VecGeom/volumes/SurfaceHitView.h"
 #include "VecGeom/volumes/kernel/BoxImplementation.h"
 #include <string>
 #include <ostream>
@@ -111,7 +112,8 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToOut(Vector3D<Precision> const &pos, Vector3D<Precision> const &dir,
-                                  Precision step_max = kInfLength) const = 0;
+                                  Precision step_max                  = kInfLength,
+                                  SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
 
   // ---------------- SafetyToOut functions -----------------------------------------------------
 
@@ -135,7 +137,8 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                 const Precision step_max = kInfLength) const = 0;
+                                 const Precision step_max            = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
 
   // ---------------- SafetyToIn functions -------------------------------------------------------
 

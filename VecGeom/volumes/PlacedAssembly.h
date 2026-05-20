@@ -80,17 +80,33 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                 const Precision step_max = kInfLength) const override
+                                 const Precision step_max            = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
-    return static_cast<UnplacedAssembly const *>(GetUnplacedVolume())
-        ->UnplacedAssembly::DistanceToIn(GetTransformation()->Transform(position),
-                                         GetTransformation()->TransformDirection(direction), step_max);
+    Vector3D<Precision> localNormal;
+    SurfaceHitView<Precision> localHitInfo;
+    SurfaceHitView<Precision> *localHitInfoPtr = nullptr;
+    if (hit_info) {
+      localHitInfo.fNormal = hit_info->WantsNormal() ? &localNormal : nullptr;
+      localHitInfoPtr      = &localHitInfo;
+    }
+    Precision distance = static_cast<UnplacedAssembly const *>(GetUnplacedVolume())
+                             ->UnplacedAssembly::DistanceToIn(GetTransformation()->Transform(position),
+                                                              GetTransformation()->TransformDirection(direction),
+                                                              step_max, localHitInfoPtr);
+    if (hit_info) {
+      hit_info->fSurface = localHitInfo.fSurface;
+      if (hit_info->WantsNormal()) hit_info->SetNormal(GetTransformation()->InverseTransformDirection(localNormal));
+    }
+    return distance;
   }
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToOut(Vector3D<Precision> const & /*position*/, Vector3D<Precision> const & /*direction*/,
-                                  Precision const /*stepMax*/) const override
+                                  Precision const /*stepMax*/,
+                                  SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
 #ifndef VECCORE_CUDA
     throw std::runtime_error("unimplemented function called");
 #endif
@@ -99,9 +115,10 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const & /*position*/,
-                                        Vector3D<Precision> const & /*direction*/,
-                                        Precision const /*stepMax*/) const override
+                                        Vector3D<Precision> const & /*direction*/, Precision const /*stepMax*/,
+                                        SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
+    if (hit_info) hit_info->Clear();
 #ifndef VECCORE_CUDA
     throw std::runtime_error("unimplemented function called");
 #endif
@@ -117,8 +134,9 @@ public:
   VECCORE_ATT_HOST_DEVICE
   virtual Precision SafetyToIn(Vector3D<Precision> const &position) const override
   {
-    return static_cast<UnplacedAssembly const *>(GetUnplacedVolume())
-        ->UnplacedAssembly::SafetyToIn(GetTransformation()->Transform(position));
+    Precision safety = static_cast<UnplacedAssembly const *>(GetUnplacedVolume())
+                           ->UnplacedAssembly::SafetyToIn(GetTransformation()->Transform(position));
+    return safety;
   }
 
   Precision SurfaceArea() const override

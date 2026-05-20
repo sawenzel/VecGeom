@@ -41,10 +41,10 @@ public:
 
   // DistanceToOut
   VECCORE_ATT_HOST_DEVICE
-  Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                          Precision step_max = kInfLength) const override
+  Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d, Precision step_max = kInfLength,
+                          SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
-    return fImplPtr->ImplementingUnplaced::DistanceToOut(p, d, step_max);
+    return fImplPtr->ImplementingUnplaced::DistanceToOut(p, d, step_max, hit_info);
   }
 
   // SafetyToOut

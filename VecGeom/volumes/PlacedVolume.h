@@ -12,6 +12,7 @@
 #include "VecGeom/base/Assert.h"
 #include "VecGeom/base/Global.h"
 #include "VecGeom/volumes/LogicalVolume.h"
+#include "VecGeom/volumes/SurfaceHitView.h"
 #include <string>
 
 #ifdef VECGEOM_GEANT4
@@ -287,7 +288,8 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                 const Precision step_max = kInfLength) const = 0;
+                                 const Precision step_max            = kInfLength,
+                                 SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
 
   /**
    * Like similar function in VUnplacedVolume. Here position and direction are supposed to be
@@ -295,7 +297,8 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                  Precision const step_max = kInfLength) const = 0;
+                                  Precision const step_max            = kInfLength,
+                                  SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
 
   /** A "placed" version of the DistanceToOut function; here
    * the point and direction are first of all transformed into the reference frame of the
@@ -305,7 +308,8 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                        Precision const step_max = kInfLength) const = 0;
+                                        Precision const step_max            = kInfLength,
+                                        SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
 
   /**
    * Like similar function in VUnplacedVolume but taking into account

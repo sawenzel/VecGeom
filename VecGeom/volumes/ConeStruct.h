@@ -8,6 +8,7 @@
 #define VECGEOM_CONESTRUCT_H_
 
 #include "VecGeom/base/Global.h"
+#include "VecGeom/volumes/SurfaceHitView.h"
 #include "VecGeom/volumes/Wedge_Evolution.h"
 #include <VecGeom/management/Logger.h>
 
@@ -16,6 +17,59 @@ namespace vecgeom {
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(struct, ConeStruct, typename);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+/// @brief Shape-local opaque surface codes returned by cone distance and safety queries.
+/// @details The bit layout is intentionally cone-specific. Callers that understand cone topology can decode these
+/// bits, while generic navigation code should treat them as opaque and only forward them to cone-aware consumers.
+struct ConeSurfaceCode {
+  static constexpr SurfaceCode kNone     = kNoSurfaceCode;       ///< No cone surface was identified.
+  static constexpr SurfaceCode kZMin     = SurfaceCode(1u) << 0; ///< Lower z cap.
+  static constexpr SurfaceCode kZMax     = SurfaceCode(1u) << 1; ///< Upper z cap.
+  static constexpr SurfaceCode kInner    = SurfaceCode(1u) << 2; ///< Inner conical surface.
+  static constexpr SurfaceCode kOuter    = SurfaceCode(1u) << 3; ///< Outer conical surface.
+  static constexpr SurfaceCode kPhiStart = SurfaceCode(1u) << 4; ///< Starting phi plane.
+  static constexpr SurfaceCode kPhiEnd   = SurfaceCode(1u) << 5; ///< Ending phi plane.
+
+  /// @brief Return true if the surface code identifies either z cap.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsZHit(SurfaceCode surface) { return (surface & (kZMin | kZMax)) != kNone; }
+
+  /// @brief Return true if the surface code identifies either conical surface.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsConicalHit(SurfaceCode surface) { return (surface & (kInner | kOuter)) != kNone; }
+
+  /// @brief Return true if the surface code identifies either radial side surface.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsRadialHit(SurfaceCode surface) { return IsConicalHit(surface); }
+
+  /// @brief Return true if the surface code identifies either phi plane.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsPhiHit(SurfaceCode surface) { return (surface & (kPhiStart | kPhiEnd)) != kNone; }
+
+  /// @brief Return true if the surface code identifies the lower z cap.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsZMinHit(SurfaceCode surface) { return (surface & kZMin) != kNone; }
+
+  /// @brief Return true if the surface code identifies the upper z cap.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsZMaxHit(SurfaceCode surface) { return (surface & kZMax) != kNone; }
+
+  /// @brief Return true if the surface code identifies the inner conical surface.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsInnerHit(SurfaceCode surface) { return (surface & kInner) != kNone; }
+
+  /// @brief Return true if the surface code identifies the outer conical surface.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsOuterHit(SurfaceCode surface) { return (surface & kOuter) != kNone; }
+
+  /// @brief Return true if the surface code identifies the starting phi plane.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsPhiStartHit(SurfaceCode surface) { return (surface & kPhiStart) != kNone; }
+
+  /// @brief Return true if the surface code identifies the ending phi plane.
+  VECCORE_ATT_HOST_DEVICE
+  static bool IsPhiEndHit(SurfaceCode surface) { return (surface & kPhiEnd) != kNone; }
+};
 
 // a plain and lightweight struct to encapsulate data members of a Cone
 template <typename T = double>
@@ -249,10 +303,9 @@ struct ConeStruct {
     }
 
     if (inside && distZ <= kHalfTolerance) {
-      const bool onUpperEnd = p.z() >= 0.;
-      const bool degenerateEndRing =
-          onUpperEnd ? (vecCore::math::Abs(_frmax2 - _frmin2) < kTolerance)
-                     : (vecCore::math::Abs(_frmax1 - _frmin1) < kTolerance);
+      const bool onUpperEnd        = p.z() >= 0.;
+      const bool degenerateEndRing = onUpperEnd ? (vecCore::math::Abs(_frmax2 - _frmin2) < kTolerance)
+                                                : (vecCore::math::Abs(_frmax1 - _frmin1) < kTolerance);
       if (!degenerateEndRing) {
         noSurfaces++;
         if (onUpperEnd)

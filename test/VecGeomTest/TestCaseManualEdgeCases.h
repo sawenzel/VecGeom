@@ -90,7 +90,6 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"box_outside_hit_consistency_positive_x", "box", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(0., 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the box."},
-
       // Tube
       {"tube_fullphi_surface_grazing_outer_r", "tube_fullphi", "surface", ShapeSampleCategory::kSurface,
        Vec_t(10., 0., 0.), Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
@@ -113,6 +112,18 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+      {"tube_fullphi_cap_grazing_entry_continuation", "tube_fullphi", "grazing_entry", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 20.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray lies on the top cap plane and crosses the outer ring; if DistanceToIn accepts that grazing entry, "
+       "DistanceToOut must carry the ray across the cap annulus to the next ring."},
+      {"tube_fullphi_cap_near_grazing_entry_continuation", "tube_fullphi", "grazing_entry",
+       ShapeSampleCategory::kOutside, Vec_t(12., 0., 20.), Vec_t(-1., 0., -1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance inward z component on the top cap plane; near-grazing entries must keep the "
+       "same non-zero DistanceToOut continuation convention as exact grazing."},
+      {"tube_fullphi_cap_near_grazing_outward_miss", "tube_fullphi", "grazing_miss", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 20.), Vec_t(-1., 0., 1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance outward z component on the top cap plane; it must not report a cap-plane "
+       "DistanceToIn hit because there is no owned continuation interval."},
 
       // Boolean
       {"boolean_intersection_rotated_boxes_rotated_face_normal", "boolean_intersection_rotated_boxes", "normals",
@@ -120,9 +131,8 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        Vec_t(0.70710678118654757, 0.70710678118654757, 0.), false, Vec_t(0., 0., 0.), 0.,
        "Surface point on the rotated right constituent of an intersection; normal selection must compute "
        "SafetyToOut in constituent-local coordinates."},
-      {"boolean_nested_transformed_subtraction_inner_cut_grazing",
-       "boolean_nested_transformed_subtraction", "surface", ShapeSampleCategory::kSurface, Vec_t(2.8, 0., 0.),
-       Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+      {"boolean_nested_transformed_subtraction_inner_cut_grazing", "boolean_nested_transformed_subtraction", "surface",
+       ShapeSampleCategory::kSurface, Vec_t(2.8, 0., 0.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
        "Ray starts on the transformed cutter inner face that remains as the nested subtraction boundary."},
       // These polyhedron-left subtraction probes complement random sampling by
       // hitting edge starts, shared planes, and grazing rays that are otherwise
@@ -137,9 +147,9 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        "boolean_subtraction_polyhedron_exact_radial_shell", "surface", ShapeSampleCategory::kEdge, Vec_t(3., 0., 5.),
        Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
        "Ray starts on the top edge of the inner prism left after subtracting the exactly matching radial shell."},
-      {"boolean_subtraction_polyhedron_side_cut_tube_edge_grazing",
-       "boolean_subtraction_polyhedron_side_cut_tube", "surface", ShapeSampleCategory::kEdge,
-       Vec_t(5., 0.714142842854285, 0.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+      {"boolean_subtraction_polyhedron_side_cut_tube_edge_grazing", "boolean_subtraction_polyhedron_side_cut_tube",
+       "surface", ShapeSampleCategory::kEdge, Vec_t(5., 0.714142842854285, 0.), Vec_t(0., 0., 1.), false,
+       Vec_t(0., 0., 0.), 0.,
        "Ray starts on the intersection edge between the left polyhedron side and the subtracted tube opening."},
       {"boolean_subtraction_polyhedron_phi_seam_rotated_top_edge_grazing",
        "boolean_subtraction_polyhedron_phi_seam_rotated", "surface", ShapeSampleCategory::kEdge,
@@ -195,6 +205,18 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        ShapeSampleCategory::kSurface, Vec_t(-43.093354838211269, -25.356710388709519, -200.0),
        Vec_t(0.90448163727274844, 0.15468343036337337, -0.39747453277842609), false, Vec_t(0., 0., 0.), 0.,
        "Surface-entering replay ray on the lower outer ring of the thin-shell cone from the 10M-point stress run."},
+      {"cone_fullphi_cap_grazing_entry_continuation", "cone_fullphi", "grazing_entry", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 12.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray lies on the upper cap plane and crosses the outer conical ring; a finite grazing entry must be "
+       "matched by a non-zero cap-annulus DistanceToOut continuation."},
+      {"cone_fullphi_cap_near_grazing_entry_continuation", "cone_fullphi", "grazing_entry",
+       ShapeSampleCategory::kOutside, Vec_t(12., 0., 12.), Vec_t(-1., 0., -1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance inward z component on the upper cap plane; the finite near-grazing entry must "
+       "still hand off to a non-zero DistanceToOut continuation."},
+      {"cone_fullphi_cap_near_grazing_outward_miss", "cone_fullphi", "grazing_miss", ShapeSampleCategory::kOutside,
+       Vec_t(12., 0., 12.), Vec_t(-1., 0., 1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance outward z component on the upper cap plane; it must not report a cap-plane "
+       "DistanceToIn hit because there is no owned continuation interval."},
       {"cone_narrow_phi_outside_phi_entry", "cone_narrow_phi", "distance_to_in", ShapeSampleCategory::kOutside,
        Vec_t(2.8232263578195393, 1.0145900317433738, 0.0), Vec_t(0., 0., 0.), true,
        Vec_t(2.812939466458048, 1.0427710957073528, 0.0), 0.,
@@ -213,6 +235,30 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        ShapeSampleCategory::kSurface, Vec_t(20., 0., -20.), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
        "Surface-exit ray on the exposed annulus of a repeated-z transition where the boundary point belongs only to "
        "the upper section and DistanceToOut must still return zero instead of wrong-side -1."},
+      {"polycone_two_section_sharp_jump_transition_circle_grazing", "polycone_two_section_sharp_jump", "surface",
+       ShapeSampleCategory::kEdge, Vec_t(70., 0., -20.), Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts exactly on the outer circle of the exposed transition annulus; the grazing surface convention must "
+       "not report both DistanceToIn and DistanceToOut as zero."},
+      {"polycone_two_section_sharp_jump_shared_plane_grazing_entry_continuation", "polycone_two_section_sharp_jump",
+       "grazing_entry", ShapeSampleCategory::kOutside, Vec_t(80., 0., -20.), Vec_t(-1., 0., 0.), false,
+       Vec_t(0., 0., 0.), 0.,
+       "Outside ray lies on a repeated-z transition plane. If the polycone accepts the grazing entry, the chosen hit "
+       "must be the one with a non-zero DistanceToOut continuation in the owned radial interval."},
+      {"polycone_two_section_sharp_jump_shared_plane_near_grazing_up_entry_continuation",
+       "polycone_two_section_sharp_jump", "grazing_entry", ShapeSampleCategory::kOutside, Vec_t(80., 0., -20.),
+       Vec_t(-1., 0., 1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance positive z component on the repeated-z transition plane; the upper-section "
+       "entry must still expose a non-zero DistanceToOut continuation."},
+      {"polycone_two_section_sharp_jump_shared_plane_near_grazing_down_entry_continuation",
+       "polycone_two_section_sharp_jump", "grazing_entry", ShapeSampleCategory::kOutside, Vec_t(80., 0., -20.),
+       Vec_t(-1., 0., -1.e-10), false, Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance negative z component on the repeated-z transition plane; the lower-section "
+       "entry must still expose a non-zero DistanceToOut continuation."},
+      {"polycone_two_section_sharp_jump_top_cap_near_grazing_outward_miss", "polycone_two_section_sharp_jump",
+       "grazing_miss", ShapeSampleCategory::kOutside, Vec_t(80., 0., 120.), Vec_t(-1., 0., 1.e-10), false,
+       Vec_t(0., 0., 0.), 0.,
+       "Outside ray has a sub-tolerance outward z component on the terminal top cap plane; unlike an internal "
+       "handoff plane, it must not report a DistanceToIn hit."},
   };
   return cases;
 }

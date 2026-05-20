@@ -107,6 +107,47 @@ bool TestPolycone()
   VECGEOM_ASSERT(placedpoly1->DistanceToIn(Vec_t(3., 0., 0), Vec_t(-1., 0., 0.)) == 1);
   VECGEOM_ASSERT(std::fabs(placedpoly1->DistanceToIn(Vec_t(0., 0., 1.9999999), Vec_t(1., 0., 0.)) - 0.4) <
                  1000. * kTolerance);
+  VECGEOM_ASSERT(Simple.DistanceToIn(Vec_t(25., 0., -10.), Vec_t(1., 0., 0.)) == kInfLength);
+  VECGEOM_ASSERT(Simple.DistanceToIn(Vec_t(25., 0., 10.), Vec_t(1., 0., 0.)) == kInfLength);
+
+  Precision zShared[3]    = {-1., 0., 1.};
+  Precision rminShared[3] = {0., 0., 0.};
+  Precision rmaxShared[3] = {1., 2., 1.};
+  Polycone_t sharedPlaneRadialHit("SharedPlaneRadialHit", 0., kTwoPi, 3, zShared, rminShared, rmaxShared);
+  Vec_t radialEntryDirection(-1., 0., 0.1);
+  radialEntryDirection.Normalize();
+  // The ray hits the outer conical surface exactly at the shared z plane. This is a radial hit, not a z-annulus
+  // hand-off, so DistanceToIn must not reject it as an internal section transition.
+  Precision radialEntry = sharedPlaneRadialHit.DistanceToIn(Vec_t(3., 0., -0.1), radialEntryDirection);
+  VECGEOM_ASSERT(std::fabs(radialEntry - std::sqrt(1.01)) < 1000. * kTolerance);
+
+  Precision rmaxSharedFlat[3] = {1., 2., 2.};
+  Polycone_t sharedPlaneEdgeMiss("SharedPlaneEdgeMiss", 0., kTwoPi, 3, zShared, rminShared, rmaxSharedFlat);
+  Vec_t edgeMissDirection(0.5, 0., 1.);
+  edgeMissDirection.Normalize();
+  // The ray touches the next section endpoint at its outer radius, but keeps
+  // moving outside the following cylindrical section. This is a pure grazing
+  // edge miss, not a valid DistanceToIn entry.
+  VECGEOM_ASSERT(sharedPlaneEdgeMiss.DistanceToIn(Vec_t(1.5, 0., -1.), edgeMissDirection) == kInfLength);
+
+  SUnplacedCone<ConeTypes::UniversalCone> simpleLowerSection(0., 70., 0., 70., 5., 0., kTwoPi);
+  SUnplacedCone<ConeTypes::UniversalCone> simpleUpperSection(0., 70., 0., 80., 5., 0., kTwoPi);
+  VECGEOM_ASSERT(simpleLowerSection.DistanceToIn(Vec_t(25., 0., -5.), Vec_t(1., 0., 0.)) == kInfLength);
+  VECGEOM_ASSERT(std::fabs(simpleLowerSection.DistanceToOut(Vec_t(25., 0., -5.), Vec_t(1., 0., 0.)) - 45.) <
+                 1000. * kTolerance);
+  VECGEOM_ASSERT(simpleUpperSection.DistanceToIn(Vec_t(25., 0., 5.), Vec_t(1., 0., 0.)) == kInfLength);
+  VECGEOM_ASSERT(std::fabs(simpleUpperSection.DistanceToOut(Vec_t(25., 0., 5.), Vec_t(1., 0., 0.)) - 55.) <
+                 1000. * kTolerance);
+
+  Precision zSharp[4]    = {-120., -20., -20., 120.};
+  Precision rminSharp[4] = {0., 0., 0., 0.};
+  Precision rmaxSharp[4] = {15., 15., 70., 70.};
+  Polycone_t sharpJump("SharpJump", 0., kTwoPi, 4, zSharp, rminSharp, rmaxSharp);
+  VECGEOM_ASSERT(std::fabs(sharpJump.DistanceToIn(Vec_t(80., 0., -20.), Vec_t(-1., 0., 0.)) - 65.) <
+                 1000. * kTolerance);
+  Vec_t grazingUpEntry(-1., 0., 1.e-10);
+  grazingUpEntry.Normalize();
+  VECGEOM_ASSERT(std::fabs(sharpJump.DistanceToIn(Vec_t(80., 0., -20.), grazingUpEntry) - 10.) < 1000. * kTolerance);
 
   // test SafetyToIn
   VECGEOM_ASSERT(placedpoly1->SafetyToIn(Vec_t(0., 0., -3.)) == 2.);
@@ -174,6 +215,9 @@ bool TestPolycone()
   VECGEOM_ASSERT(Simple.Inside(ponmzside) == vecgeom::EInside::kSurface);
   VECGEOM_ASSERT(Simple.Inside(ponzsidey) == vecgeom::EInside::kInside);
   VECGEOM_ASSERT(Simple.Inside(ponmzsidey) == vecgeom::EInside::kInside);
+
+  VECGEOM_ASSERT(std::fabs(Simple.DistanceToOut(Vec_t(25., 0., -10.), Vec_t(1., 0., 0.)) - 45.) < 1000. * kTolerance);
+  VECGEOM_ASSERT(std::fabs(Simple.DistanceToOut(Vec_t(25., 0., 10.), Vec_t(1., 0., 0.)) - 55.) < 1000. * kTolerance);
 
   // check that Normal() returns valid=false and a non-zero normal for points away from the surface
 

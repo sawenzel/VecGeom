@@ -18,6 +18,7 @@
 #include "VecGeom/volumes/kernel/shapetypes/ConeTypes.h"
 #include "VecGeom/volumes/ConeStruct.h"
 #include "VecGeom/volumes/ConeUtilities.h"
+#include "VecGeom/volumes/SurfaceHitView.h"
 
 namespace vecgeom {
 
@@ -36,6 +37,120 @@ struct ConeImplementation {
   using UnplacedStruct_t = ConeStruct<Precision>;
   using UnplacedVolume_t = SUnplacedCone<coneTypeT>;
   using PlacedShape_t    = SPlacedCone<UnplacedVolume_t>;
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SetZSurfaceHit(SurfaceHitView<Real_v> *hit_info,
+                                                                          SurfaceCode surface)
+  {
+    if (!hit_info) return;
+    hit_info->SetSurface(surface);
+    if (hit_info->WantsNormal()) {
+      const Real_v zSign = (surface & ConeSurfaceCode::kZMax) ? Real_v(1.) : Real_v(-1.);
+      hit_info->SetNormal(Vector3D<Real_v>(Real_v(0.), Real_v(0.), zSign));
+    }
+  }
+
+  template <typename Real_v, bool ForInnerSurface>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SetConicalSurfaceHit(UnplacedStruct_t const &cone,
+                                                                                Vector3D<Real_v> const &point,
+                                                                                Vector3D<Real_v> const &direction,
+                                                                                Real_v const &distance,
+                                                                                SurfaceHitView<Real_v> *hit_info)
+  {
+    if (!hit_info) return;
+    hit_info->SetSurface(ForInnerSurface ? ConeSurfaceCode::kInner : ConeSurfaceCode::kOuter);
+    if (hit_info->WantsNormal()) {
+      hit_info->SetNormal(ConeUtilities::GetNormal<Real_v, ForInnerSurface>(cone, point + distance * direction));
+    }
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SetPhiSurfaceHit(UnplacedStruct_t const &cone,
+                                                                            SurfaceCode surface,
+                                                                            SurfaceHitView<Real_v> *hit_info)
+  {
+    if (!hit_info) return;
+    hit_info->SetSurface(surface);
+    if (hit_info->WantsNormal()) {
+      const Vector3D<Precision> normal =
+          (surface & ConeSurfaceCode::kPhiStart) ? cone.fPhiWedge.GetNormal1() : cone.fPhiWedge.GetNormal2();
+      hit_info->SetNormal(Vector3D<Real_v>(-normal.x(), -normal.y(), Real_v(0.)));
+    }
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static SurfaceCode GetPhiSafetySurface(UnplacedStruct_t const &cone,
+                                                                                      Vector3D<Real_v> const &point,
+                                                                                      bool toOut)
+  {
+    const Vector3D<Precision> normal1 = cone.fPhiWedge.GetNormal1();
+    const Vector3D<Precision> normal2 = cone.fPhiWedge.GetNormal2();
+    const Real_v dist1                = point.x() * normal1.x() + point.y() * normal1.y();
+    const Real_v dist2                = point.x() * normal2.x() + point.y() * normal2.y();
+    if (toOut) {
+      const bool startIsCloser = (cone.fDPhi < kPi) ? (dist1 <= dist2) : (dist1 >= dist2);
+      return startIsCloser ? ConeSurfaceCode::kPhiStart : ConeSurfaceCode::kPhiEnd;
+    }
+    const bool startIsCloser = (cone.fDPhi < kPi) ? (-dist1 >= -dist2) : (-dist1 <= -dist2);
+    return startIsCloser ? ConeSurfaceCode::kPhiStart : ConeSurfaceCode::kPhiEnd;
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void AddSurfaceHit(SurfaceHitView<Real_v> *hit_info,
+                                                                         SurfaceCode surface)
+  {
+    if (hit_info) hit_info->SetSurface(hit_info->fSurface | surface);
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsFiniteHitDistance(Real_v const &distance)
+  {
+    return distance >= Real_v(0.) && distance < Real_v(kInfLength);
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void AddCoincidentEdgeSurfaceHits(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &hitPoint, SurfaceHitView<Real_v> *hit_info)
+  {
+    using namespace ConeTypes;
+    if (!hit_info) return;
+
+    // Surface mode reports edge/corner topology by OR-ing surfaces incident to
+    // the selected hit point. This is cheaper than solving every alternative
+    // distance only to detect rare tied candidates.
+    const SurfaceCode primary = hit_info->fSurface;
+    const bool onZ            = Abs(Abs(hitPoint.z()) - Real_v(cone.fDz)) < Real_v(kConeTolerance);
+    if (onZ) {
+      AddSurfaceHit(hit_info, hitPoint.z() >= Real_v(0.) ? ConeSurfaceCode::kZMax : ConeSurfaceCode::kZMin);
+    }
+
+    const bool hasPhi = checkPhiTreatment<coneTypeT>(cone);
+    if (!onZ && !hasPhi) return;
+
+    if (!ConeSurfaceCode::IsConicalHit(primary)) {
+      if (Abs(SafeDistanceToConicalSurface<Real_v, false>(cone, hitPoint)) < Real_v(cone.fOuterTolerance)) {
+        AddSurfaceHit(hit_info, ConeSurfaceCode::kOuter);
+      }
+      if (checkRminTreatment<coneTypeT>(cone) &&
+          Abs(SafeDistanceToConicalSurface<Real_v, true>(cone, hitPoint)) < Real_v(cone.fInnerTolerance)) {
+        AddSurfaceHit(hit_info, ConeSurfaceCode::kInner);
+      }
+    }
+
+    if (hasPhi && !ConeSurfaceCode::IsPhiHit(primary)) {
+      const Real_v startCheck = (-hitPoint.x() * cone.fAlongPhi1y) + (hitPoint.y() * cone.fAlongPhi1x);
+      const bool onStartPhi   = ((hitPoint.x() * cone.fAlongPhi1x) + (hitPoint.y() * cone.fAlongPhi1y) >= Real_v(0.)) &&
+                              (Abs(startCheck) < Real_v(kConeTolerance));
+      if (onStartPhi) AddSurfaceHit(hit_info, ConeSurfaceCode::kPhiStart);
+
+      if (SectorType<coneTypeT>::value != kOnePi) {
+        const Real_v endCheck = (-cone.fAlongPhi2x * hitPoint.y()) + (cone.fAlongPhi2y * hitPoint.x());
+        const bool onEndPhi   = ((hitPoint.x() * cone.fAlongPhi2x) + (hitPoint.y() * cone.fAlongPhi2y) >= Real_v(0.)) &&
+                              (Abs(endCheck) < Real_v(kConeTolerance));
+        if (onEndPhi) AddSurfaceHit(hit_info, ConeSurfaceCode::kPhiEnd);
+      }
+    }
+  }
 
   /* Check whether a point already known to lie on a z plane is also on the matching ring edge. */
   template <typename Real_v, bool ForInnerSurface, bool ForLowerZ>
@@ -142,15 +257,15 @@ struct ConeImplementation {
     ConeHelpers<Real_v, coneTypeT>::template Inside<Inside_v>(cone, point, inside);
   }
 
-  template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &cone,
-                                                                        Vector3D<Real_v> const &point,
-                                                                        Vector3D<Real_v> const &dir,
-                                                                        Real_v const & /*stepMax*/, Real_v &distance)
+  template <typename Real_v, bool RecordHitInfo>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToInImpl(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
+      Real_v const & /*stepMax*/, Real_v &distance, SurfaceHitView<Real_v> *hit_info)
   {
     using namespace ConeUtilities;
     using namespace ConeTypes;
     const Real_v zero(0.);
+    if constexpr (RecordHitInfo) hit_info->Clear();
 
     // Reject rays that are already outside and moving away before doing any
     // intersection work.
@@ -196,24 +311,16 @@ struct ConeImplementation {
 
     if (IsOnDegenerateClosingRing(cone, point) && IsEnteringDegenerateClosingRing(cone, point, dir)) {
       distance = zero;
+      if constexpr (RecordHitInfo) {
+        // Degenerate closing-ring zero hits still need the incident surface metadata.
+        SetZSurfaceHit(hit_info, point.z() >= zero ? ConeSurfaceCode::kZMax : ConeSurfaceCode::kZMin);
+        AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+      }
       return;
     }
 
     if (distz >= -kTolerance && dir.z() != zero) {
       Real_v distToZ = distz / NonZero(Abs(dir.z()));
-
-#ifdef EDGE_POINTS
-      bool onZsurf  = (Abs(point.z()) - cone.fDz) < Real_v(kTolerance);
-      bool onLoZSrf = onZsurf && point.z() < zero;
-      bool onHiZSrf = onZsurf && point.z() > zero;
-      bool loZcond  = onLoZSrf && (IsOnRing<Real_v, false, true>(cone, point));
-      bool hiZcond  = onHiZSrf && (IsOnRing<Real_v, false, false>(cone, point));
-      if (checkRminTreatment<coneTypeT>(cone)) {
-        loZcond |= onLoZSrf && IsOnRing<Real_v, true, true>(cone, point);
-        hiZcond |= onHiZSrf && IsOnRing<Real_v, true, false>(cone, point);
-      }
-      if (loZcond || hiZcond) distToZ = zero;
-#endif
 
       Real_v hitx = point.x() + distToZ * dir.x();
       Real_v hity = point.y() + distToZ * dir.y();
@@ -239,6 +346,10 @@ struct ConeImplementation {
       if (okz && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, distToZ)) okz = false;
       if (okz) {
         distance = distToZ;
+        if constexpr (RecordHitInfo) {
+          SetZSurfaceHit(hit_info, point.z() >= zero ? ConeSurfaceCode::kZMax : ConeSurfaceCode::kZMin);
+          AddCoincidentEdgeSurfaceHits(cone, point + distance * dir, hit_info);
+        }
         return;
       }
     }
@@ -252,6 +363,10 @@ struct ConeImplementation {
     }
     if (ok_outerCone && dist_rOuter < distance) {
       distance = dist_rOuter;
+      if constexpr (RecordHitInfo) {
+        SetConicalSurfaceHit<Real_v, false>(cone, point, dir, distance, hit_info);
+        AddCoincidentEdgeSurfaceHits(cone, point + distance * dir, hit_info);
+      }
       return;
     }
 
@@ -263,16 +378,13 @@ struct ConeImplementation {
       if (ok_innerCone && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, dist_rInner)) {
         ok_innerCone = false;
       }
-      if (ok_innerCone && dist_rInner < distance) distance = dist_rInner;
+      if (ok_innerCone && dist_rInner < distance) {
+        distance = dist_rInner;
+        if constexpr (RecordHitInfo) SetConicalSurfaceHit<Real_v, true>(cone, point, dir, distance, hit_info);
+      }
     }
 
     if (checkPhiTreatment<coneTypeT>(cone)) {
-      Real_v startCheck         = (-point.x() * cone.fAlongPhi1y) + (point.y() * cone.fAlongPhi1x);
-      Real_v endCheck           = (-cone.fAlongPhi2x * point.y()) + (cone.fAlongPhi2y * point.x());
-      bool nearStartPhiBoundary = ((point.x() * cone.fAlongPhi1x) + (point.y() * cone.fAlongPhi1y) >= zero) &&
-                                  (Abs(startCheck) <= Real_v(kConeTolerance));
-      bool nearEndPhiBoundary   = ((point.x() * cone.fAlongPhi2x) + (point.y() * cone.fAlongPhi2y) >= zero) &&
-                                  (Abs(endCheck) <= Real_v(kConeTolerance));
       evolution::Wedge const &w = cone.fPhiWedge;
 
       Real_v dist_phi(kInfLength);
@@ -282,11 +394,21 @@ struct ConeImplementation {
           ok_phi);
       if (ok_phi && dist_phi < distance) {
         bool ignoreStartPhiRoot = false;
-        if (nearStartPhiBoundary && dist_phi <= Real_v(kConeTolerance)) {
-          ignoreStartPhiRoot = IsLeavingOtherBoundaryForPhiRoot(cone, point, dir, rsq, outerRad);
+        if (dist_phi <= Real_v(kConeTolerance)) {
+          // The same-boundary rejection is only relevant for near-zero phi
+          // roots, so keep the extra boundary test out of the common path.
+          const Real_v startCheck         = (-point.x() * cone.fAlongPhi1y) + (point.y() * cone.fAlongPhi1x);
+          const bool nearStartPhiBoundary = ((point.x() * cone.fAlongPhi1x) + (point.y() * cone.fAlongPhi1y) >= zero) &&
+                                            (Abs(startCheck) <= Real_v(kConeTolerance));
+          if (nearStartPhiBoundary)
+            ignoreStartPhiRoot = IsLeavingOtherBoundaryForPhiRoot(cone, point, dir, rsq, outerRad);
         }
         if (!ignoreStartPhiRoot) {
           distance = dist_phi;
+          if constexpr (RecordHitInfo) {
+            SetPhiSurfaceHit(cone, ConeSurfaceCode::kPhiStart, hit_info);
+            AddCoincidentEdgeSurfaceHits(cone, point + distance * dir, hit_info);
+          }
           return;
         }
       }
@@ -297,25 +419,59 @@ struct ConeImplementation {
                                                                       point, dir, dist_phi, ok_phi);
         if (ok_phi && dist_phi < distance) {
           bool ignoreEndPhiRoot = false;
-          if (nearEndPhiBoundary && dist_phi <= Real_v(kConeTolerance)) {
-            ignoreEndPhiRoot = IsLeavingOtherBoundaryForPhiRoot(cone, point, dir, rsq, outerRad);
+          if (dist_phi <= Real_v(kConeTolerance)) {
+            // Same-boundary rejection is rare; compute the end-plane band only
+            // for near-zero candidates that may actually need it.
+            const Real_v endCheck         = (-cone.fAlongPhi2x * point.y()) + (cone.fAlongPhi2y * point.x());
+            const bool nearEndPhiBoundary = ((point.x() * cone.fAlongPhi2x) + (point.y() * cone.fAlongPhi2y) >= zero) &&
+                                            (Abs(endCheck) <= Real_v(kConeTolerance));
+            if (nearEndPhiBoundary)
+              ignoreEndPhiRoot = IsLeavingOtherBoundaryForPhiRoot(cone, point, dir, rsq, outerRad);
           }
-          if (!ignoreEndPhiRoot) distance = dist_phi;
+          if (!ignoreEndPhiRoot) {
+            distance = dist_phi;
+            if constexpr (RecordHitInfo) SetPhiSurfaceHit(cone, ConeSurfaceCode::kPhiEnd, hit_info);
+          }
         }
       }
+    }
+    if constexpr (RecordHitInfo) {
+      if (IsFiniteHitDistance(distance)) AddCoincidentEdgeSurfaceHits(cone, point + distance * dir, hit_info);
     }
   }
 
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &cone,
-                                                                         Vector3D<Real_v> const &point,
-                                                                         Vector3D<Real_v> const &direction,
-                                                                         Real_v const & /*stepMax*/, Real_v &distance)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &cone,
+                                                                        Vector3D<Real_v> const &point,
+                                                                        Vector3D<Real_v> const &dir,
+                                                                        Real_v const &stepMax, Real_v &distance)
+  {
+    DistanceToInImpl<Real_v, false>(cone, point, dir, stepMax, distance, nullptr);
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &cone,
+                                                                        Vector3D<Real_v> const &point,
+                                                                        Vector3D<Real_v> const &dir,
+                                                                        Real_v const &stepMax, Real_v &distance,
+                                                                        SurfaceHitView<Real_v> *hit_info)
+  {
+    if (hit_info)
+      DistanceToInImpl<Real_v, true>(cone, point, dir, stepMax, distance, hit_info);
+    else
+      DistanceToInImpl<Real_v, false>(cone, point, dir, stepMax, distance, nullptr);
+  }
+
+  template <typename Real_v, bool RecordHitInfo>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOutImpl(
+      UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction,
+      Real_v const & /*stepMax*/, Real_v &distance, SurfaceHitView<Real_v> *hit_info)
   {
     using namespace ConeUtilities;
     using namespace ConeTypes;
 
     const Real_v zero(0.0);
+    if constexpr (RecordHitInfo) hit_info->Clear();
 
     // Delay the z division until a z-plane candidate is still plausible.
     Real_v distz = Abs(point.z()) - cone.fDz;
@@ -336,6 +492,11 @@ struct ConeImplementation {
         onDegenerateClosingRing && IsEnteringDegenerateClosingRing(cone, point, direction);
     if (onDegenerateClosingRing && !enteringDegenerateClosingRing) {
       distance = zero;
+      if constexpr (RecordHitInfo) {
+        // Degenerate closing-ring zero hits still need the incident surface metadata.
+        SetZSurfaceHit(hit_info, point.z() >= zero ? ConeSurfaceCode::kZMax : ConeSurfaceCode::kZMin);
+        AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+      }
       return;
     }
 
@@ -343,6 +504,10 @@ struct ConeImplementation {
                                (direction.Dot(GetNormal<Real_v, false>(cone, point)) > -kHalfTolerance);
     if (!onDegenerateClosingRing && onSurfaceAndExiting) {
       distance = zero;
+      if constexpr (RecordHitInfo) {
+        SetConicalSurfaceHit<Real_v, false>(cone, point, direction, distance, hit_info);
+        AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+      }
       return;
     }
 
@@ -356,6 +521,10 @@ struct ConeImplementation {
       onSurfaceAndExiting = onInnerSurface && (direction.Dot(GetNormal<Real_v, true>(cone, point)) >= kHalfTolerance);
       if (!onDegenerateClosingRing && onSurfaceAndExiting) {
         distance = zero;
+        if constexpr (RecordHitInfo) {
+          SetConicalSurfaceHit<Real_v, true>(cone, point, direction, distance, hit_info);
+          AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+        }
         return;
       }
       skipRmin = onInnerSurface;
@@ -401,6 +570,10 @@ struct ConeImplementation {
     bool isOnZPlaneAndMovingOutside = !enteringThroughZEdge && (leavingTopZ || leavingBottomZ);
     if (isOnZPlaneAndMovingOutside) {
       distance = distz;
+      if constexpr (RecordHitInfo) {
+        SetZSurfaceHit(hit_info, leavingTopZ ? ConeSurfaceCode::kZMax : ConeSurfaceCode::kZMin);
+        AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+      }
       return;
     }
 
@@ -410,21 +583,33 @@ struct ConeImplementation {
 
     Precision fDz  = cone.fDz;
     Real_v dirZInv = Real_v(1.) / NonZero(direction.z());
-    if (isGoingUp && !enteringThroughTopZEdge) distance = (fDz - point.z()) * dirZInv;
-    if (isGoingDown && !enteringThroughBottomZEdge) distance = (-fDz - point.z()) * dirZInv;
+    if (isGoingUp && !enteringThroughTopZEdge) {
+      distance = (fDz - point.z()) * dirZInv;
+      if constexpr (RecordHitInfo) SetZSurfaceHit(hit_info, ConeSurfaceCode::kZMax);
+    }
+    if (isGoingDown && !enteringThroughBottomZEdge) {
+      distance = (-fDz - point.z()) * dirZInv;
+      if constexpr (RecordHitInfo) SetZSurfaceHit(hit_info, ConeSurfaceCode::kZMin);
+    }
 
     Real_v dist_rOuter(kInfLength);
     bool ok_outerCone =
         ConeHelpers<Real_v, coneTypeT>::template DetectIntersectionAndCalculateDistanceToConicalSurface<false, false>(
             cone, point, direction, dist_rOuter);
-    if (ok_outerCone && dist_rOuter < distance) distance = dist_rOuter;
+    if (ok_outerCone && dist_rOuter < distance) {
+      distance = dist_rOuter;
+      if constexpr (RecordHitInfo) SetConicalSurfaceHit<Real_v, false>(cone, point, direction, distance, hit_info);
+    }
 
     Real_v dist_rInner(kInfLength);
     if (checkRminTreatment<coneTypeT>(cone) && !skipRmin) {
       bool ok_innerCone =
           ConeHelpers<Real_v, coneTypeT>::template DetectIntersectionAndCalculateDistanceToConicalSurface<false, true>(
               cone, point, direction, dist_rInner);
-      if (ok_innerCone && dist_rInner < distance) distance = dist_rInner;
+      if (ok_innerCone && dist_rInner < distance) {
+        distance = dist_rInner;
+        if constexpr (RecordHitInfo) SetConicalSurfaceHit<Real_v, true>(cone, point, direction, distance, hit_info);
+      }
     }
 
     if (checkPhiTreatment<coneTypeT>(cone)) {
@@ -437,6 +622,10 @@ struct ConeImplementation {
           (isOnStartPhi && direction.Dot(-normal1) > zero) || (isOnEndPhi && direction.Dot(-normal2) > zero);
       if (leavingPhiSurface) {
         distance = zero;
+        if constexpr (RecordHitInfo) {
+          SetPhiSurfaceHit(cone, isOnStartPhi ? ConeSurfaceCode::kPhiStart : ConeSurfaceCode::kPhiEnd, hit_info);
+          AddCoincidentEdgeSurfaceHits(cone, point, hit_info);
+        }
         return;
       }
 
@@ -446,16 +635,47 @@ struct ConeImplementation {
       PhiPlaneTrajectoryIntersection<Real_v, coneTypeT, SectorType<coneTypeT>::value != kOnePi, false>(
           cone.fAlongPhi1x, cone.fAlongPhi1y, w.GetNormal1().x(), w.GetNormal1().y(), cone, point, direction, dist_phi,
           ok_phi);
-      if (ok_phi && dist_phi < distance) distance = dist_phi;
+      if (ok_phi && dist_phi < distance) {
+        distance = dist_phi;
+        if constexpr (RecordHitInfo) SetPhiSurfaceHit(cone, ConeSurfaceCode::kPhiStart, hit_info);
+      }
 
       if (SectorType<coneTypeT>::value != kOnePi) {
         ConeUtilities::PhiPlaneTrajectoryIntersection<Real_v, coneTypeT, true, false>(
             cone.fAlongPhi2x, cone.fAlongPhi2y, w.GetNormal2().x(), w.GetNormal2().y(), cone, point, direction,
             dist_phi, ok_phi);
-        if (ok_phi && dist_phi < distance) distance = dist_phi;
+        if (ok_phi && dist_phi < distance) {
+          distance = dist_phi;
+          if constexpr (RecordHitInfo) SetPhiSurfaceHit(cone, ConeSurfaceCode::kPhiEnd, hit_info);
+        }
       }
     }
     if (distance < zero && Abs(distance) < kTolerance) distance = zero;
+    if constexpr (RecordHitInfo) {
+      if (IsFiniteHitDistance(distance)) AddCoincidentEdgeSurfaceHits(cone, point + distance * direction, hit_info);
+    }
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &cone,
+                                                                         Vector3D<Real_v> const &point,
+                                                                         Vector3D<Real_v> const &direction,
+                                                                         Real_v const &stepMax, Real_v &distance)
+  {
+    DistanceToOutImpl<Real_v, false>(cone, point, direction, stepMax, distance, nullptr);
+  }
+
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &cone,
+                                                                         Vector3D<Real_v> const &point,
+                                                                         Vector3D<Real_v> const &direction,
+                                                                         Real_v const &stepMax, Real_v &distance,
+                                                                         SurfaceHitView<Real_v> *hit_info)
+  {
+    if (hit_info)
+      DistanceToOutImpl<Real_v, true>(cone, point, direction, stepMax, distance, hit_info);
+    else
+      DistanceToOutImpl<Real_v, false>(cone, point, direction, stepMax, distance, nullptr);
   }
 
   template <typename Real_v>
@@ -497,16 +717,17 @@ struct ConeImplementation {
     // Now if the point is neither inside nor on surface, then it should be outside
     // and the safety should be set to some finite value, which is done by below logic
 
-    Real_v safeZ                = Abs(point.z()) - fDz;
-    Real_v safeDistOuterSurface = -SafeDistanceToConicalSurface<Real_v, false>(cone, point);
+    Real_v safeZ = distz;
+    // Reuse the squared radius already computed for the inside test; the conical safety helper needs rho only here.
+    Real_v rho                  = vecCore::math::Sqrt(rsq);
+    Real_v safeDistOuterSurface = -SafeDistanceToConicalSurface<Real_v, false>(cone, point, rho);
 
     Real_v safeDistInnerSurface(-kInfLength);
     if (checkRminTreatment<coneTypeT>(cone)) {
-      safeDistInnerSurface = -SafeDistanceToConicalSurface<Real_v, true>(cone, point);
+      safeDistInnerSurface = -SafeDistanceToConicalSurface<Real_v, true>(cone, point, rho);
     }
 
     safety = Max(safeZ, Max(safeDistOuterSurface, safeDistInnerSurface));
-
     if (checkPhiTreatment<coneTypeT>(cone)) {
       safety = Max(safetyPhi, safety);
     }
@@ -564,7 +785,6 @@ struct ConeImplementation {
     }
 
     safety = Min(safeZ, Min(safeDistOuterSurface, safeDistInnerSurface));
-
     if (checkPhiTreatment<coneTypeT>(cone)) {
       safety = Min(safetyPhi, safety);
     }
@@ -573,11 +793,11 @@ struct ConeImplementation {
 
   template <typename Real_v, bool ForInnerSurface>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v SafeDistanceToConicalSurface(UnplacedStruct_t const &cone,
-                                                                                          Vector3D<Real_v> const &point)
+                                                                                          Vector3D<Real_v> const &point,
+                                                                                          Real_v const &rho)
   {
 
     typedef Real_v Float_t;
-    Float_t rho = point.Perp();
     if (ForInnerSurface) {
       Float_t pRMin = cone.fTanRMin * point.z() + (cone.fRmin1 + cone.fRmin2) * Float_t(0.5); // cone.fRminAv;
       return (rho - pRMin) * cone.fInvSecRMin;
@@ -585,6 +805,13 @@ struct ConeImplementation {
       Float_t pRMax = cone.fTanRMax * point.z() + (cone.fRmax1 + cone.fRmax2) * Float_t(0.5); // cone.fRmaxAv;
       return (pRMax - rho) * cone.fInvSecRMax;
     }
+  }
+
+  template <typename Real_v, bool ForInnerSurface>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v SafeDistanceToConicalSurface(UnplacedStruct_t const &cone,
+                                                                                          Vector3D<Real_v> const &point)
+  {
+    return SafeDistanceToConicalSurface<Real_v, ForInnerSurface>(cone, point, point.Perp());
   }
 };
 } // namespace VECGEOM_IMPL_NAMESPACE

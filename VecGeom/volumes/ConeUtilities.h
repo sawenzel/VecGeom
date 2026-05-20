@@ -569,17 +569,18 @@ public:
 
     using namespace ConeUtilities;
     using namespace ConeTypes;
-    distance                   = kInfLength;
-    bool onConicalSurface      = IsOnConicalSurface<Precision, ForInnerSurface>(cone, point);
-    Vector3D<Precision> normal = ConeUtilities::GetNormal<Precision, ForInnerSurface>(cone, point);
-    bool tangentToSurface      = vecCore::math::Abs(direction.Dot(normal)) == 0.;
-    if (onConicalSurface && tangentToSurface) {
-      return false;
-    }
+    distance              = kInfLength;
+    bool onConicalSurface = IsOnConicalSurface<Precision, ForInnerSurface>(cone, point);
 
     if (onConicalSurface) {
+      // The normal calculation contains a sqrt, so pay it only for the rare
+      // surface-start convention path and reuse it for the side test.
+      Vector3D<Precision> normal = ConeUtilities::GetNormal<Precision, ForInnerSurface>(cone, point);
+      Precision normalDot        = direction.Dot(normal);
+      if (vecCore::math::Abs(normalDot) == 0.) return false;
+
       if (ForDistToIn) {
-        bool isMovingInside = IsMovingInsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
+        bool isMovingInside = normalDot <= 0.;
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
           if (isMovingInside) { // && onConicalSurface
@@ -597,7 +598,7 @@ public:
       }
 
       else { // !ForDistToIn
-        bool isMovingOutside = IsMovingOutsideConicalSurface<Precision, ForInnerSurface>(cone, point, direction);
+        bool isMovingOutside = normalDot >= 0.;
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
           if (isMovingOutside) { // && onConicalSurface

@@ -64,9 +64,10 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToOut(Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
-                                  const Precision stepMax = kInfLength) const override
+                                  const Precision stepMax             = kInfLength,
+                                  SurfaceHitView<Precision> *hit_info = nullptr) const override
   {
-    return GetUnplacedVolume()->UnplacedShape_t::DistanceToOut(point, direction, stepMax);
+    return GetUnplacedVolume()->UnplacedShape_t::DistanceToOut(point, direction, stepMax, hit_info);
   }
 
   VECCORE_ATT_HOST_DEVICE
