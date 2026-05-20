@@ -112,8 +112,16 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToOut(Vector3D<Precision> const &pos, Vector3D<Precision> const &dir,
-                                  Precision step_max                  = kInfLength,
-                                  SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
+                                  Precision step_max = kInfLength) const = 0;
+
+  // Keep the three-argument virtual above as the source-compatible override contract.
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision DistanceToOut(Vector3D<Precision> const &pos, Vector3D<Precision> const &dir, Precision step_max,
+                                  SurfaceHitView<Precision> *hit_info) const
+  {
+    if (hit_info) hit_info->Clear();
+    return DistanceToOut(pos, dir, step_max);
+  }
 
   // ---------------- SafetyToOut functions -----------------------------------------------------
 
@@ -137,8 +145,16 @@ public:
    */
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                 const Precision step_max            = kInfLength,
-                                 SurfaceHitView<Precision> *hit_info = nullptr) const = 0;
+                                 const Precision step_max = kInfLength) const = 0;
+
+  // Keep the three-argument virtual above as the source-compatible override contract.
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                 const Precision step_max, SurfaceHitView<Precision> *hit_info) const
+  {
+    if (hit_info) hit_info->Clear();
+    return DistanceToIn(position, direction, step_max);
+  }
 
   // ---------------- SafetyToIn functions -------------------------------------------------------
 

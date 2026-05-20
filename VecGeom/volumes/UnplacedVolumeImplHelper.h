@@ -45,8 +45,25 @@ public:
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   virtual Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                  Precision step_max                  = kInfLength,
-                                  SurfaceHitView<Precision> *hit_info = nullptr) const override
+                                  Precision step_max = kInfLength) const override
+  {
+    VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
+    Precision output = kInfLength;
+    SurfaceHitDispatch::DistanceToOut<Implementation>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d,
+                                                      step_max, output,
+                                                      static_cast<SurfaceHitView<Precision> *>(nullptr));
+
+// detect -inf responses which are often an indication for a real bug
+#ifndef VECCORE_CUDA
+    VECGEOM_ASSERT(!((output < 0.) && std::isinf((Precision)output)));
+#endif
+    return output;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  VECGEOM_FORCE_INLINE
+  virtual Precision DistanceToOut(Vector3D<Precision> const &p, Vector3D<Precision> const &d, Precision step_max,
+                                  SurfaceHitView<Precision> *hit_info) const override
   {
     VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output = kInfLength;
@@ -80,8 +97,19 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d,
-                                 const Precision step_max            = kInfLength,
-                                 SurfaceHitView<Precision> *hit_info = nullptr) const override
+                                 const Precision step_max = kInfLength) const override
+  {
+    VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
+    Precision output(kInfLength);
+    SurfaceHitDispatch::DistanceToIn<Implementation>(((UnplacedVolume_t *)this)->UnplacedVolume_t::GetStruct(), p, d,
+                                                     step_max, output,
+                                                     static_cast<SurfaceHitView<Precision> *>(nullptr));
+    return output;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &p, Vector3D<Precision> const &d, const Precision step_max,
+                                 SurfaceHitView<Precision> *hit_info) const override
   {
     VECGEOM_ASSERT(d.IsNormalized() && " direction not normalized in call to  DistanceToOut ");
     Precision output(kInfLength);
