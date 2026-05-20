@@ -8,11 +8,11 @@ better maintainable piece of software within the EU-AIDA program. As such it is 
 - Calculate distances and other geometrical information
 - Collision detection and navigation in complex scenes
 - SIMD support in various flavours:
-  - True vector interfaces to primitives with SIMD acceleration when benefical
+  - True vector interfaces to primitives with SIMD acceleration when beneficial
   - SIMD acceleration of navigation through the use of special voxelization or bounding box hierarchies
 - Runtime specialization of objects to improve execution speed via a factory mechanism and use of C++ templates
 - VecGeom also compiles under CUDA
-- Few generic kernels serve many instanteations of various simple or vectored interfaces or the CUDA version.
+- Few generic kernels serve many instantiations of various simple or vectored interfaces or the CUDA version.
 
 ## Building/Installing VecGeom
 ### Requirements
@@ -85,6 +85,11 @@ The following options are available for enabling, building, and running tests:
 Please note that the Geant4 and ROOT options are only for testing and should not be enabled
 in builds for production use. Both Geant4 and ROOT provide their own interfaces for
 use of VecGeom by their consumers.
+
+### Development
+
+- [GoogleTest](https://github.com/google/googletest) is required for testing (but will be installed automatically if not available on the system).
+- [Pre-commit](https://pre-commit.com) is used to format changes while committing. Run `pre-commit install --install-hooks` before beginning development.
 
 ## Documentation
 - [Doxygen reference guide](https://lcgapp-services.cern.ch/spi-jenkins/job/VecGeom-Doxygen/doxygen/)

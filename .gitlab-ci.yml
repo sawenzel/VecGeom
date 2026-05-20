@@ -2,15 +2,54 @@ image: registry.cern.ch/docker.io/ubuntu:jammy
 
 stages:
   - build
-    
-clang-format:
+
+precommit_mr:
   stage: build
+  variables:
+    GIT_DEPTH: "0"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   before_script:
     - apt-get update -y && apt-get upgrade -y
-    - apt-get install -y software-properties-common wget cmake git findutils clang-format-14
+    - apt-get install -y git python3 python3-pip
+    - python3 -m pip install --no-cache-dir pre-commit
   script:
-    - ln -s `which clang-format-14` clang-format && PATH=$PATH:$PWD ./scripts/clang-format-test.sh
- 
+    - |
+      if [ -z "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        echo "CI_MERGE_REQUEST_DIFF_BASE_SHA is not set."
+        exit 1
+      fi
+      CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$CI_MERGE_REQUEST_DIFF_BASE_SHA" "$CI_COMMIT_SHA")
+    - |
+      if [ -z "$CHANGED_FILES" ]; then
+        echo "No changed files in merge request diff."
+        exit 0
+      fi
+    - |
+      if pre-commit run --show-diff-on-failure --color=always --files $CHANGED_FILES ; then
+        echo "Pre-commit checks passed."
+        exit 0
+      fi
+    - |
+      git config --global user.email "noreply@gitlab.cern.ch"
+      git config --global user.name "Gitlab CI"
+      if [ -n "$(git status --porcelain)" ] ; then
+        # Local changes are present: upload as a patch
+        git commit -a --author "$CI_COMMIT_AUTHOR" -m "Apply pre-commit fixes"
+        PATCH_ARGS="--files $CHANGED_FILES --fixes-patch precommit-fixes.patch"
+      else
+        git commit --allow-empty -m "No autofix available"
+        PATCH_ARGS=""
+      fi
+    - git format-patch -1 --stdout > precommit-fixes.patch
+    - python3 scripts/process-precommit-mr.py $PATCH_ARGS
+    - exit 1
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - precommit-fixes.patch
+
 # performing the static analysis code check using a custom docker image with the llvm installation we need
 code_checks:
   stage: build
@@ -22,7 +61,7 @@ code_checks:
     - CXX=clang++-14 cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_ROOT=OFF -DVECGEOM_GDML=OFF -DVECGEOM_TEST_STATIC_ANALYSIS=ON -DVECGEOM_BACKEND=Scalar
     - make -j8
     - ctest -j8 -V
-     
+
 # normal build against a recent ROOT; using the ALICE software stack
 # Solid model with navigation index
 NOSURF_NAVINDEX_ROOT:
