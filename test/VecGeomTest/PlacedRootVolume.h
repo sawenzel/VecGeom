@@ -56,17 +56,25 @@ public:
 
   VECGEOM_FORCE_INLINE
   virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                 const Precision step_max,
-                                 SurfaceHitView<Precision> *hit_info = nullptr) const override;
+                                 const Precision step_max) const override;
+
+  VECGEOM_FORCE_INLINE
+  virtual Precision DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                 const Precision step_max, SurfaceHitView<Precision> *hit_info) const override;
 
   VECGEOM_FORCE_INLINE
   virtual Precision DistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                  Precision const stepMax,
-                                  SurfaceHitView<Precision> *hit_info = nullptr) const override;
+                                  Precision const stepMax) const override;
+
+  VECGEOM_FORCE_INLINE
+  virtual Precision DistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                  Precision const stepMax, SurfaceHitView<Precision> *hit_info) const override;
 
   virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                        Precision const stepMax,
-                                        SurfaceHitView<Precision> *hit_info = nullptr) const override;
+                                        Precision const stepMax) const override;
+
+  virtual Precision PlacedDistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                        Precision const stepMax, SurfaceHitView<Precision> *hit_info) const override;
 
   VECGEOM_FORCE_INLINE
   virtual Precision SafetyToOut(Vector3D<Precision> const &position) const override;
@@ -141,12 +149,26 @@ EnumInside PlacedRootVolume::Inside(Vector3D<Precision> const &point) const
 }
 
 Precision PlacedRootVolume::DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
-                                         const Precision stepMax, SurfaceHitView<Precision> *hit_info) const
+                                         const Precision /*stepMax*/) const
 {
-  if (hit_info) hit_info->Clear();
   Vector3D<double> positionLocal  = GetTransformation()->Transform(position);
   Vector3D<double> directionLocal = GetTransformation()->TransformDirection(direction);
   return GetRootShape()->DistFromOutside(&positionLocal[0], &directionLocal[0], 3);
+}
+
+VECGEOM_FORCE_INLINE
+Precision PlacedRootVolume::DistanceToIn(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                         const Precision stepMax, SurfaceHitView<Precision> *hit_info) const
+{
+  if (hit_info) hit_info->Clear();
+  return DistanceToIn(position, direction, stepMax);
+}
+
+VECGEOM_FORCE_INLINE
+Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position, Vector3D<Precision> const &direction,
+                                          const Precision /*stepMax*/) const
+{
+  return GetRootShape()->DistFromInside(&Vector3D<double>(position)[0], &Vector3D<double>(direction)[0], 3);
 }
 
 VECGEOM_FORCE_INLINE
@@ -154,7 +176,16 @@ Precision PlacedRootVolume::DistanceToOut(Vector3D<Precision> const &position, V
                                           const Precision stepMax, SurfaceHitView<Precision> *hit_info) const
 {
   if (hit_info) hit_info->Clear();
-  return GetRootShape()->DistFromInside(&Vector3D<double>(position)[0], &Vector3D<double>(direction)[0], 3);
+  return DistanceToOut(position, direction, stepMax);
+}
+
+VECGEOM_FORCE_INLINE
+Precision PlacedRootVolume::PlacedDistanceToOut(Vector3D<Precision> const &position,
+                                                Vector3D<Precision> const &direction, const Precision /*stepMax*/) const
+{
+  Vector3D<double> positionLocal  = GetTransformation()->Transform(position);
+  Vector3D<double> directionLocal = GetTransformation()->TransformDirection(direction);
+  return GetRootShape()->DistFromInside(&positionLocal[0], &directionLocal[0], 3);
 }
 
 VECGEOM_FORCE_INLINE
@@ -163,9 +194,7 @@ Precision PlacedRootVolume::PlacedDistanceToOut(Vector3D<Precision> const &posit
                                                 SurfaceHitView<Precision> *hit_info) const
 {
   if (hit_info) hit_info->Clear();
-  Vector3D<double> positionLocal  = GetTransformation()->Transform(position);
-  Vector3D<double> directionLocal = GetTransformation()->TransformDirection(direction);
-  return GetRootShape()->DistFromInside(&positionLocal[0], &directionLocal[0], 3);
+  return PlacedDistanceToOut(position, direction, stepMax);
 }
 
 VECGEOM_FORCE_INLINE
