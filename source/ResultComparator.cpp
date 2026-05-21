@@ -46,7 +46,7 @@ std::shared_ptr<G4VSolid const> LookupG4(VPlacedVolume const *vol)
   return gG4shapes[vol];
 }
 #endif
-}
+} // namespace
 
 void CompareUnplacedContains(VPlacedVolume const *vol, bool vecgeomresult, Vector3D<Precision> const &point)
 {
@@ -113,14 +113,18 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
   Vector3D<Precision> tdirection = vol->GetTransformation()->TransformDirection(direction);
 #endif
 
+#ifdef VECGEOM_GEANT4
+  bool root_mismatch = false;
+#endif
 #ifdef VECGEOM_ROOT
-  bool mismatch = false;
   auto rootshape = LookupROOT(vol);
   if (rootshape != nullptr) {
     rootresult = rootshape->DistFromOutside((double *)&tpoint[0], (double *)&tdirection[0], 3, stepMax);
 
     if (Abs(rootresult - vecgeomresult) > kTolerance * rootresult && Abs(rootresult - vecgeomresult) < 1e30) {
-      mismatch = true;
+#ifdef VECGEOM_GEANT4
+      root_mismatch = true;
+#endif
       std::cerr << "## WARNING ## DI VecGeom  " << tpoint << " " << tdirection << " " << vecgeomresult;
       std::cerr << " ROOT: " << rootresult << "Delta(" << rootresult - vecgeomresult << ")\n";
     }
@@ -133,7 +137,8 @@ void CompareDistanceToIn(VPlacedVolume const *vol, Precision vecgeomresult, Vect
   if (g4shape != nullptr) {
     Precision g4result = g4shape->DistanceToIn(G4ThreeVector(tpoint[0], tpoint[1], tpoint[2]),
                                                G4ThreeVector(tdirection[0], tdirection[1], tdirection[2]));
-    if (mismatch || (Abs(g4result - vecgeomresult) > kTolerance * g4result && Abs(rootresult - vecgeomresult) < 1e30)) {
+    if (root_mismatch ||
+        (Abs(g4result - vecgeomresult) > kTolerance * g4result && Abs(rootresult - vecgeomresult) < 1e30)) {
       std::cerr << "## WARNING ## DI VecGeom  " << vecgeomresult;
       std::cerr << " G4: " << g4result << "Delta(" << g4result - vecgeomresult << ")\n";
     }
@@ -165,6 +170,6 @@ void CompareDistanceToOut(VPlacedVolume const *vol, Precision vecgeomresult, Vec
   }
 #endif
 }
-} // end inner namespace
-}
-} // end namespace
+} // namespace DistanceComparator
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom

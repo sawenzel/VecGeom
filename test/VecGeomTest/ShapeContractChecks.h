@@ -694,8 +694,7 @@ struct ShapeTangentialProbeReplay;
 
 template <typename ImplT>
 ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, const Vec_t &normal_unit,
-                                   Precision solid_tolerance,
-                                   std::vector<vecgeom::EnumInside> *probe_results = nullptr,
+                                   Precision solid_tolerance, std::vector<vecgeom::EnumInside> *probe_results = nullptr,
                                    std::vector<ShapeTangentialProbeReplay> *probe_details = nullptr);
 
 inline const char *ShapeSurfaceKindLabel(ShapeSurfaceKind kind)
@@ -1727,7 +1726,7 @@ ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, cons
     for (auto const &probe : probes) {
       ShapeTangentialProbeReplay probe_replay;
       vecgeom::EnumInside probe_inside = vecgeom::EnumInside::kOutside;
-      bool probe_passed                = EvaluateTangentialNormalProbe(volume, probe, normal_unit, probe_step,
+      bool probe_passed = EvaluateTangentialNormalProbe(volume, probe, normal_unit, probe_step,
                                                         probe_details ? &probe_replay : nullptr, &probe_inside);
       if (probe_results) probe_results->push_back(probe_inside);
       if (probe_details) probe_details->push_back(probe_replay);
@@ -2972,9 +2971,11 @@ ShapeSurfaceRayReplay ReplayShapeSurfaceSample(ImplT const *volume, const ShapeC
                                                DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeSurfaceRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -2984,8 +2985,8 @@ ShapeSurfaceRayReplay ReplayShapeSurfaceSample(ImplT const *volume, const ShapeC
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
-    EvaluateSurfacePointSample(volume, replay.point, replay.direction, solid_tolerance, grazing_tolerance,
-                               call_distance_to_out, replay.context, record_failure, &replay);
+    EvaluateSurfacePointSample(volume, point, direction, solid_tolerance, grazing_tolerance, call_distance_to_out,
+                               replay.context, record_failure, &replay);
     break;
   case ShapeSampleCategory::kInside:
   case ShapeSampleCategory::kOutside:
@@ -3002,9 +3003,11 @@ ShapeSafetyRayReplay ReplayShapeSafetySample(ImplT const *volume, const ShapeCon
                                              DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeSafetyRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -3014,8 +3017,8 @@ ShapeSafetyRayReplay ReplayShapeSafetySample(ImplT const *volume, const ShapeCon
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kInside:
   case ShapeSampleCategory::kOutside:
-    EvaluateShapeSafetySample(volume, replay.point, replay.direction, solid_tolerance, call_distance_to_out,
-                              replay.context, record_failure, &replay);
+    EvaluateShapeSafetySample(volume, point, direction, solid_tolerance, call_distance_to_out, replay.context,
+                              record_failure, &replay);
     break;
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
@@ -3033,9 +3036,11 @@ ShapeHitConsistencyRayReplay ReplayShapeHitConsistencySample(ImplT const *volume
                                                              DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeHitConsistencyRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -3044,15 +3049,15 @@ ShapeHitConsistencyRayReplay ReplayShapeHitConsistencySample(ImplT const *volume
 
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kInside:
-    EvaluateInsideHitConsistencySample(volume, replay.point, replay.direction, solid_tolerance, call_distance_to_out,
-                                       replay.context, record_failure, &replay);
+    EvaluateInsideHitConsistencySample(volume, point, direction, solid_tolerance, call_distance_to_out, replay.context,
+                                       record_failure, &replay);
     break;
   case ShapeSampleCategory::kOutside: {
     const int target_sample_index = PairedInsideSampleIndex(samples, sample_index);
     if (target_sample_index >= 0) {
-      EvaluateOutsideHitConsistencySample(volume, replay.point, samples.Point(target_sample_index), target_sample_index,
-                                          solid_tolerance, call_distance_to_out, replay.context, record_failure,
-                                          &replay);
+      const Vec_t target_point = samples.Point(target_sample_index);
+      EvaluateOutsideHitConsistencySample(volume, point, target_point, target_sample_index, solid_tolerance,
+                                          call_distance_to_out, replay.context, record_failure, &replay);
     }
     break;
   }
@@ -3070,9 +3075,11 @@ ShapeDistanceToInRayReplay ReplayShapeDistanceToInSample(ImplT const *volume, co
                                                          int sample_index, Precision solid_tolerance)
 {
   ShapeDistanceToInRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -3084,8 +3091,9 @@ ShapeDistanceToInRayReplay ReplayShapeDistanceToInSample(ImplT const *volume, co
     const int target_sample_index = PairedInsideSampleIndex(samples, sample_index);
     if (target_sample_index >= 0) {
       replay.target_sample_index = target_sample_index;
-      EvaluateOutsideDistanceToInSample(volume, replay.point, samples.Point(target_sample_index), solid_tolerance,
-                                        replay.context, record_failure, &replay);
+      const Vec_t target_point   = samples.Point(target_sample_index);
+      EvaluateOutsideDistanceToInSample(volume, point, target_point, solid_tolerance, replay.context, record_failure,
+                                        &replay);
     }
     break;
   }
@@ -3105,9 +3113,11 @@ ShapeDistanceToOutRayReplay ReplayShapeDistanceToOutSample(ImplT const *volume, 
                                                            DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeDistanceToOutRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -3116,9 +3126,8 @@ ShapeDistanceToOutRayReplay ReplayShapeDistanceToOutSample(ImplT const *volume, 
 
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kInside:
-    EvaluateInsideDistanceToOutSample(volume, replay.point, replay.direction, solid_tolerance,
-                                      ShapeExtentDistance(volume), call_distance_to_out, replay.context, record_failure,
-                                      &replay);
+    EvaluateInsideDistanceToOutSample(volume, point, direction, solid_tolerance, ShapeExtentDistance(volume),
+                                      call_distance_to_out, replay.context, record_failure, &replay);
     break;
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
@@ -3149,9 +3158,11 @@ ShapeNormalRayReplay ReplayShapeNormalSample(ImplT const *volume, const ShapeCon
                                              DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeNormalRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
     replay.failures.push_back(
@@ -3160,17 +3171,16 @@ ShapeNormalRayReplay ReplayShapeNormalSample(ImplT const *volume, const ShapeCon
 
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kInside:
-    EvaluateInsideExitNormalSample(volume, replay.point, replay.direction, solid_tolerance, call_distance_to_out,
-                                   replay.context, record_failure, &replay);
+    EvaluateInsideExitNormalSample(volume, point, direction, solid_tolerance, call_distance_to_out, replay.context,
+                                   record_failure, &replay);
     break;
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
-    EvaluateSurfaceNormalSample(volume, replay.point, replay.direction, solid_tolerance, replay.context, record_failure,
-                                &replay);
+    EvaluateSurfaceNormalSample(volume, point, direction, solid_tolerance, replay.context, record_failure, &replay);
     break;
   case ShapeSampleCategory::kOutside:
-    EvaluateOutsideEntryNormalSample(volume, replay.point, replay.direction, solid_tolerance, replay.context,
-                                     record_failure, &replay);
+    EvaluateOutsideEntryNormalSample(volume, point, direction, solid_tolerance, replay.context, record_failure,
+                                     &replay);
     break;
   case ShapeSampleCategory::kUnknown:
     break;
@@ -3201,9 +3211,11 @@ ShapeContractRayReplay ReplayShapeConventionSample(ImplT const *volume, const Sh
                                                    DistanceToOutCaller &&call_distance_to_out)
 {
   ShapeContractRayReplay replay;
-  replay.context   = MakeShapeCheckContext(samples, sample_index);
-  replay.point     = samples.Point(sample_index);
-  replay.direction = samples.Direction(sample_index);
+  const Vec_t point     = samples.Point(sample_index);
+  const Vec_t direction = samples.Direction(sample_index);
+  replay.context        = MakeShapeCheckContext(samples, sample_index);
+  replay.point          = point;
+  replay.direction      = direction;
 
   auto record_failure = [&](const ShapeCheckContext &context, const std::string &message, Precision distance) {
     replay.failures.push_back({context, ShapeConventionLabel(context.convention_bit), message, distance});
@@ -3211,17 +3223,17 @@ ShapeContractRayReplay ReplayShapeConventionSample(ImplT const *volume, const Sh
 
   switch (replay.context.sample_group) {
   case ShapeSampleCategory::kInside:
-    EvaluateInsideConventionSample(volume, replay.point, replay.direction, call_distance_to_out, replay.context,
-                                   record_failure, &replay);
+    EvaluateInsideConventionSample(volume, point, direction, call_distance_to_out, replay.context, record_failure,
+                                   &replay);
     break;
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
-    EvaluateSurfaceConventionSample(volume, replay.point, replay.direction, solid_tolerance, call_distance_to_out,
-                                    replay.context, record_failure, &replay);
+    EvaluateSurfaceConventionSample(volume, point, direction, solid_tolerance, call_distance_to_out, replay.context,
+                                    record_failure, &replay);
     break;
   case ShapeSampleCategory::kOutside:
-    EvaluateOutsideConventionSample(volume, replay.point, replay.direction, call_distance_to_out, replay.context,
-                                    record_failure, &replay);
+    EvaluateOutsideConventionSample(volume, point, direction, call_distance_to_out, replay.context, record_failure,
+                                    &replay);
     break;
   case ShapeSampleCategory::kUnknown:
     break;

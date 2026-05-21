@@ -9,14 +9,14 @@
 #
 # Optional variables:
 # CTEST_SITE              // Name of the host computer
-# ExtraCMakeOptions       // Addional options
+# ExtraCMakeOptions       // Additional options
 
 cmake_minimum_required(VERSION 3.8)
 
 ################################################################################
 # Build name settings
 find_program(UNAME NAMES uname)
-exec_program(${UNAME} ARGS -m OUTPUT_VARIABLE arch)
+execute_process(COMMAND ${UNAME} -m OUTPUT_VARIABLE arch OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if (DEFINED ENV{BACKEND})
   set(CTEST_BUILD_NAME "$ENV{OPTION}-${arch}+$ENV{BACKEND}-$ENV{LABEL}-$ENV{COMPILER}-$ENV{BUILDTYPE}")
@@ -34,7 +34,7 @@ elseif(DEFINED ENV{container} AND DEFINED ENV{NODE_NAME})
   set(CTEST_SITE "$ENV{NODE_NAME}-$ENV{container}")
 else()
   find_program(HOSTNAME_CMD NAMES hostname)
-  exec_program(${HOSTNAME_CMD} ARGS OUTPUT_VARIABLE CTEST_SITE)
+  execute_process(COMMAND ${HOSTNAME_CMD} OUTPUT_VARIABLE CTEST_SITE OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
 ################################################################################
