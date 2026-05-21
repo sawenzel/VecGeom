@@ -7,19 +7,15 @@ precommit_mr:
   stage: build
   variables:
     GIT_DEPTH: "0"
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   before_script:
     - apt-get update -y && apt-get upgrade -y
     - apt-get install -y git python3 python3-pip
     - python3 -m pip install --no-cache-dir pre-commit
   script:
     - |
-      if [ -z "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
-        echo "CI_MERGE_REQUEST_DIFF_BASE_SHA is not set."
-        exit 1
-      fi
-      CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "$CI_MERGE_REQUEST_DIFF_BASE_SHA" "$CI_COMMIT_SHA")
+      TARGET_BRANCH="${CI_DEFAULT_BRANCH:-master}"
+      git fetch origin "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
+      CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "origin/${TARGET_BRANCH}...${CI_COMMIT_SHA}")
     - |
       if [ -z "$CHANGED_FILES" ]; then
         echo "No changed files in merge request diff."
