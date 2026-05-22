@@ -36,6 +36,8 @@
 #include "valgrind/callgrind.h"
 #endif
 
+#include <vector>
+
 namespace vecgeom {
 
 // #ifdef VECGEOM_CUDA_INTERFACE
@@ -106,7 +108,7 @@ Precision benchmarkSerialSafety(int nPoints, int nReps, SOA3D<Precision> const &
 Precision benchmarkROOTSafety(int nPoints, int nReps, SOA3D<Precision> const &points)
 {
   TGeoNavigator *rootnav = ::gGeoManager->GetCurrentNavigator();
-  TGeoBranchArray *brancharrays[nPoints];
+  std::vector<TGeoBranchArray *> brancharrays(nPoints);
   Precision *safety = new Precision[nPoints];
 
   for (int i = 0; i < nPoints; ++i) {
@@ -160,7 +162,7 @@ Precision benchmarkSerialNavigation(int nPoints, int nReps, SOA3D<Precision> con
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], *(curStates[i]), true);
   }
 
-  auto *nav = vecgeom::NewSimpleNavigator<>::Instance();
+  auto *nav      = vecgeom::NewSimpleNavigator<>::Instance();
   Precision step = 0.0;
   Stopwatch timer;
   timer.Start();
@@ -318,14 +320,15 @@ bool validateNavigationStepAgainstRoot(Vector3D<Precision> const &pos, Vector3D<
   rootnav->SetCurrentDirection(dir.x(), dir.y(), dir.z());
   rootnav->FindNextBoundaryAndStep(maxStep);
 
-  const char *vgname = testState.Top() ? testState.Top()->GetName() : "NULL";
-  const char *rtname = rootnav->GetCurrentNode()->GetName();
+  const char *vgname   = testState.Top() ? testState.Top()->GetName() : "NULL";
+  const char *rtname   = rootnav->GetCurrentNode()->GetName();
   static int maxReport = 0;
-  if ( maxReport < 10 ) {
-    if ( strcmp(vgname, rtname) ) {
-      std::cerr << "validateAgainstROOT: pos="<< pos <<" -> vol name mismatch: VGname=<" << vgname << ">, ROOTname=<" << rtname << ">\n";
+  if (maxReport < 10) {
+    if (strcmp(vgname, rtname)) {
+      std::cerr << "validateAgainstROOT: pos=" << pos << " -> vol name mismatch: VGname=<" << vgname << ">, ROOTname=<"
+                << rtname << ">\n";
       maxReport++;
-      if(maxReport == 10) std::cerr<<"validateAgainstROOT: more mismatches detected, but further reports dropped!\n";
+      if (maxReport == 10) std::cerr << "validateAgainstROOT: more mismatches detected, but further reports dropped!\n";
     }
   }
   if (testState.Top() == NULL) {
@@ -338,14 +341,13 @@ bool validateNavigationStepAgainstRoot(Vector3D<Precision> const &pos, Vector3D<
   else if (Abs(testStep - rootnav->GetStep()) > 5. * kTolerance ||
            rootnav->GetCurrentNode() != RootGeoManager::Instance().tgeonode(testState.Top())) {
     result = false;
-    std::cerr << "\n*** ERROR on validateAgainstROOT: "
-              << " ROOT node=" << rootnav->GetCurrentNode()->GetName() << " outside=" << rootnav->IsOutside()
-              << " step=" << rootnav->GetStep()
+    std::cerr << "\n*** ERROR on validateAgainstROOT: " << " ROOT node=" << rootnav->GetCurrentNode()->GetName()
+              << " outside=" << rootnav->IsOutside() << " step=" << rootnav->GetStep()
               << " <==> VecGeom node=" << (testState.Top() ? testState.Top()->GetLabel() : "NULL")
               << " step=" << testStep << " /// Step ratio=" << testStep / rootnav->GetStep()
               << " / step diff=" << Abs(testStep - rootnav->GetStep())
-              << " / rel.error=" << Abs(testStep - rootnav->GetStep()) / testStep
-              << " / tolerance=" << 5. * kTolerance << "\n";
+              << " / rel.error=" << Abs(testStep - rootnav->GetStep()) / testStep << " / tolerance=" << 5. * kTolerance
+              << "\n";
 
     std::cerr << rootnav->GetCurrentNode() << ' ' << RootGeoManager::Instance().tgeonode(testState.Top()) << "\n";
   }
@@ -397,8 +399,8 @@ bool validateNavigationStepAgainstGeant4(Vector3D<Precision> const &pos, Vector3
     }
   } else if (Abs(testStep - step / cm) > 5. * kTolerance || vgLogName.compare(nextVol->GetName())) {
     result = false;
-    std::cerr << "\n*** ERROR on validateAgainstGeant4: "
-              << " Geant4 node=" << (nextVol ? nextVol->GetName() : "Null")
+    std::cerr << "\n*** ERROR on validateAgainstGeant4: " << " Geant4 node="
+              << (nextVol ? nextVol->GetName() : "Null")
               //             <<" outside="<< g4nav->IsOutside()
               << " step=" << step / cm // printouts are in cm units
               << " <==> VecGeom node=" << (testState.Top() ? testState.Top()->GetLabel() : "NULL")
@@ -493,7 +495,8 @@ bool validateVecGeomNavigation(int np, SOA3D<Precision> const &points, SOA3D<Pre
     }
   }
 #ifdef VECGEOM_ROOT
-  std::cout << "VecGeom navigation - serial interface: # ROOT mismatches (step lengths) = " << rootMismatches << " / " << np << "\n";
+  std::cout << "VecGeom navigation - serial interface: # ROOT mismatches (step lengths) = " << rootMismatches << " / "
+            << np << "\n";
 #endif
 #ifdef VECGEOM_GEANT4
   std::cout << "VecGeom navigation - serial interface: # Geant4 mismatches = " << g4Mismatches << " / " << np << "\n";
@@ -512,11 +515,9 @@ bool validateVecGeomNavigation(int np, SOA3D<Precision> const &points, SOA3D<Pre
   gpuStates.CopyToGpu();
 
   printf("Start validating GPU navigation...\n");
-  runNavigationCuda(origStates.GetGPUPointer(), gpuStates.GetGPUPointer(),
-                    GeoManager::Instance().getMaxDepth(),
-                    GeoManager::Instance().GetWorld(),
-                    np, points.x(),  points.y(), points.z(),
-                    dirs.x(), dirs.y(), dirs.z(), maxSteps, gpuSteps );
+  runNavigationCuda(origStates.GetGPUPointer(), gpuStates.GetGPUPointer(), GeoManager::Instance().getMaxDepth(),
+                    GeoManager::Instance().GetWorld(), np, points.x(), points.y(), points.z(), dirs.x(), dirs.y(),
+                    dirs.z(), maxSteps, gpuSteps);
 
   gpuStates.CopyFromGpu();
 
@@ -527,20 +528,17 @@ bool validateVecGeomNavigation(int np, SOA3D<Precision> const &points, SOA3D<Pre
   for (int i = 0; i < np; ++i) {
     bool mismatch = false;
     if (Abs(gpuSteps[i] - refSteps[i]) > 5. * kTolerance) mismatch = true;
-    if( gpuStates[i]->Top() != vgSerialStates[i]->Top() )                  mismatch = true;
-    if( gpuStates[i]->IsOnBoundary() != vgSerialStates[i]->IsOnBoundary()) mismatch = true;
+    if (gpuStates[i]->Top() != vgSerialStates[i]->Top()) mismatch = true;
+    if (gpuStates[i]->IsOnBoundary() != vgSerialStates[i]->IsOnBoundary()) mismatch = true;
     // if( safeties[i] != nav.GetSafety( points[i], *origStates[i] ))         mismatch = true;
     if (mismatch) {
       result = false;
       ++errorCountGpu;
       std::cout << "GPU navigation mismatches: track[" << i << "]=(" << points[i].x() << "; " << points[i].y() << "; "
-                << points[i].z() << ") "
-                << " steps: " << refSteps[i] << " / " << gpuSteps[i]
-                <<" navStates: "<< vgSerialStates[i]->Top()->GetLabel()
-                << (vgSerialStates[i]->IsOnBoundary() ? "*" : "")
-                <<" / "<< gpuStates[i]->Top()->GetLabel()
-                << (gpuStates[i]->IsOnBoundary() ? "*" : "")
-                << "\n";
+                << points[i].z() << ") " << " steps: " << refSteps[i] << " / " << gpuSteps[i]
+                << " navStates: " << vgSerialStates[i]->Top()->GetLabel()
+                << (vgSerialStates[i]->IsOnBoundary() ? "*" : "") << " / " << gpuStates[i]->Top()->GetLabel()
+                << (gpuStates[i]->IsOnBoundary() ? "*" : "") << "\n";
     }
   }
 
@@ -557,7 +555,7 @@ bool validateVecGeomNavigation(int np, SOA3D<Precision> const &points, SOA3D<Pre
 #ifdef VECCORE_CUDA
   if (gpuSteps) vecCore::AlignedFree(gpuSteps);
 #endif
-  //delete[] vgVectorStates;
+  // delete[] vgVectorStates;
 
   return result;
 }

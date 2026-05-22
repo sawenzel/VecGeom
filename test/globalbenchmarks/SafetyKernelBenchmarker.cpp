@@ -28,8 +28,8 @@
 #include "VecGeom/management/FlatVoxelManager.h"
 
 // in case someone has written a special safety estimator for the CAHL logical volume
-//#include "VecGeom/navigation/CAHLSafetyEstimator.h"
-//#define SPECIALESTIMATOR CAHLSafetyEstimator
+// #include "VecGeom/navigation/CAHLSafetyEstimator.h"
+// #define SPECIALESTIMATOR CAHLSafetyEstimator
 
 #ifdef VECGEOM_ROOT
 #include "TGeoNavigator.h"
@@ -48,8 +48,9 @@
 #endif
 
 #include <iostream>
+#include <vector>
 
-//#define CALLGRIND_ENABLED
+// #define CALLGRIND_ENABLED
 #ifdef CALLGRIND_ENABLED
 #include <valgrind/callgrind.h>
 #endif
@@ -162,7 +163,7 @@ __attribute__((noinline)) void benchmarkLocalG4Safety(SOA3D<Precision> const &po
 __attribute__((noinline)) void benchmarkROOTSafety(int nPoints, SOA3D<Precision> const &points)
 {
   TGeoNavigator *rootnav = ::gGeoManager->GetCurrentNavigator();
-  TGeoBranchArray *brancharrays[nPoints];
+  std::vector<TGeoBranchArray *> brancharrays(nPoints);
   Precision *safety = new Precision[nPoints];
 
   for (int i = 0; i < nPoints; ++i) {

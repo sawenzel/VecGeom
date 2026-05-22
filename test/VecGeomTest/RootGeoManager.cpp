@@ -64,6 +64,7 @@
 
 #include <iostream>
 #include <list>
+#include <vector>
 
 namespace vecgeom {
 
@@ -88,7 +89,7 @@ void RootGeoManager::LoadRootGeometry()
     std::cout << "*** Closing VecGeom geometry finished (" << timer.Elapsed() << " s) ***\n";
   }
   // fix the world --> close geometry might have changed it ( "compactification" )
-  // this is very ugly of course: some observer patter/ super smart pointer might be appropriate
+  // this is very ugly of course: some observer pattern/ super smart pointer might be appropriate
   fWorld = GeoManager::Instance().GetWorld();
 
   // setup fast lookup table
@@ -142,7 +143,7 @@ void FlattenAssemblies(TGeoNode *node, std::list<TGeoNode *> &nodeaccumulator, T
       nullptr != dynamic_cast<TGeoVolumeAssembly *>(node->GetVolume())) {
     // it is an assembly --> so modify the matrix
     TGeoVolumeAssembly *assembly = dynamic_cast<TGeoVolumeAssembly *>(node->GetVolume());
-    for (int i = 0, Nd = assembly->GetNdaughters(); i < Nd; ++i) {
+    for (int i = 0, nDaughters = assembly->GetNdaughters(); i < nDaughters; ++i) {
       TGeoHMatrix nextglobalmatrix = *globalmatrix;
       nextglobalmatrix.Multiply(assembly->GetNode(i)->GetMatrix());
       FlattenAssemblies(assembly->GetNode(i), nodeaccumulator, &nextglobalmatrix, currentdepth + 1, count, maxdepth);
@@ -150,7 +151,7 @@ void FlattenAssemblies(TGeoNode *node, std::list<TGeoNode *> &nodeaccumulator, T
   } else {
     if (currentdepth == 0) // can keep original node ( it was not an assembly )
       nodeaccumulator.push_back(node);
-    else {                 // need a new flattened node with a different transformation
+    else { // need a new flattened node with a different transformation
       TGeoMatrix *newmatrix   = new TGeoHMatrix(*globalmatrix);
       TGeoNodeMatrix *newnode = new TGeoNodeMatrix(node->GetVolume(), newmatrix);
       newnode->SetNumber(node->GetNumber());
@@ -437,9 +438,9 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
 
     // fix dimensions - (requires making a copy of some arrays)
     const int NZs = pgon->GetNz();
-    Precision zs[NZs];
-    Precision rmins[NZs];
-    Precision rmaxs[NZs];
+    std::vector<Precision> zs(NZs);
+    std::vector<Precision> rmins(NZs);
+    std::vector<Precision> rmaxs(NZs);
     for (int i = 0; i < NZs; ++i) {
       zs[i]    = pgon->GetZ()[i] * LUnit();
       rmins[i] = pgon->GetRmin()[i] * LUnit();
@@ -450,9 +451,9 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
                                                                    pgon->GetDphi() * kDegToRad, // phiEnd
                                                                    pgon->GetNedges(),           // sideCount
                                                                    pgon->GetNz(),               // zPlaneCount
-                                                                   zs,                          // zPlanes
-                                                                   rmins,                       // rMin
-                                                                   rmaxs                        // rMax
+                                                                   zs.data(),                   // zPlanes
+                                                                   rmins.data(),                // rMin
+                                                                   rmaxs.data()                 // rMax
     );
   }
 
@@ -567,9 +568,9 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
 
     // fix dimensions - (requires making a copy of some arrays)
     const int NZs = p->GetNz();
-    Precision zs[NZs];
-    Precision rmins[NZs];
-    Precision rmaxs[NZs];
+    std::vector<Precision> zs(NZs);
+    std::vector<Precision> rmins(NZs);
+    std::vector<Precision> rmaxs(NZs);
     for (int i = 0; i < NZs; ++i) {
       zs[i]    = p->GetZ()[i] * LUnit();
       rmins[i] = p->GetRmin()[i] * LUnit();
@@ -577,7 +578,7 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
     }
 
     unplaced_volume = GeoManager::MakeInstance<UnplacedPolycone>(p->GetPhi1() * kDegToRad, p->GetDphi() * kDegToRad,
-                                                                 p->GetNz(), zs, rmins, rmaxs);
+                                                                 p->GetNz(), zs.data(), rmins.data(), rmaxs.data());
   }
 
   // THE SCALED SHAPE
@@ -661,7 +662,7 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
         Vector3D<Precision>(ctube->GetNhigh()[0], ctube->GetNhigh()[1], ctube->GetNhigh()[2]));
   }
 
-  // THE TESSELATED
+  // THE TESSELLATED
   if (shape->IsA() == TGeoTessellated::Class()) {
     TGeoTessellated *tes = (TGeoTessellated *)(shape);
     unplaced_volume      = GeoManager::MakeInstance<UnplacedTessellated>();
@@ -760,15 +761,15 @@ bool RootGeoManager::TGeoTrapIsDegenerate(TGeoTrap const *trap)
     auto lowerindex = layer * 4;
     auto upperindex = (layer + 1) * 4;
     for (int i = lowerindex; i < upperindex; ++i) {
-      auto currentx = vertices[2 * i];
-      auto currenty = vertices[2 * i + 1];
+      auto currentx  = vertices[2 * i];
+      auto current_y = vertices[2 * i + 1];
       for (int j = lowerindex; j < upperindex; ++j) {
         if (j == i) {
           continue;
         }
         auto otherx = vertices[2 * j];
         auto othery = vertices[2 * j + 1];
-        if (otherx == currentx && othery == currenty) {
+        if (otherx == currentx && othery == current_y) {
           degeneracy = true;
         }
       }

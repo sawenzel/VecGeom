@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/vecgeom-configure.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/vecgeom-submit.cmake)
 
 ################################################################################
 # Test custom update with a dashboard script.
@@ -9,8 +10,8 @@ ctest_start(${MODEL} TRACK ${MODEL} APPEND)
 
 ctest_test(BUILD ${CTEST_BINARY_DIRECTORY}
           APPEND)
-ctest_submit(PARTS Test)
+vecgeom_ctest_submit(PARTS Test)
 
 if(${MODEL} MATCHES NightlyMemoryCheck)
-  ctest_submit(PARTS MemCheck)
+  vecgeom_ctest_submit(PARTS MemCheck)
 endif()
