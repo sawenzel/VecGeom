@@ -227,7 +227,40 @@ struct HypeImplementation {
 
     Bool_v cond(false);
     Real_v sigz = absZ - hype.fDz;
-    cond        = (sigz > kHalfTolerance) && (r < hype.fEndOuterRadius) && (r > hype.fEndInnerRadius);
+    if constexpr (vecCore::VectorSize<Real_v>() == 1) {
+      if (sigz > kHalfTolerance) {
+        if (r < hype.fEndOuterRadius && r > hype.fEndInnerRadius) {
+          safety = sigz;
+          return;
+        }
+        if (r > hype.fEndOuterRadius) {
+          Real_v dr = r - hype.fEndOuterRadius;
+          safety    = Sqrt(dr * dr + sigz * sigz);
+          return;
+        }
+        if (r < hype.fEndInnerRadius) {
+          Real_v dr = r - hype.fEndInnerRadius;
+          safety    = Sqrt(dr * dr + sigz * sigz);
+          return;
+        }
+      }
+
+      if (absZ > Real_v(0.) && absZ < hype.fDz) {
+        Real_v outerRad2 = hype.fRmax2 + hype.fTOut2 * absZ * absZ;
+        if (r2 > outerRad2 + kHalfTolerance) {
+          safety = HypeUtilities::ApproxDistOutside<Real_v>(r, absZ, hype.fRmax, hype.fTOut);
+          return;
+        }
+
+        Real_v innerRad2 = hype.fRmin2 + hype.fTIn2 * absZ * absZ;
+        if (r2 < innerRad2 - kHalfTolerance) {
+          safety = HypeUtilities::ApproxDistInside<Real_v>(r, absZ, hype.fRmin, hype.fTIn2);
+        }
+      }
+      return;
+    }
+
+    cond = (sigz > kHalfTolerance) && (r < hype.fEndOuterRadius) && (r > hype.fEndInnerRadius);
     vecCore::MaskedAssign(safety, !done && cond, sigz);
     done |= cond;
     if (vecCore::MaskFull(done)) return;
