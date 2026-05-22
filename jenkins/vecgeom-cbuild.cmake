@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/vecgeom-configure.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/vecgeom-submit.cmake)
 
 ################################################################################
 # Test custom update with a dashboard script.
@@ -15,11 +16,9 @@ ctest_configure(BUILD   ${CTEST_BINARY_DIRECTORY}
                 SOURCE  ${CTEST_SOURCE_DIRECTORY}
                 OPTIONS "${config_options}"
                 APPEND)
-ctest_submit(PARTS Update Configure Notes)
+vecgeom_ctest_submit(PARTS Update Configure Notes)
 
 ctest_build(BUILD ${CTEST_BINARY_DIRECTORY}
             TARGET install
             APPEND)
-ctest_submit(PARTS Build)
-
-
+vecgeom_ctest_submit(PARTS Build)

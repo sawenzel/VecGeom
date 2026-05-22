@@ -19,7 +19,7 @@
 #include "G4VSolid.hh"
 #endif
 
-size_t N = 1000;
+constexpr size_t N = 1000;
 
 using namespace vecgeom;
 
