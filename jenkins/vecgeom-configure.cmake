@@ -120,15 +120,32 @@ endif()
 
 set(CTEST_GIT_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
 
-if(${MODEL} MATCHES Nightly OR Experimental)
-  if(NOT "$ENV{GIT_COMMIT}" STREQUAL "")
-    set(CTEST_CHECKOUT_COMMAND "cmake -E chdir ${CTEST_SOURCE_DIRECTORY} ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_PREVIOUS_COMMIT}")
-    set(CTEST_GIT_UPDATE_CUSTOM  ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_COMMIT})
+function(vecgeom_set_checkout_if_available commit description)
+  if("${commit}" STREQUAL "")
+    return()
   endif()
-else()
-  if(NOT "$ENV{GIT_COMMIT}" STREQUAL "")
-    set(CTEST_CHECKOUT_COMMAND "cmake -E chdir ${CTEST_SOURCE_DIRECTORY} ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_COMMIT}")
-    set(CTEST_GIT_UPDATE_CUSTOM  ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_COMMIT})
+
+  execute_process(
+    COMMAND ${CTEST_GIT_COMMAND} -C ${CTEST_SOURCE_DIRECTORY} cat-file -e "${commit}^{commit}"
+    RESULT_VARIABLE checkout_commit_status
+    OUTPUT_QUIET
+    ERROR_QUIET)
+
+  if(checkout_commit_status EQUAL 0)
+    set(CTEST_CHECKOUT_COMMAND "cmake -E chdir ${CTEST_SOURCE_DIRECTORY} ${CTEST_GIT_COMMAND} checkout -f ${commit}"
+        PARENT_SCOPE)
+  else()
+    message(STATUS "Skipping CTest initial checkout of ${description} ${commit}: commit is not available locally")
+  endif()
+endfunction()
+
+if(NOT "$ENV{GIT_COMMIT}" STREQUAL "")
+  set(CTEST_GIT_UPDATE_CUSTOM ${CTEST_GIT_COMMAND} checkout -f $ENV{GIT_COMMIT})
+
+  if("${MODEL}" MATCHES "Nightly|Experimental")
+    vecgeom_set_checkout_if_available("$ENV{GIT_PREVIOUS_COMMIT}" "previous Jenkins commit")
+  else()
+    vecgeom_set_checkout_if_available("$ENV{GIT_COMMIT}" "Jenkins commit")
   endif()
 endif()
 

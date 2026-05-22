@@ -83,7 +83,7 @@ struct ConeStruct {
   T fSPhi{0.};
   T fDPhi{0.};
 
-  /* These new data members are introduced to store the original paramters of
+  /* These new data members are introduced to store the original parameters of
    * Cone, which may change in the case where rmin is equal to rmax.
    * These are basically required by the Extent functions to do more accurate
    * bounding box calculations.
@@ -259,8 +259,9 @@ struct ConeStruct {
     else
       distRMax = (pRMax - widRMax) / fSecRMax;
 
-    bool inside = distZ < kTolerance && distRMax < fOuterTolerance;
-    if (fRmin1 || fRmin2) inside &= distRMin > -fInnerTolerance;
+    bool inside = false;
+    if (distZ < kTolerance) inside = distRMax < fOuterTolerance;
+    if (inside && (fRmin1 || fRmin2)) inside = distRMin > -fInnerTolerance;
 
     distZ    = std::fabs(distZ);
     distRMax = std::fabs(distRMax);

@@ -52,8 +52,7 @@ class ExtrudedStruct {
   };
 
   template <typename Facets_t>
-  VECCORE_ATT_HOST_DEVICE
-  void TriangulatePolygon(Facets_t &facets) const
+  VECCORE_ATT_HOST_DEVICE void TriangulatePolygon(Facets_t &facets) const
   {
     const size_t nvertices = GetNVertices();
     vector_t<size_t> vtx;
@@ -150,12 +149,12 @@ public:
     void GetFacetVertices(size_t ifacet, size_t (&indices)[3]) const;
   };
 
-  bool fIsSxtru                  = false;     ///< Flag for sxtru representation
-  bool fInitialized              = false;     ///< Flag for initialization
-  Precision *fZPlanes            = nullptr;   ///< Z position of planes
-  mutable Precision fCubicVolume = 0.;        ///< Cubic volume
-  mutable Precision fSurfaceArea = 0.;        ///< Surface area
-  PolygonalShell fSxtruHelper;                ///< Sxtru helper
+  bool fIsSxtru                  = false;                ///< Flag for sxtru representation
+  bool fInitialized              = false;                ///< Flag for initialization
+  Precision *fZPlanes            = nullptr;              ///< Z position of planes
+  mutable Precision fCubicVolume = 0.;                   ///< Cubic volume
+  mutable Precision fSurfaceArea = 0.;                   ///< Surface area
+  PolygonalShell fSxtruHelper;                           ///< Sxtru helper
   TessellatedRuntimeStruct<Precision> fTslRuntimeHelper; ///< The tessellated helper for navigation
   // TODO(VecGeom-release-transition): remove this old-layout export shim after
   // a VecGeom release. Geant4 and other visualization/export users should use
@@ -165,7 +164,7 @@ public:
   bool fUseTslSections = false;                           ///< Use tessellated section helper
   vector_t<TessellatedSection<Precision> *> fTslSections; ///< Tessellated sections
 #endif
-  vector_t<XtruVertex2> fVertices; ///< Polygone vertices
+  vector_t<XtruVertex2> fVertices; ///< Polygon vertices
   vector_t<XtruSection> fSections; ///< Vector of sections
   PlanarPolygon fPolygon;          ///< Planar polygon
 
@@ -174,7 +173,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   ExtrudedStruct() {}
 
-  /** @brief Constructor providing polygone vertices and sections */
+  /** @brief Constructor providing polygon vertices and sections */
   VECCORE_ATT_HOST_DEVICE
   ExtrudedStruct(int nvertices, XtruVertex2 const *vertices, int nsections, XtruSection const *sections)
   {
@@ -353,7 +352,7 @@ public:
 
   ExtrudedMeshHelper GetMeshHelper() const { return ExtrudedMeshHelper(*this); }
 
-  /** @brief Get the polygone vertex i */
+  /** @brief Get the polygon vertex i */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   void GetVertex(int i, Precision &x, Precision &y) const
@@ -367,18 +366,23 @@ public:
   VECGEOM_FORCE_INLINE
   bool IsSameLine(size_t i, size_t i1, size_t i2) const
   {
-    const Precision *x = fPolygon.GetVertices().x();
-    const Precision *y = fPolygon.GetVertices().y();
-    if (x[i1] == x[i2]) return std::fabs(x[i] - x[i1]) < kTolerance * 0.5;
+    const Precision *x   = fPolygon.GetVertices().x();
+    const Precision *y   = fPolygon.GetVertices().y();
+    const Precision dx   = x[i2] - x[i1];
+    const Precision dy   = y[i2] - y[i1];
+    const Precision tol  = 0.5 * kTolerance;
+    const Precision tol2 = tol * tol;
 
-    Precision slope = (y[i2] - y[i1]) / (x[i2] - x[i1]);
-    Precision predy = y[i1] + slope * (x[i] - x[i1]);
-    Precision dy    = y[i] - predy;
+    const Precision len2 = dx * dx + dy * dy;
+    if (len2 <= tol2) {
+      const Precision px = x[i] - x[i1];
+      const Precision py = y[i] - y[i1];
+      return px * px + py * py <= tol2;
+    }
 
-    // Check perpendicular distance vs tolerance 'directly'
-    const Precision tol = 0.5 * kTolerance;
-    bool squareComp     = (dy * dy < (1 + slope * slope) * tol * tol);
-    return squareComp;
+    // Compare squared perpendicular distance without dividing by the segment length.
+    const Precision cross = dx * (y[i] - y[i1]) - dy * (x[i] - x[i1]);
+    return cross * cross <= len2 * tol2;
   }
 
   /** @brief Return true if point i is on the line through i1, i2 and lies between i1 and i2 */
@@ -428,7 +432,7 @@ public:
     return inside || onEdge;
   }
 
-  /** @brief Check if the polygone segments (i0, i1) and (i1, i2) make a convex side */
+  /** @brief Check if the polygon segments (i0, i1) and (i1, i2) make a convex side */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsConvexSide(size_t i0, size_t i1, size_t i2) const
