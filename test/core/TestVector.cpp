@@ -5,8 +5,35 @@
 
 #include "VecGeom/base/Vector.h"
 #include "VecGeom/base/Vector2D.h"
+#include "VecGeom/base/Vector3D.h"
 
 #include <gtest/gtest.h>
+
+namespace {
+
+/// @brief Calls Min on a vector while VecCore Min is visible.
+/// @details This exercises the lookup pattern that exposed the regression:
+/// VecCore scalar overloads are imported into ordinary lookup, but VecGeom vector
+/// arguments must still resolve to vecgeom::Min through ADL.
+template <typename Vector>
+Vector MinViaADL(Vector const &lhs, Vector const &rhs)
+{
+  using vecCore::math::Min;
+  return Min(lhs, rhs);
+}
+
+/// @brief Calls Max on a vector while VecCore Max is visible.
+/// @details This exercises the lookup pattern that exposed the regression:
+/// VecCore scalar overloads are imported into ordinary lookup, but VecGeom vector
+/// arguments must still resolve to vecgeom::Max through ADL.
+template <typename Vector>
+Vector MaxViaADL(Vector const &lhs, Vector const &rhs)
+{
+  using vecCore::math::Max;
+  return Max(lhs, rhs);
+}
+
+} // namespace
 
 TEST(VecgeomBaseVector, Vector)
 {
@@ -46,6 +73,28 @@ TEST(VecgeomBaseVector, Vector)
   EXPECT_EQ(aVector.size(), 0);
 }
 
+TEST(VecgeomBaseVector, Vector3DMinMaxUseADL)
+{
+  using Vec3D = vecgeom::Vector3D<double>;
+
+  Vec3D lhs(1., 100., 1.);
+  Vec3D rhs(2., 2., 2.);
+
+  EXPECT_TRUE(MinViaADL(lhs, rhs) == Vec3D(1., 2., 1.));
+  EXPECT_TRUE(MaxViaADL(lhs, rhs) == Vec3D(2., 100., 2.));
+}
+
+TEST(VecgeomBaseVector, Vector2DMinMaxUseADL)
+{
+  using Vec2D = vecgeom::Vector2D<double>;
+
+  Vec2D lhs(1., 100.);
+  Vec2D rhs(2., 2.);
+
+  EXPECT_TRUE(MinViaADL(lhs, rhs) == Vec2D(1., 2.));
+  EXPECT_TRUE(MaxViaADL(lhs, rhs) == Vec2D(2., 100.));
+}
+
 TEST(VecgeomBaseVector, VectorOfVector)
 {
   // Testing Vector<Vector<T>>
@@ -74,7 +123,7 @@ TEST(VecgeomBaseVector, VectorOfVector)
   // clear
   vb.clear();
   EXPECT_EQ(vb.size(), 0);
-  EXPECT_EQ(vb[7], Vec2D()); // still valid since the support array is not shrinked
+  EXPECT_EQ(vb[7], Vec2D()); // still valid since the support array is not shrunk
   // Vector<Vector<T>>
   vecgeom::Vector<vecgeom::Vector<Vec2D>> vc;
   for (auto i = 0; i < 10; ++i) {
@@ -82,4 +131,3 @@ TEST(VecgeomBaseVector, VectorOfVector)
     EXPECT_TRUE(equal_vect(va, vc[i]));
   }
 }
-

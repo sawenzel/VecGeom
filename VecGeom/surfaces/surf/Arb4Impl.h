@@ -23,10 +23,10 @@ struct SurfaceHelper<SurfaceType::kArb4, Real_t> {
     aMin.Set(fArb4Data->verticesX[0], fArb4Data->verticesY[0], -dz);
     aMax = aMin;
     for (auto i = 0; i < 4; ++i) {
-      aMin = vecCore::math::Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
-      aMax = vecCore::math::Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
-      aMin = vecCore::math::Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
-      aMax = vecCore::math::Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
+      aMin = Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
+      aMax = Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], -dz));
+      aMin = Min(aMin, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
+      aMax = Max(aMax, Vector3D<Real_t>(fArb4Data->verticesX[i], fArb4Data->verticesY[i], dz));
     }
   }
 

@@ -10,6 +10,7 @@
 #define BVH_NAVIGATOR_H
 
 #include <VecGeom/base/Global.h>
+#include <VecGeom/base/Math.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/volumes/LogicalVolume.h>

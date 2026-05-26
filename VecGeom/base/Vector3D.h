@@ -312,7 +312,7 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Type Min() const { return vecCore::math::Min(vec[0], vec[1], vec[2]); }
+  Type Min() const { return vecgeom::Min(vec[0], vec[1], vec[2]); }
 
   template <typename BoolVector>
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Type MinSkip(BoolVector const &skip) const
@@ -323,7 +323,7 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Type Max() const { return vecCore::math::Max(vec[0], vec[1], vec[2]); }
+  Type Max() const { return vecgeom::Max(vec[0], vec[1], vec[2]); }
 
   template <typename BoolVector>
   VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE Type MaxSkip(BoolVector const &skip) const
@@ -352,7 +352,7 @@ public:
 #define VECTOR3D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR)                                                       \
   VECCORE_ATT_HOST_DEVICE                                                                                   \
   VECGEOM_FORCE_INLINE                                                                                      \
-  VecType &operator OPERATOR(const VecType & other)                                                         \
+  VecType &operator OPERATOR(const VecType &other)                                                          \
   {                                                                                                         \
     vec[0] OPERATOR other.vec[0];                                                                           \
     vec[1] OPERATOR other.vec[1];                                                                           \
@@ -369,7 +369,7 @@ public:
   }                                                                                                         \
   VECCORE_ATT_HOST_DEVICE                                                                                   \
   VECGEOM_FORCE_INLINE                                                                                      \
-  VecType &operator OPERATOR(const Type & scalar)                                                           \
+  VecType &operator OPERATOR(const Type &scalar)                                                            \
   {                                                                                                         \
     vec[0] OPERATOR scalar;                                                                                 \
     vec[1] OPERATOR scalar;                                                                                 \
@@ -489,6 +489,7 @@ VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(&&)
 VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP(||)
 #undef VECTOR3D_SCALAR_BOOLEAN_LOGICAL_OP
 #pragma GCC diagnostic pop
+
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
@@ -502,37 +503,44 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void MaskedAssign(vecgeom::Vector3D
   vecCore::MaskedAssign(v[1], mask, val[1]);
   vecCore::MaskedAssign(v[2], mask, val[2]);
 }
+} // namespace vecCore
+
+namespace vecgeom {
+inline namespace VECGEOM_IMPL_NAMESPACE {
 
 /// @brief Minimum between two vectors
+/// @details This overload intentionally lives in the vecgeom namespace, which
+/// is associated with Vector3D. Unqualified calls with Vector3D arguments then
+/// find this component-wise operation by argument-dependent lookup, independent
+/// of which scalar Min overloads are imported into the caller scope.
 /// @tparam T Vector type
 /// @param v1 first vector
 /// @param v2 second vector
 /// @return Vector having the minimum of the two vector components
-inline namespace math {
 template <typename T>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecgeom::Vector3D<T> Min(vecgeom::Vector3D<T> const &v1,
-                                                                      vecgeom::Vector3D<T> const &v2)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<T> Min(Vector3D<T> const &v1, Vector3D<T> const &v2)
 {
-  vecgeom::Vector3D<T> result(vecCore::math::Min(v1.x(), v2.x()), vecCore::math::Min(v1.y(), v2.y()),
-                              vecCore::math::Min(v1.z(), v2.z()));
+  Vector3D<T> result(vecgeom::Min(v1.x(), v2.x()), vecgeom::Min(v1.y(), v2.y()), vecgeom::Min(v1.z(), v2.z()));
   return result;
 }
 
 /// @brief Maximum between two vectors
+/// @details This overload intentionally lives in the vecgeom namespace, which
+/// is associated with Vector3D. Unqualified calls with Vector3D arguments then
+/// find this component-wise operation by argument-dependent lookup, independent
+/// of which scalar Max overloads are imported into the caller scope.
 /// @tparam T Vector type
 /// @param v1 first vector
 /// @param v2 second vector
 /// @return Vector having the maximum of the two vector components
 template <typename T>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE vecgeom::Vector3D<T> Max(vecgeom::Vector3D<T> const &v1,
-                                                                      vecgeom::Vector3D<T> const &v2)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector3D<T> Max(Vector3D<T> const &v1, Vector3D<T> const &v2)
 {
-  vecgeom::Vector3D<T> result(vecCore::math::Max(v1.x(), v2.x()), vecCore::math::Max(v1.y(), v2.y()),
-                              vecCore::math::Max(v1.z(), v2.z()));
+  Vector3D<T> result(vecgeom::Max(v1.x(), v2.x()), vecgeom::Max(v1.y(), v2.y()), vecgeom::Max(v1.z(), v2.z()));
   return result;
 }
-} // namespace math
-} // namespace vecCore
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom
 
 // for use in GEANT4
 using UVector3 = VECGEOM_NAMESPACE::Vector3D<double>;

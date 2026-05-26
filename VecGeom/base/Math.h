@@ -4,7 +4,12 @@
 #include <cmath>
 #include <limits>
 #include "VecGeom/base/Config.h"
+
+// Veccore:
+#include <cstddef>          // IWYU pragma: keep
+#include "VecCore/Common.h" // IWYU pragma: keep
 #include "VecCore/Limits.h"
+#include "VecCore/VecMath.h"
 
 namespace vecgeom {
 
@@ -83,13 +88,27 @@ constexpr double kToleranceBVH = double(1e-4);
 constexpr float kToleranceBVH = float(1e-9);
 #endif
 
-using namespace vecCore::math;
-
 VECGEOM_CONST Precision kAvogadro = 6.02214085774e23;
 VECGEOM_CONST Precision kEpsilon  = std::numeric_limits<Precision>::epsilon();
 template <typename Real_t>
 constexpr Real_t kEpsilonT        = std::numeric_limits<Real_t>::epsilon();
 VECGEOM_CONST double kInfinityDbl = std::numeric_limits<double>::infinity();
+
+// NOTE: numerous downstream classes depend on transitive veccore includes and namespace import
+using vecCore::math::Abs;
+using vecCore::math::ACos;
+using vecCore::math::ATan2;
+using vecCore::math::Cbrt;
+using vecCore::math::CopySign;
+using vecCore::math::Cos;
+using vecCore::math::IsInf;
+using vecCore::math::Max;
+using vecCore::math::Min;
+using vecCore::math::Pow;
+using vecCore::math::Sign;
+using vecCore::math::Sin;
+using vecCore::math::Sqrt;
+
 // a function to estimate ULP *unit in the last place for a number
 // Compute ULP of a given number x (templated on precision type)
 template <typename T>
@@ -98,7 +117,7 @@ VECCORE_ATT_HOST_DEVICE T ULP(T x)
   static_assert(std::is_floating_point<T>::value, "T must be a floating point type");
   // Use nextafter to find the next representable value greater than x
   T next = std::nextafter(x, vecCore::NumericLimits<T>::Infinity());
-  return vecCore::math::Abs(next - x);
+  return Abs(next - x);
 }
 
 // a special constant to indicate a "miss" length
