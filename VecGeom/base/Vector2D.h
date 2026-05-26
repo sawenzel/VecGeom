@@ -115,11 +115,11 @@ public:
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Type Min() const { return vecCore::math::Min(vec[0], vec[1]); };
+  Type Min() const { return vecgeom::Min(vec[0], vec[1]); };
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Type Max() const { return vecCore::math::Max(vec[0], vec[1]); };
+  Type Max() const { return vecgeom::Max(vec[0], vec[1]); };
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
@@ -188,7 +188,7 @@ public:
 #define VECTOR2D_TEMPLATE_INPLACE_BINARY_OP(OPERATOR) \
   VECCORE_ATT_HOST_DEVICE                             \
   VECGEOM_FORCE_INLINE                                \
-  VecType &operator OPERATOR(const VecType & other)   \
+  VecType &operator OPERATOR(const VecType &other)    \
   {                                                   \
     vec[0] OPERATOR other.vec[0];                     \
     vec[1] OPERATOR other.vec[1];                     \
@@ -196,7 +196,7 @@ public:
   }                                                   \
   VECCORE_ATT_HOST_DEVICE                             \
   VECGEOM_FORCE_INLINE                                \
-  VecType &operator OPERATOR(const Type & scalar)     \
+  VecType &operator OPERATOR(const Type &scalar)      \
   {                                                   \
     vec[0] OPERATOR scalar;                           \
     vec[1] OPERATOR scalar;                           \
@@ -258,6 +258,38 @@ VECTOR2D_BINARY_OP(-, -=)
 VECTOR2D_BINARY_OP(*, *=)
 VECTOR2D_BINARY_OP(/, /=)
 #undef VECTOR2D_BINARY_OP
+
+/// @brief Minimum between two vectors
+/// @details This overload intentionally lives in the vecgeom namespace, which
+/// is associated with Vector2D. Unqualified calls with Vector2D arguments then
+/// find this component-wise operation by argument-dependent lookup, independent
+/// of which scalar Min overloads are imported into the caller scope.
+/// @tparam T Vector type
+/// @param v1 first vector
+/// @param v2 second vector
+/// @return Vector having the minimum of the two vector components
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector2D<T> Min(Vector2D<T> const &v1, Vector2D<T> const &v2)
+{
+  Vector2D<T> result(vecgeom::Min(v1.x(), v2.x()), vecgeom::Min(v1.y(), v2.y()));
+  return result;
+}
+
+/// @brief Maximum between two vectors
+/// @details This overload intentionally lives in the vecgeom namespace, which
+/// is associated with Vector2D. Unqualified calls with Vector2D arguments then
+/// find this component-wise operation by argument-dependent lookup, independent
+/// of which scalar Max overloads are imported into the caller scope.
+/// @tparam T Vector type
+/// @param v1 first vector
+/// @param v2 second vector
+/// @return Vector having the maximum of the two vector components
+template <typename T>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE Vector2D<T> Max(Vector2D<T> const &v1, Vector2D<T> const &v2)
+{
+  Vector2D<T> result(vecgeom::Max(v1.x(), v2.x()), vecgeom::Max(v1.y(), v2.y()));
+  return result;
+}
 
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
