@@ -11,25 +11,28 @@
 
 namespace {
 
+using vecCore::math::Max;
+using vecCore::math::Min;
+
 /// @brief Calls Min on a vector while VecCore Min is visible.
 /// @details This exercises the lookup pattern that exposed the regression:
-/// VecCore scalar overloads are imported into ordinary lookup, but VecGeom vector
-/// arguments must still resolve to vecgeom::Min through ADL.
+/// VecCore scalar overloads are imported into namespace-scope ordinary lookup,
+/// matching Math.h without using a block-scope declaration that can suppress
+/// ADL on some compilers.
 template <typename Vector>
 Vector MinViaADL(Vector const &lhs, Vector const &rhs)
 {
-  using vecCore::math::Min;
   return Min(lhs, rhs);
 }
 
 /// @brief Calls Max on a vector while VecCore Max is visible.
 /// @details This exercises the lookup pattern that exposed the regression:
-/// VecCore scalar overloads are imported into ordinary lookup, but VecGeom vector
-/// arguments must still resolve to vecgeom::Max through ADL.
+/// VecCore scalar overloads are imported into namespace-scope ordinary lookup,
+/// matching Math.h without using a block-scope declaration that can suppress
+/// ADL on some compilers.
 template <typename Vector>
 Vector MaxViaADL(Vector const &lhs, Vector const &rhs)
 {
-  using vecCore::math::Max;
   return Max(lhs, rhs);
 }
 
