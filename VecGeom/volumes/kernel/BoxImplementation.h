@@ -1,6 +1,7 @@
 //===-- kernel/BoxImplementation.h ----------------------------------*- C++ -*-===//
 //===--------------------------------------------------------------------------===//
 /// @file BoxImplementation.h
+/// @brief Axis-aligned box kernel helpers and navigation entry points.
 /// @author Johannes de Fine Licht (johannes.definelicht@cern.ch), Sandro Wenzel (sandro.wenzel@cern.ch)
 
 /// History notes:
@@ -29,40 +30,69 @@ template <typename T>
 struct BoxStruct;
 class UnplacedBox;
 
+/// @brief Kernel implementation for axis-aligned boxes.
+/// @details The stored dimensions are half-lengths along x, y, and z. The main
+/// `UnplacedBox` navigation entry points are scalar and use local slab
+/// predicates for classification, distance, safety, and normals. The separate
+/// `ABBoxImplementation` below keeps vectorized/batched aligned-bounding-box
+/// utilities used by navigation acceleration structures.
 struct BoxImplementation {
 
   using PlacedShape_t    = PlacedBox;
   using UnplacedStruct_t = BoxStruct<Precision>;
   using UnplacedVolume_t = UnplacedBox;
 
+  /// @brief Return the box half-lengths promoted to the requested real type.
+  /// @param box Box runtime data.
+  /// @return Vector of x/y/z half-lengths.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> HalfSize(const UnplacedStruct_t &box)
   {
     return Vector3D<Real_v>(box.fDimensions[0], box.fDimensions[1], box.fDimensions[2]);
   }
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a point is contained by the box.
+  /// @details The containment convention accepts surface points within the box
+  /// tolerance, matching the other shape kernels.
+  /// @param box Box runtime data.
+  /// @param point Query point.
+  /// @param[out] inside True when @p point is inside or on the tolerated surface.
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &box,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
     // in analogy to other shapes, surface points are considered inside
     inside = (point.Abs() - HalfSize<Real_v>(box)).Max() < Real_v(kTolerance);
   }
 
+  /// @brief Classify a point as inside, outside, or on the box surface.
+  /// @details Classification is based on the maximum signed distance to the
+  /// three slabs. Points within `kHalfTolerance` of any limiting slab are
+  /// reported as `kSurface`.
+  /// @param box Box runtime data.
+  /// @param point Query point.
+  /// @param[out] inside VecGeom inside code.
   template <typename Real_v, typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &box,
                                                                   Vector3D<Real_v> const &point, Inside_v &inside)
   {
     Real_v dist = (point.Abs() - HalfSize<Real_v>(box)).Max();
 
-    inside = vecCore::Blend(dist < Real_v(0.0), Inside_v(kInside), Inside_v(kOutside));
-    vecCore__MaskedAssignFunc(inside, Abs(dist) < Real_v(kHalfTolerance), Inside_v(kSurface));
+    inside = (Abs(dist) < Real_v(kHalfTolerance)) ? Inside_v(kSurface)
+                                                  : ((dist < Real_v(0.0)) ? Inside_v(kInside) : Inside_v(kOutside));
   }
 
+  /// @brief Shared scalar slab classification helper.
+  /// @details The maximum signed slab distance determines outside rejection. If
+  /// `ForInside` is true, the helper also reports strict interior ownership
+  /// separated from all slabs by at least `kHalfTolerance`.
+  /// @param halfsize Box half-lengths.
+  /// @param point Query point.
+  /// @param[out] completelyinside True when the point is strictly inside.
+  /// @param[out] completelyoutside True when the point is outside.
   template <typename Real_v, bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      Vector3D<Real_v> const &halfsize, Vector3D<Real_v> const &point, vecCore::Mask<Real_v> &completelyinside,
-      vecCore::Mask<Real_v> &completelyoutside)
+      Vector3D<Real_v> const &halfsize, Vector3D<Real_v> const &point, bool &completelyinside, bool &completelyoutside)
   {
     Real_v dist = (point.Abs() - halfsize).Max();
 
@@ -71,6 +101,16 @@ struct BoxImplementation {
     completelyoutside = dist > Real_v(kHalfTolerance);
   }
 
+  /// @brief Compute distance from an exterior point to the box.
+  /// @details Uses the standard slab intersection interval. The entry distance
+  /// is rejected when the interval is empty, when the candidate exit is already
+  /// behind or on the start point, or when the start is already on an exit slab
+  /// within tolerance.
+  /// @param box Box runtime data.
+  /// @param point Query point, expected outside.
+  /// @param direction Normalized propagation direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param[out] distance Entry distance, or infinity when no valid entry exists.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &box,
                                                                         Vector3D<Real_v> const &point,
@@ -93,11 +133,20 @@ struct BoxImplementation {
     // distIn calculation
     distance = (tempIn * invDir).Max();
 
-    vecCore__MaskedAssignFunc(
-        distance, distance >= distOut || distOut <= Real_v(kHalfTolerance) || absOrthogOut <= Real_v(kHalfTolerance),
-        InfinityLength<Real_v>());
+    if (distance >= distOut || distOut <= Real_v(kHalfTolerance) || absOrthogOut <= Real_v(kHalfTolerance)) {
+      distance = InfinityLength<Real_v>();
+    }
   }
 
+  /// @brief Compute distance from an interior point to leave the box.
+  /// @details The nearest forward slab crossing is selected after skipping axes
+  /// whose direction is effectively parallel for the current half-length scale.
+  /// Points already outside the tolerated box return `-1`.
+  /// @param box Box runtime data.
+  /// @param point Query point, expected inside or on the surface.
+  /// @param direction Normalized propagation direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param[out] distance Exit distance, or `-1` for outside input.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &box,
                                                                          Vector3D<Real_v> const &point,
@@ -126,6 +175,12 @@ struct BoxImplementation {
     distance = (tempOut * invDir).MinSkip(skip);
   }
 
+  /// @brief Compute the safety from an exterior point to the box.
+  /// @details The value is the maximum signed slab excess and is non-positive
+  /// for points already inside the box.
+  /// @param box Box runtime data.
+  /// @param point Query point.
+  /// @param[out] safety Conservative distance to the nearest entry boundary.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &box,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -133,6 +188,12 @@ struct BoxImplementation {
     safety = (point.Abs() - HalfSize<Real_v>(box)).Max();
   }
 
+  /// @brief Compute the safety from an interior point to leave the box.
+  /// @details The value is the minimum remaining distance to any of the six
+  /// limiting slabs and becomes negative for outside points.
+  /// @param box Box runtime data.
+  /// @param point Query point.
+  /// @param[out] safety Conservative distance to the nearest exit boundary.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &box,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
@@ -140,9 +201,18 @@ struct BoxImplementation {
     safety = (HalfSize<Real_v>(box) - point.Abs()).Min();
   }
 
+  /// @brief Compute a box surface normal.
+  /// @details A point within `kHalfTolerance` of one face returns that face
+  /// normal. Edge and corner points average all equally closest face normals and
+  /// normalize the result.
+  /// @param box Box runtime data.
+  /// @param point Query point.
+  /// @param[out] valid True when @p point is close enough to a box surface.
+  /// @return Outward normal. For invalid input this is a fallback vector.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &box, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &box,
+                                                                                    Vector3D<Real_v> const &point,
+                                                                                    bool &valid)
   {
     // Computes the normal on a surface and returns it as a unit vector
     //   In case a point is further than kHalfTolerance from a surface, set valid=false
@@ -155,14 +225,22 @@ struct BoxImplementation {
     valid               = safmin < kHalfTolerance;
 
     Vector3D<Real_v> normal(0.);
-    vecCore__MaskedAssignFunc(normal[0], safety[0] - safmin < kHalfTolerance, Sign(point[0]));
-    vecCore__MaskedAssignFunc(normal[1], safety[1] - safmin < kHalfTolerance, Sign(point[1]));
-    vecCore__MaskedAssignFunc(normal[2], safety[2] - safmin < kHalfTolerance, Sign(point[2]));
+    if (safety[0] - safmin < kHalfTolerance) normal[0] = Sign(point[0]);
+    if (safety[1] - safmin < kHalfTolerance) normal[1] = Sign(point[1]);
+    if (safety[2] - safmin < kHalfTolerance) normal[2] = Sign(point[2]);
     if (normal.Mag2() > 1.0) normal.Normalize();
 
     return normal;
   }
 
+  /// @brief Slab-intersection helper for one scalar ray and one box.
+  /// @details This legacy helper is used by assembly and bounding-box code. It
+  /// tests whether the ray intersects the box described by the lower/upper
+  /// corners passed in @p corners.
+  /// @param corners Two box corners ordered as lower and upper.
+  /// @param point Ray start point.
+  /// @param ray Ray direction.
+  /// @return True if the ray intersects the box interval.
   // an algorithm to test for intersection ( could be faster than DistanceToIn )
   // actually this also calculated the distance at the same time ( in tmin )
   // template <class Backend>
@@ -212,9 +290,8 @@ struct BoxImplementation {
   template <int signx, int signy, int signz>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE
       //__attribute__((noinline))
-      static Precision
-      IntersectCached(Vector3D<Precision> const *corners, Vector3D<Precision> const &point,
-                      Vector3D<Precision> const &inverseray, Precision t0, Precision t1)
+      static Precision IntersectCached(Vector3D<Precision> const *corners, Vector3D<Precision> const &point,
+                                       Vector3D<Precision> const &inverseray, Precision t0, Precision t1)
   {
     // intersection algorithm 1 ( Amy Williams )
 
@@ -419,6 +496,10 @@ struct BoxImplementation {
   }
 }; // End struct BoxImplementation
 
+/// @brief Aligned bounding-box helper kernels used by acceleration structures.
+/// @details These methods intentionally keep vector mask support because they
+/// operate on bounding-box batches in navigation and voxel managers, unlike the
+/// scalar `UnplacedBox` entry points above.
 struct ABBoxImplementation {
 
   // a contains kernel to be used with aligned bounding boxes
