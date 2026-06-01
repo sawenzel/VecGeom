@@ -4,12 +4,10 @@
 #include <cmath>
 #include <limits>
 #include "VecGeom/base/Config.h"
+#include "VecGeom/base/Cuda.h" // Defines VECGEOM_IMPL_NAMESPACE used below.
 
-// Veccore:
-#include <cstddef>          // IWYU pragma: keep
-#include "VecCore/Common.h" // IWYU pragma: keep
-#include "VecCore/Limits.h"
-#include "VecCore/VecMath.h"
+// VecCore math relies on the backend/type-traits setup from the full VecCore prelude.
+#include <VecCore/VecCore> // IWYU pragma: keep
 
 namespace vecgeom {
 
@@ -94,7 +92,7 @@ template <typename Real_t>
 constexpr Real_t kEpsilonT        = std::numeric_limits<Real_t>::epsilon();
 VECGEOM_CONST double kInfinityDbl = std::numeric_limits<double>::infinity();
 
-// NOTE: numerous downstream classes depend on transitive veccore includes and namespace import
+// NOTE: numerous downstream classes depend on transitive veccore includes and math functions.
 using vecCore::math::Abs;
 using vecCore::math::ACos;
 using vecCore::math::ATan2;
@@ -102,12 +100,35 @@ using vecCore::math::Cbrt;
 using vecCore::math::CopySign;
 using vecCore::math::Cos;
 using vecCore::math::IsInf;
-using vecCore::math::Max;
-using vecCore::math::Min;
 using vecCore::math::Pow;
 using vecCore::math::Sign;
 using vecCore::math::Sin;
 using vecCore::math::Sqrt;
+
+// Min/Max are forwarding definitions instead of using-declarations so they are VecGeom-owned overload
+// candidates. Scalar calls cannot rely on ADL to find VecCore, and local definitions give VecGeom a
+// specialization point.
+#define VECGEOM_MATH_BINARY_FUNCTION(F)                                                 \
+  template <typename T, typename U>                                                     \
+  VECCORE_FORCE_INLINE VECCORE_ATT_HOST_DEVICE decltype(auto) F(T const &x, U const &y) \
+  {                                                                                     \
+    return vecCore::math::F(x, y);                                                      \
+  }
+
+#define VECGEOM_MATH_TERNARY_FUNCTION(F)                                                            \
+  template <typename T, typename U, typename V>                                                     \
+  VECCORE_FORCE_INLINE VECCORE_ATT_HOST_DEVICE decltype(auto) F(T const &x, U const &y, V const &z) \
+  {                                                                                                 \
+    return vecCore::math::F(x, y, z);                                                               \
+  }
+
+VECGEOM_MATH_BINARY_FUNCTION(Max)
+VECGEOM_MATH_BINARY_FUNCTION(Min)
+VECGEOM_MATH_TERNARY_FUNCTION(Max)
+VECGEOM_MATH_TERNARY_FUNCTION(Min)
+
+#undef VECGEOM_MATH_TERNARY_FUNCTION
+#undef VECGEOM_MATH_BINARY_FUNCTION
 
 // a function to estimate ULP *unit in the last place for a number
 // Compute ULP of a given number x (templated on precision type)
