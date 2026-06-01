@@ -210,19 +210,11 @@ cmake_dependent_option(VECGEOM_NO_SPECIALIZATION
 )
 
 set(_navstate_opts tuple index)
-if(NOT VECGEOM_USE_SURF)
-  list(APPEND _navstate_opts path)
-endif()
 
-if(VECGEOM_USE_SURF)
-  set(_navstate_default 0) # tuple
-elseif(VECGEOM_ENABLE_CUDA)
-  # Volume + GPU
-  set(_navstate_default 1) # index
-else()
-  # Volume + CPU
-  set(_navstate_default 2) # path
-endif()
+# Tuple navigation is the conservative default for both surface and solid models.
+# It keeps the per-track state GPU-capable without expanding every touchable into
+# the full NavStateIndex table unless the user explicitly requests that mode.
+set(_navstate_default 0) # tuple
 
 # BACKWARD COMPATIBILITY: remove in future (2.x?)
 if(DEFINED VECGEOM_USE_NAVTUPLE OR DEFINED VECGEOM_USE_NAVINDEX)
@@ -234,11 +226,8 @@ if(DEFINED VECGEOM_USE_NAVTUPLE OR DEFINED VECGEOM_USE_NAVINDEX)
     set(_navstate_default 0)
   elseif(VECGEOM_USE_NAVINDEX)
     set(_navstate_default 1)
-  elseif(VECGEOM_USE_SURF)
-    message(SEND_ERROR "Given options are incompatible with surface geometry")
   else()
-    # Path (navtuple+index are false)
-    set(_navstate_default 2)
+    set(_navstate_default 0)
   endif()
   unset(VECGEOM_USE_NAVTUPLE CACHE)
   unset(VECGEOM_USE_NAVINDEX CACHE)
@@ -251,30 +240,29 @@ enum_option(VECGEOM_NAV DOC "Navigation state implementation"
   CASE_INSENSITIVE
 )
 
-cmake_dependent_option(VECGEOM_USE_CACHED_TRANSFORMATIONS
-  "Use cached transformations in NavStatePath"
-  OFF
-  "VECGEOM_NAV STREQUAL \"path\""
-  OFF
-)
-cmake_dependent_option(VECGEOM_USE_INDEXEDNAVSTATES
-  "Use indices rather than volume pointers in NavStatePath"
-  ON
-  "VECGEOM_NAV STREQUAL \"path\""
-  ON
-)
-
 if(VECGEOM_NAV STREQUAL "tuple")
   if(DEFINED VECGEOM_NAVTUPLE_MAXDEPTH AND VECGEOM_NAVTUPLE_MAXDEPTH LESS 1)
     message(WARNING "VECGEOM_NAVTUPLE_MAXDEPTH requested value ${VECGEOM_NAVTUPLE_MAXDEPTH} while minimum allowed is 1")
     unset(VECGEOM_NAVTUPLE_MAXDEPTH CACHE)
   endif()
   set(VECGEOM_NAVTUPLE_MAXDEPTH "4" CACHE STRING "Maximum depth of navigation tuple states")
-else()
+elseif(VECGEOM_NAV STREQUAL "index")
   # Set to a valid value since it's needed for the code to compile even when not
   # using navtuple
   set(VECGEOM_NAVTUPLE_MAXDEPTH 1)
+else()
+  message(FATAL_ERROR "Unsupported VECGEOM_NAV value: ${VECGEOM_NAV}. Supported values are: tuple, index")
 endif()
+
+set(VECGEOM_NAVTABLE_WARN_MEMORY_MB "512" CACHE STRING
+  "Navigation table size warning threshold in MBytes; set to 0 to disable"
+)
+if(NOT VECGEOM_NAVTABLE_WARN_MEMORY_MB MATCHES "^[0-9]+$")
+  message(FATAL_ERROR "VECGEOM_NAVTABLE_WARN_MEMORY_MB must be a non-negative integer value in MBytes")
+endif()
+option(VECGEOM_NAVTABLE_RECOMMEND
+  "Run extra count-only navigation-table passes to recommend VECGEOM_NAV and tuple depth"
+  OFF)
 
 ################################################################################
 # Echo options
@@ -303,7 +291,7 @@ if(VECGEOM_NAV STREQUAL "tuple")
 elseif(VECGEOM_NAV STREQUAL "index")
   message(STATUS "Using ${Magenta}touchable indexing${ColorReset} navigation: memory intensive")
 else()
-  message(STATUS "Using CPU-only ${Cyan}touchable path${ColorReset} navigation")
+  message(FATAL_ERROR "Unsupported VECGEOM_NAV value: ${VECGEOM_NAV}. Supported values are: tuple, index")
 endif()
 
 ################################################################################
@@ -317,7 +305,7 @@ cmake_dependent_option(VECGEOM_GEANT4 "Enable testing using Geant4" OFF "BUILD_T
 
 # Debug options
 cmake_dependent_option(VECGEOM_DISTANCE_DEBUG
-  "Enable comparison of calculated distances againt ROOT/Geant4 behind the scenes"
+  "Enable comparison of calculated distances against ROOT/Geant4 behind the scenes"
   OFF
   "VECGEOM_ROOT;VECGEOM_GEANT4"
   OFF
@@ -694,7 +682,6 @@ set(VECGEOM_COMMON_SRCS
   source/UnplacedExtruded.cpp
   source/UnplacedVolume.cpp
   source/NavStateIndex.cpp
-  source/NavStatePath.cpp
   source/NavIndexTable.cpp
 
   source/UnplacedOrb.cpp
@@ -819,6 +806,8 @@ if(VECGEOM_NAV STREQUAL "tuple")
   set(VECGEOM_USE_NAVTUPLE TRUE)
 elseif(VECGEOM_NAV STREQUAL "index")
   set(VECGEOM_USE_NAVINDEX TRUE)
+else()
+  message(FATAL_ERROR "Unsupported VECGEOM_NAV value: ${VECGEOM_NAV}. Supported values are: tuple, index")
 endif()
 
 # - Configure settings and version headers

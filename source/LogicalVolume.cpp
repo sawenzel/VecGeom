@@ -78,9 +78,8 @@ LogicalVolume::LogicalVolume(char const *const label, VUnplacedVolume const *con
 VECCORE_ATT_DEVICE
 LogicalVolume::LogicalVolume(VUnplacedVolume const *const unplaced_vol, unsigned int id, Vector<Daughter> *GetDaughter)
     // Id for logical volumes is not needed on the device for CUDA
-    : fUnplacedVolume(unplaced_vol), fId(id), fLabel(nullptr), fDaughters(GetDaughter),
-      fLevelLocator(new SimpleAssemblyLevelLocator()), fSafetyEstimator(SimpleSafetyEstimator::Instance()),
-      fNavigator(NewSimpleNavigator<>::Instance())
+    : fUnplacedVolume(unplaced_vol), fId(id), fLabel(nullptr), fDaughters(GetDaughter), fLevelLocator(nullptr),
+      fSafetyEstimator(nullptr), fNavigator(nullptr)
 {
 }
 

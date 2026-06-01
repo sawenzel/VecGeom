@@ -5,6 +5,9 @@
 #include "VecGeom/base/BVH.h"
 
 #include "VecGeom/management/ABBoxManager.h"
+#ifdef VECGEOM_CUDA_INTERFACE
+#include "VecGeom/management/CudaManager.h"
+#endif
 #ifdef VECGEOM_USE_SURF
 #include "VecGeom/surfaces/Model.h"
 #endif
@@ -314,7 +317,7 @@ int *surfaceAreaHeuristic(const AABB<Real_t> *primitiveBoxes, int *begin, int *e
     const auto centroidB   = primitiveBoxes[b].Center();
     constexpr double shift = 0.01;
     return less3D(centroidA + shift * (centroidA - primitiveBoxes[a].Min()),
-                          centroidB + shift * (centroidB - primitiveBoxes[b].Min()), currentSortAxis);
+                  centroidB + shift * (centroidB - primitiveBoxes[b].Min()), currentSortAxis);
   };
 
   for (int axis = 0; axis <= 2; ++axis) {

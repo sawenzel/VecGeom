@@ -3,6 +3,8 @@
 
 #include "VecGeom/volumes/PlacedVolume.h"
 
+#include <algorithm>
+#include <cmath>
 #include <vector>
 #include <limits>
 #include "VecGeom/base/Assert.h"
@@ -28,11 +30,11 @@ struct GeometryInfo {
   GeometryInfo() = default;
 
   template <typename Vol_t>
-  VECCORE_ATT_HOST_DEVICE
-  GeometryInfo(unsigned int theDepth, Vol_t &vol)
+  VECCORE_ATT_HOST_DEVICE GeometryInfo(unsigned int theDepth, Vol_t &vol)
       : depth(theDepth), id(vol.id()), childId(vol.GetChildId()), copyNo(vol.GetCopyNo()),
-        logicalId(vol.GetLogicalVolume()->id()), trans{*vol.GetTransformation()}
+        trans{*vol.GetTransformation()}
   {
+    logicalId           = vol.GetLogicalVolume()->id();
     const auto unplaced = vol.GetUnplacedVolume();
     VECGEOM_ASSERT(unplaced);
 
@@ -52,21 +54,23 @@ struct GeometryInfo {
   {
     bool same_bbox = amin[0] == rhs.amin[0] && amin[1] == rhs.amin[1] && amin[2] == rhs.amin[2] &&
                      amax[0] == rhs.amax[0] && amax[1] == rhs.amax[1] && amax[2] == rhs.amax[2];
-    const bool correctSafety = (unplacedSafety == 0. && rhs.unplacedSafety == 0.)
-                            || (std::fabs(unplacedSafety - rhs.unplacedSafety)/unplacedSafety < 30. * std::numeric_limits<vecgeom::Precision>::epsilon());
+    const auto safetyScale =
+        std::max(vecgeom::Precision(1.), std::max(std::fabs(unplacedSafety), std::fabs(rhs.unplacedSafety)));
+    const bool correctSafety = std::fabs(unplacedSafety - rhs.unplacedSafety) <=
+                               safetyScale * 256. * std::numeric_limits<vecgeom::Precision>::epsilon();
     return depth == rhs.depth && id == rhs.id && childId == rhs.childId && copyNo == rhs.copyNo &&
-           logicalId == rhs.logicalId && trans == rhs.trans
-           && same_bbox && correctSafety;
+           logicalId == rhs.logicalId && trans == rhs.trans && same_bbox && correctSafety;
   }
 
-  void print() const {
-    printf("depth: %d, id: %d, childId: %d, copyNo: %d, logicalId: %d\n",
-        depth, id, childId, copyNo, logicalId);
+  void print() const
+  {
+    printf("depth: %d, id: %d, childId: %d, copyNo: %d, logicalId: %d\n", depth, id, childId, copyNo, logicalId);
     trans.Print();
-    printf("\namin: (%12.10E, %12.10E, %12.10E)  amax: (%12.10E, %12.10E, %12.10E)\n", amin[0], amin[1], amin[2], amax[0],
-           amax[1], amax[2]);
+    printf("\namin: (%12.10E, %12.10E, %12.10E)  amax: (%12.10E, %12.10E, %12.10E)\n", amin[0], amin[1], amin[2],
+           amax[0], amax[1], amax[2]);
     printf("unplaced safety: %15.13f\n", unplacedSafety);
   }
 };
 
-std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume* volume, std::size_t numVols);
+std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *volume, std::size_t numVols,
+                                              std::size_t stackCapacity);

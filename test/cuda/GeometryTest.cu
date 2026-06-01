@@ -6,17 +6,20 @@
 #include <err.h>
 
 __managed__ std::size_t g_volumesVisited;
-__device__ struct VolumeData {
-  vecgeom::cuda::VPlacedVolume const * vol;
+struct VolumeData {
+  vecgeom::cuda::VPlacedVolume const *vol;
   unsigned int depth;
-} volumeStack[10000];
+};
 
 __global__ void kernel_visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *volume, GeometryInfo *geoData,
-                                           const std::size_t nGeoData)
+                                           const std::size_t nGeoData, VolumeData *volumeStack,
+                                           const std::size_t stackCapacity)
 {
   g_volumesVisited = 0;
-  auto stackp = volumeStack;
-  *(stackp++) = {volume, 0};
+  VECGEOM_ASSERT(stackCapacity > 0);
+  auto stackp   = volumeStack;
+  auto stackEnd = volumeStack + stackCapacity;
+  *(stackp++)   = {volume, 0};
 
   while (stackp > volumeStack) {
     auto const current = *(--stackp);
@@ -25,15 +28,16 @@ __global__ void kernel_visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *v
     geoData[g_volumesVisited++] = GeometryInfo{current.depth, *current.vol};
 
     // We push backwards in order to visit the first daughter first
-    for (int i = current.vol->GetDaughters().size() - 1; i >= 0; --i) {
+    for (int i = static_cast<int>(current.vol->GetDaughters().size()) - 1; i >= 0; --i) {
       auto daughter = current.vol->GetDaughters()[i];
+      VECGEOM_ASSERT(stackp < stackEnd && "Volume stack size exhausted");
       *stackp++ = VolumeData{daughter, current.depth + 1};
-      VECGEOM_ASSERT(stackp - volumeStack < sizeof(volumeStack) / sizeof(VolumeData) && "Volume stack size exhausted");
     }
   }
 }
 
-std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *volume, std::size_t maxElem)
+std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume *volume, std::size_t maxElem,
+                                              std::size_t stackCapacity)
 {
   auto err = cudaDeviceSynchronize();
   if (err != cudaSuccess) {
@@ -41,11 +45,23 @@ std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume
   }
 
   GeometryInfo *geoDataGPU;
-  cudaMalloc(&geoDataGPU, maxElem * sizeof(GeometryInfo));
+  err = cudaMalloc(&geoDataGPU, maxElem * sizeof(GeometryInfo));
+  if (err != cudaSuccess) {
+    errx(2, "Allocating device geometry data failed with '%s'", cudaGetErrorString(err));
+  }
 
-  kernel_visitDeviceGeometry<<<1, 1>>>(volume, geoDataGPU, maxElem);
+  VolumeData *volumeStackGPU;
+  err = cudaMalloc(&volumeStackGPU, stackCapacity * sizeof(VolumeData));
+  if (err != cudaSuccess) {
+    cudaFree(geoDataGPU);
+    errx(2, "Allocating device traversal stack failed with '%s'", cudaGetErrorString(err));
+  }
+
+  kernel_visitDeviceGeometry<<<1, 1>>>(volume, geoDataGPU, maxElem, volumeStackGPU, stackCapacity);
   err = cudaDeviceSynchronize();
   if (err != cudaSuccess) {
+    cudaFree(volumeStackGPU);
+    cudaFree(geoDataGPU);
     errx(2, "Visiting device geometry failed with '%s'", cudaGetErrorString(err));
   }
 
@@ -53,9 +69,12 @@ std::vector<GeometryInfo> visitDeviceGeometry(const vecgeom::cuda::VPlacedVolume
   cudaMemcpy(geoDataCPU.data(), geoDataGPU, maxElem * sizeof(GeometryInfo), cudaMemcpyDeviceToHost);
   err = cudaDeviceSynchronize();
   if (err != cudaSuccess) {
+    cudaFree(volumeStackGPU);
+    cudaFree(geoDataGPU);
     errx(2, "Retrieving device geometry data failed with '%s'", cudaGetErrorString(err));
   }
 
+  cudaFree(volumeStackGPU);
   cudaFree(geoDataGPU);
 
   geoDataCPU.resize(g_volumesVisited);
