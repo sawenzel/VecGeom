@@ -35,6 +35,7 @@ VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState c
   if (validation_error == ReferenceNavValidationError::kNone) return true;
 
   error = static_cast<int>(validation_error);
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
   VECGEOM_LOG(critical) << "Validate: " << ToString(validation_error);
 #ifndef VECCORE_CUDA
   if (!reference.IsOutside()) {
@@ -52,6 +53,7 @@ VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState c
     VECGEOM_LOG(critical) << "Reference transformation: " << reference_matrix << "\n";
     VECGEOM_LOG(critical) << "Encoded transformation: " << encoded_matrix << "\n";
   }
+#endif
   return false;
 }
 

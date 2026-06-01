@@ -355,9 +355,8 @@ Precision UncontainedCapacity(VPlacedVolume const &volume)
 {
   Precision momCapacity = const_cast<VPlacedVolume &>(volume).Capacity();
   Precision dauCapacity = 0.;
-  unsigned int kk       = 0;
   for (Vector<Daughter>::const_iterator j = volume.GetDaughters().cbegin(), jEnd = volume.GetDaughters().cend();
-       j != jEnd; ++j, ++kk) {
+       j != jEnd; ++j) {
     dauCapacity += const_cast<VPlacedVolume *>(*j)->Capacity();
   }
   return momCapacity - dauCapacity;
@@ -421,9 +420,8 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Tra
       if (motherOnly) break;
 
       contained = false;
-      int kk    = 0;
       for (Vector<Daughter>::const_iterator j = volume.GetDaughters().cbegin(), jEnd = volume.GetDaughters().cend();
-           j != jEnd; ++j, ++kk) {
+           j != jEnd; ++j) {
         if ((*j)->Contains(points[i])) {
           contained = true;
           break;
@@ -457,7 +455,7 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(LogicalVolume const &volume, Tra
  */
 template <typename RandomEngine, typename TrackContainer>
 VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, RandomEngine &rngengine,
-                                                TrackContainer &points, const bool verbose= false)
+                                                TrackContainer &points, const bool verbose = false)
 {
   static double lastUncontCap = 0.0;
   double uncontainedCapacity  = UncontainedCapacity(volume);
@@ -467,26 +465,23 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
   }
   double totalcapacity = const_cast<VPlacedVolume &>(volume).Capacity();
 
-  if (verbose)
-  {
+  if (verbose) {
     VECGEOM_LOG(info) << "Volume <" << volume.GetLabel() << "> capacities: total =  " << totalcapacity
-                       << ", uncontained = " << uncontainedCapacity << "\n";
+                      << ", uncontained = " << uncontainedCapacity << "\n";
   }
 
 #ifndef VECCORE_CUDA
-  if (verbose && uncontainedCapacity <= 0.0 ) {
-    VECGEOM_LOG(info) << " VolUtil: FillUncontPts: Volume " << volume.GetLabel() << "  capacities: "
-                      << " total =  " << totalcapacity
-                      << " uncontained = " << uncontainedCapacity << "\n";
+  if (verbose && uncontainedCapacity <= 0.0) {
+    VECGEOM_LOG(info) << " VolUtil: FillUncontPts: Volume " << volume.GetLabel()
+                      << "  capacities: " << " total =  " << totalcapacity << " uncontained = " << uncontainedCapacity
+                      << "\n";
   }
 #endif
 
-  if (uncontainedCapacity <= 1000 * vecgeom::kTolerance)
-  {
+  if (uncontainedCapacity <= 1000 * vecgeom::kTolerance) {
     VECGEOM_LOG(warning) << "\nVolUtil: FillUncontPts: ERROR: Volume provided <" << volume.GetLabel()
-                          << "> does not have uncontained capacity!  "
-                          << "    Value = " << uncontainedCapacity
-                          << "      total = " << totalcapacity;
+                         << "> does not have uncontained capacity!  " << "    Value = " << uncontainedCapacity
+                         << "      total = " << totalcapacity;
     return false;
     // TODO --- try to find points anyway, and decide if real points were found
   }
@@ -515,24 +510,22 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
 
         onego++;
         if (onego % 100000 == 0) {
-          VECGEOM_LOG(status) << "Warning: " <<  tries << " tries without another good point. "
-                              << " Total successful # " << i << " ) "
-                              << " to find uncontained points in volume= " << volume.GetLabel();
+          VECGEOM_LOG(status) << "Warning: " << tries << " tries without another good point. " << " Total successful # "
+                              << i << " ) " << " to find uncontained points in volume= " << volume.GetLabel();
         }
 
-        if ( verbose && tries % 5000000 == 0) {
-          double ratio = ( 1.0 * i ) / tries;
+        if (verbose && tries % 5000000 == 0) {
+          double ratio = (1.0 * i) / tries;
           VECGEOM_LOG(status) << "Progress : " << tries << "tries (in this task) succeeded = " << i
                               << ", ratio = " << 100.0 * ratio << " % "
-                              <<  " towards finding uncontained points... volume=" << volume.GetLabel() << " . ";
+                              << " towards finding uncontained points... volume=" << volume.GetLabel() << " . ";
         }
       } while (!volume.UnplacedContains(point));
       points.set(i, point);
 
       contained = false;
-      int kk    = 0;
       for (Vector<Daughter>::const_iterator j = volume.GetDaughters().cbegin(), jEnd = volume.GetDaughters().cend();
-           j != jEnd; ++j, ++kk) {
+           j != jEnd; ++j) {
         if ((*j)->Contains(points[i])) {
           contained = true;
           break;
@@ -542,13 +535,12 @@ VECGEOM_FORCE_INLINE bool FillUncontainedPoints(VPlacedVolume const &volume, Ran
 
     if (tries >= maxtries) break;
   }
-  constexpr double too_small= 0.03; // --- Lots of work for each point
+  constexpr double too_small = 0.03; // --- Lots of work for each point
   // if(verbose || ratio < too_small )
-  if(verbose || i < too_small * tries ) {
-     double ratio = (i * 1.0) / tries;
-     VECGEOM_LOG(info)  << " trials " << tries << " found " << i << " points "
-                        << " ( out of " << size << " requested - success ratio = " << ratio
-                        << " ) for Volume <" << volume.GetLabel() << "\n";
+  if (verbose || i < too_small * tries) {
+    double ratio = (i * 1.0) / tries;
+    VECGEOM_LOG(info) << " trials " << tries << " found " << i << " points " << " ( out of " << size
+                      << " requested - success ratio = " << ratio << " ) for Volume <" << volume.GetLabel() << "\n";
   }
   return (i > 0);
 }
@@ -946,7 +938,7 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
     }
   } else {
     // an error message
-      VECGEOM_LOG(error) << "FillGlobalPointsAndDirectionsForLogicalVolume()... ERROR condition detected";
+    VECGEOM_LOG(error) << "FillGlobalPointsAndDirectionsForLogicalVolume()... ERROR condition detected";
   }
   printf(" really hits %d, virtually hits %d ", reallyhitsdaughter, virtuallyhitsdaughter);
   NavigationState::ReleaseInstance(s1);
@@ -1038,7 +1030,7 @@ inline void FillGlobalPointsForLogicalVolume(LogicalVolume const *lvol, TrackCon
       }
     }
   } else {
-      VECGEOM_LOG(error) << "FillGlobalPointsForLogicalVolume()... ERROR condition detected";
+    VECGEOM_LOG(error) << "FillGlobalPointsForLogicalVolume()... ERROR condition detected";
   }
 
   std::list<NavigationState *>::iterator iter = allpaths.begin();

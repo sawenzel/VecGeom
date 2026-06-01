@@ -890,25 +890,28 @@ endif()
 # TESTING
 if(BUILD_TESTING)
   # - Try bringing in GoogleTest
-  find_package(GTest QUIET)
+  set(VECGEOM_GTEST_MIN_VERSION 1.17.0)
+  find_package(GTest ${VECGEOM_GTEST_MIN_VERSION} CONFIG QUIET)
 
-  # If we don't find GTest, add it as an external (so, this would eventually go into externals or
-  # as part of the testing setup)
+  # Use an installed GoogleTest only when its package config proves the minimum
+  # version. Otherwise fetch the pinned dependency instead of accepting an older
+  # system copy through CMake's version-less FindGTest module.
   if(GTest_FOUND)
     message(STATUS "Found GTest at ${GTest_DIR}")
   else()
-    message(STATUS "Using FetchContent to import GoogleTest locally")
+    message(STATUS "Using FetchContent to import GoogleTest ${VECGEOM_GTEST_MIN_VERSION} locally")
     include(FetchContent)
     FetchContent_Declare(
       googletest
-      # v1.14.0
-      URL https://github.com/google/googletest/archive/f8d7d77c06936315286eb55f8de22cd23c188571.zip)
+      # v1.17.0
+      URL https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.zip)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     # Don't install gtest itself
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
   endif()
+  unset(VECGEOM_GTEST_MIN_VERSION)
 
   add_subdirectory(test)
 endif()
