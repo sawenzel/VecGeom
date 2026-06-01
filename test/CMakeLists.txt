@@ -208,11 +208,8 @@ set(TEST_EXECUTABLES_CORE
   core/CreateExtruded.cpp
   core/TestGeoManager.cpp
   core/TestTriangularFacet.cpp
+  core/TestNavigationState.cpp
   )
-
-if(VECGEOM_USE_INDEXEDNAVSTATES)
-  list(APPEND TEST_EXECUTABLES_CORE core/TestNavigationState.cpp)
-endif()
 
 if (VECGEOM_USE_SURF)
   list(APPEND TEST_EXECUTABLES_CORE surfaces/testLogic.cpp)

@@ -3,13 +3,418 @@
 
 #include "VecGeom/management/NavIndexTable.h"
 #include "VecGeom/management/Logger.h"
+#include "VecGeom/management/NavIndexTableLayout.h"
+#include "VecGeom/management/ReferenceNavState.h"
+#include "VecGeom/navigation/NavigationState.h"
 
 #include <vector>
 #include <numeric>
 #include <iomanip>
+#include <limits>
 
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+namespace {
+
+/**
+ * @brief Validates a single encoded navigation state against reference geometry truth.
+ *
+ * Table construction no longer performs inline per-node validation while the
+ * visitor is filling records. Instead, `NavIndexTable::Validate()` performs a
+ * dedicated second traversal of the geometry tree and calls this helper for
+ * each encoded state reached during that traversal. The helper keeps the
+ * low-level checks shared by the recursive validation code for `NavStateIndex`
+ * and `NavStateTuple` in one place.
+ */
+template <typename EncodedNavState, typename EncodedState>
+VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState const &reference,
+                                                             EncodedState encoded_state, int &error)
+{
+  auto validation_error = ValidateEncodedState<EncodedNavState>(reference, encoded_state);
+  if (validation_error == ReferenceNavValidationError::kNone) return true;
+
+  error = static_cast<int>(validation_error);
+  VECGEOM_LOG(critical) << "Validate: " << ToString(validation_error);
+#ifndef VECCORE_CUDA
+  if (!reference.IsOutside()) {
+    VECGEOM_LOG(critical) << "\nreference top volume: " << reference.Top()->GetLabel();
+  }
+#endif
+  VECGEOM_LOG(critical) << "\n";
+  PrintValidationFailure<EncodedNavState>(validation_error, reference, encoded_state);
+
+  if (validation_error == ReferenceNavValidationError::kTransformationMismatch) {
+    Transformation3D reference_matrix;
+    Transformation3D encoded_matrix;
+    reference.TopMatrix(reference_matrix);
+    EncodedNavState::TopMatrixImpl(encoded_state, encoded_matrix);
+    VECGEOM_LOG(critical) << "Reference transformation: " << reference_matrix << "\n";
+    VECGEOM_LOG(critical) << "Encoded transformation: " << encoded_matrix << "\n";
+  }
+  return false;
+}
+
+/**
+ * @brief Recursively validates index-based encoded states against the geometry tree.
+ */
+#ifndef VECGEOM_USE_NAVTUPLE
+int ValidateNavIndexRecursive(VPlacedVolume const *currentvolume, ReferenceNavState &reference, NavIndex_t nav_ind,
+                              int &error)
+{
+  if (!ValidateEncodedStateWithLogging<NavStateIndex>(reference, nav_ind, error)) return error;
+
+  for (auto daughter : currentvolume->GetDaughters()) {
+    if (daughter->GetChildId() < 0) {
+      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter) << "\n";
+      error = static_cast<int>(ReferenceNavValidationError::kIncompatibleDaughter);
+      return error;
+    }
+    auto child_nav_ind = nav_ind;
+    NavStateIndex::PushImpl(child_nav_ind, daughter);
+    reference.Push(daughter);
+    auto ierr = ValidateNavIndexRecursive(daughter, reference, child_nav_ind, error);
+    reference.Pop();
+    if (ierr) return ierr;
+  }
+  return 0;
+}
+#else
+/**
+ * @brief Recursively validates tuple-based encoded states against the geometry tree.
+ */
+int ValidateNavTupleRecursive(VPlacedVolume const *currentvolume, ReferenceNavState &reference, NavTuple_t nav_tuple,
+                              int &error)
+{
+  if (!ValidateEncodedStateWithLogging<NavStateTuple>(reference, nav_tuple, error)) return error;
+
+  for (auto daughter : currentvolume->GetDaughters()) {
+    if (daughter->GetChildId() < 0) {
+      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter) << "\n";
+      error = static_cast<int>(ReferenceNavValidationError::kIncompatibleDaughter);
+      return error;
+    }
+
+    auto child_nav_tuple = nav_tuple;
+    NavStateTuple::PushImpl(child_nav_tuple, daughter);
+
+    auto scene_error = ValidateSceneTransition<NavStateTuple>(nav_tuple, child_nav_tuple);
+    if (scene_error != ReferenceNavValidationError::kNone) {
+      error = static_cast<int>(scene_error);
+      VECGEOM_LOG(critical) << "Validate: " << ToString(scene_error) << "\n";
+      PrintSceneTransitionFailure<NavStateTuple>(nav_tuple, child_nav_tuple, currentvolume, daughter);
+      return error;
+    }
+
+    reference.Push(daughter);
+    auto ierr = ValidateNavTupleRecursive(daughter, reference, child_nav_tuple, error);
+    reference.Pop();
+    if (ierr) return ierr;
+  }
+  return 0;
+}
+#endif
+
+constexpr size_t kBytesPerMByte = 1024 * 1024;
+constexpr const char *kMemoryBudgetConfigHelp =
+    " This memory budget is configured with -DVECGEOM_NAVTABLE_WARN_MEMORY_MB=<MB>; set it to 0 to disable size "
+    "guidance.";
+
+size_t NavTableWarningLimitBytes()
+{
+  if (VECGEOM_NAVTABLE_WARN_MEMORY_MB <= 0) return 0;
+  return size_t(VECGEOM_NAVTABLE_WARN_MEMORY_MB) * kBytesPerMByte;
+}
+
+double BytesToMBytes(size_t bytes) { return double(bytes) / double(kBytesPerMByte); }
+
+size_t CeilBytesToMBytes(size_t bytes) { return bytes / kBytesPerMByte + (bytes % kBytesPerMByte != 0); }
+
+#ifdef VECGEOM_USE_NAVTUPLE
+size_t SaturatingAdd(size_t lhs, size_t rhs)
+{
+  const auto max_size = std::numeric_limits<size_t>::max();
+  if (lhs > max_size - rhs) return max_size;
+  return lhs + rhs;
+}
+
+size_t SaturatingMultiply(size_t lhs, size_t rhs)
+{
+  const auto max_size = std::numeric_limits<size_t>::max();
+  if (lhs != 0 && rhs > max_size / lhs) return max_size;
+  return lhs * rhs;
+}
+
+size_t EstimateIndexTableSizeUpperBound(size_t touchables)
+{
+  if (touchables == 0) return sizeof(NavIndex_t);
+
+  // Every non-world touchable contributes once to the daughter-index arrays.
+  const auto daughter_indices                  = touchables - 1;
+  constexpr size_t kMaxRecordAlignmentIndices  = 1;
+  constexpr size_t kMaxTransformPaddingIndices = (sizeof(Precision) > sizeof(NavIndex_t)) ? size_t{1} : size_t{0};
+  constexpr size_t kFixedRecordIndices =
+      NavIndexTableLayout::Index::kDaughters + kMaxRecordAlignmentIndices + kMaxTransformPaddingIndices;
+  constexpr size_t kCachedTransformBytes =
+      NavIndexTableLayout::Index::kStoredTransformPrecisionCount * sizeof(Precision);
+  constexpr size_t kPerTouchableBytes = kFixedRecordIndices * sizeof(NavIndex_t) + kCachedTransformBytes;
+
+  auto estimate = sizeof(NavIndex_t);
+  estimate      = SaturatingAdd(estimate, SaturatingMultiply(touchables, kPerTouchableBytes));
+  estimate      = SaturatingAdd(estimate, SaturatingMultiply(daughter_indices, sizeof(NavIndex_t)));
+  return estimate;
+}
+
+struct NavIndexCompatibility {
+  bool compatible          = true;
+  size_t max_daughters     = 0;
+  unsigned int logical_id  = 0;
+  const char *logical_name = "";
+};
+
+NavIndexCompatibility CheckNavIndexCompatibility()
+{
+  NavIndexCompatibility result;
+  for (auto const &entry : GeoManager::Instance().GetLogicalVolumesMap()) {
+    auto const *logical = entry.second;
+    if (logical == nullptr) continue;
+    const auto daughters = logical->GetDaughters().size();
+    if (daughters < std::numeric_limits<unsigned short>::max() || daughters <= result.max_daughters) continue;
+    result.compatible    = false;
+    result.max_daughters = daughters;
+    result.logical_id    = logical->id();
+    result.logical_name  = logical->GetName();
+  }
+  return result;
+}
+
+void LogNavIndexIncompatibilityInfo(NavIndexCompatibility const &compatibility)
+{
+  if (compatibility.compatible) return;
+  VECGEOM_LOG(info) << "NavStateIndex is not recommended for this geometry: logical volume " << compatibility.logical_id
+                    << " (" << compatibility.logical_name << ") has " << compatibility.max_daughters
+                    << " daughters, while NavStateIndex records store the daughter count in an unsigned short.";
+}
+
+bool LogIndexPerformanceRecommendation(size_t current_table_size, size_t index_table_size, size_t limit,
+                                       size_t touchables, int current_tuple_depth, bool conservative,
+                                       NavIndexCompatibility const &compatibility)
+{
+  if (limit == 0) return false;
+  if (index_table_size > limit) return false;
+  if (!compatibility.compatible) return false;
+
+  VECGEOM_LOG(info) << "Recommended VECGEOM_NAV=index for this geometry: the navigation index table is "
+                    << (conservative ? "conservatively estimated from " : "estimated for ") << touchables
+                    << (conservative ? " touchables at no more than " : " touchables at ") << std::setprecision(5)
+                    << BytesToMBytes(index_table_size)
+                    << " MBytes, below VECGEOM_NAVTABLE_WARN_MEMORY_MB=" << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                    << " MBytes. Current VECGEOM_NAV=tuple with VECGEOM_NAVTUPLE_MAXDEPTH=" << current_tuple_depth
+                    << " gives a " << std::setprecision(5) << BytesToMBytes(current_table_size) << " MBytes table. "
+                    << "Index navigation is preferred when it fits because tuple navigation uses a larger per-track "
+                       "state."
+                    << kMemoryBudgetConfigHelp;
+  return true;
+}
+
+#ifndef VECGEOM_NAVTABLE_RECOMMEND
+void LogIndexGuidanceWithoutRecommendation(size_t index_table_size, size_t limit, size_t touchables,
+                                           NavIndexCompatibility const &compatibility)
+{
+  if (!compatibility.compatible) {
+    LogNavIndexIncompatibilityInfo(compatibility);
+    return;
+  }
+  if (index_table_size <= limit) return;
+
+  VECGEOM_LOG(info) << "NavStateIndex navigation table is conservatively estimated from " << touchables
+                    << " touchables at no more than " << std::setprecision(5) << BytesToMBytes(index_table_size)
+                    << " MBytes, above VECGEOM_NAVTABLE_WARN_MEMORY_MB=" << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                    << " MBytes. Tuple navigation remains selected for this memory budget." << kMemoryBudgetConfigHelp;
+}
+
+void LogTupleDepthRecommendationInfoIfUseful(size_t current_table_size, size_t limit, int current_tuple_depth)
+{
+  constexpr size_t kWellBelowMemoryLimitFactor = 4;
+  if (limit == 0 || current_tuple_depth <= 1 || current_table_size > limit / kWellBelowMemoryLimitFactor) return;
+
+  VECGEOM_LOG(info) << "Current NavStateTuple table size is " << std::setprecision(5)
+                    << BytesToMBytes(current_table_size)
+                    << " MBytes, well below VECGEOM_NAVTABLE_WARN_MEMORY_MB=" << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                    << " MBytes. Smaller tuple depths reduce per-track navigation-state size and may still fit this "
+                       "memory budget."
+                    << kMemoryBudgetConfigHelp
+                    << " Configure -DVECGEOM_NAVTABLE_RECOMMEND=ON once to estimate the smallest "
+                       "VECGEOM_NAVTUPLE_MAXDEPTH for this geometry, then rebuild with the selected setting for "
+                       "production.";
+}
+#endif
+#endif
+
+void WarnLargeNavTable(const char *mode, size_t table_size, size_t limit, size_t touchables, const char *recommendation)
+{
+  if (limit == 0 || table_size <= limit) return;
+  VECGEOM_LOG(warning) << mode << " navigation table is estimated at " << std::setprecision(5)
+                       << BytesToMBytes(table_size) << " MBytes for " << touchables
+                       << " touchables, exceeding VECGEOM_NAVTABLE_WARN_MEMORY_MB=" << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                       << " MBytes. Allocation, filling, validation, and host/device transfer may be slow. "
+                       << recommendation << kMemoryBudgetConfigHelp << " If this table size is expected, configure "
+                       << "-DVECGEOM_NAVTABLE_WARN_MEMORY_MB=" << CeilBytesToMBytes(table_size)
+                       << " or set it to 0 to disable this warning.";
+}
+
+#ifdef VECGEOM_USE_NAVTUPLE
+#ifdef VECGEOM_NAVTABLE_RECOMMEND
+size_t EstimateIndexTableSize(VPlacedVolume const *top, int depth_limit)
+{
+  ReferenceNavState state;
+  BuildNavIndexVisitor visitor(depth_limit, true);
+  NavIndex_t id = 1;
+  NavIndexTable::visitAllPlacedVolumesNavIndex(top, &visitor, &state, id);
+  return visitor.GetTableSize();
+}
+
+size_t EstimateTupleTableSize(VPlacedVolume const *top, int depth_limit, int min_per_scene, int tuple_depth)
+{
+  ReferenceNavState state;
+  BuildNavIndexVisitor visitor(depth_limit, true);
+  NavIndex_t id = 1;
+  int scene_id  = 0;
+  visitor.NodeReduction(min_per_scene, tuple_depth - 1, false);
+  NavIndexTable::visitAllPlacedVolumesNavTuple(top, &visitor, &state, id, scene_id, scene_id);
+  return visitor.GetTableSize();
+}
+#endif
+
+void ReportTupleNavTableGuidance(VPlacedVolume const *top, int depth_limit, int min_per_scene, int current_tuple_depth,
+                                 size_t current_table_size, size_t limit)
+{
+  if (limit == 0) return;
+
+#ifndef VECGEOM_NAVTABLE_RECOMMEND
+  const auto touchables             = GeoManager::Instance().GetTotalNodeCount();
+  const auto index_compatibility    = CheckNavIndexCompatibility();
+  const auto cheap_index_table_size = EstimateIndexTableSizeUpperBound(touchables);
+  const auto index_fits = LogIndexPerformanceRecommendation(current_table_size, cheap_index_table_size, limit,
+                                                            touchables, current_tuple_depth, true, index_compatibility);
+  if (!index_fits)
+    LogIndexGuidanceWithoutRecommendation(cheap_index_table_size, limit, touchables, index_compatibility);
+  if (!index_fits) LogTupleDepthRecommendationInfoIfUseful(current_table_size, limit, current_tuple_depth);
+  if (current_table_size <= limit) return;
+  WarnLargeNavTable("NavStateTuple", current_table_size, limit, touchables,
+                    index_fits ? "Consider -DVECGEOM_NAV=index, or configure -DVECGEOM_NAVTABLE_RECOMMEND=ON once to "
+                                 "check tuple-depth alternatives before rebuilding with the selected setting for "
+                                 "production."
+                               : "Extra VECGEOM_NAVTUPLE_MAXDEPTH estimates are disabled by default to avoid "
+                                 "increasing geometry initialization time. Configure -DVECGEOM_NAVTABLE_RECOMMEND=ON "
+                                 "once to get recommendations, then rebuild with the selected setting for production.");
+#else
+  const auto touchables             = GeoManager::Instance().GetTotalNodeCount();
+  const auto index_compatibility    = CheckNavIndexCompatibility();
+  const auto cheap_index_table_size = EstimateIndexTableSizeUpperBound(touchables);
+  // Fast-path the preferred index recommendation without extra table scans when the conservative estimate fits.
+  const auto cheap_index_fits_budget = LogIndexPerformanceRecommendation(
+      current_table_size, cheap_index_table_size, limit, touchables, current_tuple_depth, true, index_compatibility);
+  if (cheap_index_fits_budget) {
+    WarnLargeNavTable("NavStateTuple", current_table_size, limit, touchables,
+                      "Configure -DVECGEOM_NAV=index to use the faster navigation representation that fits the "
+                      "configured memory budget.");
+    return;
+  }
+
+  auto index_table_size = cheap_index_table_size;
+  if (index_compatibility.compatible) index_table_size = EstimateIndexTableSize(top, depth_limit);
+  if (index_compatibility.compatible && index_table_size <= limit) {
+    LogIndexPerformanceRecommendation(current_table_size, index_table_size, limit, touchables, current_tuple_depth,
+                                      false, index_compatibility);
+    WarnLargeNavTable("NavStateTuple", current_table_size, limit, touchables,
+                      "Configure -DVECGEOM_NAV=index to use the faster navigation representation that fits the "
+                      "configured memory budget.");
+    return;
+  }
+
+  if (current_table_size <= limit) {
+    int smallest_fitting_depth = current_tuple_depth;
+    size_t smallest_size       = current_table_size;
+    for (int depth = 1; depth < current_tuple_depth; ++depth) {
+      auto estimated_size = EstimateTupleTableSize(top, depth_limit, min_per_scene, depth);
+      if (estimated_size <= limit) {
+        smallest_fitting_depth = depth;
+        smallest_size          = estimated_size;
+        break;
+      }
+    }
+    if (smallest_fitting_depth < current_tuple_depth) {
+      VECGEOM_LOG(info) << "Recommended VECGEOM_NAVTUPLE_MAXDEPTH=" << smallest_fitting_depth
+                        << " for this geometry: it is the smallest checked tuple depth that keeps the navigation "
+                           "tuple table below VECGEOM_NAVTABLE_WARN_MEMORY_MB="
+                        << VECGEOM_NAVTABLE_WARN_MEMORY_MB << " MBytes (estimated " << std::setprecision(5)
+                        << BytesToMBytes(smallest_size) << " MBytes). Current depth " << current_tuple_depth
+                        << " gives " << std::setprecision(5) << BytesToMBytes(current_table_size) << " MBytes."
+                        << kMemoryBudgetConfigHelp;
+      if (index_compatibility.compatible) {
+        VECGEOM_LOG(info) << "The navigation index table is estimated at " << std::setprecision(5)
+                          << BytesToMBytes(index_table_size)
+                          << " MBytes, above the configured limit; larger tuple depths increase per-track state.";
+      } else {
+        LogNavIndexIncompatibilityInfo(index_compatibility);
+      }
+    } else {
+      VECGEOM_LOG(info) << "Current VECGEOM_NAVTUPLE_MAXDEPTH=" << current_tuple_depth
+                        << " is the smallest checked tuple depth that keeps the navigation tuple table below "
+                           "VECGEOM_NAVTABLE_WARN_MEMORY_MB="
+                        << VECGEOM_NAVTABLE_WARN_MEMORY_MB << " MBytes." << kMemoryBudgetConfigHelp;
+      if (index_compatibility.compatible) {
+        VECGEOM_LOG(info) << "The navigation index table is estimated at " << std::setprecision(5)
+                          << BytesToMBytes(index_table_size)
+                          << " MBytes, above the configured limit; larger tuple depths increase per-track state.";
+      } else {
+        LogNavIndexIncompatibilityInfo(index_compatibility);
+      }
+    }
+    return;
+  }
+
+  constexpr int kMaxTupleDepthEstimate = 16;
+  for (int depth = current_tuple_depth + 1; depth <= kMaxTupleDepthEstimate; ++depth) {
+    auto estimated_size = EstimateTupleTableSize(top, depth_limit, min_per_scene, depth);
+    if (estimated_size <= limit) {
+      VECGEOM_LOG(warning) << "NavStateTuple navigation table is estimated at " << std::setprecision(5)
+                           << BytesToMBytes(current_table_size) << " MBytes for "
+                           << GeoManager::Instance().GetTotalNodeCount()
+                           << " touchables, exceeding VECGEOM_NAVTABLE_WARN_MEMORY_MB="
+                           << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                           << " MBytes. Allocation, filling, validation, and host/device transfer may be slow. The "
+                              "navigation index table is estimated at "
+                           << std::setprecision(5) << BytesToMBytes(index_table_size)
+                           << " MBytes, also above the configured limit. Recommended VECGEOM_NAVTUPLE_MAXDEPTH="
+                           << depth << " gives an estimated " << std::setprecision(5) << BytesToMBytes(estimated_size)
+                           << " MBytes table, at the cost of a larger per-track tuple state. If the current table size "
+                              "is expected, configure -DVECGEOM_NAVTABLE_WARN_MEMORY_MB="
+                           << CeilBytesToMBytes(current_table_size) << " or set it to 0 to disable this warning.";
+      if (!index_compatibility.compatible) LogNavIndexIncompatibilityInfo(index_compatibility);
+      return;
+    }
+  }
+
+  VECGEOM_LOG(warning) << "NavStateTuple navigation table is estimated at " << std::setprecision(5)
+                       << BytesToMBytes(current_table_size) << " MBytes for "
+                       << GeoManager::Instance().GetTotalNodeCount()
+                       << " touchables, exceeding VECGEOM_NAVTABLE_WARN_MEMORY_MB=" << VECGEOM_NAVTABLE_WARN_MEMORY_MB
+                       << " MBytes. Allocation, filling, validation, and host/device transfer may be slow. The "
+                          "navigation index table is estimated at "
+                       << std::setprecision(5) << BytesToMBytes(index_table_size)
+                       << " MBytes, also above the configured limit, and estimates up to VECGEOM_NAVTUPLE_MAXDEPTH="
+                       << kMaxTupleDepthEstimate
+                       << " did not fit the configured limit. If this table size is expected, configure "
+                       << "-DVECGEOM_NAVTABLE_WARN_MEMORY_MB=" << CeilBytesToMBytes(current_table_size)
+                       << " or set it to 0 to disable this warning.";
+  if (!index_compatibility.compatible) LogNavIndexIncompatibilityInfo(index_compatibility);
+#endif
+}
+#endif
+
+} // namespace
 
 /// @brief Filling one touchable record (TR) to use with NavStateTuple.
 /// @details The records are delimited at unsigned int (4 bytes) size:
@@ -42,10 +447,10 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 /// d0_addr ... dn_addr = index of the daughter TR's
 /// @param state Navigation state pointing to the current touchable
 /// @param level Touchable depth
-/// @param mother Address of the parent touchable recored
+/// @param mother Address of the parent touchable record
 /// @param dind Index of this touchable in the parent list of daughters
 /// @return index of TR
-NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, NavIndex_t mother, int dind,
+NavIndex_t BuildNavIndexVisitor::apply_tuple(ReferenceNavState *state, int level, NavIndex_t mother, int dind,
                                              NavIndex_t &id, int scene_id, int new_scene_id)
 {
   bool cacheTrans   = true;
@@ -83,10 +488,6 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   // All transformations are currently cached for the NavStateTuple case, so not using fLimitDepth
 
-  if (fValidate) {
-    return NavIndexTable::Instance()->ValidateState(state, fError);
-  }
-
   size_t size_trans = 0;
   Transformation3D mat;
   bool has_trans = false;
@@ -102,15 +503,15 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
   static_assert(sizeof(Precision) == sizeof(NavIndex_t) || sizeof(Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
-  // Count of data fields before the transformation
-  constexpr unsigned record_count_before_trans = 7;
+  // Count of touchable-record fields before the optional transformation.
+  constexpr unsigned record_count_before_trans = NavIndexTableLayout::Tuple::kRecordFieldsBeforeTransform;
   // Count of volume data fields (volume index, number of daughters plus index of each daughter)
   NavIndex_t index_scene                = GetSceneIndex(ivol);
   const unsigned record_count_daughters = visited ? 0 : nd + 2;
 
   const auto record_count_notrans = record_count_before_trans + record_count_daughters;
   const bool padTransformationData =
-      ((indicesBefore + record_count_before_trans) * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
+      NavIndexTableLayout::NeedsPrecisionPadding(indicesBefore + record_count_before_trans);
 
   // Size in bytes of the current touchable data record
   const size_t current_size =
@@ -125,20 +526,20 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   }
 
   // Add data for the current element.
-  NavIndex_t index_mother    = fCurrent;
-  NavIndex_t index_placed    = fCurrent + 1;
-  NavIndex_t index_child     = fCurrent + 2;
-  NavIndex_t index_touchable = fCurrent + 3;
-  NavIndex_t index_logical   = fCurrent + 4;
-  NavIndex_t index_scenes    = fCurrent + 5;
-  NavIndex_t index_lhtr      = fCurrent + 6;
+  NavIndex_t index_mother    = fCurrent + NavIndexTableLayout::Tuple::kParent;
+  NavIndex_t index_placed    = fCurrent + NavIndexTableLayout::Tuple::kPlacedVolume;
+  NavIndex_t index_child     = fCurrent + NavIndexTableLayout::Tuple::kChildId;
+  NavIndex_t index_touchable = fCurrent + NavIndexTableLayout::Tuple::kTouchableId;
+  NavIndex_t index_logical   = fCurrent + NavIndexTableLayout::Tuple::kLogicalRecord;
+  NavIndex_t index_scenes    = fCurrent + NavIndexTableLayout::Tuple::kScenes;
+  NavIndex_t index_lhtr      = fCurrent + NavIndexTableLayout::Tuple::kPacked;
   auto content_ichild        = reinterpret_cast<int *>(fNavInd + index_child);
   auto content_scene         = reinterpret_cast<unsigned short *>(fNavInd + index_scenes);
-  auto content_newscene      = content_scene + 1;
+  auto content_newscene      = content_scene + NavIndexTableLayout::Tuple::kCurrentSceneHalf;
   auto content_level         = reinterpret_cast<unsigned char *>(fNavInd + index_lhtr);
-  auto content_hasm          = content_level + 1;
-  auto content_hast          = content_level + 2;
-  auto content_hasr          = content_level + 3;
+  auto content_hasm          = content_level + NavIndexTableLayout::Tuple::kTransformOffsetByte;
+  auto content_hast          = content_level + NavIndexTableLayout::Tuple::kHasTranslationByte;
+  auto content_hasr          = content_level + NavIndexTableLayout::Tuple::kHasRotationByte;
 
   NavIndex_t index_trans = fCurrent + record_count_before_trans + unsigned{padTransformationData};
   VECGEOM_ASSERT((index_trans * sizeof(NavIndex_t)) % sizeof(Precision) == 0);
@@ -148,8 +549,9 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   NavIndex_t index_lvol_id = (index_scene > 2) ? index_scene : index_trans + size_trans / sizeof(NavIndex_t);
   if (selected) SetSceneIndex(ivol, index_lvol_id);
 
-  NavIndex_t index_nd = index_lvol_id + 1;
-  // NavIndex_t index_daughters = index_lvol_id + 2; // filled by daughters. Don't remove this comment
+  NavIndex_t index_nd = index_lvol_id + NavIndexTableLayout::Tuple::kDaughterCount;
+  // NavIndex_t index_daughters = index_lvol_id + NavIndexTableLayout::Tuple::kDaughters; // filled by daughters.
+  // Don't remove this comment
   auto content_lvol_id = reinterpret_cast<int *>(fNavInd + index_lvol_id);
 
   // Fill the mother index for the current node
@@ -157,12 +559,13 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
 
   // Fill the node index in the mother list of daughters
   if (mother > 0) {
-    NavIndex_t index_inmother = fNavInd[mother + 4] + 2 + dind;
-    fNavInd[index_inmother]   = fCurrent;
+    NavIndex_t index_inmother =
+        fNavInd[mother + NavIndexTableLayout::Tuple::kLogicalRecord] + NavIndexTableLayout::Tuple::kDaughters + dind;
+    fNavInd[index_inmother] = fCurrent;
   }
 
   // Placed volume index
-  fNavInd[index_placed] = (level >= 0) ? state->ValueAt(level) : 0;
+  fNavInd[index_placed] = (level >= 0) ? pv->id() : 0;
 
   // Child index in mother
   *content_ichild = ichild;
@@ -217,7 +620,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(NavStatePath *state, int level, Nav
   return record;
 }
 
-NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id)
+NavIndex_t BuildNavIndexVisitor::apply(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id)
 {
   bool cacheTrans       = true;
   NavIndex_t new_mother = fCurrent;
@@ -236,21 +639,17 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   // Check if matrix has to be cached for this node
   if (fLimitDepth > 0 && level > fLimitDepth && !lv->IsReqCaching()) cacheTrans = false;
 
-  if (fValidate) {
-    if (level == 0) return true;
-    return NavIndexTable::Instance()->ValidateState(state, fError);
-  }
-
   // To keep the transformation data sufficiently aligned, we may insert padding. Precision is either the same size or
   // twice the size as NavIndex_t, so in case we need to pad, we only need to pad one NavIndex_t.
   static_assert(sizeof(Precision) == sizeof(NavIndex_t) || sizeof(Precision) == 2 * sizeof(NavIndex_t));
   const auto indicesBefore         = fDoCount ? fTableSize / sizeof(NavIndex_t) : fCurrent;
-  const auto daughterIndices       = 6 + nd + ((nd + 1) & 1);
-  const bool padTransformationData = ((indicesBefore + daughterIndices) * sizeof(NavIndex_t)) % sizeof(Precision) != 0;
+  const auto daughterIndices       = NavIndexTableLayout::Index::kDaughters + nd + ((nd + 1) & 1);
+  const bool padTransformationData = NavIndexTableLayout::NeedsPrecisionPadding(indicesBefore + daughterIndices);
 
   // Size in bytes of the current node data
   const size_t current_size =
-      (daughterIndices + int{padTransformationData}) * sizeof(NavIndex_t) + int{cacheTrans} * 12 * sizeof(Precision);
+      (daughterIndices + int{padTransformationData}) * sizeof(NavIndex_t) +
+      int{cacheTrans} * NavIndexTableLayout::Index::kStoredTransformPrecisionCount * sizeof(Precision);
   // current_size does not need to be a multiple of sizeof(Precision), because the start of the node could be
   // misaligned.
 
@@ -263,40 +662,40 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
 
   // Add data for the current element.
   // Fill the mother index for the current node
-  fNavInd[fCurrent] = mother;
+  fNavInd[fCurrent + NavIndexTableLayout::Index::kParent] = mother;
 
   // Fill the incremental id
-  fNavInd[fCurrent + 1] = id++;
+  fNavInd[fCurrent + NavIndexTableLayout::Index::kTouchableId] = id++;
 
   // Fill the node index in the mother list of daughters
-  if (mother > 0) fNavInd[mother + 6 + dind] = fCurrent;
+  if (mother > 0) fNavInd[mother + NavIndexTableLayout::Index::kDaughters + dind] = fCurrent;
 
   // Placed volume index
-  fNavInd[fCurrent + 2] = (level >= 0) ? state->ValueAt(level) : 0;
+  fNavInd[fCurrent + NavIndexTableLayout::Index::kPlacedVolume] = (level >= 0) ? pv->id() : 0;
 
   // Child index in mother
-  auto content_ichild = reinterpret_cast<int *>(fNavInd + fCurrent + 3);
+  auto content_ichild = reinterpret_cast<int *>(fNavInd + fCurrent + NavIndexTableLayout::Index::kChildId);
   *content_ichild     = ichild;
 
   // Logical volume id
-  fNavInd[fCurrent + 4] = lv->id();
+  fNavInd[fCurrent + NavIndexTableLayout::Index::kLogicalVolume] = lv->id();
 
   // Write current level in next byte
-  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + 5]);
+  auto content_ddt = (unsigned char *)(&fNavInd[fCurrent + NavIndexTableLayout::Index::kPacked]);
   VECGEOM_VALIDATE(level < std::numeric_limits<unsigned char>::max(),
                    << "unsupported geometry depth: " << level << " > 255");
   *content_ddt = (unsigned char)level;
 
   // Write number of daughters in next 2 bytes
-  auto content_nd = (unsigned short *)(content_ddt + 2);
+  auto content_nd = (unsigned short *)(content_ddt + NavIndexTableLayout::Index::kDaughterCountByte);
   *content_nd     = nd;
 
   // Write the flag if matrix is stored in the next byte
-  auto content_hasm = (unsigned char *)(content_ddt + 1);
+  auto content_hasm = (unsigned char *)(content_ddt + NavIndexTableLayout::Index::kMatrixFlagsByte);
   *content_hasm     = 0;
 
   // Prepare the space for the daughter indices
-  auto content_dind = &fNavInd[fCurrent + 6];
+  auto content_dind = &fNavInd[fCurrent + NavIndexTableLayout::Index::kDaughters];
   for (size_t i = 0; i < nd; ++i)
     content_dind[i] = 0;
 
@@ -307,7 +706,9 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
   Transformation3D mat;
   // encode has_trans, translation and rotation flags in the content_hasm byte
   state->TopMatrix(mat);
-  *content_hasm = 0x04 + 0x02 * (unsigned short)mat.HasTranslation() + (unsigned short)mat.HasRotation();
+  *content_hasm = NavIndexTableLayout::Index::kHasStoredMatrixFlag +
+                  NavIndexTableLayout::Index::kHasTranslationFlag * (unsigned short)mat.HasTranslation() +
+                  NavIndexTableLayout::Index::kHasRotationFlag * (unsigned short)mat.HasRotation();
 
   // insert padding before transformation elements to align them
   if (padTransformationData) fCurrent++;
@@ -322,16 +723,16 @@ NavIndex_t BuildNavIndexVisitor::apply(NavStatePath *state, int level, NavIndex_
     content_mat[i + 3] = mat.Rotation(i);
 
   // Set new value for fCurrent
-  fCurrent += 12 * sizeof(Precision) / sizeof(NavIndex_t);
+  fCurrent += NavIndexTableLayout::Index::kStoredTransformPrecisionCount * sizeof(Precision) / sizeof(NavIndex_t);
   VECGEOM_ASSERT((fCurrent - new_mother) * sizeof(NavIndex_t) == current_size);
   return new_mother;
 }
 
-void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
+void BuildNavIndexVisitor::NodeReduction(int min_per_scene, int max_scene_depth, bool log_summary)
 {
   // Maximum allowed scene depth and minimum number of touchables per scene are exposed as cmake options
   // #define SCENEMAKE_DEBUG 1
-  int max_depth      = VECGEOM_NAVTUPLE_MAXDEPTH - 1;
+  int max_depth      = max_scene_depth;
   using VolPtr_t     = LogicalVolume const *;
   auto &vol_selected = fSelectedVolumes;
   // This is the total number of registered volume, larger than the number of volumes in the hierarchy
@@ -548,8 +949,8 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
   };
 
   /// This visitor fills volumes[], nrep[], nleaves[], levels[] and parents[] and should be called once for the top
-  typedef std::function<void(VPlacedVolume const *, NavStatePath *, int &)> funcFillRepetitions_t;
-  funcFillRepetitions_t visitAndFillRepetitions = [&](VPlacedVolume const *pvol, NavStatePath *state, int &count) {
+  typedef std::function<void(VPlacedVolume const *, ReferenceNavState *, int &)> funcFillRepetitions_t;
+  funcFillRepetitions_t visitAndFillRepetitions = [&](VPlacedVolume const *pvol, ReferenceNavState *state, int &count) {
     // reset vol_visited before calling first time
     count++;
     auto parent = state->Top();
@@ -573,10 +974,8 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
     state->Pop();
   };
 
-  int maxdepth        = GeoManager::Instance().getMaxDepth();
-  NavStatePath *state = NavStatePath::MakeInstance(maxdepth);
-  visitAndFillRepetitions(GeoManager::Instance().GetWorld(), state, nnodes);
-  NavStatePath::ReleaseInstance(state);
+  ReferenceNavState state;
+  visitAndFillRepetitions(GeoManager::Instance().GetWorld(), &state, nnodes);
   if (nnodes < min_per_scene) return;
   // now fill score for each volume
   for (auto lvol : volumes) {
@@ -663,9 +1062,11 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene)
   count_selected  = 0;
   std::fill(vol_visited.begin(), vol_visited.end(), false);
   visitAndCountReducedSize(GeoManager::Instance().GetWorld(), measured_nnodes, count_selected, depth, scene_sum);
-  VECGEOM_LOG(info) << "selected_volumes = " << std::accumulate(vol_selected.begin(), vol_selected.end(), int(0))
-                    << "  node_count = " << nnodes - total_score << " (" << nnodes
-                    << " initial)  max_scenes = " << estimated_depth;
+  if (log_summary) {
+    VECGEOM_LOG(info) << "selected_volumes = " << std::accumulate(vol_selected.begin(), vol_selected.end(), int(0))
+                      << "  node_count = " << nnodes - total_score << " (" << nnodes
+                      << " initial)  max_scenes = " << estimated_depth;
+  }
   // << "  * measured: max_scenes = " << measured_depth
   // << "  node_count = " << measured_nnodes + count_selected
   // << "  avg_scene_level = " << float(scene_sum) / nnodes << "\n";
@@ -687,167 +1088,62 @@ bool NavIndexTable::AllocateTable(size_t bytes)
 
 bool NavIndexTable::CreateTable(VPlacedVolume const *top, int maxdepth, int depth_limit, int min_per_scene)
 {
-  fDepthLimit         = depth_limit;
-  NavStatePath *state = NavStatePath::MakeInstance(maxdepth);
+  fDepthLimit = depth_limit;
+  (void)maxdepth;
+  ReferenceNavState state;
   BuildNavIndexVisitor visitor(depth_limit, true); // just count table size
   NavIndex_t id = 1;
 #ifdef VECGEOM_USE_NAVTUPLE
   visitor.NodeReduction(min_per_scene);
   int scene_id = 0;
   VECGEOM_LOG(info) << "=== creating navigation table with min_per_scene " << min_per_scene;
-  visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
+  visitAllPlacedVolumesNavTuple(top, &visitor, &state, id, scene_id, scene_id);
   visitor.ResetVisited();
 #else
-  visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  visitAllPlacedVolumesNavIndex(top, &visitor, &state, id);
 #endif
-  VECGEOM_LOG(info) << "navigation table size is " << std::setprecision(5)
-                    << float(visitor.GetTableSize()) / (1024 * 1024) << " MBytes";
+  const auto table_size = visitor.GetTableSize();
+  const auto warn_limit = NavTableWarningLimitBytes();
+  VECGEOM_LOG(info) << "navigation table size is " << std::setprecision(5) << BytesToMBytes(table_size) << " MBytes";
+#ifdef VECGEOM_USE_NAVTUPLE
+  ReportTupleNavTableGuidance(top, depth_limit, min_per_scene, VECGEOM_NAVTUPLE_MAXDEPTH, table_size, warn_limit);
+#else
+  WarnLargeNavTable("NavStateIndex", table_size, warn_limit, GeoManager::Instance().GetTotalNodeCount(),
+                    "Consider -DVECGEOM_NAV=tuple for large repeated geometries.");
+#endif
 
-  bool hasTable = AllocateTable(visitor.GetTableSize());
-  if (!hasTable) return false;
+  bool has_table = AllocateTable(table_size);
+  if (!has_table) return false;
 
   visitor.SetTable(fNavInd);
   visitor.SetDoCount(false);
 
-  state->Clear();
   id = 1;
 #ifdef VECGEOM_USE_NAVTUPLE
   scene_id = 0;
-  visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
+  visitAllPlacedVolumesNavTuple(top, &visitor, &state, id, scene_id, scene_id);
   // printf("scene_id_last = %d\n", scene_id);
 #else
-  visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  visitAllPlacedVolumesNavIndex(top, &visitor, &state, id);
 #endif
-  NavStatePath::ReleaseInstance(state);
   return true;
 }
 
 bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
 {
-  NavStatePath *state = NavStatePath::MakeInstance(maxdepth);
-  state->Clear();
-  BuildNavIndexVisitor visitor(0, false);
-  visitor.SetTable(fNavInd);
-  visitor.SetValidate(true);
-  NavIndex_t id = 1;
+  (void)maxdepth;
+  int error = 0;
+  // Validation is a dedicated post-build pass: start from a reference state
+  // containing the world volume and walk the geometry tree in lockstep with
+  // the encoded navigation representation stored in the table.
+  auto reference = ReferenceNavState::MakeWorld(top);
 #ifdef VECGEOM_USE_NAVTUPLE
-  int scene_id = 0;
-  int ierr     = visitAllPlacedVolumesNavTuple(top, &visitor, state, id, scene_id, scene_id);
+  int ierr = ValidateNavTupleRecursive(top, reference, NavTuple_t{fWorld}, error);
 #else
-  int ierr = visitAllPlacedVolumesNavIndex(top, &visitor, state, id);
+  int ierr = ValidateNavIndexRecursive(top, reference, fWorld, error);
 #endif
-  NavStatePath::ReleaseInstance(state);
   if (ierr > 0) return false;
   return true;
-}
-
-NavIndex_t NavIndexTable::ValidateState(NavStatePath *state, int &error)
-{
-  // Decode the NavIndex_t
-#ifdef VECGEOM_USE_NAVTUPLE
-  using NavState = NavStateTuple;
-  using NavInd_t = NavTuple_t;
-#else
-  using NavState = NavStateIndex;
-  using NavInd_t = NavIndex_t;
-#endif
-  unsigned char level            = state->GetLevel();
-  int dind                       = 0;
-  NavInd_t nav_ind               = fWorld;
-  VPlacedVolume const *pdaughter = nullptr;
-  for (int i = 1; i < level + 1; ++i) {
-    pdaughter = state->At(i);
-    dind      = pdaughter->GetChildId();
-    if (dind < 0) {
-      VECGEOM_LOG(critical) << "Validate: incompatible daughter pointer";
-      state->Print();
-      error = 1;
-      return 0;
-    }
-    unsigned short scene_id = 0, newscene_id = 0;
-    bool scene = NavState::GetSceneIdImpl(nav_ind, scene_id, newscene_id);
-    NavState::PushImpl(nav_ind, pdaughter);
-    unsigned short dscene_id = 0, dnewscene_id = 0;
-    NavState::GetSceneIdImpl(nav_ind, dscene_id, dnewscene_id);
-    if (scene && (dscene_id == scene_id)) {
-      VECGEOM_LOG(critical) << "Validate: incompatible scene index " << dscene_id << " was supposed different than "
-                            << scene_id << " for " << state->At(i - 1)->id() << "/" << pdaughter->id();
-      error = 2;
-      return 0;
-    }
-  }
-
-  // Check if the placed volume is correct
-  if (NavState::TopImpl(nav_ind) != state->Top()) {
-    VECGEOM_LOG(critical) << "Validate: Top placed volume pointer mismatch";
-    state->Print();
-    error = 3;
-    return 0;
-  }
-
-  // Check if the child id is correct
-  if (NavState::GetChildIdImpl(nav_ind) != state->Top()->GetChildId()) {
-    VECGEOM_LOG(critical) << "Validate: Top placed volume child id mismatch";
-    state->Print();
-    error = 4;
-    return 0;
-  }
-
-  // Check if the logical volume id is correct
-  if (NavState::GetLogicalIdImpl(nav_ind) != state->Top()->GetLogicalVolume()->id()) {
-    VECGEOM_LOG(critical) << "Validate: Logical volume id mismatch";
-    state->Print();
-    error = 5;
-    return 0;
-  }
-
-  // Check if the current level is valid
-  if (level != NavState::GetLevelImpl(nav_ind)) {
-    VECGEOM_LOG(critical) << "Validate: Level mismatch";
-    state->Print();
-    error = 6;
-    return 0;
-  }
-
-  // Check if mother navigation index is consistent
-  if (level > 0) {
-    auto nav_ind_m = nav_ind;
-    NavState::PopImpl(nav_ind_m);
-    NavState::PushImpl(nav_ind_m, pdaughter);
-    if (nav_ind_m != nav_ind) {
-      VECGEOM_LOG(critical) << "Validate: Navigation index inconsistency for Push/Pop";
-      state->Print();
-      error = 7;
-      return 0;
-    }
-  }
-
-  // Check if the number of daughters is correct
-  if (NavState::GetNdaughtersImpl(nav_ind) != state->Top()->GetDaughters().size()) {
-    VECGEOM_LOG(critical) << "Validate: Number of daughters mismatch";
-    state->Print();
-    error = 8;
-    return 0;
-  }
-
-  // Check the top transformation
-  Transformation3D trans, trans_nav_ind;
-  state->TopMatrix(trans);
-  NavState::TopMatrixImpl(nav_ind, trans_nav_ind);
-  if (!trans.ApproxEqual(trans_nav_ind)) {
-    VECGEOM_LOG(critical) << "Validate: Transformation matrix mismatch";
-    state->Print();
-    VECGEOM_LOG(critical) << "NavStatePath  transformation: " << trans << "\n";
-    VECGEOM_LOG(critical) << "NavStateIndex transformation: " << trans_nav_ind << "\n";
-    error = 9;
-    return 0;
-  }
-
-#ifdef VECGEOM_USE_NAVTUPLE
-  return nav_ind.Top();
-#else
-  return nav_ind;
-#endif
 }
 
 } // namespace VECGEOM_IMPL_NAMESPACE

@@ -11,11 +11,7 @@
 #ifdef VECGEOM_USE_NAVTUPLE
 #define NavigationStateImpl NavStateTuple
 #else
-#ifdef VECGEOM_USE_NAVINDEX
 #define NavigationStateImpl NavStateIndex
-#else
-#define NavigationStateImpl NavStatePath
-#endif
 #endif
 namespace vecgeom {
 
@@ -29,7 +25,6 @@ class NavStateTuple;
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 class NavStateIndex;
-class NavStatePath; // Needed even when not the navigation state, at least for GeoVisitor and NavIndexTable.
 using NavigationState = NavigationStateImpl;
 
 } // namespace VECGEOM_IMPL_NAMESPACE

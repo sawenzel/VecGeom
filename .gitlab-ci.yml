@@ -96,8 +96,8 @@ NOSURF_NAVTUPLE_ROOT_GDML:
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 
-# build for DVECGEOM_GDML=ON (using the cvmfs ALICE software stack: TODO: convert to project/sft...)
-NOSURF_NAVPATH_ROOT_GDML:
+# build for VECGEOM_GDML=ON (using the cvmfs ALICE software stack: TODO: convert to project/sft...)
+NOSURF_NAVINDEX_ROOT_GDML:
    tags:
      - cvmfs
    image: cern/alma9-base
@@ -111,7 +111,7 @@ NOSURF_NAVPATH_ROOT_GDML:
      - export CMAKE_PREFIX_PATH=${VC_PATH}:${CMAKE_PREFIX_PATH}
    script:
      - mkdir build && cd build
-     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_SURF=OFF -DVECGEOM_NAV="path" -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
+     - cmake .. -DVECGEOM_BUILTIN_VECCORE=ON -DVECGEOM_BACKEND=Vc -DVECGEOM_USE_SURF=OFF -DVECGEOM_NAV="index" -DVECGEOM_ROOT=ON -DVECGEOM_GDML=ON
        # for the moment exclude the E03 test since downloading E03 root geometry has problems on the CI machine
      - make -j8 VERBOSE=ON && ctest --output-on-failure -j8 -E E03
 

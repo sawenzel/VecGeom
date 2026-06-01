@@ -15,6 +15,7 @@
 
 #include "VecGeom/base/Assert.h"
 #include "VecGeom/base/Global.h"
+#include "VecGeom/base/Stopwatch.h"
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/CudaManager.h"
 #include "test/benchmark/ArgParser.h"
@@ -23,8 +24,10 @@
 #include "Frontend.h" // VecGeom/gdml/Frontend.h
 #endif
 
+#include <algorithm>
 #include <err.h>
 #include <cstring>
+#include <exception>
 
 using namespace vecgeom;
 
@@ -65,6 +68,26 @@ void compareGeometries(const cxx::VPlacedVolume *hostVolume, std::size_t &volume
   }
 }
 
+std::size_t MaxDeviceVisitStackCapacity(const cxx::VPlacedVolume *hostVolume)
+{
+  std::vector<const cxx::VPlacedVolume *> stack;
+  stack.reserve(1024);
+  stack.push_back(hostVolume);
+
+  std::size_t maxStackSize = stack.size();
+  while (!stack.empty()) {
+    auto const *current = stack.back();
+    stack.pop_back();
+
+    auto const &daughters = current->GetDaughters();
+    for (int i = static_cast<int>(daughters.size()) - 1; i >= 0; --i) {
+      stack.push_back(daughters[i]);
+    }
+    maxStackSize = std::max(maxStackSize, stack.size());
+  }
+  return maxStackSize;
+}
+
 int main(int argc, char **argv)
 {
 #ifdef VECGEOM_GDML
@@ -72,6 +95,7 @@ int main(int argc, char **argv)
   OPTION_INT(stacksize, 8192);
   OPTION_INT(heapsize, 8388608);
   OPTION_BOOL(validate, false);
+  OPTION_BOOL(timing, false);
   double mm_unit = 0.1;
 
   if (argc == 1)
@@ -79,8 +103,13 @@ int main(int argc, char **argv)
 
   const char *filename = argv[1];
 
+  Stopwatch totalTimer, initTimer, loadTimer, cudaTimer, visitTimer, compareTimer;
+  totalTimer.Start();
+  initTimer.Start();
+  loadTimer.Start();
   if (!filename || !vgdml::Frontend::Load(filename, validate, mm_unit, verbosity > 0))
     errx(EBADF, "Cannot open file '%s'", filename);
+  const auto loadTime = loadTimer.Stop();
 
   auto &geoManager  = GeoManager::Instance();
   auto &cudaManager = CudaManager::Instance();
@@ -109,24 +138,56 @@ int main(int argc, char **argv)
 
   if (!geoManager.IsClosed()) errx(1, "Geometry not closed");
 
-  cudaManager.LoadGeometry(geoManager.GetWorld());
-  cudaManager.Synchronize();
+  double cudaTime = 0.;
+  double initTime = 0.;
+  try {
+    cudaManager.set_verbose(verbosity);
+    cudaTimer.Start();
+    cudaManager.LoadGeometry(geoManager.GetWorld());
+    cudaManager.Synchronize();
+    cudaTime = cudaTimer.Stop();
+    initTime = initTimer.Stop();
+  } catch (std::exception const &) {
+    cudaTime = cudaTimer.Stop();
+    initTime = initTimer.Stop();
+    if (timing) {
+      printf("GEOMETRYTEST_TIMING load_close_geometry_s %.6f\n", loadTime);
+      printf("GEOMETRYTEST_TIMING cuda_load_sync_s %.6f\n", cudaTime);
+      printf("GEOMETRYTEST_TIMING init_including_cuda_s %.6f\n", initTime);
+      printf("GEOMETRYTEST_TIMING total_s %.6f\n", totalTimer.Stop());
+      fflush(stdout);
+    }
+    throw;
+  }
 
   if (verbosity > 0) {
     printf("#PV known to GeoManager: %li\n", geoManager.GetPlacedVolumesCount());
     printf("#LV known to GeoManager: %li\n", geoManager.GetRegisteredVolumesCount());
     printf("# unique navig states: %li\n", geoManager.GetTotalNodeCount());
-    cudaManager.set_verbose(verbosity);
   }
 
   printf("Visiting device geometry ... ");
   const std::size_t numVols = geoManager.GetTotalNodeCount();
-  auto deviceGeometry       = visitDeviceGeometry(cudaManager.world_gpu(), numVols);
+  const auto stackCapacity  = MaxDeviceVisitStackCapacity(geoManager.GetWorld());
+  visitTimer.Start();
+  auto deviceGeometry  = visitDeviceGeometry(cudaManager.world_gpu(), numVols, stackCapacity);
+  const auto visitTime = visitTimer.Stop();
 
   printf("Comparing to host geometry ... ");
   std::size_t volumeCounter = 0;
+  compareTimer.Start();
   compareGeometries(geoManager.GetWorld(), volumeCounter, deviceGeometry, 0);
+  const auto compareTime = compareTimer.Stop();
   printf("%zu volumes. Done.\n", volumeCounter);
+  const auto totalTime = totalTimer.Stop();
+  if (timing) {
+    printf("GEOMETRYTEST_TIMING load_close_geometry_s %.6f\n", loadTime);
+    printf("GEOMETRYTEST_TIMING cuda_load_sync_s %.6f\n", cudaTime);
+    printf("GEOMETRYTEST_TIMING init_including_cuda_s %.6f\n", initTime);
+    printf("GEOMETRYTEST_TIMING device_visit_s %.6f\n", visitTime);
+    printf("GEOMETRYTEST_TIMING host_compare_s %.6f\n", compareTime);
+    printf("GEOMETRYTEST_TIMING total_s %.6f\n", totalTime);
+  }
 #endif
   return EXIT_SUCCESS;
 }

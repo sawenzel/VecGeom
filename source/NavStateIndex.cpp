@@ -66,11 +66,11 @@ VECCORE_ATT_HOST_DEVICE
 void NavStateIndex::PrintRecord(NavIndex_t nav_ind)
 {
   if (nav_ind == 0) return;
-  auto parent     = NavInd(nav_ind);
-  auto placed_id  = NavInd(nav_ind + 2);
-  auto child_id   = NavInd(nav_ind + 3);
-  auto id         = NavInd(nav_ind + 1);
-  auto logical_id = NavInd(nav_ind + 4);
+  auto parent     = NavInd(nav_ind + NavIndexTableLayout::Index::kParent);
+  auto placed_id  = NavInd(nav_ind + NavIndexTableLayout::Index::kPlacedVolume);
+  auto child_id   = NavInd(nav_ind + NavIndexTableLayout::Index::kChildId);
+  auto id         = NavInd(nav_ind + NavIndexTableLayout::Index::kTouchableId);
+  auto logical_id = NavInd(nav_ind + NavIndexTableLayout::Index::kLogicalVolume);
   auto level      = GetLevelImpl(nav_ind);
   auto nd         = GetNdaughtersImpl(nav_ind);
   printf("| navind %u |+0| parent %u |+1| id %u |+2| placed_id %u |+3| child_id %u |+4| logical_id %u "

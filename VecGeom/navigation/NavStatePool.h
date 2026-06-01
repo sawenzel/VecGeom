@@ -123,14 +123,10 @@ public:
   // quick and dirty serialization and deserialization
   void ToFile(std::string filename) const
   {
-#ifdef VECGEOM_USE_INDEXEDNAVSTATES
     std::ofstream outfile(filename, std::ios::binary);
     outfile.write(reinterpret_cast<const char *>(&fCapacity), sizeof(fCapacity));
     outfile.write(reinterpret_cast<const char *>(&fDepth), sizeof(fDepth));
     outfile.write(reinterpret_cast<char *>(fBuffer), fCapacity * NavigationState::SizeOfInstanceAlignAware(fDepth));
-#else
-    std::cerr << "serializing pointer based navstates not supported \n";
-#endif
   }
 
   static void ReadDepthAndCapacityFromFile(std::string filename, int &cap, int &dep)
@@ -143,7 +139,6 @@ public:
   // return number of elements read or -1 if failure
   int FromFile(std::string filename)
   {
-#ifdef VECGEOM_USE_INDEXEDNAVSTATES
     // assumes existing NavStatePool object
     decltype(fCapacity) cap;
     decltype(fDepth) dep;
@@ -156,9 +151,6 @@ public:
     if (cap != fCapacity || dep != fDepth) std::cerr << " warning: reading from navstate with different size\n";
     fin.read(reinterpret_cast<char *>(fBuffer), fCapacity * NavigationState::SizeOfInstanceAlignAware(fDepth));
     if (!fin) return -3;
-#else
-    std::cerr << "serializing pointer based navstates not supported \n";
-#endif
     return fCapacity;
   }
 
@@ -181,7 +173,7 @@ public:
     }
   }
 
-  // dito for the non-const version
+  // ditto for the non-const version
   VECCORE_ATT_HOST_DEVICE
   void ToPlainPointerArray(NavigationState **&array)
   {
@@ -227,25 +219,10 @@ private:         // members
 inline void NavStatePool::CopyToGpu()
 {
 
-  // modify content temporarily to convert CPU pointers to GPU pointers
-  NavigationState *state;
-  for (int i = 0; i < fCapacity; ++i) {
-    state = operator[](i);
-    state->ConvertToGPUPointers();
-  }
-
-  // we also have to fix the fPath pointers
-
   // copy
   vecgeom::CopyToGpu((void *)fBuffer, fGPUPointer, fCapacity * NavigationState::SizeOfInstanceAlignAware(fDepth));
   // CudaAssertError( cudaMemcpy(fGPUPointer, (void*)fBuffer, fCapacity*NavigationState::SizeOf(fDepth),
   // VECGEOM_DEVICE_API_SYMBOL(MemcpyHostToDevice)) );
-
-  // modify back pointers
-  for (int i = 0; i < fCapacity; ++i) {
-    state = operator[](i);
-    state->ConvertToCPUPointers();
-  }
 
   // now some kernel can be launched on GPU side
 } // end CopyFunction
@@ -259,11 +236,6 @@ inline void NavStatePool::CopyFromGpu()
   // std::cerr << "GPU pointer " << fGPUPointer << std::endl;
   vecgeom::CopyFromGpu(fGPUPointer, (void *)fBuffer, fCapacity * NavigationState::SizeOfInstanceAlignAware(fDepth));
 
-  NavigationState *state;
-  for (int i = 0; i < fCapacity; ++i) {
-    state = operator[](i);
-    state->ConvertToCPUPointers();
-  }
 } // end CopyFunction
 #endif
 } // namespace VECGEOM_IMPL_NAMESPACE

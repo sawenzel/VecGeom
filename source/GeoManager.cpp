@@ -7,6 +7,7 @@
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/NavIndexTable.h"
 #include "VecGeom/management/Logger.h"
+#include "VecGeom/management/ReferenceNavState.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/management/ABBoxManager.h"
@@ -298,8 +299,8 @@ void GeoManager::CreateIndexHierarchy() const
 bool GeoManager::CheckIndexHierarchy() const
 {
   auto &volTree = VolumeTree::Instance();
-  typedef std::function<bool(VPlacedVolume const *, PlacedId const &, NavStatePath *)> funcCheck_t;
-  funcCheck_t visitAndCheck = [&](VPlacedVolume const *pvol, PlacedId const &plvol, NavStatePath *state) {
+  typedef std::function<bool(VPlacedVolume const *, PlacedId const &, ReferenceNavState *)> funcCheck_t;
+  funcCheck_t visitAndCheck = [&](VPlacedVolume const *pvol, PlacedId const &plvol, ReferenceNavState *state) {
     // reset vol_visited before calling first time
     state->Push(pvol);
     auto lvol = pvol->GetLogicalVolume();
@@ -339,8 +340,8 @@ bool GeoManager::CheckIndexHierarchy() const
     return true;
   };
 
-  NavStatePath *state = NavStatePath::MakeInstance(fMaxDepth);
-  auto success        = visitAndCheck(GeoManager::Instance().GetWorld(), volTree.fWorld, state);
+  ReferenceNavState state;
+  auto success = visitAndCheck(GeoManager::Instance().GetWorld(), volTree.fWorld, &state);
   if (!success) VECGEOM_LOG(critical) << "GeoMAnager::CheckIndexHierarchy failed";
   return success;
 }
@@ -553,7 +554,7 @@ __attribute__((noinline)) void GeoManager::getAllPathForLogicalVolume(LogicalVol
   NavigationState::ReleaseInstance(state);
 }
 
-// explicitely init some symbols
+// explicitly init some symbols
 template void GeoManager::getAllPathForLogicalVolume(LogicalVolume const *lvol, std::list<NavigationState *> &c) const;
 template void GeoManager::getAllPathForLogicalVolume(LogicalVolume const *lvol,
                                                      std::vector<NavigationState *> &c) const;

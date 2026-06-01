@@ -60,15 +60,12 @@ The table below shows the available CMake options for VecGeom that may be used t
 |VECGEOM_QUADRILATERAL_ACCELERATION|ON|Enable SIMD vectorization when looping over quadrilaterals|
 |VECGEOM_SANITIZER|OFF|Enable memory sanitizer|
 |VECGEOM_SINGLE_PRECISION|OFF|Use single precision throughout the package|
-|VECGEOM_USE_CACHED_TRANSFORMATIONS|OFF|Use cached transformations in navigation states|
-|VECGEOM_USE_INDEXEDNAVSTATES|ON|Use indices rather than volume pointers when VECGEOM_NAV=path|
 |VECGEOM_USE_SURF|ON if CUDA|Enable surface model for navigation|
-|VECGEOM_NAV|tuple|Navigation state implementation (tuple/index/path)|
+|VECGEOM_NAV|tuple|Navigation state implementation (tuple/index). See [navigation documentation](VecGeom/navigation/README.md) for representation tradeoffs.|
+|VECGEOM_NAVTABLE_WARN_MEMORY_MB|512|Navigation table size warning threshold in MBytes; set to 0 to disable|
+|VECGEOM_NAVTABLE_RECOMMEND|OFF|Run extra count-only navigation table passes to recommend `VECGEOM_NAV` and tuple depth|
 |VECGEOM_NAVTUPLE_MAXDEPTH|4|Maximum depth for navigation tuple states|
 |VECGEOM_VECTOR|sse2 if x86|Vector instruction set to be used|
-
-The `VECGEOM_NAV` option supports the `path` value only if the surface implementation
-is disabled.
 
 The following options are available for enabling, building, and running tests:
 

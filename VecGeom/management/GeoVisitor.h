@@ -10,6 +10,7 @@
 #define VECGEOM_MANAGEMENT_GEOVISITOR_H_
 
 #include "VecGeom/base/Global.h"
+#include "VecGeom/management/ReferenceNavState.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/navigation/NavStateFwd.h"
@@ -24,7 +25,7 @@ protected:
   Container &c_;
 
 public:
-  GeoVisitor(Container &c) : c_(c){};
+  GeoVisitor(Container &c) : c_(c) {}
 
   virtual void apply(VPlacedVolume *, int level = 0) = 0;
   virtual ~GeoVisitor() {}
@@ -38,7 +39,7 @@ protected:
   Container &c_;
 
 public:
-  GeoVisitorWithAccessToPath(Container &c) : c_(c){};
+  GeoVisitorWithAccessToPath(Container &c) : c_(c) {}
 
   virtual void apply(NavigationState *state, int level = 0) = 0;
   virtual ~GeoVisitorWithAccessToPath() {}
@@ -49,9 +50,9 @@ public:
 class GeoVisitorNavIndex {
 
 public:
-  GeoVisitorNavIndex(){};
+  GeoVisitorNavIndex() {}
 
-  virtual NavIndex_t apply(NavStatePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id) = 0;
+  virtual NavIndex_t apply(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id) = 0;
   virtual ~GeoVisitorNavIndex() {}
 };
 

@@ -794,7 +794,7 @@ UnplacedGenTrap *RootGeoManager::ToUnplacedGenTrap(TGeoArb8 const *p)
 VPlacedVolume const *RootGeoManager::Lookup(TGeoNode const *node) const
 {
   if (node == nullptr) return nullptr;
-  return Index2PVolumeConverter<NavStateIndex_t>::ToPlacedVolume(fPlacedVolumeMap[node]);
+  return NavigationState::ToPlacedVolume(fPlacedVolumeMap[node]);
 }
 
 } // namespace vecgeom

@@ -171,7 +171,7 @@ void TabulatedTransData::EmitTableDeclaration(std::ostream &outstream)
     // convenience data view to emit AOS data
     std::vector<std::vector<double> const *> data;
 
-    // we need to emit a struct for the non-const variabels
+    // we need to emit a struct for the non-const variables
     outstream << "struct " << fName << "Struct{\n";
     for (size_t i = 0; i < 3; ++i) {
       if (fTransCoefficients[i].size() > 0 && !fTransIsConstant[i]) {
@@ -456,10 +456,7 @@ void NavigationSpecializer::DumpConstructor(std::ostream &outstream) const
   }
 }
 
-void NavigationSpecializer::DumpClassClosing(std::ostream &outstream)
-{
-  outstream << "}; // end class\n";
-}
+void NavigationSpecializer::DumpClassClosing(std::ostream &outstream) { outstream << "}; // end class\n"; }
 
 void NavigationSpecializer::DumpIncludeFiles(std::ostream &outstream)
 {
@@ -490,10 +487,7 @@ void NavigationSpecializer::DumpNamespaceOpening(std::ostream &outstream)
   outstream << "inline namespace VECGEOM_IMPL_NAMESPACE {\n";
 }
 
-void NavigationSpecializer::DumpNamespaceClosing(std::ostream &outstream)
-{
-  outstream << "}} // end namespace\n";
-}
+void NavigationSpecializer::DumpNamespaceClosing(std::ostream &outstream) { outstream << "}} // end namespace\n"; }
 
 void NavigationSpecializer::DumpPrivateClassDefinitions(std::ostream &outstream)
 {
@@ -552,7 +546,7 @@ void NavigationSpecializer::DumpPathToIndexFunction(std::ostream &outstream)
   int sizeaccum = 1;
   for (auto &mapelement : fIndexMap) {
     outstream << "{\n"; // anonymous scope;
-    outstream << "// it might be better to init to -1 ( to detect possible inconsitencies )\n";
+    outstream << "// it might be better to init to -1 ( to detect possible inconsistencies )\n";
     outstream << "size_t levelindex(0);\n";
     outstream << "switch (path->ValueAt( " << mapelement.first << " )){\n";
     // iterate over possible values
@@ -785,20 +779,20 @@ void NavigationSpecializer::AnalysePaths(std::list<NavigationState *> const &pat
 
   // cross check if space of indices map matches size of paths
   // if not there are likely some correlations in the indices which have to be reduced (to be supported)
-  bool redundency = false;
+  bool redundancy = false;
   size_t maxindex = 0;
   size_t minindex = 100000000;
   for (auto &path : paths) {
     size_t index = PathToIndex(path);
     if (index >= paths.size()) {
-      redundency = true;
+      redundancy = true;
     }
     minindex = std::min(index, minindex);
     maxindex = std::max(index, maxindex);
   }
-  if (redundency) {
+  if (redundancy) {
     std::cerr << "maxindex " << maxindex << "  vs " << paths.size() << "\n";
-    std::cerr << "redundency of factor " << (maxindex + 1) / (paths.size())
+    std::cerr << "redundancy of factor " << (maxindex + 1) / (paths.size())
               << " detected --> ask for an implementation !!\n";
     return;
   }
@@ -1139,7 +1133,7 @@ void NavigationSpecializer::AnalyseTargetPaths(NavStatePool const &inpool, NavSt
   }
 
   // CHECK THIS (verify this stupid mapping ) !!!!!
-  // very brute force: scan the complete index space and see if transition was recored in "mapping" as a string
+  // very brute force: scan the complete index space and see if transition was recorded in "mapping" as a string
   // I know this can be done more efficient
   for (auto i = decltype(fNumberOfPossiblePaths){0}; i < fNumberOfPossiblePaths; ++i) {
     for (auto j = decltype(fTransitionStrings.size()){0}; j < fTransitionStrings.size(); ++j) {
@@ -1691,11 +1685,11 @@ void NavigationSpecializer::DumpRelocateMethod(std::ostream &outstream) const
         if (horizstate) {
           outstream << "auto oldvalue = out_state.ValueAt( out_state.GetCurrentLevel()-1 );\n";
           outstream << "out_state.Pop();\n";
-          outstream << "out_state.PushIndexType( oldvalue  + " << number << " );\n";
+          outstream << "out_state.Push(static_cast<int>(oldvalue + " << number << "));\n";
           horizstate = false;
         }
         if (downstate) {
-          outstream << "out_state.PushIndexType(" << number << ");\n";
+          outstream << "out_state.Push(" << number << ");\n";
           downstate = false;
         }
       }
