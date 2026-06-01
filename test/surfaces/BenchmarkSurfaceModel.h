@@ -141,6 +141,8 @@ bool ValidateNavigation(int npoints, Precision worldX, Precision worldY, Precisi
   }
 
   printf("=== Validation: num_erros = %d / %d\n", num_errors, npoints);
+  if (num_better_safety > 0) printf("    Number of better safety values: %d\n", num_better_safety);
+  if (num_worse_safety > 0) printf("    Number of worse safety values: %d\n", num_worse_safety);
   delete[] refSteps;
   delete[] refSafeties;
 
@@ -220,7 +222,7 @@ void TestPerformance(Precision worldX, Precision worldY, Precision worldZ, Preci
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
   }
 
-  // Benchamrk primitive-based NewSimpleNavigator
+  // Benchmark primitive-based NewSimpleNavigator
   Stopwatch timer;
   timer.Start();
   for (int i = 0; i < npoints; ++i) {
@@ -274,7 +276,7 @@ void TestAndSavePerformance(Precision worldRadius, int npoints, int nbLayers)
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
   }
 
-  // Benchamrk primitive-based NewSimpleNavigator
+  // Benchmark primitive-based NewSimpleNavigator
   Stopwatch timer;
   timer.Start();
   for (int i = 0; i < npoints; ++i) {
