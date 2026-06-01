@@ -379,9 +379,6 @@ set(SHAPE_CONTRACT_SOLID_CASES
 # this list should be resolved and go away
 set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   elliptical_cone:surface
-  polycone_cms_like:contracts
-  polycone_cms_like:normals
-  polycone_cms_like:surface
   paraboloid:contracts
   paraboloid:normals
   paraboloid:surface
@@ -394,14 +391,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   hype:hit_consistency
   hype:surface
   orb:surface
-  sphere_thin_shell:surface
-  sphere_narrow_phi:surface
-  sphere_narrow_theta:normals
-  sphere_narrow_theta:surface
-  sphere_almost_full_phi:surface
-  sphere_section:distance_to_in
-  sphere_section:hit_consistency
-  sphere_section:surface
   torus2_general:hit_consistency
   torus2_general:surface
   extruded_multilayer:surface
