@@ -13,7 +13,6 @@
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/navigation/NavigationState.h"
-#include "VecGeom/navigation/NavStatePool.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/navigation/NavStateFwd.h"

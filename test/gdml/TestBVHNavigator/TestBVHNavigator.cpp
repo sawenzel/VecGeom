@@ -42,8 +42,8 @@ bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, const BVHNavigator
               const LoopNavigator *ref_navigator, Precision &checksum_add, bool verbose = true)
 {
   auto &geoManager      = GeoManager::Instance();
-  NavigationState *curr = NavigationState::MakeInstance(geoManager.getMaxDepth());
-  NavigationState *next = NavigationState::MakeInstance(geoManager.getMaxDepth());
+  NavigationState *curr = new NavigationState();
+  NavigationState *next = new NavigationState();
 
   GlobalLocator::LocateGlobalPoint(geoManager.GetWorld(), p, *curr, true);
 

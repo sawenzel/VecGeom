@@ -139,7 +139,7 @@ Vector3D<Precision> GetStartPoint(Vector3D<Precision> const &origin, Vector3D<Pr
 
 void AddTrack(LogicalVolume const *lvol, Vec3_t p, Vec3_t d, NavigationState const *state)
 {
-  NavigationState *newstate = NavigationState::MakeCopy(*state);
+  NavigationState *newstate = new NavigationState(*state);
   if (gVolumeTrackMap.find(lvol) == gVolumeTrackMap.end()) {
     std::vector<TrackAndState_t> *v = new std::vector<TrackAndState_t>();
     gVolumeTrackMap[lvol]           = v;
@@ -160,7 +160,7 @@ void PrintTracks()
 void BenchNavigationUsingLoggedTracks(LogicalVolume const *lvol, std::vector<VNavigator const *> const &navs,
                                       std::vector<TrackAndState_t> const &tracks)
 {
-  NavigationState *newstate = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+  NavigationState *newstate = new NavigationState();
   std::cerr << "lvol " << lvol->GetName() << " CURRENT NAV " << lvol->GetNavigator()->GetName() << "\n";
   int i        = 1000;
   int j        = 0;
@@ -361,8 +361,8 @@ void XRayWithVecGeom_PolymorphicNavigationFramework(int axis, Vector3D<Precision
     std::cout << pixel_width_2 << "\n";
   }
 
-  NavigationState *newnavstate = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
-  NavigationState *curnavstate = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+  NavigationState *newnavstate = new NavigationState();
+  NavigationState *curnavstate = new NavigationState();
 
   size_t zerosteps(0);
   size_t zerosteps_accum(0);
@@ -449,8 +449,8 @@ void XRayWithVecGeom_PolymorphicNavigationFramework(int axis, Vector3D<Precision
   } // end outer loop
   std::cout << "ZERO STEPS VG " << zerosteps_accum << "\n";
 
-  NavigationState::ReleaseInstance(curnavstate);
-  NavigationState::ReleaseInstance(newnavstate);
+  delete curnavstate;
+  delete newnavstate;
 
 } // end XRayWithVecGeom
 
@@ -463,7 +463,7 @@ int XRayWithGeant4(G4VPhysicalVolume *world /* the detector to scan */, int axis
                    int *image)
 {
 
-  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
+  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISMATCH HERE BETWEEN ROOT AND GEANT
   // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
 
   const double UNITCONV = 10.;
@@ -779,8 +779,7 @@ int main(int argc, char *argv[])
         std::cerr << "size ok " << data_size_x * data_size_y << "\n";
       }
     } while (data_size_x * data_size_y > 1E7L);
-    std::cerr << "allocating image"
-              << "\n";
+    std::cerr << "allocating image" << "\n";
     int *volume_result = (int *)new int[data_size_y * data_size_x * 3];
 
 #ifdef VECGEOM_GEANT4
@@ -862,11 +861,9 @@ int main(int argc, char *argv[])
     // RootGeoManager::Instance().set_verbose(true);
     RootGeoManager::Instance().SetFlattenAssemblies(!assemblies);
     RootGeoManager::Instance().LoadRootGeometry();
-    std::cout << "Detector loaded "
-              << "\n";
+    std::cout << "Detector loaded " << "\n";
     ABBoxManager<Precision>::Instance().InitABBoxesForCompleteGeometry();
-    std::cout << "voxelized "
-              << "\n";
+    std::cout << "voxelized " << "\n";
 
     // gGeoManager->Export("extractedgeom.root");
     // GeoManager::Instance().GetWorld()->PrintContent();

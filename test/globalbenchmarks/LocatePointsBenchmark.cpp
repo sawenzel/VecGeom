@@ -11,7 +11,6 @@
 #include "VecGeom/base/Vector3D.h"
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/navigation/GlobalLocator.h"
-#include "VecGeom/navigation/NavStatePool.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 
@@ -42,12 +41,12 @@
 using namespace vecgeom;
 
 // could template on storage type
-void benchVecGeom(SOA3D<Precision> const &points, NavStatePool &statepool)
+void benchVecGeom(SOA3D<Precision> const &points, std::vector<NavigationState> &statepool)
 {
   Stopwatch timer;
   timer.Start();
   for (unsigned int i = 0; i < points.size(); ++i) {
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], *(statepool[i]), true);
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], statepool[i], true);
   }
   timer.Stop();
   std::cout << "VecGeom locate took " << timer.Elapsed() << " s\n";
@@ -84,8 +83,8 @@ void benchGeant4(G4Navigator *nav, std::vector<G4ThreeVector> const &points, G4T
 }
 #endif
 
-void benchCUDA(){
-    // put the code here
+void benchCUDA() {
+  // put the code here
 };
 
 int main(int argc, char *argv[])
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
   // setup data structures
   int npoints = 1000000;
   SOA3D<Precision> points(npoints);
-  NavStatePool statepool(npoints, GeoManager::Instance().getMaxDepth());
+  std::vector<NavigationState> statepool(npoints);
 
   // setup test points
   TGeoBBox const *rootbbox = dynamic_cast<TGeoBBox const *>(gGeoManager->GetTopVolume()->GetShape());

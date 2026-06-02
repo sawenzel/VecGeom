@@ -53,7 +53,7 @@ int main()
     Vector3D<Precision> p(0., 0., 0.);
     Vector3D<Precision> p2(20., 0., 0.);
     Vector3D<Precision> lp(0., 0., 0.);
-    NavigationState *state = NavigationState::MakeInstance(10);
+    NavigationState *state = new NavigationState();
     // State must point to assembly parent (none in this case)
     state->Clear();
     std::cerr << pa->Contains(p, lp, *state) << "\n";
@@ -84,7 +84,7 @@ int main()
   if (pv->GetUnplacedVolume()->IsAssembly()) {
     Vector3D<Precision> p(20., 0., 0.);
     Vector3D<Precision> lp(0., 0., 0.);
-    NavigationState *state = NavigationState::MakeInstance(10);
+    NavigationState *state = new NavigationState();
     state->Clear();
     static_cast<PlacedAssembly const *>(pv)->Contains(p, lp, *state);
     state->Print();

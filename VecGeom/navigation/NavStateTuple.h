@@ -76,51 +76,6 @@ public:
 #endif
   }
 
-  /// @brief Allocate an empty navigation state.
-  /// @details Legacy allocation helper retained for existing pool and test
-  /// code. New code can construct `NavStateTuple` directly. The depth argument
-  /// is ignored because storage is fixed by `VECGEOM_NAVTUPLE_MAXDEPTH`.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeInstance(int) { return new NavStateTuple(); }
-
-  /// @brief Allocate a heap copy of another state.
-  /// @details Legacy allocation helper retained for existing callers. New code
-  /// can use the copy constructor directly.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeCopy(NavStateTuple const &other) { return new NavStateTuple(other); }
-
-  /// @brief Construct an empty state in caller-provided storage.
-  /// @details Legacy placement helper retained for `NavStatePool`. The depth
-  /// argument is ignored because object size is fixed by
-  /// `VECGEOM_NAVTUPLE_MAXDEPTH`.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeInstanceAt(int, void *addr) { return new (addr) NavStateTuple(); }
-
-  /// @brief Construct a copy in caller-provided storage.
-  /// @details Legacy placement helper retained for existing callers. New code
-  /// can use placement-new with the copy constructor directly.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateTuple *MakeCopy(NavStateTuple const &other, void *addr) { return new (addr) NavStateTuple(other); }
-
-  /// @brief Release a heap-allocated navigation state.
-  /// @details Legacy counterpart to `MakeInstance` and `MakeCopy`. New code can
-  /// delete directly.
-  VECCORE_ATT_HOST_DEVICE
-  static void ReleaseInstance(NavStateTuple *state) { delete state; }
-
-  /// @brief Return the size in bytes of one `NavStateTuple` object.
-  /// @details Legacy pool helper retained for existing callers. The depth
-  /// argument is ignored because storage is fixed by
-  /// `VECGEOM_NAVTUPLE_MAXDEPTH`.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOfInstance(int) { return sizeof(NavStateTuple); }
-
-  /// @brief Return the aligned size in bytes of one `NavStateTuple` object.
-  /// @details `NavStateTuple` has no variable-length trailing storage, so this
-  /// legacy pool helper is identical to `SizeOfInstance`.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOfInstanceAlignAware(int) { return sizeof(NavStateTuple); }
-
   /// @brief Return the current scene-local navigation-table index.
   /// @details This is the top component of the tuple, not the complete tuple
   /// state. Use `GetState()` for the full representation-specific state.
@@ -134,31 +89,11 @@ public:
   VECGEOM_FORCE_INLINE
   NavTuple_t const &GetState() const { return fNavTuple; }
 
-  /// @brief Return the runtime object size in bytes.
-  /// @details This is the fixed `sizeof(NavStateTuple)` value.
-  VECCORE_ATT_HOST_DEVICE
-  int GetObjectSize() const { return (int)sizeof(NavStateTuple); }
-
-  /// @brief Return the fixed object size in bytes.
-  /// @details Legacy fixed-size helper retained for generated navigation code.
-  /// The argument is ignored.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOf(size_t) { return sizeof(NavStateTuple); }
-
   /// @brief Copy this state to another `NavStateTuple`.
   /// @details This copies only the compact state fields, not any global table
   /// data referenced by the tuple.
   VECCORE_ATT_HOST_DEVICE
   void CopyTo(NavStateTuple *other) const { *other = *this; }
-
-  /// @brief Copy this state when the caller already knows the fixed size.
-  /// @details Legacy generated-code helper. `N` is ignored because
-  /// `NavStateTuple` always copies the complete object.
-  template <size_t N>
-  void CopyToFixedSize(NavStateTuple *other) const
-  {
-    *other = *this;
-  }
 
   /// @brief Return the address of an encoded table record.
   /// @details On CUDA builds this reads from device geometry globals; on host

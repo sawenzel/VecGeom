@@ -12,7 +12,6 @@
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/base/RNG.h"
 #include "VecGeom/navigation/GlobalLocator.h"
-#include "VecGeom/navigation/NavStatePool.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 
@@ -68,7 +67,7 @@
 using namespace vecgeom;
 
 template <typename T>
-__attribute__((noinline)) void benchSafety(SOA3D<Precision> const &points, NavStatePool &pool)
+__attribute__((noinline)) void benchSafety(SOA3D<Precision> const &points, std::vector<NavigationState> &pool)
 {
   // bench safety
   Precision *safety = new Precision[points.size()];
@@ -76,7 +75,7 @@ __attribute__((noinline)) void benchSafety(SOA3D<Precision> const &points, NavSt
   VSafetyEstimator *se = T::Instance();
   timer.Start();
   for (size_t i = 0; i < points.size(); ++i) {
-    safety[i] = se->ComputeSafety(points[i], *(pool[i]));
+    safety[i] = se->ComputeSafety(points[i], pool[i]);
   }
   timer.Stop();
   std::cerr << timer.Elapsed() << "\n";
@@ -89,13 +88,13 @@ __attribute__((noinline)) void benchSafety(SOA3D<Precision> const &points, NavSt
 }
 
 template <typename T>
-__attribute__((noinline)) void benchLocalSafety(SOA3D<Precision> const &localpoints, NavStatePool &pool)
+__attribute__((noinline)) void benchLocalSafety(SOA3D<Precision> const &localpoints, std::vector<NavigationState> &pool)
 {
   // bench safety
   Precision *safety = new Precision[localpoints.size()];
   Stopwatch timer;
   VSafetyEstimator *se = T::Instance();
-  const auto topvolume = pool[0]->Top();
+  const auto topvolume = pool[0].Top();
   timer.Start();
   for (size_t i = 0; i < localpoints.size(); ++i) {
     safety[i] = se->ComputeSafetyForLocalPoint(localpoints[i], topvolume);
@@ -237,7 +236,8 @@ __attribute__((noinline)) void benchmarkLocalROOTSafety(int nPoints, SOA3D<Preci
 #endif
 
 // main routine starting up the individual benchmarks
-void benchDifferentSafeties(SOA3D<Precision> const &points, SOA3D<Precision> const &localpoints, NavStatePool &pool)
+void benchDifferentSafeties(SOA3D<Precision> const &points, SOA3D<Precision> const &localpoints,
+                            std::vector<NavigationState> &pool)
 {
   std::cerr << "## - GLOBAL POINTS - \n";
   std::cerr << "##\n";
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> localpoints(npoints);
   SOA3D<Precision> directions(npoints);
-  NavStatePool statepool(npoints, GeoManager::Instance().getMaxDepth());
+  std::vector<NavigationState> statepool(npoints);
 
   // setup test points
   TGeoBBox const *rootbbox = dynamic_cast<TGeoBBox const *>(gGeoManager->GetTopVolume()->GetShape());
@@ -299,12 +299,12 @@ int main(int argc, char *argv[])
       GeoManager::Instance().FindLogicalVolume(volname.c_str()), localpoints, points, npoints);
   std::cerr << "points filled\n";
   for (size_t i = 0; i < points.size(); ++i) {
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], *(statepool[i]), true);
-    if (statepool[i]->Top()->GetLogicalVolume() != GeoManager::Instance().FindLogicalVolume(volname.c_str())) {
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], statepool[i], true);
+    if (statepool[i].Top()->GetLogicalVolume() != GeoManager::Instance().FindLogicalVolume(volname.c_str())) {
       //
       std::cerr << "problem : point " << i << " probably in overlapping region \n";
       points.set(i, points[i - 1]);
-      statepool[i - 1]->CopyTo(statepool[i]);
+      statepool[i] = statepool[i - 1];
     }
   }
 

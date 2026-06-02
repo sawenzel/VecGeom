@@ -20,7 +20,6 @@
 namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 class LogicalVolume;
-class NavStatePool;
 
 // A class providing convenient access to tabulated coordinate transformation data
 // could make it a private subclass if we don't want to expose it
@@ -85,9 +84,9 @@ private:
   bool fRotalwaysminusoneorone[9] = {true, true, true, true, true, true, true, true, true};
   bool fTransalwayszero[3]        = {true, true, true};
   bool fTransIsConstant[3]        = {true, true, true}; // indicates if this component is a constant for all entries
-  bool fRotIsConstant[9]          = {true, true, true, true, true,
-                                     true, true, true, true}; // indicates if this component is a constant for all entries
-  std::vector<std::string> fTransVariableName; // variable names which are set according to SOA/AOS choices etc
+  bool fRotIsConstant[9] = {true, true, true, true, true,
+                            true, true, true, true}; // indicates if this component is a constant for all entries
+  std::vector<std::string> fTransVariableName;       // variable names which are set according to SOA/AOS choices etc
   std::vector<std::string> fRotVariableName;
   std::vector<std::string> fVecTransVariableName; // variable names which are set according to SOA/AOS choices etc
   std::vector<std::string> fVecRotVariableName;
@@ -130,7 +129,7 @@ public:
         fUseBaseNavigator(false),    // whether to use the DaughterDetection from another navigator ( makes sense when
                                      // combined with voxel techniques )
         fBaseNavigator(), fGlobalTransData("globalTrans", true) // init 12 vectors : 3 for translation, 9 for rotation
-        {};
+  {};
 
   // produce a specialized SafetyEstimator class for a given logical volume
   // currently this is only done using the SimpleEstimator base algorithm
@@ -144,7 +143,7 @@ private:
   // analysis functions
   void AnalyseLogicalVolume();
   void AnalysePaths(std::list<NavigationState *> const & /* inpaths */);
-  void AnalyseTargetPaths(NavStatePool const &, NavStatePool const &);
+  void AnalyseTargetPaths(std::vector<NavigationState> const &, std::vector<NavigationState> const &);
   // void GeneratePathClassifierCode(std::list<std::pair<int, std::set<NavigationState::Value_t>>> const
   // &pathclassification,
   //                                 PathLevelIndexMap_t &map);
@@ -235,7 +234,7 @@ private:
 
   std::vector<std::vector<int>>
       fPathxTargetToMatrixTable; // an in - memory table to fetch the correct transition matrix index
-  std::stringstream fPathxTargetToMatrixTableStringStream; // string represenation of the above
+  std::stringstream fPathxTargetToMatrixTableStringStream; // string representation of the above
 
   // caching the transformation numbers --> to build a SOA/AOS form
   TabulatedTransData fGlobalTransData;

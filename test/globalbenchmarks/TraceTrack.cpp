@@ -113,8 +113,7 @@ void XRayWithROOT(int axis, Vector3D<Precision> origin, Vector3D<Precision> bbox
 
     if (VERBOSE) {
       if (node != NULL)
-        std::cout << " *R " << counter << " * "
-                  << " point(" << p[0] << ", " << p[1] << ", " << p[2] << ") goes to "
+        std::cout << " *R " << counter << " * " << " point(" << p[0] << ", " << p[1] << ", " << p[2] << ") goes to "
                   << " VolumeName: " << node->GetVolume()->GetName()
                   << " (MAT: " << node->GetVolume()->GetMaterial()->GetName() << ") :";
       else
@@ -131,8 +130,7 @@ void XRayWithROOT(int axis, Vector3D<Precision> origin, Vector3D<Precision> bbox
   // std::cout << crossedvolumecount << "\n";
 
   if (VERBOSE) {
-    std::cout << " PassedVolume:"
-              << "<" << crossedvolumecount << " ";
+    std::cout << " PassedVolume:" << "<" << crossedvolumecount << " ";
     std::cout << " total distance travelled: " << distancetravelled << std::endl;
   }
 } // end XRayWithROOT
@@ -144,8 +142,8 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
 
   Stopwatch internaltimer;
 
-  NavigationState *newnavstate = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
-  NavigationState *curnavstate = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+  NavigationState *newnavstate = new NavigationState();
+  NavigationState *curnavstate = new NavigationState();
   int counter                  = 0;
   //   std::cout << pixel_count_1 << " " << pixel_count_2 << "\n";
 
@@ -199,8 +197,7 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
     if (step > 0) crossedvolumecount++;
   } // end while
   if (VERBOSE) {
-    std::cout << " PassedVolume:"
-              << "<" << crossedvolumecount << " ";
+    std::cout << " PassedVolume:" << "<" << crossedvolumecount << " ";
     std::cout << " Distance: " << distancetravelled << std::endl;
   }
 
@@ -208,8 +205,8 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
 
   std::cout << "VecGeom time " << internaltimer.Elapsed() << "\n";
 
-  NavigationState::ReleaseInstance(curnavstate);
-  NavigationState::ReleaseInstance(newnavstate);
+  delete curnavstate;
+  delete newnavstate;
 
 } // end XRayWithVecGeom
 
@@ -226,8 +223,8 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
 //  NavigationState **newnavstates = new NavigationState *[N];
 //  NavigationState **curnavstates = new NavigationState *[N];
 //  for (unsigned int j = 0; j < N; ++j) {
-//    newnavstates[j] = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
-//    curnavstates[j] = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+//    newnavstates[j] = new NavigationState();
+//    curnavstates[j] = new NavigationState();
 //  }
 //
 //  SOA3D<Precision> points(N);
@@ -302,8 +299,8 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
 //  std::cout << "VecGeom vec time (per track) " << internaltimer.Elapsed() / N << "\n";
 //
 //  for (unsigned int j = 0; j < N; ++j) {
-//    NavigationState::ReleaseInstance(curnavstates[j]);
-//    NavigationState::ReleaseInstance(newnavstates[j]);
+//    delete curnavstates[j];
+//    delete newnavstates[j];
 //  }
 //} // end XRayWithVecGeomVectorInterface
 
@@ -311,7 +308,7 @@ void XRayWithVecGeom(int axis, Vector3D<Precision> origin, Vector3D<Precision> b
 G4VPhysicalVolume *SetupGeant4Geometry(std::string volumename, Vector3D<Precision> worldbbox)
 {
 
-  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
+  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISMATCH HERE BETWEEN ROOT AND GEANT
   // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
 
   const double UNITCONV = 10.;
@@ -331,8 +328,7 @@ G4VPhysicalVolume *SetupGeant4Geometry(std::string volumename, Vector3D<Precisio
       foundvolume = v;
     }
   }
-  std::cerr << " found logical volume " << volumename << " " << found << " times "
-            << "\n";
+  std::cerr << " found logical volume " << volumename << " " << found << " times " << "\n";
 
   // embed logical volume in a Box
   // create box first
@@ -362,7 +358,7 @@ int XRayWithGeant4(G4VPhysicalVolume *world /* the detector to scan */, int axis
                    int *image)
 {
 
-  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISSMATCH HERE BETWEEN ROOT AND GEANT
+  // ATTENTION: THERE IS A (OR MIGHT BE) UNIT MISMATCH HERE BETWEEN ROOT AND GEANT
   // ROOT = cm and GEANT4 = mm; basically a factor of 10 in all dimensions
 
   // const double UNITCONV=10.;
@@ -399,8 +395,7 @@ int XRayWithGeant4(G4VPhysicalVolume *world /* the detector to scan */, int axis
 
     if (VERBOSE) {
       if (vol != NULL)
-        std::cout << " *G4 " << counter++ << " * point" << p / 10. << " goes to "
-                  << " VolumeName: " << vol->GetName();
+        std::cout << " *G4 " << counter++ << " * point" << p / 10. << " goes to " << " VolumeName: " << vol->GetName();
       else
         std::cout << "  NULL: ";
 
@@ -410,8 +405,7 @@ int XRayWithGeant4(G4VPhysicalVolume *world /* the detector to scan */, int axis
   } // end while
 
   if (VERBOSE) {
-    std::cout << " PassedVolume:"
-              << "<" << crossedvolumecount << " ";
+    std::cout << " PassedVolume:" << "<" << crossedvolumecount << " ";
     std::cout << " Distance: " << distancetravelled / 10. << std::endl;
   }
   return 0;
@@ -573,8 +567,7 @@ int main(int argc, char *argv[])
 
     // convert current gGeoManager to a VecGeom geometry
     RootGeoManager::Instance().LoadRootGeometry();
-    std::cout << "Detector loaded "
-              << "\n";
+    std::cout << "Detector loaded " << "\n";
     timer.Start();
     XRayWithVecGeom(axis, Vector3D<Precision>(origin[0], origin[1], origin[2]), Vector3D<Precision>(dx, dy, dz), dir,
                     axis1_start, axis1_end, axis2_start, axis2_end, data_size_x, data_size_y, pixel_axis,

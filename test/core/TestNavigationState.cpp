@@ -63,8 +63,8 @@ std::string DownString(NavigationState const &state, int level)
 
 void ReleaseStates(NavigationState *state1, NavigationState *state2)
 {
-  NavigationState::ReleaseInstance(state1);
-  NavigationState::ReleaseInstance(state2);
+  delete state1;
+  delete state2;
 }
 
 #ifdef VECGEOM_USE_NAVTUPLE
@@ -96,8 +96,8 @@ void NavStateUnitTest1()
 {
   auto *world = BuildTestGeometry();
 
-  NavigationState *state1 = NavigationState::MakeInstance(10);
-  NavigationState *state2 = NavigationState::MakeInstance(10);
+  NavigationState *state1 = new NavigationState();
+  NavigationState *state2 = new NavigationState();
 
   // test - 0
   // The current navigation states are always rooted in the geometry world, so
@@ -162,7 +162,7 @@ void NavStateUnitTest1()
 void NavStateTupleSceneSentinelTest()
 {
   auto *world            = BuildTestGeometry();
-  NavigationState *state = NavigationState::MakeInstance(10);
+  NavigationState *state = new NavigationState();
 
   std::vector<uint> indices{0};
   bool found_scene = FindSceneState(world, *state, indices, 6);
@@ -193,7 +193,7 @@ void NavStateTupleSceneSentinelTest()
   VECGEOM_ASSERT(sentinel_scene_matrix.ApproxEqual(scene_volume_matrix));
   VECGEOM_ASSERT(sentinel_in_scene_matrix.IsIdentity());
 
-  NavigationState::ReleaseInstance(state);
+  delete state;
 }
 #endif
 

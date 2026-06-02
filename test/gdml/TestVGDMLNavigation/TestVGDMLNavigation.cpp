@@ -55,8 +55,8 @@ VNavigator const *get_navigator(const char *name)
 bool navigate(Vector3D<Precision> p, Vector3D<Precision> dir, bool verbose = true)
 {
   auto &geoManager      = GeoManager::Instance();
-  NavigationState *curr = NavigationState::MakeInstance(geoManager.getMaxDepth());
-  NavigationState *next = NavigationState::MakeInstance(geoManager.getMaxDepth());
+  NavigationState *curr = new NavigationState();
+  NavigationState *next = new NavigationState();
 
   VNavigator const &ref_navigator = *NewSimpleNavigator<>::Instance();
 

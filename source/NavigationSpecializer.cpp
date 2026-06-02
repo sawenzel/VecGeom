@@ -10,7 +10,9 @@
 #include "VecGeom/management/Logger.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/navigation/NavigationState.h"
-#include "VecGeom/navigation/NavStatePool.h"
+#include <algorithm>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <set>
@@ -64,6 +66,51 @@ auto printlambdasingle = [](std::string name, double e, std::ostream &outstream)
   outstream << std::setprecision(35) << e;
   outstream << ";\n";
 };
+
+namespace {
+
+bool ReadNavigationStateFileHeader(std::string const &filename, int &capacity, int &depth)
+{
+  std::ifstream fin(filename, std::ios::binary);
+  if (!fin) return false;
+  fin.read(reinterpret_cast<char *>(&capacity), sizeof(capacity));
+  fin.read(reinterpret_cast<char *>(&depth), sizeof(depth));
+  return bool(fin);
+}
+
+int ReadNavigationStatesFromFile(std::string const &filename, std::vector<NavigationState> &states, int expectedDepth)
+{
+  int capacity = 0;
+  int depth    = 0;
+  std::ifstream fin(filename, std::ios::binary);
+  if (!fin) return -1;
+  fin.read(reinterpret_cast<char *>(&capacity), sizeof(capacity));
+  fin.read(reinterpret_cast<char *>(&depth), sizeof(depth));
+  if (!fin) return -2;
+  if (capacity != static_cast<int>(states.size()) || depth != expectedDepth) {
+    std::cerr << " warning: refusing navigation state cache with different size or depth\n";
+    return -3;
+  }
+
+  auto const headerSize = static_cast<std::streamoff>(sizeof(capacity) + sizeof(depth));
+  auto const recordSize = static_cast<std::streamoff>(sizeof(NavigationState));
+  auto const dataSize   = static_cast<std::streamoff>(states.size()) * recordSize;
+  auto const readPos    = fin.tellg();
+  fin.seekg(0, std::ios::end);
+  auto const fileSize = static_cast<std::streamoff>(fin.tellg());
+  if (fileSize != headerSize + dataSize) {
+    std::cerr << " warning: refusing navigation state cache with incompatible payload size in " << filename
+              << " (expected " << headerSize + dataSize << " bytes, got " << fileSize << " bytes)\n";
+    return -4;
+  }
+  fin.seekg(readPos, std::ios::beg);
+
+  fin.read(reinterpret_cast<char *>(states.data()), states.size() * sizeof(NavigationState));
+  if (!fin) return -5;
+  return static_cast<int>(states.size());
+}
+
+} // namespace
 
 void TabulatedTransData::Analyse()
 {
@@ -178,8 +225,7 @@ void TabulatedTransData::EmitTableDeclaration(std::ostream &outstream)
         outstream << "double trans" << i << ";\n";
         std::stringstream stringbuilder;
         std::stringstream vecstringbuilder;
-        stringbuilder << fName << "[index]."
-                      << "trans" << i;
+        stringbuilder << fName << "[index]." << "trans" << i;
         vecstringbuilder << "trans" << i << "_v";
         fTransVariableName[i] = stringbuilder.str();
         data.push_back(&fTransCoefficients[i]);
@@ -191,8 +237,7 @@ void TabulatedTransData::EmitTableDeclaration(std::ostream &outstream)
         outstream << "double rot" << i << ";\n";
         std::stringstream stringbuilder;
         std::stringstream vecstringbuilder;
-        stringbuilder << fName << "[index]."
-                      << "rot" << i;
+        stringbuilder << fName << "[index]." << "rot" << i;
         vecstringbuilder << "rot" << i << "_v";
         fRotVariableName[i] = stringbuilder.str();
         data.push_back(&fRotCoefficients[i]);
@@ -637,17 +682,18 @@ void NavigationSpecializer::AnalyseLogicalVolume()
   // try to read from generated outpaths ( add error handling these files do not exist )
   int npointsin, ndepthin;
   int npointsout, ndepthout;
-  NavStatePool::ReadDepthAndCapacityFromFile(fInStateFileName, npointsin, ndepthin);
-  NavStatePool::ReadDepthAndCapacityFromFile(fOutStateFileName, npointsout, ndepthout);
+  bool readHeaderIn  = ReadNavigationStateFileHeader(fInStateFileName, npointsin, ndepthin);
+  bool readHeaderOut = ReadNavigationStateFileHeader(fOutStateFileName, npointsout, ndepthout);
 
-  if (npointsin != npointsout || ndepthin != ndepthout || ndepthin != GeoManager::Instance().getMaxDepth()) {
+  if (!readHeaderIn || !readHeaderOut || npointsin != npointsout || ndepthin != ndepthout ||
+      ndepthin != GeoManager::Instance().getMaxDepth()) {
     VECGEOM_LOG(critical) << "Failed to read state files";
     std::exit(1);
   }
-  NavStatePool inpool(npointsin, GeoManager::Instance().getMaxDepth());
-  NavStatePool outpool(npointsout, GeoManager::Instance().getMaxDepth());
-  auto s1 = inpool.FromFile(fInStateFileName);
-  auto s2 = outpool.FromFile(fOutStateFileName);
+  std::vector<NavigationState> inpool(npointsin);
+  std::vector<NavigationState> outpool(npointsout);
+  auto s1 = ReadNavigationStatesFromFile(fInStateFileName, inpool, GeoManager::Instance().getMaxDepth());
+  auto s2 = ReadNavigationStatesFromFile(fOutStateFileName, outpool, GeoManager::Instance().getMaxDepth());
   if (s1 != npointsin || s2 != npointsin) {
     VECGEOM_LOG(critical) << "Failed to read state files";
     std::exit(1);
@@ -852,10 +898,8 @@ void NavigationSpecializer::AnalysePaths(std::list<NavigationState *> const &pat
   fTransformationCode << ");\n";
 
   // for vectorized version this is a bit different ( we need a SIMD global point first of all )
-  fVectorTransformationCode << "Vector3D<Vc::double_v> gpoint_v("
-                            << "Vc::double_v(globalpoints.x()+i),"
-                            << "Vc::double_v(globalpoints.y()+i),"
-                            << "Vc::double_v(globalpoints.z()+i));\n";
+  fVectorTransformationCode << "Vector3D<Vc::double_v> gpoint_v(" << "Vc::double_v(globalpoints.x()+i),"
+                            << "Vc::double_v(globalpoints.y()+i)," << "Vc::double_v(globalpoints.z()+i));\n";
   fVectorTransformationCode << "Vector3D<Vc::double_v> tmp( gpoint_v.x()";
   if (!transalwayszero[0]) fVectorTransformationCode << "- gTrans0_v";
   fVectorTransformationCode << ", gpoint_v.y()";
@@ -1015,7 +1059,8 @@ std::vector<size_t> sort_indexes(const std::vector<T> &v, const std::vector<size
   return idx;
 }
 
-void NavigationSpecializer::AnalyseTargetPaths(NavStatePool const &inpool, NavStatePool const &outpool)
+void NavigationSpecializer::AnalyseTargetPaths(std::vector<NavigationState> const &inpool,
+                                               std::vector<NavigationState> const &outpool)
 {
   // the purpose of this function is to generate a list of possible target states
   // including their corresponding matrix transformations
@@ -1042,18 +1087,20 @@ void NavigationSpecializer::AnalyseTargetPaths(NavStatePool const &inpool, NavSt
   std::vector<size_t> transitioncounter; // counts the number of transitions of each type
   // could be used as a sorting criterion to optimize early returns from relocation
 
-  for (auto j = decltype(outpool.capacity()){0}; j < outpool.capacity(); ++j) {
+  for (auto j = decltype(outpool.size()){0}; j < outpool.size(); ++j) {
     std::stringstream pathstringstream2;
-    auto *navstate = outpool[j];
+    auto *navstate = &outpool[j];
     navstate->printValueSequence(pathstringstream2);
     pset.insert(navstate->Top());
     if (navstate->Top() != nullptr) lset.insert(navstate->Top()->GetLogicalVolume());
     pathset.insert(pathstringstream2.str());
 
     std::stringstream pathstringstream1;
-    auto *instate = inpool[j];
+    auto *instate = &inpool[j];
     instate->printValueSequence(pathstringstream1);
     crossset.insert(pathstringstream1.str() + " -- " + pathstringstream2.str());
+
+    if (navstate->Top() == nullptr) continue;
 
     // the string characterising the relative path difference between instate and outstate
     std::string deltapathstring = instate->RelativePath(*navstate);
@@ -1476,9 +1523,7 @@ void NavigationSpecializer::DumpStaticPrepareOutstateFunction(std::ostream &outs
          "&out_state, Precision geom_step, Precision step_limit, VPlacedVolume const *hitcandidate, bool &done){\n";
   // now we have the candidates and we prepare the out_state
 
-  outstream
-      << "// this is the special part ( fast navigation state copying since we know the depth at compile time )\n";
-  outstream << "in_state.CopyToFixedSize<NavigationState::SizeOf(" << fGeometryDepth << ")>(&out_state);\n";
+  outstream << "in_state.CopyTo(&out_state);\n";
 
   outstream << "// this is just the first try -- we should factor out the following part which is probably not \n";
   outstream << "// special code\n";
@@ -1669,8 +1714,7 @@ void NavigationSpecializer::DumpRelocateMethod(std::ostream &outstream) const
     outstream << fDeltaTransformationCode.str();
     outstream << "VPlacedVolume const * pvol = &GeoManager::gCompactPlacedVolBuffer[" << fTargetVolIds[transitionid]
               << "];\n";
-    outstream << "bool intarget = "
-              << "((" << fTransitionTargetTypes[transitionid].second << "const *) pvol)->"
+    outstream << "bool intarget = " << "((" << fTransitionTargetTypes[transitionid].second << "const *) pvol)->"
               << fTransitionTargetTypes[transitionid].second << "::UnplacedContains(localpoint);\n";
     outstream << "if(intarget){\n";
     // now parse the transition string an calculate the outstate from this

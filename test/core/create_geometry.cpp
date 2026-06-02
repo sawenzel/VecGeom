@@ -15,10 +15,9 @@ using namespace vecgeom;
 int main()
 {
   std::cout << "VecGeom version: " << vecgeom_version << std::endl;
-  if constexpr (!(VECGEOM_VERSION >= 0x020000))
-  {
-      std::cout << "Version " << VECGEOM_VERSION << " is too old";
-      return 1;
+  if constexpr (!(VECGEOM_VERSION >= 0x020000)) {
+    std::cout << "Version " << VECGEOM_VERSION << " is too old";
+    return 1;
   }
 
   // Vector3D<Precision> vec1(5, 3, 1);
@@ -62,14 +61,14 @@ int main()
   world_placed->PrintContent();
 
   Vector3D<Precision> point(2, 2, 2);
-  NavigationState *path = NavigationState::MakeInstance(4);
+  NavigationState *path = new NavigationState();
   GlobalLocator::LocateGlobalPoint(world_placed, point, *path, true);
   path->Print();
 
   GeoManager::Instance().FindLogicalVolume("Large box");
   GeoManager::Instance().FindPlacedVolume("Large box");
 
-  NavigationState::ReleaseInstance(path);
+  delete path;
 
   return 0;
 }

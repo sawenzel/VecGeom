@@ -517,7 +517,7 @@ public:
       // the current state is a good one;
 
       // make a copy and store it in the container for this visitor
-      NavigationState *copy = NavigationState::MakeCopy(*state);
+      NavigationState *copy = new NavigationState(*state);
 
       this->c_.push_back(copy);
     }
@@ -542,7 +542,7 @@ void GeoManager::visitAllPlacedVolumesWithContext(VPlacedVolume const *currentvo
 template <typename Container>
 __attribute__((noinline)) void GeoManager::getAllPathForLogicalVolume(LogicalVolume const *lvol, Container &c) const
 {
-  NavigationState *state = NavigationState::MakeInstance(getMaxDepth());
+  NavigationState *state = new NavigationState();
   c.clear();
   state->Clear();
 
@@ -551,7 +551,7 @@ __attribute__((noinline)) void GeoManager::getAllPathForLogicalVolume(LogicalVol
 
   // now walk the placed volume hierarchy
   visitAllPlacedVolumesWithContext(GetWorld(), &pv, state);
-  NavigationState::ReleaseInstance(state);
+  delete state;
 }
 
 // explicitly init some symbols

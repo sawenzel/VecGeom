@@ -4,7 +4,6 @@
 #include "VecGeom/base/SOA3D.h"
 #include "VecGeom/base/RNG.h"
 #include "VecGeom/navigation/GlobalLocator.h"
-#include "VecGeom/navigation/NavStatePool.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/volumes/LogicalVolume.h"
@@ -42,9 +41,11 @@
 #include "VecGeomTest/G4GeoManager.h"
 #endif
 
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <sstream>
+#include <vector>
 #include <dlfcn.h>
 
 #undef NDEBUG
@@ -74,6 +75,51 @@ Precision gMAXSTEP     = vecgeom::kInfLength; // global variable to configure ma
 
 std::string gSpecLibName;
 VNavigator const *gSpecializedNavigator;
+
+namespace {
+
+void WriteNavigationStatesToFile(std::string const &filename, std::vector<NavigationState> const &states, int depth)
+{
+  int capacity = static_cast<int>(states.size());
+  std::ofstream outfile(filename, std::ios::binary);
+  outfile.write(reinterpret_cast<char *>(&capacity), sizeof(capacity));
+  outfile.write(reinterpret_cast<char *>(&depth), sizeof(depth));
+  outfile.write(reinterpret_cast<char const *>(states.data()), states.size() * sizeof(NavigationState));
+}
+
+int ReadNavigationStatesFromFile(std::string const &filename, std::vector<NavigationState> &states, int expectedDepth)
+{
+  int capacity = 0;
+  int depth    = 0;
+  std::ifstream fin(filename, std::ios::binary);
+  if (!fin) return -1;
+  fin.read(reinterpret_cast<char *>(&capacity), sizeof(capacity));
+  fin.read(reinterpret_cast<char *>(&depth), sizeof(depth));
+  if (!fin) return -2;
+  if (capacity != static_cast<int>(states.size()) || depth != expectedDepth) {
+    std::cerr << " warning: ignoring navigation state cache with different size or depth\n";
+    return -3;
+  }
+
+  auto const headerSize = static_cast<std::streamoff>(sizeof(capacity) + sizeof(depth));
+  auto const recordSize = static_cast<std::streamoff>(sizeof(NavigationState));
+  auto const dataSize   = static_cast<std::streamoff>(states.size()) * recordSize;
+  auto const readPos    = fin.tellg();
+  fin.seekg(0, std::ios::end);
+  auto const fileSize = static_cast<std::streamoff>(fin.tellg());
+  if (fileSize != headerSize + dataSize) {
+    std::cerr << " warning: ignoring navigation state cache with incompatible payload size in " << filename
+              << " (expected " << headerSize + dataSize << " bytes, got " << fileSize << " bytes)\n";
+    return -4;
+  }
+  fin.seekg(readPos, std::ios::beg);
+
+  fin.read(reinterpret_cast<char *>(states.data()), states.size() * sizeof(NavigationState));
+  if (!fin) return -5;
+  return static_cast<int>(states.size());
+}
+
+} // namespace
 
 void InitNavigators()
 {
@@ -127,7 +173,7 @@ void InitSpecializedNavigators(std::string libname)
   }
 }
 
-void analyseOutStates(NavStatePool &inpool, NavStatePool const &outpool)
+void analyseOutStates(std::vector<NavigationState> const &inpool, std::vector<NavigationState> const &outpool)
 {
   std::set<VPlacedVolume const *> pset;
   std::set<LogicalVolume const *> lset;
@@ -135,18 +181,21 @@ void analyseOutStates(NavStatePool &inpool, NavStatePool const &outpool)
   std::set<std::string> crossset;
   std::set<std::string> diffset;
   std::set<std::string> matrices;
-  for (auto j = decltype(outpool.capacity()){0}; j < outpool.capacity(); ++j) {
+  for (auto j = decltype(outpool.size()){0}; j < outpool.size(); ++j) {
     std::stringstream pathstringstream2;
-    auto *navstate = outpool[j];
+    auto *navstate = &outpool[j];
     navstate->printValueSequence(pathstringstream2);
     pset.insert(navstate->Top());
-    lset.insert(navstate->Top()->GetLogicalVolume());
+    if (navstate->Top() != nullptr) lset.insert(navstate->Top()->GetLogicalVolume());
     pathset.insert(pathstringstream2.str());
 
     std::stringstream pathstringstream1;
-    auto *instate = inpool[j];
+    auto *instate = &inpool[j];
     instate->printValueSequence(pathstringstream1);
     crossset.insert(pathstringstream1.str() + " -- " + pathstringstream2.str());
+
+    if (navstate->Top() == nullptr) continue;
+
     diffset.insert(instate->RelativePath(*navstate));
 
     Transformation3D g;
@@ -351,8 +400,8 @@ __attribute__((noinline)) void benchmarkG4Navigator(SOA3D<Precision> const &poin
 
 template <bool WithSafety = true>
 __attribute__((noinline)) void benchNavigator(VNavigator const *se, SOA3D<Precision> const &points,
-                                              SOA3D<Precision> const &dirs, NavStatePool const &inpool,
-                                              NavStatePool &outpool)
+                                              SOA3D<Precision> const &dirs, std::vector<NavigationState> const &inpool,
+                                              std::vector<NavigationState> &outpool)
 {
   Precision *steps = new Precision[points.size()];
   Precision *safeties;
@@ -362,10 +411,10 @@ __attribute__((noinline)) void benchNavigator(VNavigator const *se, SOA3D<Precis
   timer.Start();
   for (decltype(points.size()) i = 0; i < points.size(); ++i) {
     if (WithSafety) {
-      steps[i] = se->ComputeStepAndSafetyAndPropagatedState(points[i], dirs[i], gMAXSTEP, *inpool[i], *outpool[i], true,
+      steps[i] = se->ComputeStepAndSafetyAndPropagatedState(points[i], dirs[i], gMAXSTEP, inpool[i], outpool[i], true,
                                                             safeties[i]);
     } else {
-      steps[i] = se->ComputeStepAndPropagatedState(points[i], dirs[i], gMAXSTEP, *inpool[i], *outpool[i]);
+      steps[i] = se->ComputeStepAndPropagatedState(points[i], dirs[i], gMAXSTEP, inpool[i], outpool[i]);
     }
   }
   timer.Stop();
@@ -376,7 +425,7 @@ __attribute__((noinline)) void benchNavigator(VNavigator const *se, SOA3D<Precis
     if (WithSafety) {
       saccum += safeties[i];
     }
-    if (outpool[i]->Top()) hittargetchecksum += (size_t)outpool[i]->Top()->id();
+    if (outpool[i].Top()) hittargetchecksum += (size_t)outpool[i].Top()->id();
   }
   delete[] steps;
   std::cerr << "accum  " << se->GetName() << " " << accum << " target checksum " << hittargetchecksum << "\n";
@@ -388,8 +437,9 @@ __attribute__((noinline)) void benchNavigator(VNavigator const *se, SOA3D<Precis
 // version benchmarking navigation without relocation
 template <bool WithSafety = true>
 __attribute__((noinline)) void benchNavigatorNoReloc(VNavigator const *se, SOA3D<Precision> const &points,
-                                                     SOA3D<Precision> const &dirs, NavStatePool const &inpool,
-                                                     NavStatePool &outpool)
+                                                     SOA3D<Precision> const &dirs,
+                                                     std::vector<NavigationState> const &inpool,
+                                                     std::vector<NavigationState> &outpool)
 {
   Precision *steps = new Precision[points.size()];
   Precision *safeties;
@@ -399,10 +449,10 @@ __attribute__((noinline)) void benchNavigatorNoReloc(VNavigator const *se, SOA3D
   timer.Start();
   for (decltype(points.size()) i = 0; i < points.size(); ++i) {
     if (WithSafety) {
-      steps[i] = se->ComputeStepAndSafety(points[i], dirs[i], gMAXSTEP, *const_cast<NavigationState *>(inpool[i]), true,
-                                          safeties[i]);
+      auto &instate = const_cast<NavigationState &>(inpool[i]);
+      steps[i]      = se->ComputeStepAndSafety(points[i], dirs[i], gMAXSTEP, instate, true, safeties[i]);
     } else {
-      steps[i] = se->ComputeStep(points[i], dirs[i], gMAXSTEP, *inpool[i], *outpool[i]);
+      steps[i] = se->ComputeStep(points[i], dirs[i], gMAXSTEP, inpool[i], outpool[i]);
     }
   }
   timer.Stop();
@@ -413,7 +463,7 @@ __attribute__((noinline)) void benchNavigatorNoReloc(VNavigator const *se, SOA3D
     if (WithSafety) {
       saccum += safeties[i];
     }
-    if (outpool[i]->Top()) hittargetchecksum += (size_t)outpool[i]->Top()->id();
+    if (outpool[i].Top()) hittargetchecksum += (size_t)outpool[i].Top()->id();
   }
   delete[] steps;
   std::cerr << "accum  " << se->GetName() << " " << accum << " target checksum " << hittargetchecksum << "\n";
@@ -423,8 +473,9 @@ __attribute__((noinline)) void benchNavigatorNoReloc(VNavigator const *se, SOA3D
 }
 
 template <bool WithSafety = false>
-void benchDifferentNavigators(SOA3D<Precision> const &points, SOA3D<Precision> const &dirs, NavStatePool &pool,
-                              NavStatePool &outpool, std::string outfilenamebase)
+void benchDifferentNavigators(SOA3D<Precision> const &points, SOA3D<Precision> const &dirs,
+                              std::vector<NavigationState> &pool, std::vector<NavigationState> &outpool,
+                              std::string outfilenamebase)
 {
   std::cerr << "##\n";
   if (gSpecializedLib) {
@@ -434,7 +485,7 @@ void benchDifferentNavigators(SOA3D<Precision> const &points, SOA3D<Precision> c
   RUNBENCH((benchNavigator<WithSafety>(NewSimpleNavigator<false>::Instance(), points, dirs, pool, outpool)));
   std::stringstream str;
   str << outfilenamebase << "_simple.bin";
-  outpool.ToFile(str.str());
+  WriteNavigationStatesToFile(str.str(), outpool, GeoManager::Instance().getMaxDepth());
   std::cerr << "##\n";
   RUNBENCH((benchNavigator<WithSafety>(NewSimpleNavigator<true>::Instance(), points, dirs, pool, outpool)));
   std::cerr << "##\n";
@@ -448,7 +499,7 @@ void benchDifferentNavigators(SOA3D<Precision> const &points, SOA3D<Precision> c
 
 #ifdef BENCH_GENERATED_NAVIGATOR
   RUNBENCH((benchNavigator<GeneratedNavigator, WithSafety>(points, dirs, pool, outpool)));
-  outpool.ToFile("generatedoutpool.bin");
+  WriteNavigationStatesToFile("generatedoutpool.bin", outpool, GeoManager::Instance().getMaxDepth());
   std::cerr << "##\n";
   std::cerr << "##\n";
 #endif
@@ -560,8 +611,8 @@ int main(int argc, char *argv[])
   SOA3D<Precision> points(npoints);
   SOA3D<Precision> localpoints(npoints);
   SOA3D<Precision> directions(npoints);
-  NavStatePool statepool(npoints, GeoManager::Instance().getMaxDepth());
-  NavStatePool statepoolout(npoints, GeoManager::Instance().getMaxDepth());
+  std::vector<NavigationState> statepool(npoints);
+  std::vector<NavigationState> statepoolout(npoints);
 
   std::stringstream pstream;
   std::string geomfilename(argv[1]);
@@ -577,7 +628,8 @@ int main(int argc, char *argv[])
     std::cerr << " loading points from cache \n";
     bool fail = (npoints != points.FromFile(pstream.str()));
     fail |= (npoints != directions.FromFile(dstream.str()));
-    fail |= (npoints != statepool.FromFile(statestream.str()));
+    fail |=
+        (npoints != ReadNavigationStatesFromFile(statestream.str(), statepool, GeoManager::Instance().getMaxDepth()));
     if (fail) {
       std::cerr << " loading points from cache failed ... continuing normally \n";
       usecached = false;
@@ -588,19 +640,19 @@ int main(int argc, char *argv[])
                                                                                      directions, 0.4, npoints);
     std::cerr << "\n points filled\n";
     for (unsigned int i = 0; i < points.size(); ++i) {
-      GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], *(statepool[i]), true);
-      if (statepool[i]->Top()->GetLogicalVolume() != lvol) {
+      GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), points[i], statepool[i], true);
+      if (statepool[i].Top()->GetLogicalVolume() != lvol) {
         //
         std::cerr << "problem : point " << i << " probably in overlapping region \n";
         points.set(i, points[i - 1]);
-        statepool[i - 1]->CopyTo(statepool[i]);
+        statepool[i] = statepool[i - 1];
       }
     }
     std::cerr << "located ...\n";
 
     points.ToFile(pstream.str());
     directions.ToFile(dstream.str());
-    statepool.ToFile(statestream.str());
+    WriteNavigationStatesToFile(statestream.str(), statepool, GeoManager::Instance().getMaxDepth());
   }
   if (gBenchWithSafety) {
     benchDifferentNavigators<true>(points, directions, statepool, statepoolout, outstatestream.str());
