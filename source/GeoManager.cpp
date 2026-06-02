@@ -7,7 +7,7 @@
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/NavIndexTable.h"
 #include "VecGeom/management/Logger.h"
-#include "VecGeom/management/ReferenceNavState.h"
+#include "VecGeom/management/TouchablePath.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/navigation/NavigationState.h"
 #include "VecGeom/management/ABBoxManager.h"
@@ -299,8 +299,8 @@ void GeoManager::CreateIndexHierarchy() const
 bool GeoManager::CheckIndexHierarchy() const
 {
   auto &volTree = VolumeTree::Instance();
-  typedef std::function<bool(VPlacedVolume const *, PlacedId const &, ReferenceNavState *)> funcCheck_t;
-  funcCheck_t visitAndCheck = [&](VPlacedVolume const *pvol, PlacedId const &plvol, ReferenceNavState *state) {
+  typedef std::function<bool(VPlacedVolume const *, PlacedId const &, TouchablePath *)> funcCheck_t;
+  funcCheck_t visitAndCheck = [&](VPlacedVolume const *pvol, PlacedId const &plvol, TouchablePath *state) {
     // reset vol_visited before calling first time
     state->Push(pvol);
     auto lvol = pvol->GetLogicalVolume();
@@ -340,7 +340,7 @@ bool GeoManager::CheckIndexHierarchy() const
     return true;
   };
 
-  ReferenceNavState state;
+  TouchablePath state;
   auto success = visitAndCheck(GeoManager::Instance().GetWorld(), volTree.fWorld, &state);
   if (!success) VECGEOM_LOG(critical) << "GeoMAnager::CheckIndexHierarchy failed";
   return success;

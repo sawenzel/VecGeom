@@ -2,12 +2,12 @@
 // conditions in the file LICENSE.txt in the top directory.
 // For the full list of authors see CONTRIBUTORS.txt and `git log`.
 
-/// \brief Lightweight reference state for validating encoded navigation data.
-/// \file management/ReferenceNavState.h
+/// \brief Lightweight touchable path for validating encoded navigation data.
+/// \file management/TouchablePath.h
 /// \author OpenAI Codex
 
-#ifndef VECGEOM_MANAGEMENT_REFERENCENAVSTATE_H_
-#define VECGEOM_MANAGEMENT_REFERENCENAVSTATE_H_
+#ifndef VECGEOM_MANAGEMENT_TOUCHABLEPATH_H_
+#define VECGEOM_MANAGEMENT_TOUCHABLEPATH_H_
 
 #include "VecGeom/base/Global.h"
 #include "VecGeom/base/Transformation3D.h"
@@ -70,7 +70,7 @@ inline char const *ToString(ReferenceNavValidationError error)
 }
 
 /**
- * @brief Compact host/device reference state derived directly from the geometry tree.
+ * @brief Compact host/device touchable path derived directly from the geometry tree.
  *
  * The helper stores only the explicit touchable path:
  * - `fPath[0]` is the world placed volume when the state is non-empty,
@@ -89,7 +89,7 @@ inline char const *ToString(ReferenceNavValidationError error)
  * validation oracle tied to the explicit path data and avoids a second,
  * independent transform-accumulation implementation.
  */
-class ReferenceNavState {
+class TouchablePath {
 private:
   static constexpr unsigned int kMaxPathEntries = 256; ///< Supports geometry depths from 0 to 255.
 
@@ -97,14 +97,14 @@ private:
   unsigned short fCurrentLevel                = 0;  ///< Count of valid entries currently stored in @ref fPath.
 
 public:
-  /// @brief Constructs an empty reference state.
+  /// @brief Constructs an empty touchable path.
   VECCORE_ATT_HOST_DEVICE
-  ReferenceNavState() = default;
+  TouchablePath() = default;
 
   /**
-   * @brief Creates the reference state for the world volume.
+   * @brief Creates the touchable path for the world volume.
    * @param world Top placed volume of the geometry tree.
-   * @return Reference state whose path contains exactly the world volume.
+   * @return Touchable path whose stack contains exactly the world volume.
    *
    * If @p world is non-null, the returned state satisfies:
    * - `Top() == world`
@@ -115,9 +115,9 @@ public:
    * lives at depth 0.
    */
   VECCORE_ATT_HOST_DEVICE
-  static ReferenceNavState MakeWorld(VPlacedVolume const *world)
+  static TouchablePath MakeWorld(VPlacedVolume const *world)
   {
-    ReferenceNavState state;
+    TouchablePath state;
     if (world) {
       state.fPath[0]      = world;
       state.fCurrentLevel = 1;
@@ -138,14 +138,13 @@ public:
   VECGEOM_FORCE_INLINE
   void Push(VPlacedVolume const *volume)
   {
-    VECGEOM_VALIDATE(volume != nullptr, << "ReferenceNavState cannot push a null placed volume");
-    VECGEOM_VALIDATE(fCurrentLevel < kMaxPathEntries,
-                     << "ReferenceNavState does not support geometry depths beyond 255");
+    VECGEOM_VALIDATE(volume != nullptr, << "TouchablePath cannot push a null placed volume");
+    VECGEOM_VALIDATE(fCurrentLevel < kMaxPathEntries, << "TouchablePath does not support geometry depths beyond 255");
     fPath[fCurrentLevel++] = volume;
   }
 
   /**
-   * @brief Pops the current top placed volume from the reference stack.
+   * @brief Pops the current top placed volume from the touchable path.
    *
    * This removes the last path entry and restores the previous top volume.
    * Popping the world entry returns the helper to the empty-state representation.
@@ -154,7 +153,7 @@ public:
   VECGEOM_FORCE_INLINE
   void Pop()
   {
-    VECGEOM_VALIDATE(fCurrentLevel > 0, << "ReferenceNavState cannot pop an empty path");
+    VECGEOM_VALIDATE(fCurrentLevel > 0, << "TouchablePath cannot pop an empty path");
     fPath[--fCurrentLevel] = nullptr;
   }
 
@@ -213,18 +212,13 @@ public:
       matrix *= *(fPath[i]->GetTransformation());
   }
 
-  /// @brief Prints the current reference path for diagnostics.
-  VECCORE_ATT_HOST_DEVICE
+  /// @brief Prints the current touchable path for host diagnostics.
   void Print() const
   {
-#ifndef VECCORE_CUDA
-    printf("ReferenceNavState: level=%u, path=<", unsigned(GetLevel()));
+    printf("TouchablePath: level=%u, path=<", unsigned(GetLevel()));
     for (unsigned int i = 0; i < fCurrentLevel; ++i)
       printf("/%s", fPath[i] ? fPath[i]->GetLabel().c_str() : "NULL");
     printf(">\n");
-#else
-    printf("ReferenceNavState: level=%u, topVol=<%p>\n", unsigned(GetLevel()), Top());
-#endif
   }
 };
 
@@ -234,13 +228,13 @@ public:
  * @tparam EncodedNavState Navigation-state class providing the static `...Impl`
  *         validation interface, for example `NavStateIndex` or `NavStateTuple`.
  * @tparam EncodedState Encoded state handle type used by @p EncodedNavState.
- * @param reference Geometry-truth reference state for the current touchable.
+ * @param reference Geometry-truth touchable path for the current touchable.
  * @param encoded_state Encoded state to be validated.
  * @return Validation result code.
  */
 template <typename EncodedNavState, typename EncodedState>
 VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE ReferenceNavValidationError
-ValidateEncodedState(ReferenceNavState const &reference, EncodedState encoded_state)
+ValidateEncodedState(TouchablePath const &reference, EncodedState encoded_state)
 {
   if (reference.IsOutside()) return ReferenceNavValidationError::kNone;
 
@@ -306,20 +300,19 @@ ValidateSceneTransition(EncodedState parent_state, EncodedState child_state)
  * @brief Prints detailed diagnostics for a failed encoded-state validation.
  *
  * The output includes both the observed encoded value and the geometry-truth
- * value carried by the reference state so that callers can immediately see what
+ * value carried by the touchable path so that callers can immediately see what
  * the validator expected.
  *
  * @tparam EncodedNavState Navigation-state class providing the static `...Impl`
  *         validation interface.
  * @tparam EncodedState Encoded state handle type used by @p EncodedNavState.
  * @param error Validation error code to describe.
- * @param reference Geometry-truth reference state for the current touchable.
+ * @param reference Geometry-truth touchable path for the current touchable.
  * @param encoded_state Encoded state that failed validation.
  */
 template <typename EncodedNavState, typename EncodedState>
-VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void PrintValidationFailure(ReferenceNavValidationError error,
-                                                                         ReferenceNavState const &reference,
-                                                                         EncodedState encoded_state)
+void PrintValidationFailure(ReferenceNavValidationError error, TouchablePath const &reference,
+                            EncodedState encoded_state)
 {
   printf("=== EEE === Validation detail: error code %d\n", static_cast<int>(error));
   switch (error) {
@@ -382,10 +375,8 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void PrintValidationFailure(Referen
  * @param child_volume Geometry child used for the attempted descent.
  */
 template <typename EncodedNavState, typename EncodedState>
-VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void PrintSceneTransitionFailure(EncodedState parent_state,
-                                                                              EncodedState child_state,
-                                                                              VPlacedVolume const *parent_volume,
-                                                                              VPlacedVolume const *child_volume)
+void PrintSceneTransitionFailure(EncodedState parent_state, EncodedState child_state,
+                                 VPlacedVolume const *parent_volume, VPlacedVolume const *child_volume)
 {
   unsigned short parent_scene = 0, parent_new_scene = 0;
   unsigned short child_scene = 0, child_new_scene = 0;
@@ -402,4 +393,4 @@ VECCORE_ATT_HOST_DEVICE VECGEOM_FORCE_INLINE void PrintSceneTransitionFailure(En
 } // namespace VECGEOM_IMPL_NAMESPACE
 } // namespace vecgeom
 
-#endif // VECGEOM_MANAGEMENT_REFERENCENAVSTATE_H_
+#endif // VECGEOM_MANAGEMENT_TOUCHABLEPATH_H_

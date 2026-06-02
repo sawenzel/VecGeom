@@ -11,7 +11,7 @@
 
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/GeoVisitor.h"
-#include "VecGeom/management/ReferenceNavState.h"
+#include "VecGeom/management/TouchablePath.h"
 
 #include <new>
 
@@ -116,10 +116,10 @@ public:
   /// @param dind Daughter index
   /// @param id Unique touchable id to be assigned
   /// @return Index of the record created for this state
-  NavIndex_t apply(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id);
+  NavIndex_t apply(TouchablePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id);
 
-  /// @brief Create one `NavStateTuple` record for the current reference traversal state.
-  /// @param state Reference state currently visited
+  /// @brief Create one `NavStateTuple` record for the current touchable path.
+  /// @param state Touchable path currently visited
   /// @param level Current depth
   /// @param mother Mother navigation index
   /// @param dind Daughter index
@@ -127,7 +127,7 @@ public:
   /// @param scene_id Current scene id
   /// @param new_scene_id New scene id
   /// @return Index of the record created for this state
-  NavIndex_t apply_tuple(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id, int scene_id,
+  NavIndex_t apply_tuple(TouchablePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id, int scene_id,
                          int new_scene_id);
 
   /// @brief Select repeated logical volumes to be represented as tuple scenes.
@@ -207,9 +207,9 @@ public:
   /// @brief Validate the encoded navigation table against the geometry tree.
   /// @details Validation is intentionally performed as a separate pass after
   /// table construction. The builder only fills the encoded records. This
-  /// method then walks the geometry again using a `ReferenceNavState` as
+  /// method then walks the geometry again using a `TouchablePath` as
   /// geometry truth and compares each encoded `NavStateIndex` or
-  /// `NavStateTuple` entry against that reference state. Keeping validation
+  /// `NavStateTuple` entry against that touchable path. Keeping validation
   /// separate avoids coupling table construction to a mutable path-state
   /// implementation and makes the checks shared between both encoded state
   /// formats.
@@ -229,9 +229,8 @@ public:
   /// @param mother Mother navigation index
   /// @param dind Child index
   template <typename Visitor>
-  static int visitAllPlacedVolumesNavIndex(VPlacedVolume const *currentvolume, Visitor *visitor,
-                                           ReferenceNavState *state, NavIndex_t &id, int level = 0,
-                                           NavIndex_t mother = 0, int dind = 0)
+  static int visitAllPlacedVolumesNavIndex(VPlacedVolume const *currentvolume, Visitor *visitor, TouchablePath *state,
+                                           NavIndex_t &id, int level = 0, NavIndex_t mother = 0, int dind = 0)
   {
     if (currentvolume != NULL) {
       state->Push(currentvolume);
@@ -262,9 +261,9 @@ public:
   /// @param dind Child index
   /// @param new_scene Nodes have to be placed in a new scene
   template <typename Visitor>
-  static int visitAllPlacedVolumesNavTuple(VPlacedVolume const *currentvolume, Visitor *visitor,
-                                           ReferenceNavState *state, NavIndex_t &id, int &iscene, int scene_id,
-                                           int level = 0, NavIndex_t mother = 0, int dind = 0, bool new_scene = false)
+  static int visitAllPlacedVolumesNavTuple(VPlacedVolume const *currentvolume, Visitor *visitor, TouchablePath *state,
+                                           NavIndex_t &id, int &iscene, int scene_id, int level = 0,
+                                           NavIndex_t mother = 0, int dind = 0, bool new_scene = false)
   {
     if (currentvolume != NULL) {
       auto lvol = currentvolume->GetLogicalVolume();
@@ -287,11 +286,11 @@ public:
       auto ierr             = visitor->GetError();
       if (ierr) return ierr;
       if (!visited) {
-        int size                       = currentvolume->GetDaughters().size();
-        ReferenceNavState *scene_state = nullptr;
-        ReferenceNavState scene_state_storage;
+        int size                   = currentvolume->GetDaughters().size();
+        TouchablePath *scene_state = nullptr;
+        TouchablePath scene_state_storage;
         if (selected) {
-          scene_state_storage = ReferenceNavState::MakeWorld(GeoManager::Instance().GetWorld());
+          scene_state_storage = TouchablePath::MakeWorld(GeoManager::Instance().GetWorld());
           scene_state         = &scene_state_storage;
           VECGEOM_ASSERT(visitor->IsVisited(ivol));
           id    = 1; // index 0 not used

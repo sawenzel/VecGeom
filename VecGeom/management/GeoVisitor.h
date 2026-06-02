@@ -10,7 +10,7 @@
 #define VECGEOM_MANAGEMENT_GEOVISITOR_H_
 
 #include "VecGeom/base/Global.h"
-#include "VecGeom/management/ReferenceNavState.h"
+#include "VecGeom/management/TouchablePath.h"
 #include "VecGeom/volumes/PlacedVolume.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/navigation/NavStateFwd.h"
@@ -52,7 +52,7 @@ class GeoVisitorNavIndex {
 public:
   GeoVisitorNavIndex() {}
 
-  virtual NavIndex_t apply(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id) = 0;
+  virtual NavIndex_t apply(TouchablePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id) = 0;
   virtual ~GeoVisitorNavIndex() {}
 };
 

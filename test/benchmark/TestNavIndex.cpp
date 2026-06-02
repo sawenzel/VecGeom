@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <VecGeom/management/GeoManager.h>
 #include <VecGeom/management/NavIndexTable.h>
-#include <VecGeom/management/ReferenceNavState.h>
+#include <VecGeom/management/TouchablePath.h>
 #include <VecGeom/navigation/NavigationState.h>
 #include <VecGeom/base/Stopwatch.h>
 #include "ArgParser.h"
@@ -28,15 +28,13 @@ int TestNavIndexGPU(vecgeom::cxx::VPlacedVolume const *const world, int maxdepth
 namespace visitorcxx {
 
 template <typename EncodedNavState, typename EncodedState>
-VECCORE_ATT_HOST_DEVICE int ReportValidationError(ReferenceNavValidationError error, ReferenceNavState const &reference,
-                                                  EncodedState encoded_state)
+int ReportValidationError(ReferenceNavValidationError error, TouchablePath const &reference, EncodedState encoded_state)
 {
   printf("=== EEE === TestNavIndex: %s\n", ToString(error));
   PrintValidationFailure<EncodedNavState>(error, reference, encoded_state);
   return static_cast<int>(error);
 }
 
-VECCORE_ATT_HOST_DEVICE
 int ReportIncompatibleDaughter(VPlacedVolume const *parent, VPlacedVolume const *daughter)
 {
   printf("=== EEE === TestNavIndex: %s\n", ToString(ReferenceNavValidationError::kIncompatibleDaughter));
@@ -46,17 +44,15 @@ int ReportIncompatibleDaughter(VPlacedVolume const *parent, VPlacedVolume const 
 }
 
 template <typename EncodedNavState, typename EncodedState>
-VECCORE_ATT_HOST_DEVICE int ReportSceneTransitionError(EncodedState parent_state, EncodedState child_state,
-                                                       VPlacedVolume const *parent, VPlacedVolume const *daughter)
+int ReportSceneTransitionError(EncodedState parent_state, EncodedState child_state, VPlacedVolume const *parent,
+                               VPlacedVolume const *daughter)
 {
   printf("=== EEE === TestNavIndex: %s\n", ToString(ReferenceNavValidationError::kIncompatibleScene));
   PrintSceneTransitionFailure<EncodedNavState>(parent_state, child_state, parent, daughter);
   return static_cast<int>(ReferenceNavValidationError::kIncompatibleScene);
 }
 
-VECCORE_ATT_HOST_DEVICE
-int visitAllPlacedVolumesPassNavIndex(VPlacedVolume const *currentvolume, ReferenceNavState &reference,
-                                      NavIndex_t nav_ind)
+int visitAllPlacedVolumesPassNavIndex(VPlacedVolume const *currentvolume, TouchablePath &reference, NavIndex_t nav_ind)
 {
   auto validation_error = ValidateEncodedState<NavStateIndex>(reference, nav_ind);
   if (validation_error != ReferenceNavValidationError::kNone) {
@@ -77,8 +73,7 @@ int visitAllPlacedVolumesPassNavIndex(VPlacedVolume const *currentvolume, Refere
   return 0;
 }
 
-VECCORE_ATT_HOST_DEVICE
-int visitAllPlacedVolumesPassNavTuple(VPlacedVolume const *currentvolume, ReferenceNavState &reference,
+int visitAllPlacedVolumesPassNavTuple(VPlacedVolume const *currentvolume, TouchablePath &reference,
                                       NavTuple_t nav_tuple)
 {
   auto validation_error = ValidateEncodedState<NavStateTuple>(reference, nav_tuple);
@@ -113,7 +108,7 @@ int TestNavIndexCPU(vecgeom::cxx::VPlacedVolume const *const world, int maxdepth
   (void)maxdepth;
 
   Stopwatch timer;
-  auto reference    = ReferenceNavState::MakeWorld(world);
+  auto reference    = TouchablePath::MakeWorld(world);
   NavIndex_t navind = 1; // The navigation index corresponding to the world
 
   timer.Start();
