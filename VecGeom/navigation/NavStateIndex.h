@@ -76,50 +76,6 @@ public:
 #endif
   }
 
-  /// @brief Allocate an empty navigation state.
-  /// @details Legacy allocation helper retained for existing pool and test
-  /// code. New code can construct `NavStateIndex` directly. The depth argument
-  /// is ignored because storage is fixed size.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateIndex *MakeInstance(int) { return new NavStateIndex(); }
-
-  /// @brief Allocate a heap copy of another state.
-  /// @details Legacy allocation helper retained for existing callers. New code
-  /// can use the copy constructor directly.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateIndex *MakeCopy(NavStateIndex const &other) { return new NavStateIndex(other); }
-
-  /// @brief Construct an empty state in caller-provided storage.
-  /// @details Legacy placement helper retained for `NavStatePool`. The depth
-  /// argument is ignored because `NavStateIndex` has fixed object size.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateIndex *MakeInstanceAt(int, void *addr) { return new (addr) NavStateIndex(); }
-
-  /// @brief Construct a copy in caller-provided storage.
-  /// @details Legacy placement helper retained for existing callers. New code
-  /// can use placement-new with the copy constructor directly.
-  VECCORE_ATT_HOST_DEVICE
-  static NavStateIndex *MakeCopy(NavStateIndex const &other, void *addr) { return new (addr) NavStateIndex(other); }
-
-  /// @brief Release a heap-allocated navigation state.
-  /// @details Legacy counterpart to `MakeInstance` and `MakeCopy`. New code can
-  /// delete directly.
-  VECCORE_ATT_HOST_DEVICE
-  static void ReleaseInstance(NavStateIndex *state) { delete state; }
-
-  /// @brief Return the size in bytes of one `NavStateIndex` object.
-  /// @details Legacy pool helper retained for existing callers. The depth
-  /// argument is ignored because `NavStateIndex` stores a fixed-size table
-  /// index.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOfInstance(int) { return sizeof(NavStateIndex); }
-
-  /// @brief Return the aligned size in bytes of one `NavStateIndex` object.
-  /// @details `NavStateIndex` has no variable-length trailing storage, so this
-  /// legacy pool helper is identical to `SizeOfInstance`.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOfInstanceAlignAware(int) { return sizeof(NavStateIndex); }
-
   /// @brief Return the current encoded navigation-table index.
   /// @details This is the complete state for the expanded-index
   /// representation.
@@ -134,31 +90,11 @@ public:
   VECGEOM_FORCE_INLINE
   NavIndex_t GetState() const { return fNavInd; }
 
-  /// @brief Return the runtime object size in bytes.
-  /// @details This is the fixed `sizeof(NavStateIndex)` value.
-  VECCORE_ATT_HOST_DEVICE
-  int GetObjectSize() const { return (int)sizeof(NavStateIndex); }
-
-  /// @brief Return the fixed object size in bytes.
-  /// @details Legacy fixed-size helper retained for generated navigation code.
-  /// The argument is ignored.
-  VECCORE_ATT_HOST_DEVICE
-  static size_t SizeOf(size_t) { return sizeof(NavStateIndex); }
-
   /// @brief Copy this state to another `NavStateIndex`.
   /// @details This copies only the compact state fields, not any global table
   /// data referenced by the state.
   VECCORE_ATT_HOST_DEVICE
   void CopyTo(NavStateIndex *other) const { *other = *this; }
-
-  /// @brief Copy this state when the caller already knows the fixed size.
-  /// @details Legacy generated-code helper. `N` is ignored because
-  /// `NavStateIndex` always copies the complete object.
-  template <size_t N>
-  void CopyToFixedSize(NavStateIndex *other) const
-  {
-    *other = *this;
-  }
 
   /// @brief Return the address of an encoded table record.
   /// @details On CUDA builds this reads from device geometry globals; on host

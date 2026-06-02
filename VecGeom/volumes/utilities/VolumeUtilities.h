@@ -880,8 +880,8 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
   std::list<NavigationState *> allpaths;
   GeoManager::Instance().getAllPathForLogicalVolume(lvol, allpaths);
 
-  NavigationState *s1       = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
-  NavigationState *s2       = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+  NavigationState s1;
+  NavigationState s2;
   int virtuallyhitsdaughter = 0;
   int reallyhitsdaughter    = 0;
   if (allpaths.size() > 0) {
@@ -916,19 +916,19 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
         directions.set(placedcount, m.InverseTransformDirection(directions[placedcount]));
 
         // do extensive cross tests
-        s1->Clear();
-        s2->Clear();
-        GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), globalpoints[placedcount], *s1, true);
-        VECGEOM_ASSERT(s1->Top()->GetLogicalVolume() == lvol);
+        s1.Clear();
+        s2.Clear();
+        GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), globalpoints[placedcount], s1, true);
+        VECGEOM_ASSERT(s1.Top()->GetLogicalVolume() == lvol);
         Precision step = vecgeom::kInfLength;
-        auto nav       = s1->Top()->GetLogicalVolume()->GetNavigator();
-        nav->FindNextBoundaryAndStep(globalpoints[placedcount], directions[placedcount], *s1, *s2, vecgeom::kInfLength,
+        auto nav       = s1.Top()->GetLogicalVolume()->GetNavigator();
+        nav->FindNextBoundaryAndStep(globalpoints[placedcount], directions[placedcount], s1, s2, vecgeom::kInfLength,
                                      step);
 #ifdef DEBUG
-        if (!hitsdaughter) VECGEOM_ASSERT(s1->Distance(*s2) > s2->GetCurrentLevel() - s1->GetCurrentLevel());
+        if (!hitsdaughter) VECGEOM_ASSERT(s1.Distance(s2) > s2.GetCurrentLevel() - s1.GetCurrentLevel());
 #endif
         if (hitsdaughter)
-          if (s1->Distance(*s2) == s2->GetCurrentLevel() - s1->GetCurrentLevel()) {
+          if (s1.Distance(s2) == s2.GetCurrentLevel() - s1.GetCurrentLevel()) {
             reallyhitsdaughter++;
           }
 
@@ -941,11 +941,9 @@ inline void FillGlobalPointsAndDirectionsForLogicalVolume(LogicalVolume const *l
     VECGEOM_LOG(error) << "FillGlobalPointsAndDirectionsForLogicalVolume()... ERROR condition detected";
   }
   printf(" really hits %d, virtually hits %d ", reallyhitsdaughter, virtuallyhitsdaughter);
-  NavigationState::ReleaseInstance(s1);
-  NavigationState::ReleaseInstance(s2);
   std::list<NavigationState *>::iterator iter = allpaths.begin();
   while (iter != allpaths.end()) {
-    NavigationState::ReleaseInstance(*iter);
+    delete *iter;
     ++iter;
   }
 }
@@ -1035,7 +1033,7 @@ inline void FillGlobalPointsForLogicalVolume(LogicalVolume const *lvol, TrackCon
 
   std::list<NavigationState *>::iterator iter = allpaths.begin();
   while (iter != allpaths.end()) {
-    NavigationState::ReleaseInstance(*iter);
+    delete *iter;
     ++iter;
   }
 }

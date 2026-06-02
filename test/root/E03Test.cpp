@@ -28,10 +28,9 @@ using namespace vecgeom;
 void locatetest()
 {
   VolumePath_t *a;
-  a = VolumePath_t::MakeInstance(3);
+  a = new VolumePath_t();
 
-  vecgeom::UnplacedBox *const box =
-      (vecgeom::UnplacedBox * const)GeoManager::Instance().GetWorld()->GetUnplacedVolume();
+  vecgeom::UnplacedBox *const box = (vecgeom::UnplacedBox *const)GeoManager::Instance().GetWorld()->GetUnplacedVolume();
   std::cerr << "\n" << box << "\n";
   std::cerr << box->dimensions() << "\n";
   std::cerr << box->dimensions().x() << "\n";
@@ -45,12 +44,12 @@ void locatetest()
 
   GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), Vector3D<Precision>(-8, 0, 0), *a, true);
   a->Print();
-  auto* node = RootGeoManager::Instance().tgeonode(a->Top());
+  auto *node = RootGeoManager::Instance().tgeonode(a->Top());
 
   if (node != nullptr) {
     node->GetVolume()->Print();
   }
-  NavigationState::ReleaseInstance(a);
+  delete a;
 }
 
 void loadvecgeomgeometry()

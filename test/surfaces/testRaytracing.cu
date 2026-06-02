@@ -5,6 +5,7 @@
 #include <VecGeom/surfaces/Navigator.h>
 #include <VecGeom/surfaces/BVHSurfNavigator.h>
 #include <VecGeom/management/BVHManager.h>
+#include <VecGeom/management/CudaManager.h>
 #include <VecGeom/navigation/BVHNavigator.h>
 #include <VecGeom/navigation/LoopNavigator.h>
 #include <VecGeom/base/Stopwatch.h>
@@ -718,7 +719,7 @@ int testRaytracingCUDA(Vec3Dc const *pointsc, Vec3Dc const *dirsc, const SurfDat
   time_locate_surf_bvh = timer.Stop();
 
   if (!config.only_surf) {
-    // Corectness for locating points
+    // Correctness for locating points
     ValidateLocate<<<initBlocks, initThreads>>>(origStates, outputStates, num_errors_d, config);
     VECGEOM_DEVICE_API_CALL(
         Memcpy(&num_errors, num_errors_d, sizeof(int), VECGEOM_DEVICE_API_SYMBOL(MemcpyDeviceToHost)));

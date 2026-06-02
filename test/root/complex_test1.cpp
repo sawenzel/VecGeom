@@ -68,7 +68,7 @@ void testVecAssign(Vector3D<Precision> const &a, Vector3D<Precision> &b) { b = a
 void test1()
 {
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
   VPlacedVolume const *vol;
 
   // point should be in world
@@ -76,15 +76,14 @@ void test1()
 
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
   VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
-  std::cerr << "test1 passed"
-            << "\n";
+  std::cerr << "test1 passed" << "\n";
 }
 
 void test2()
 {
   // inside box3 check
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
   VPlacedVolume const *vol;
 
   // point should be in box3
@@ -98,55 +97,51 @@ void test2()
   state->Clear();
   vol = GlobalLocator::LocateGlobalPoint(world, p2, *state, true);
   VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b3l_0") == 0);
-  std::cerr << "test2 passed"
-            << "\n";
+  std::cerr << "test2 passed" << "\n";
 }
 
 void test3()
 {
   // inside box1 left check
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
 
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(-9 / 10., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
   VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_0") == 0);
-  std::cerr << "test3 passed"
-            << "\n";
+  std::cerr << "test3 passed" << "\n";
 }
 
 void test3_2()
 {
   // inside box1 right check
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(9 / 10., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
   VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b1l_1") == 0);
-  std::cerr << "test3_2 passed"
-            << "\n";
+  std::cerr << "test3_2 passed" << "\n";
 }
 
 void test4()
 {
   // inside box2 check
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(5., 9 * 5 / 10., 0.);
   vol = GlobalLocator::LocateGlobalPoint(world, p1, *state, true);
   VECGEOM_ASSERT(std::strcmp(RootGeoManager::Instance().tgeonode(vol)->GetName(), "b2l_0") == 0);
-  std::cerr << "test4 passed"
-            << "\n";
+  std::cerr << "test4 passed" << "\n";
 }
 
 void test5()
 {
   // outside world check
   VPlacedVolume const *world = GeoManager::Instance().GetWorld();
-  NavigationState *state     = NavigationState::MakeInstance(4);
+  NavigationState *state     = new NavigationState();
 
   VPlacedVolume const *vol;
   Vector3D<Precision> p1(-20, 0., 0.);
@@ -162,7 +157,7 @@ void test6()
 {
   // statistical test  - comparing with ROOT navigation functionality
   // generate points
-  NavigationState *state = NavigationState::MakeInstance(4);
+  NavigationState *state = new NavigationState();
   for (int i = 0; i < 100000; ++i) {
     double x = RNG::Instance().uniform(-10, 10);
     double y = RNG::Instance().uniform(-10, 10);
@@ -179,15 +174,14 @@ void test6()
 
     VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == node);
   }
-  std::cerr << "test6 (statistical location) passed"
-            << "\n";
+  std::cerr << "test6 (statistical location) passed" << "\n";
 }
 
 // relocation test
 void test7()
 {
-  NavigationState *state  = NavigationState::MakeInstance(4);
-  NavigationState *state2 = NavigationState::MakeInstance(4);
+  NavigationState *state  = new NavigationState();
+  NavigationState *state2 = new NavigationState();
   // statistical test  - testing global matrix transforms and relocation at the same time
   // consistency check with full LocatePoint method
   // generate points
@@ -234,8 +228,7 @@ void test7()
     //      std::cerr << vol1 << " " << vol2 << " " << vol3 << "\n";
     VECGEOM_ASSERT(vol3 == vol2);
   }
-  std::cerr << "test7 (statistical relocation) passed"
-            << "\n";
+  std::cerr << "test7 (statistical relocation) passed" << "\n";
 }
 
 Vector3D<Precision> sampleDir()
@@ -263,13 +256,13 @@ void testnavsimple()
   const int maxdepth = GeoManager::Instance().getMaxDepth();
   VECGEOM_ASSERT(maxdepth == 4);
 
-  NavigationState *currentstate = NavigationState::MakeInstance(maxdepth);
+  NavigationState *currentstate = new NavigationState();
 
   VPlacedVolume const *vol =
       GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), p1, *currentstate, true);
   VECGEOM_ASSERT(RootGeoManager::Instance().tgeonode(vol) == ::gGeoManager->GetTopNode());
 
-  NavigationState *newstate = NavigationState::MakeInstance(maxdepth);
+  NavigationState *newstate = new NavigationState();
 
   // check with a large physical step
   Precision step = 0.0, tolerance = 1.0e-4;
@@ -298,11 +291,11 @@ void testnavsimple()
 template <typename Navigator = NewSimpleNavigator<>>
 void test9(double pstep = 1E30)
 {
-  NavigationState *state    = NavigationState::MakeInstance(4);
-  NavigationState *newstate = NavigationState::MakeInstance(4);
+  NavigationState *state    = new NavigationState();
+  NavigationState *newstate = new NavigationState();
 
-  NavigationState *state2    = NavigationState::MakeInstance(4);
-  NavigationState *newstate2 = NavigationState::MakeInstance(4);
+  NavigationState *state2    = new NavigationState();
+  NavigationState *newstate2 = new NavigationState();
 
   // statistical test  of navigation via comparison with ROOT navigation
   bool error = false;
@@ -365,14 +358,13 @@ void test9(double pstep = 1E30)
     }
   }
   VECGEOM_ASSERT(!error);
-  std::cerr << "test9 (statistical navigation without relocation) passed"
-            << "\n";
+  std::cerr << "test9 (statistical navigation without relocation) passed" << "\n";
 }
 
 // testing safety functions via the navigator
 void test_safety()
 {
-  NavigationState *state = NavigationState::MakeInstance(4);
+  NavigationState *state = new NavigationState();
   // statistical test  of navigation via comparison with ROOT navigation
   for (int i = 0; i < 100000; ++i) {
     state->Clear();
@@ -394,14 +386,13 @@ void test_safety()
 
     VECGEOM_ASSERT(fabs(safetyRoot - safety) < 1E-9);
   }
-  std::cerr << "statistical safetytest from navigation passed"
-            << "\n";
+  std::cerr << "statistical safetytest from navigation passed" << "\n";
 }
 
 void test_NavigationStateToTGeoBranchArrayConversion()
 {
-  NavigationState *state    = NavigationState::MakeInstance(4);
-  NavigationState *newstate = NavigationState::MakeInstance(4);
+  NavigationState *state    = new NavigationState();
+  NavigationState *newstate = new NavigationState();
   for (int i = 0; i < 100000; ++i) {
     // std::cerr << "START ITERATION " << i << "\n";
     double x = RNG::Instance().uniform(-10, 10);
@@ -442,8 +433,7 @@ void test_NavigationStateToTGeoBranchArrayConversion()
     VECGEOM_ASSERT(state->Top() != newstate->Top());
     delete path;
   }
-  std::cerr << "test  (init TGeoBranchArray from NavigationState) passed"
-            << "\n";
+  std::cerr << "test  (init TGeoBranchArray from NavigationState) passed" << "\n";
 }
 
 void test_geoapi()
@@ -459,8 +449,7 @@ void test_geoapi()
 
   VECGEOM_ASSERT(GeoManager::Instance().getMaxDepth() == 4);
 
-  std::cerr << "test of geomanager query API passed"
-            << "\n";
+  std::cerr << "test of geomanager query API passed" << "\n";
 }
 
 void test_aos3d()
@@ -499,7 +488,7 @@ void test_pointgenerationperlogicalvolume()
 
   // test that points are really inside b1l; test also that they have to be in two different placed volumes
   std::set<VPlacedVolume const *> pvolumeset;
-  NavigationState *state = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+  NavigationState *state = new NavigationState();
   for (int i = 0; i < np; ++i) {
     state->Clear();
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), globalpoints[i], *state, true);
@@ -508,7 +497,7 @@ void test_pointgenerationperlogicalvolume()
   }
   // b1l should be placed two times
   VECGEOM_ASSERT(pvolumeset.size() == 2);
-  NavigationState::ReleaseInstance(state);
+  delete state;
   std::cout << "test pointgenerationperlogicalvolume passed\n";
 }
 

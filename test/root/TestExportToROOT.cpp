@@ -98,7 +98,7 @@ VPlacedVolume *SetupGeometry()
 
   Transformation3D *placement9  = new Transformation3D(-0.5, -0.5, -0.5, 0, 0, 0);
   Transformation3D *placement10 = new Transformation3D(0.5, 0.5, 0.5, 0, 45, 0);
-  Transformation3D *idendity    = new Transformation3D();
+  Transformation3D *identity    = new Transformation3D();
 
   LogicalVolume *world = new LogicalVolume("world", worldUnplaced);
   LogicalVolume *box   = new LogicalVolume("lbox1", boxUnplaced);
@@ -115,12 +115,12 @@ VPlacedVolume *SetupGeometry()
   LogicalVolume *epip1  = new LogicalVolume("lepip1", epipedUnplaced);
   LogicalVolume *tor1   = new LogicalVolume("torus1", torusUnplaced);
 
-  world->PlaceDaughter(orb1, idendity);
-  trd1->PlaceDaughter(parab1, idendity);
-  world->PlaceDaughter(epip1, idendity);
+  world->PlaceDaughter(orb1, identity);
+  trd1->PlaceDaughter(parab1, identity);
+  world->PlaceDaughter(epip1, identity);
 
-  tube1->PlaceDaughter(trd1, idendity);
-  tube2->PlaceDaughter(trap1, idendity);
+  tube1->PlaceDaughter(trd1, identity);
+  tube2->PlaceDaughter(trap1, identity);
   box->PlaceDaughter(tube1, placement9);
   box->PlaceDaughter(tube2, placement10);
 
@@ -133,7 +133,7 @@ VPlacedVolume *SetupGeometry()
   world->PlaceDaughter(box, placement7);
   world->PlaceDaughter(box, placement8);
 
-  cone1->PlaceDaughter(trap1, idendity);
+  cone1->PlaceDaughter(trap1, identity);
   world->PlaceDaughter(cone1, new Transformation3D(8, 0, 0, 0, 0, 0));
   world->PlaceDaughter(cone2, new Transformation3D(-8, 0, 0, 0, 0, 0));
   // might not be fully in world ( need to rotate ... )
@@ -170,8 +170,8 @@ int main()
   TGeoBranchArray **rootstates = new TGeoBranchArray *[NPOINTS];
 
   for (int i = 0; i < NPOINTS; ++i) {
-    states1[i] = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
-    states2[i] = NavigationState::MakeInstance(GeoManager::Instance().getMaxDepth());
+    states1[i] = new NavigationState();
+    states2[i] = new NavigationState();
     GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), testpoints[i], *states1[i], true);
   }
 

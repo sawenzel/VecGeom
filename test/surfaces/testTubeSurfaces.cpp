@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include "test/benchmark/ArgParser.h"
 #include <VecGeom/volumes/LogicalVolume.h>
@@ -18,7 +19,6 @@
 #include <VecGeom/navigation/NewSimpleNavigator.h>
 #include <VecGeom/navigation/SimpleSafetyEstimator.h>
 #include <VecGeom/volumes/utilities/VolumeUtilities.h>
-#include <VecGeom/navigation/NavStatePool.h>
 #include "VecGeom/base/Stopwatch.h"
 
 using BrepHelper = vgbrep::BrepHelper<vecgeom::Precision>;
@@ -342,9 +342,8 @@ bool ValidateNavigation(int npoints, int nbLayers, double worldR, double worldZ,
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
   // now setup all the navigation states
-  int ndeep = GeoManager::Instance().getMaxDepth();
-  NavStatePool origStates(npoints, ndeep);
-  NavStatePool outputStates(npoints, ndeep);
+  std::vector<NavigationState> origStates(npoints);
+  std::vector<NavigationState> outputStates(npoints);
 
   vecgeom::Precision *refSteps = new Precision[npoints];
   memset(refSteps, 0, sizeof(Precision) * npoints);
@@ -356,9 +355,9 @@ bool ValidateNavigation(int npoints, int nbLayers, double worldR, double worldZ,
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
-    nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], *outputStates[i], vecgeom::kInfLength, refSteps[i]);
-    refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, *origStates[i]);
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, origStates[i], true);
+    nav->FindNextBoundaryAndStep(pos, dir, origStates[i], outputStates[i], vecgeom::kInfLength, refSteps[i]);
+    refSafeties[i] = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, origStates[i]);
 
     // shoot the same ray in the surface model
     vgbrep::CrossedSurface crossed_surf;
@@ -366,16 +365,16 @@ bool ValidateNavigation(int npoints, int nbLayers, double worldR, double worldZ,
     NavigationState in_state, out_state, surflocate_state;
     vgbrep::protonav::LocatePointIn<Precision, Precision>(NavigationState::WorldId(), pos, surflocate_state, true);
     auto distance =
-        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, *origStates[i], out_state, crossed_surf);
+        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, origStates[i], out_state, crossed_surf);
     int common_id = crossed_surf.hit_surf.GetCSindex();
-    auto safety   = vgbrep::protonav::ComputeSafety<Precision, Precision>(pos, *origStates[i], common_id);
-    if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, *origStates[i], safety, 1000);
+    auto safety   = vgbrep::protonav::ComputeSafety<Precision, Precision>(pos, origStates[i], common_id);
+    if (safety > refSafeties[i] + kTolerance) safesafe = CheckSafety(pos, origStates[i], safety, 1000);
     num_better_safety += safesafe && (safety > refSafeties[i] + kTolerance);
     num_worse_safety += safesafe && (safety < refSafeties[i] - kTolerance);
     if (safety < refSafeties[i] - kTolerance)
       printf("safe_ref = %g   safe = %g  pos = (%g, %g, %g)\n", refSafeties[i], safety, pos[0], pos[1], pos[2]);
-    bool errlocate = surflocate_state.GetNavIndex() != origStates[i]->GetNavIndex();
-    bool errpath   = out_state.GetNavIndex() != outputStates[i]->GetNavIndex();
+    bool errlocate = surflocate_state.GetNavIndex() != origStates[i].GetNavIndex();
+    bool errpath   = out_state.GetNavIndex() != outputStates[i].GetNavIndex();
     bool errdist   = std::abs(distance - refSteps[i]) > tolerance;
     bool errsafe   = !safesafe;
     bool err       = errlocate || errpath || errdist || errsafe;
@@ -383,11 +382,11 @@ bool ValidateNavigation(int npoints, int nbLayers, double worldR, double worldZ,
 
     if (err) {
       printf("%d: input state:  ", i);
-      origStates[i]->Print();
+      origStates[i].Print();
       printf("%d: model locate: ", i);
       surflocate_state.Print();
       printf("ref output state: ");
-      outputStates[i]->Print();
+      outputStates[i].Print();
       printf("model output state: ");
       out_state.Print();
     }
@@ -426,27 +425,26 @@ bool ShootOneParticle(double worldR, double worldZ, double px, double py, double
             << "DIR: " << direction << std::endl;
 
   // now setup all the navigation states
-  int ndeep = GeoManager::Instance().getMaxDepth();
-  NavStatePool origStates(1, ndeep);
-  NavStatePool outputStates(1, ndeep);
+  std::vector<NavigationState> origStates(1);
+  std::vector<NavigationState> outputStates(1);
 
   vecgeom::Precision *refSteps = new Precision[1];
   memset(refSteps, 0, sizeof(Precision));
 
   auto *nav = vecgeom::NewSimpleNavigator<>::Instance();
 
-  GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, *origStates[0], true);
-  nav->FindNextBoundaryAndStep(point, direction, *origStates[0], *outputStates[0], vecgeom::kInfLength, refSteps[0]);
+  GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), point, origStates[0], true);
+  nav->FindNextBoundaryAndStep(point, direction, origStates[0], outputStates[0], vecgeom::kInfLength, refSteps[0]);
 
   // shoot the same ray in the surface model
   vgbrep::CrossedSurface crossed_surf;
   NavigationState out_state;
-  auto distance = vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(point, direction, *origStates[0], out_state,
+  auto distance = vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(point, direction, origStates[0], out_state,
                                                                             crossed_surf);
-  if (out_state.GetNavIndex() != outputStates[0]->GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
+  if (out_state.GetNavIndex() != outputStates[0].GetNavIndex() || std::abs(distance - refSteps[0]) > tolerance) {
     num_errors++;
     std::cout << "ERROR." << std::endl;
-    std::cout << " IN VOLUME MODEL: (navind) " << outputStates[0]->GetNavIndex() << "; (distance) " << refSteps[0]
+    std::cout << " IN VOLUME MODEL: (navind) " << outputStates[0].GetNavIndex() << "; (distance) " << refSteps[0]
               << std::endl;
     std::cout << "IN SURFACE MODEL: (navind) " << out_state.GetNavIndex() << "; (distance) " << distance << std::endl;
     return 0;
@@ -475,8 +473,7 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers)
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
   // now setup all the navigation states
-  int ndeep = GeoManager::Instance().getMaxDepth();
-  NavStatePool origStates(npoints, ndeep);
+  std::vector<NavigationState> origStates(npoints);
   NavigationState out_state;
   vecgeom::Precision distance = 0;
   auto *nav                   = vecgeom::NewSimpleNavigator<>::Instance();
@@ -484,16 +481,16 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers)
   // Locate all input points, without timing this operation
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, origStates[i], true);
   }
 
-  // Benchamrk primitive-based NewSimpleNavigator
+  // Benchmark primitive-based NewSimpleNavigator
   Stopwatch timer;
   timer.Start();
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], out_state, vecgeom::kInfLength, distance);
+    nav->FindNextBoundaryAndStep(pos, dir, origStates[i], out_state, vecgeom::kInfLength, distance);
   }
   Precision time_prim = timer.Stop();
 
@@ -504,7 +501,7 @@ void TestPerformance(double worldRadius, int npoints, int nbLayers)
     Vector3D<Precision> const &dir = dirs[i];
     vgbrep::CrossedSurface crossed_surf;
     distance =
-        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, *origStates[i], out_state, crossed_surf);
+        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, origStates[i], out_state, crossed_surf);
   }
   Precision time_surf = timer1.Stop();
 
@@ -528,8 +525,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
   vecgeom::volumeUtilities::FillRandomDirections(dirs);
 
   // now setup all the navigation states
-  int ndeep = GeoManager::Instance().getMaxDepth();
-  NavStatePool origStates(npoints, ndeep);
+  std::vector<NavigationState> origStates(npoints);
   NavigationState out_state;
   vecgeom::Precision distance = 0;
   auto *nav                   = vecgeom::NewSimpleNavigator<>::Instance();
@@ -537,16 +533,16 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
   // Locate all input points, without timing this operation
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
-    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, *origStates[i], true);
+    GlobalLocator::LocateGlobalPoint(GeoManager::Instance().GetWorld(), pos, origStates[i], true);
   }
 
-  // Benchamrk primitive-based NewSimpleNavigator
+  // Benchmark primitive-based NewSimpleNavigator
   Stopwatch timer;
   timer.Start();
   for (int i = 0; i < npoints; ++i) {
     Vector3D<Precision> const &pos = points[i];
     Vector3D<Precision> const &dir = dirs[i];
-    nav->FindNextBoundaryAndStep(pos, dir, *origStates[i], out_state, vecgeom::kInfLength, distance);
+    nav->FindNextBoundaryAndStep(pos, dir, origStates[i], out_state, vecgeom::kInfLength, distance);
   }
   Precision time_prim = timer.Stop();
 
@@ -557,7 +553,7 @@ void TestAndSavePerformance(double worldRadius, int npoints, int nbLayers)
     Vector3D<Precision> const &dir = dirs[i];
     vgbrep::CrossedSurface crossed_surf;
     distance =
-        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, *origStates[i], out_state, crossed_surf);
+        vgbrep::protonav::ComputeStepAndHit<Precision, Precision>(pos, dir, origStates[i], out_state, crossed_surf);
   }
   Precision time_surf = timer1.Stop();
 

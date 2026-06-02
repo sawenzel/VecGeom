@@ -2,6 +2,7 @@
 #include "VecGeom/base/Assert.h"
 #include <VecGeom/management/GeoManager.h>
 #include <VecGeom/management/BVHManager.h>
+#include <VecGeom/management/CudaManager.h>
 #include <VecGeom/navigation/NewSimpleNavigator.h>
 #include <VecGeom/navigation/LoopNavigator.h>
 #include <VecGeom/navigation/SimpleSafetyEstimator.h>

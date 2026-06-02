@@ -198,7 +198,6 @@ set(TEST_EXECUTABLES_CORE
   unit_tests/TestBooleans.cpp
   core/AssemblyTest.cpp
   core/TestMakeInstance.cpp
-  #  services/CompNavStatePools.cpp
   core/TestMaskedAssign.cpp
   core/TestOvershoot.cpp
   core/TestHybridBVH.cpp
@@ -491,20 +490,6 @@ if(VECGEOM_ROOT)
   if(VECGEOM_EMBREE)
     list(APPEND TEST_EXECUTABLES_ROOT core/EmbreeManagerTest.cpp)
   endif()
-
-
-  if(VECGEOM_ENABLE_CUDA)
-    list(APPEND _test_nav_src core/TestNavigationStatePool.cu)
-  endif()
-  if(VECGEOM_ROOT)
-    list(APPEND _test_nav_libs VecGeomTest)
-  endif()
-  add_executable(TestNavigationStatePool
-    core/TestNavigationStatePool.cpp
-    ${_test_nav_src})
-  cuda_rdc_target_link_libraries(TestNavigationStatePool PRIVATE
-    vecgeom ${_test_nav_libs})
-  add_test(NAME TestNavigationStatePool COMMAND TestNavigationStatePool)
 
   # - separate list for ROOT UNIT tests
   set(TEST_UNITTESTEXECUTABLES_ROOT
