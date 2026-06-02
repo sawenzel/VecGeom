@@ -4,7 +4,7 @@
 #include "VecGeom/management/NavIndexTable.h"
 #include "VecGeom/management/Logger.h"
 #include "VecGeom/management/NavIndexTableLayout.h"
-#include "VecGeom/management/ReferenceNavState.h"
+#include "VecGeom/management/TouchablePath.h"
 #include "VecGeom/navigation/NavigationState.h"
 
 #include <vector>
@@ -28,21 +28,17 @@ namespace {
  * and `NavStateTuple` in one place.
  */
 template <typename EncodedNavState, typename EncodedState>
-VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState const &reference,
-                                                             EncodedState encoded_state, int &error)
+bool ValidateEncodedStateWithLogging(TouchablePath const &reference, EncodedState encoded_state, int &error)
 {
   auto validation_error = ValidateEncodedState<EncodedNavState>(reference, encoded_state);
   if (validation_error == ReferenceNavValidationError::kNone) return true;
 
-  error = static_cast<int>(validation_error);
-#ifndef VECCORE_CUDA_DEVICE_COMPILATION
-  VECGEOM_LOG(critical) << "Validate: " << ToString(validation_error);
-#ifndef VECCORE_CUDA
+  error    = static_cast<int>(validation_error);
+  auto msg = VECGEOM_LOG(critical);
+  msg << "Validate: " << ToString(validation_error);
   if (!reference.IsOutside()) {
-    VECGEOM_LOG(critical) << "\nreference top volume: " << reference.Top()->GetLabel();
+    msg << "; reference top volume: " << reference.Top()->GetLabel();
   }
-#endif
-  VECGEOM_LOG(critical) << "\n";
   PrintValidationFailure<EncodedNavState>(validation_error, reference, encoded_state);
 
   if (validation_error == ReferenceNavValidationError::kTransformationMismatch) {
@@ -50,10 +46,9 @@ VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState c
     Transformation3D encoded_matrix;
     reference.TopMatrix(reference_matrix);
     EncodedNavState::TopMatrixImpl(encoded_state, encoded_matrix);
-    VECGEOM_LOG(critical) << "Reference transformation: " << reference_matrix << "\n";
-    VECGEOM_LOG(critical) << "Encoded transformation: " << encoded_matrix << "\n";
+    auto matrix_msg = VECGEOM_LOG(critical);
+    matrix_msg << "Reference transformation: " << reference_matrix << "; encoded transformation: " << encoded_matrix;
   }
-#endif
   return false;
 }
 
@@ -61,14 +56,14 @@ VECCORE_ATT_HOST_DEVICE bool ValidateEncodedStateWithLogging(ReferenceNavState c
  * @brief Recursively validates index-based encoded states against the geometry tree.
  */
 #ifndef VECGEOM_USE_NAVTUPLE
-int ValidateNavIndexRecursive(VPlacedVolume const *currentvolume, ReferenceNavState &reference, NavIndex_t nav_ind,
+int ValidateNavIndexRecursive(VPlacedVolume const *currentvolume, TouchablePath &reference, NavIndex_t nav_ind,
                               int &error)
 {
   if (!ValidateEncodedStateWithLogging<NavStateIndex>(reference, nav_ind, error)) return error;
 
   for (auto daughter : currentvolume->GetDaughters()) {
     if (daughter->GetChildId() < 0) {
-      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter) << "\n";
+      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter);
       error = static_cast<int>(ReferenceNavValidationError::kIncompatibleDaughter);
       return error;
     }
@@ -85,14 +80,14 @@ int ValidateNavIndexRecursive(VPlacedVolume const *currentvolume, ReferenceNavSt
 /**
  * @brief Recursively validates tuple-based encoded states against the geometry tree.
  */
-int ValidateNavTupleRecursive(VPlacedVolume const *currentvolume, ReferenceNavState &reference, NavTuple_t nav_tuple,
+int ValidateNavTupleRecursive(VPlacedVolume const *currentvolume, TouchablePath &reference, NavTuple_t nav_tuple,
                               int &error)
 {
   if (!ValidateEncodedStateWithLogging<NavStateTuple>(reference, nav_tuple, error)) return error;
 
   for (auto daughter : currentvolume->GetDaughters()) {
     if (daughter->GetChildId() < 0) {
-      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter) << "\n";
+      VECGEOM_LOG(critical) << "Validate: " << ToString(ReferenceNavValidationError::kIncompatibleDaughter);
       error = static_cast<int>(ReferenceNavValidationError::kIncompatibleDaughter);
       return error;
     }
@@ -103,7 +98,7 @@ int ValidateNavTupleRecursive(VPlacedVolume const *currentvolume, ReferenceNavSt
     auto scene_error = ValidateSceneTransition<NavStateTuple>(nav_tuple, child_nav_tuple);
     if (scene_error != ReferenceNavValidationError::kNone) {
       error = static_cast<int>(scene_error);
-      VECGEOM_LOG(critical) << "Validate: " << ToString(scene_error) << "\n";
+      VECGEOM_LOG(critical) << "Validate: " << ToString(scene_error);
       PrintSceneTransitionFailure<NavStateTuple>(nav_tuple, child_nav_tuple, currentvolume, daughter);
       return error;
     }
@@ -269,7 +264,7 @@ void WarnLargeNavTable(const char *mode, size_t table_size, size_t limit, size_t
 #ifdef VECGEOM_NAVTABLE_RECOMMEND
 size_t EstimateIndexTableSize(VPlacedVolume const *top, int depth_limit)
 {
-  ReferenceNavState state;
+  TouchablePath state;
   BuildNavIndexVisitor visitor(depth_limit, true);
   NavIndex_t id = 1;
   NavIndexTable::visitAllPlacedVolumesNavIndex(top, &visitor, &state, id);
@@ -278,7 +273,7 @@ size_t EstimateIndexTableSize(VPlacedVolume const *top, int depth_limit)
 
 size_t EstimateTupleTableSize(VPlacedVolume const *top, int depth_limit, int min_per_scene, int tuple_depth)
 {
-  ReferenceNavState state;
+  TouchablePath state;
   BuildNavIndexVisitor visitor(depth_limit, true);
   NavIndex_t id = 1;
   int scene_id  = 0;
@@ -452,7 +447,7 @@ void ReportTupleNavTableGuidance(VPlacedVolume const *top, int depth_limit, int 
 /// @param mother Address of the parent touchable record
 /// @param dind Index of this touchable in the parent list of daughters
 /// @return index of TR
-NavIndex_t BuildNavIndexVisitor::apply_tuple(ReferenceNavState *state, int level, NavIndex_t mother, int dind,
+NavIndex_t BuildNavIndexVisitor::apply_tuple(TouchablePath *state, int level, NavIndex_t mother, int dind,
                                              NavIndex_t &id, int scene_id, int new_scene_id)
 {
   bool cacheTrans   = true;
@@ -622,7 +617,7 @@ NavIndex_t BuildNavIndexVisitor::apply_tuple(ReferenceNavState *state, int level
   return record;
 }
 
-NavIndex_t BuildNavIndexVisitor::apply(ReferenceNavState *state, int level, NavIndex_t mother, int dind, NavIndex_t &id)
+NavIndex_t BuildNavIndexVisitor::apply(TouchablePath *state, int level, NavIndex_t mother, int dind, NavIndex_t &id)
 {
   bool cacheTrans       = true;
   NavIndex_t new_mother = fCurrent;
@@ -951,8 +946,8 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene, int max_scene_depth,
   };
 
   /// This visitor fills volumes[], nrep[], nleaves[], levels[] and parents[] and should be called once for the top
-  typedef std::function<void(VPlacedVolume const *, ReferenceNavState *, int &)> funcFillRepetitions_t;
-  funcFillRepetitions_t visitAndFillRepetitions = [&](VPlacedVolume const *pvol, ReferenceNavState *state, int &count) {
+  typedef std::function<void(VPlacedVolume const *, TouchablePath *, int &)> funcFillRepetitions_t;
+  funcFillRepetitions_t visitAndFillRepetitions = [&](VPlacedVolume const *pvol, TouchablePath *state, int &count) {
     // reset vol_visited before calling first time
     count++;
     auto parent = state->Top();
@@ -976,7 +971,7 @@ void BuildNavIndexVisitor::NodeReduction(int min_per_scene, int max_scene_depth,
     state->Pop();
   };
 
-  ReferenceNavState state;
+  TouchablePath state;
   visitAndFillRepetitions(GeoManager::Instance().GetWorld(), &state, nnodes);
   if (nnodes < min_per_scene) return;
   // now fill score for each volume
@@ -1092,7 +1087,7 @@ bool NavIndexTable::CreateTable(VPlacedVolume const *top, int maxdepth, int dept
 {
   fDepthLimit = depth_limit;
   (void)maxdepth;
-  ReferenceNavState state;
+  TouchablePath state;
   BuildNavIndexVisitor visitor(depth_limit, true); // just count table size
   NavIndex_t id = 1;
 #ifdef VECGEOM_USE_NAVTUPLE
@@ -1135,10 +1130,10 @@ bool NavIndexTable::Validate(VPlacedVolume const *top, int maxdepth) const
 {
   (void)maxdepth;
   int error = 0;
-  // Validation is a dedicated post-build pass: start from a reference state
+  // Validation is a dedicated post-build pass: start from a touchable path
   // containing the world volume and walk the geometry tree in lockstep with
   // the encoded navigation representation stored in the table.
-  auto reference = ReferenceNavState::MakeWorld(top);
+  auto reference = TouchablePath::MakeWorld(top);
 #ifdef VECGEOM_USE_NAVTUPLE
   int ierr = ValidateNavTupleRecursive(top, reference, NavTuple_t{fWorld}, error);
 #else
