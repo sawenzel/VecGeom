@@ -389,7 +389,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   hype:distance_to_in
   hype:hit_consistency
   hype:surface
-  orb:surface
   torus2_general:hit_consistency
   torus2_general:surface
   extruded_multilayer:surface
@@ -426,6 +425,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   cone_narrow_phi
   generic_polycone_irregular
   generic_polycone_zigzag_profile
+  orb
   polycone_two_section_sharp_jump
   tube_fullphi
   )
