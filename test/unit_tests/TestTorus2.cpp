@@ -65,12 +65,12 @@ bool testTorus()
   // Check torus roots
 
   Torus_t t1("Solid Torus #1", 0, Rmax, Rtor, 0, vecgeom::kTwoPi);
-  Torus_t t2("Hole cutted Torus #2", Rmin, Rmax, Rtor, 0, kPi / 2.); // kPi/4., kPi/2.);
+  Torus_t t2("Hole cut Torus #2", Rmin, Rmax, Rtor, 0, kPi / 2.); // kPi/4., kPi/2.);
   Torus_t tn2("tn2", Rmin, Rmax, Rtor, vecgeom::kPi / 2., vecgeom::kPi / 2.);
   Torus_t tn3("tn3", Rmin, Rmax, Rtor, vecgeom::kPi / 2., 3 * vecgeom::kPi / 2.);
-  Torus_t t3("Hole cutted Torus #3", 4 * Rmin, Rmax, Rtor, vecgeom::kPi / 2. - vecgeom::kPi / 24, vecgeom::kPi / 12);
+  Torus_t t3("Hole cut Torus #3", 4 * Rmin, Rmax, Rtor, vecgeom::kPi / 2. - vecgeom::kPi / 24, vecgeom::kPi / 12);
   Torus_t t4("Solid Torus #4", 0, Rtor - 2.e3 * tolerance, Rtor, 0, vecgeom::kTwoPi);
-  Torus_t t5("Solid cutted Torus #5", 0, Rtor - 2.e3 * tolerance, Rtor, vecgeom::kPi / 4, vecgeom::kPi / 2);
+  Torus_t t5("Solid cut Torus #5", 0, Rtor - 2.e3 * tolerance, Rtor, vecgeom::kPi / 4, vecgeom::kPi / 2);
   Torus_t *aTub = new Torus_t("Ring1", 0, 100, 1000, 0, vecgeom::kTwoPi);
   Torus_t t6("t6", 100, 150, 200, 0, vecgeom::kPi / 3);
   Torus_t *clad = new Torus_t("clad", 0., 10., 100., 0., vecgeom::kPi); // external
@@ -80,7 +80,7 @@ bool testTorus()
   Vec_t temp1         = Vec_t(-0.646752, -0.762700, -0.000012);
   temp1               = temp1 / (temp1.Mag());
 
-  // std::cout << "Dout=" << cmsEECool3->DistanceToOut(Vec_t(1230.993171, 1078.075896, -2.947036), temp1)
+  // std::cout << "DoutValue=" << cmsEECool3->DistanceToOut(Vec_t(1230.993171, 1078.075896, -2.947036), temp1)
   //          << std::endl; //: inf / inf / inf / 1.57856
   // std::cout<<"In="<<cmsEECool3->Inside(Vec_t(1230.993171, 1078.075896, -2.947036))<<"
   // Rtor="<<std::sqrt(1230.99*1230.99+1078.07*1078.07)<<std::endl;
@@ -259,11 +259,12 @@ bool testTorus()
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = t2.DistanceToIn(ponphi1, vy);
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 13.550819613108856743)); // Not sure about this
-  // Torus t2 is ends at pi/2 rad, we expect infinity
+  // From the inner radial boundary of the quarter torus, +y is an immediate
+  // entry while -y reaches the opposite inner radial boundary.
   Dist = t2.DistanceToIn(ponrmin, vy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, vecgeom::kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = t2.DistanceToIn(ponrmin, vmy);
-  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, vecgeom::kInfLength));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
 
   Dist = t3.DistanceToIn(ponrtor, vy);
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40));

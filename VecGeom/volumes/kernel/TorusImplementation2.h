@@ -1,4 +1,5 @@
 /// @file TorusImplementation2.h
+/// @brief Torus kernel helpers and navigation entry points.
 
 #ifndef VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION2_H_
 #define VECGEOM_VOLUMES_KERNEL_TORUSIMPLEMENTATION2_H_
@@ -20,6 +21,14 @@ VECGEOM_DEVICE_DECLARE_CONV(struct, TorusImplementation2);
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 //_____________________________________________________________________________
+/// @brief Solve a monic cubic equation and keep its real roots.
+/// @details Solves `x^3 + a*x^2 + b*x + c = 0`. The returned roots are used by
+/// the quartic solver for torus surface intersections.
+/// @param a Quadratic coefficient.
+/// @param b Linear coefficient.
+/// @param c Constant coefficient.
+/// @param[out] x Storage for up to three real roots.
+/// @return Number of real roots stored in @p x.
 template <typename T>
 VECCORE_ATT_HOST_DEVICE unsigned int SolveCubic(T a, T b, T c, T *x)
 {
@@ -62,19 +71,22 @@ VECCORE_ATT_HOST_DEVICE unsigned int SolveCubic(T a, T b, T c, T *x)
   return ireal;
 }
 
+/// @brief Compare two fixed entries and swap them into increasing order.
+/// @param[in,out] array Small root array to update in place.
 template <typename T, unsigned int i, unsigned int j>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CmpAndSwap(T *array)
 {
-  if (vecCore::MaskFull(array[i] > array[j])) {
+  if (array[i] > array[j]) {
     T c      = array[j];
     array[j] = array[i];
     array[i] = c;
   }
 }
 
-// a special function to sort a 4 element array
-// sorting is done inplace and in increasing order
-// implementation comes from a sorting network
+/// @brief Sort four candidate roots in place.
+/// @details Uses a fixed sorting network to avoid branches and loops whose
+/// overhead would dominate this tiny array.
+/// @param[in,out] array Four entries sorted into increasing order.
 template <typename T>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Sort4(T *array)
 {
@@ -85,9 +97,18 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Sort4(T *array)
   CmpAndSwap<T, 1, 2>(array);
 }
 
-// solve quartic taken from ROOT/TGeo and adapted
 //_____________________________________________________________________________
 
+/// @brief Solve a monic quartic equation and keep its real roots.
+/// @details Solves `x^4 + a*x^3 + b*x^2 + c*x + d = 0`. Torus distance
+/// kernels use these roots as candidate intersections with a scaled torus
+/// surface and perform geometry-specific filtering afterwards.
+/// @param a Cubic coefficient.
+/// @param b Quadratic coefficient.
+/// @param c Linear coefficient.
+/// @param d Constant coefficient.
+/// @param[out] x Storage for up to four real roots, sorted when returned.
+/// @return Number of real roots stored in @p x.
 template <typename T>
 VECCORE_ATT_HOST_DEVICE int SolveQuartic(T a, T b, T c, T d, T *x)
 {
@@ -104,7 +125,7 @@ VECCORE_ATT_HOST_DEVICE int SolveQuartic(T a, T b, T c, T d, T *x)
   unsigned int ireal = 0;
 
   // special case when f is zero
-  if (Abs(f) < 1E-6) {
+  if (Abs(f) < T(1.e-5)) {
     delta = e * e - 4. * g;
     if (delta < 0.) return 0;
     delta = Sqrt(delta);
@@ -174,20 +195,47 @@ class UnplacedTorus2;
 
 class SIMDUnplacedTorus2;
 
+/// @brief Kernel implementation for torus navigation.
+/// @details The implementation supports full and phi-cut torus variants, with
+/// optional inner radius for hollow tori. Distance queries scale the torus major
+/// radius to one, solve the quartic surface equation, and then filter candidate
+/// roots against radial, phi-wedge, direction, and tolerance conventions.
+///
+/// Navigation entry points are called with scalar inputs. The implementation
+/// therefore favors local scalar predicates and direct access to cached wedge
+/// state in hot paths instead of broader shape classification helpers.
 struct TorusImplementation2 {
   using PlacedShape_t    = PlacedTorus2;
   using UnplacedStruct_t = TorusStruct2<Precision>;
   using UnplacedVolume_t = UnplacedTorus2;
 
+  /// @brief Return the squared radial cross-section distance after propagation.
+  /// @details The torus is assumed to be scaled so `rtor == 1`. The result is
+  /// compared with scaled `rmin^2` and `rmax^2` to decide whether a phi-plane
+  /// intersection lies in the torus annulus.
+  /// @param point Scaled starting point.
+  /// @param dir Direction of propagation.
+  /// @param dist Candidate distance along @p dir.
+  /// @return Squared distance to the center of the scaled torus tube.
   template <class Real_v>
-  VECCORE_ATT_HOST_DEVICE static Real_v DistSqrToTorusR(Vector3D<Real_v> const &point,
-                                                        Vector3D<Real_v> const &dir, Real_v dist)
+  VECCORE_ATT_HOST_DEVICE static Real_v DistSqrToTorusR(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
+                                                        Real_v dist)
   {
     Vector3D<Real_v> p = point + dir * dist;
     Real_v rxy         = p.Perp();
     return (rxy - 1.) * (rxy - 1.) + p.z() * p.z();
   }
 
+  /// @brief Compute distance from an interior point to the torus boundary.
+  /// @details Candidate distances are obtained from the outer tube surface,
+  /// optional inner tube surface, and optional phi wedge. Phi candidates use the
+  /// cached wedge directly because `GetWedge()` returns by value and copying it
+  /// is measurable in sector hot paths.
+  /// @param torus Torus runtime data.
+  /// @param point Query point, expected to be inside or on the torus.
+  /// @param dir Normalized propagation direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param[out] distance Distance to exit, `-1` for outside input.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &torus,
                                                                          Vector3D<Real_v> const &point,
@@ -195,14 +243,14 @@ struct TorusImplementation2 {
                                                                          Real_v const & /*stepMax*/, Real_v &distance)
   {
     using Inside_v = vecCore::Index_v<Real_v>;
-    using Bool_v   = vecCore::Mask_v<Real_v>;
 
     bool hasphi  = (torus.dphi() < kTwoPi);
     bool hasrmin = (torus.rmin() > 0);
+    Real_v rtor  = torus.rtor();
 
     //=== First, for points outside --> return infinity
-    Bool_v done = Bool_v(false);
-    distance    = kInfLength;
+    bool done = false;
+    distance  = kInfLength;
 
     // very simple calculations -- only if can save some time
     Real_v distz = Abs(point.z()) - torus.rmax();
@@ -215,118 +263,148 @@ struct TorusImplementation2 {
     done |= rsq > outerExclRadius * outerExclRadius;
     Precision innerExclRadius = torus.rtor() - torus.rmax() - kHalfTolerance;
     done |= rsq < innerExclRadius * innerExclRadius;
-    vecCore__MaskedAssignFunc(distance, done, Real_v(-1.));
-    if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(done)) return;
+    if (done) {
+      distance = Real_v(-1.);
+      return;
+    }
 
     //=== Use InsideKernel() for a quick check, and if outside --> return -1
-    // Bool_t inside=false, outside=false;
-    // GenericKernelForContainsAndInside<Backend,true,true>(torus, point, inside, outside);
-    // MaskedAssign( inside, -1.0, &distance );
-    // done |= inside;
     Inside_v locus;
     TorusImplementation2::InsideKernel<Real_v, Inside_v>(torus, point, locus);
-    vecCore__MaskedAssignFunc(distance, locus == EInside::kOutside, Real_v(-1.));
-    done |= locus == EInside::kOutside;
-    if (vecCore::EarlyReturnAllowed() && vecCore::MaskFull(done)) return;
+    if (locus == Inside_v(EInside::kOutside)) {
+      distance = Real_v(-1.);
+      return;
+    }
 
-    Real_v dout = ToBoundary<Real_v, false>(torus, point/torus.rtor(), dir, torus.rmax()/torus.rtor(), true);
+    Vector3D<Real_v> scaledPoint = point / rtor;
+    Real_v distOut               = ToBoundary<Real_v, false>(torus, scaledPoint, dir, torus.rmax() / rtor, true);
     // ToBoundary<Backend, false, true>(torus, point, dir, torus.rmax());
     Real_v din(kInfLength);
     if (hasrmin) {
-      din = ToBoundary<Real_v, true>(torus, point/torus.rtor(), dir, torus.rmin()/torus.rtor(), true);
+      din = ToBoundary<Real_v, true>(torus, scaledPoint, dir, torus.rmin() / rtor, true);
       // ToBoundary<Backend, true, true>(torus, point, dir, torus.rmin());
     }
-    distance = Min(dout, din);
-    distance *= torus.rtor();
-    // std::cerr << "dout, din: " << dout << ", " << din << '\n';
-    // std::cerr << "distance = Min(dout, din): " << distance << '\n';
+    distance = Min(distOut, din);
+    distance *= rtor;
+    // std::cerr << "distOut, din: " << distOut << ", " << din << '\n';
+    // std::cerr << "distance = Min(distOut, din): " << distance << '\n';
 
     if (hasphi) {
       Real_v distPhi1;
       Real_v distPhi2;
-      // torus.GetWedge().DistanceToOut<Backend>(point, dir, distPhi1, distPhi2);
-      torus.GetWedge().DistanceToOut<Real_v>(point, dir, distPhi1, distPhi2);
-      Bool_v smallerphi = distPhi1 < distance;
-      if (!vecCore::MaskEmpty(smallerphi)) {
+      auto const &wedge = torus.fPhiWedge;
+      wedge.DistanceToOut<Real_v>(point, dir, distPhi1, distPhi2);
+      if (distPhi1 < distance) {
         Vector3D<Real_v> intersectionPoint = point + dir * distPhi1;
-        Bool_v insideDisk;
-        // UnplacedContainsDisk<Backend>(torus, intersectionPoint, insideDisk);
-        UnplacedContainsDisk<Real_v, Bool_v>(torus, intersectionPoint, insideDisk);
+        bool insideDisk                    = InsideRadialCrossSection<Real_v>(torus, intersectionPoint);
 
-        if (!vecCore::MaskEmpty(insideDisk)) // Inside Disk
+        if (insideDisk) // Inside Disk
         {
-          Real_v diri = intersectionPoint.x() * torus.GetWedge().GetAlong1().x() +
-                        intersectionPoint.y() * torus.GetWedge().GetAlong1().y();
-          Bool_v rightside = (diri >= 0);
-
-          vecCore__MaskedAssignFunc(distance, rightside && smallerphi && insideDisk, distPhi1);
+          auto along1 = wedge.GetAlong1();
+          Real_v diri = intersectionPoint.x() * along1.x() + intersectionPoint.y() * along1.y();
+          if (diri >= Real_v(0.)) distance = distPhi1;
         }
       }
-      smallerphi = distPhi2 < distance;
-      if (!vecCore::MaskEmpty(smallerphi)) {
+      if (distPhi2 < distance) {
 
         Vector3D<Real_v> intersectionPoint = point + dir * distPhi2;
-        Bool_v insideDisk;
-        // UnplacedContainsDisk<Backend>(torus, intersectionPoint, insideDisk);
-        UnplacedContainsDisk<Real_v, Bool_v>(torus, intersectionPoint, insideDisk);
-        if (!vecCore::MaskEmpty(insideDisk)) // Inside Disk
+        bool insideDisk                    = InsideRadialCrossSection<Real_v>(torus, intersectionPoint);
+        if (insideDisk) // Inside Disk
         {
-          Real_v diri2 = intersectionPoint.x() * torus.GetWedge().GetAlong2().x() +
-                         intersectionPoint.y() * torus.GetWedge().GetAlong2().y();
-          Bool_v rightside = (diri2 >= Real_v(0));
-          vecCore__MaskedAssignFunc(distance, rightside && (distPhi2 < distance) && smallerphi && insideDisk, distPhi2);
+          auto along2  = wedge.GetAlong2();
+          Real_v diri2 = intersectionPoint.x() * along2.x() + intersectionPoint.y() * along2.y();
+          if (diri2 >= Real_v(0.)) distance = distPhi2;
         }
       }
     }
 
-    vecCore__MaskedAssignFunc(distance, done || distance >= kInfLength, Real_v(-1.));
+    if (distance >= kInfLength) distance = Real_v(-1.);
   }
 
-  template <typename Real_v, typename Bool_v, bool notForDisk>
+  /// @brief Classification helper used by `Contains` variants.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] inside True when @p point is accepted by the requested torus
+  /// predicate.
+  template <typename Real_v, bool notForDisk>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ContainsKernel(UnplacedStruct_t const &torus,
-                                                                          Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                          Vector3D<Real_v> const &point, bool &inside)
   {
-    Bool_v unused(false);
-    Bool_v outside(false);
+    bool unused  = false;
+    bool outside = false;
     TorusImplementation2::GenericKernelForContainsAndInside<Real_v, false, notForDisk>(torus, point, unused, outside);
     inside = !outside;
   }
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a point belongs to the radial disk of a cut torus.
+  /// @details This keeps the phi wedge out of the predicate, allowing callers
+  /// to validate intersections with a phi boundary plane against only the
+  /// torus radial annulus.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] inside True if the point lies in the torus radial annulus.
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void UnplacedContainsDisk(UnplacedStruct_t const &torus,
                                                                                 Vector3D<Real_v> const &point,
-                                                                                Bool_v &inside)
+                                                                                bool &inside)
   {
-    ContainsKernel<Real_v, Bool_v, false>(torus, point, inside);
+    ContainsKernel<Real_v, false>(torus, point, inside);
   }
 
+  /// @brief Test the torus radial cross-section only.
+  /// @details This is intentionally narrower than full torus classification:
+  /// it ignores phi because phi-plane distance checks already know they are on
+  /// the limiting plane and only need to know whether material exists there.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @return True if @p point lies between `rmin` and `rmax` in the torus
+  /// cross-section.
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool InsideRadialCrossSection(UnplacedStruct_t const &torus,
+                                                                                    Vector3D<Real_v> const &point)
+  {
+    Real_v rxy   = Sqrt(point[0] * point[0] + point[1] * point[1]);
+    Real_v radsq = (rxy - torus.rtor()) * (rxy - torus.rtor()) + point[2] * point[2];
+    return radsq <= torus.rmax2() && radsq >= torus.rmin2();
+  }
+
+  /// @brief Return inside/surface/outside classification for a point.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] inside VecGeom inside code.
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void InsideKernel(UnplacedStruct_t const &torus,
                                                                         Vector3D<Real_v> const &point, Inside_t &inside)
   {
-
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    //
-    Bool_v completelyinside, completelyoutside;
+    bool completelyinside  = false;
+    bool completelyoutside = false;
     TorusImplementation2::GenericKernelForContainsAndInside<Real_v, true, true>(torus, point, completelyinside,
                                                                                 completelyoutside);
-    inside = Inside_t(EInside::kSurface);
-    vecCore::MaskedAssign(inside, completelyoutside, Inside_t(EInside::kOutside));
-    vecCore::MaskedAssign(inside, completelyinside, Inside_t(EInside::kInside));
+    inside = completelyoutside ? Inside_t(EInside::kOutside)
+                               : (completelyinside ? Inside_t(EInside::kInside) : Inside_t(EInside::kSurface));
   }
 
+  /// @brief Shared point-classification kernel for `Contains` and `Inside`.
+  /// @details The radial tube classification is based on the squared distance
+  /// from the point to the torus tube centerline. For phi-cut tori, the cached
+  /// wedge predicate is applied only when the caller requests full shape
+  /// classification rather than a radial disk predicate.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] completelyinside True when @p point is strictly inside for the
+  /// selected predicate.
+  /// @param[out] completelyoutside True when @p point is outside for the
+  /// selected predicate.
   template <typename Real_v, bool ForInside, bool notForDisk>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      UnplacedStruct_t const &torus, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &completelyinside,
-      typename vecCore::Mask_v<Real_v> &completelyoutside)
+      UnplacedStruct_t const &torus, Vector3D<Real_v> const &point, bool &completelyinside, bool &completelyoutside)
 
   {
     // using vecgeom::GenericKernels;
-    // here we are explicitely unrolling the loop since  a for statement will likely be a penality
+    // here we are explicitly unrolling the loop since a for statement will likely be a penalty
     // check if second call to Abs is compiled away
     // and it can anyway not be vectorized
     /* rmax */
-    using Bool_v                = vecCore::Mask_v<Real_v>;
     VECGEOM_CONST Precision tol = 100. * vecgeom::kTolerance;
 
     Real_v rxy   = Sqrt(point[0] * point[0] + point[1] * point[1]);
@@ -339,11 +417,7 @@ struct TorusImplementation2 {
       completelyoutside = radsq > torus.rmax2();
     }
 
-    if (vecCore::EarlyReturnAllowed()) {
-      if (vecCore::MaskFull(completelyoutside)) {
-        return;
-      }
-    }
+    if (completelyoutside) return;
     /* rmin */
     if (ForInside) {
       completelyoutside |= radsq < (-tol * torus.rmin() + torus.rmin2()); // rmin
@@ -352,18 +426,13 @@ struct TorusImplementation2 {
       completelyoutside |= radsq < torus.rmin2();
     }
 
-    // NOT YET NEEDED WHEN NOT PHI TREATMENT
-    if (vecCore::EarlyReturnAllowed()) {
-      if (vecCore::MaskFull(completelyoutside)) {
-        return;
-      }
-    }
+    if (completelyoutside) return;
 
     /* phi */
     if ((torus.dphi() < kTwoPi) && (notForDisk)) {
-      Bool_v completelyoutsidephi;
-      Bool_v completelyinsidephi;
-      torus.GetWedge().GenericKernelForContainsAndInside<Real_v, ForInside>(point, completelyinsidephi,
+      bool completelyoutsidephi = false;
+      bool completelyinsidephi  = false;
+      torus.fPhiWedge.template GenericKernelForContainsAndInside<ForInside>(point, completelyinsidephi,
                                                                             completelyoutsidephi);
 
       completelyoutside |= completelyoutsidephi;
@@ -371,18 +440,32 @@ struct TorusImplementation2 {
     }
   }
 
+  /// @brief Find the next crossing of a scaled torus tube boundary.
+  /// @details The caller passes a point already scaled by `rtor` and a scaled
+  /// tube radius. The method solves the quartic, filters candidate roots by
+  /// propagation direction and phi wedge ownership, and refines the accepted
+  /// root with Newton iterations. Grazing roots are rejected using tolerance
+  /// bands rather than strict zero tests.
+  /// @param torus Torus runtime data.
+  /// @param pt Scaled query point.
+  /// @param dir Normalized propagation direction.
+  /// @param radius Scaled tube radius, either `rmax/rtor` or `rmin/rtor`.
+  /// @param out True for distance-to-out filtering, false for distance-to-in.
+  /// @param skipZero Ignore zero-distance roots from an already leaving phi
+  /// boundary.
+  /// @return Accepted scaled distance, or `kInfLength` when no crossing applies.
   template <typename Real_v, bool ForRmin>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v ToBoundary(UnplacedStruct_t const &torus,
                                                                         Vector3D<Real_v> const &pt,
                                                                         Vector3D<Real_v> const &dir, Real_v radius,
-                                                                        bool out)
+                                                                        bool out, bool skipZero = false)
   {
     // to be taken from ROOT
     // Returns distance to the surface or the torus from a point, along
     // a direction. Point is close enough to the boundary so that the distance
     // to the torus is decreasing while moving along the given direction.
 
-    // Compute coeficients of the quartic
+    // Compute coefficients of the quartic
     Real_v s                 = vecgeom::kInfLength;
     VECGEOM_CONST Real_v tol = 100. * vecgeom::kTolerance;
     Real_v r0sq              = pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2];
@@ -391,33 +474,32 @@ struct TorusImplementation2 {
     Real_v a                 = 4. * rdotn;
     Real_v b                 = 2. * (r0sq + 2. * rdotn * rdotn - rsumsq + 2. * dir[2] * dir[2]);
     Real_v c                 = 4. * (r0sq * rdotn - rsumsq * rdotn + 2. * pt[2] * dir[2]);
-    Real_v d                 = r0sq * r0sq - 2. * r0sq * rsumsq + 4. * pt[2] * pt[2] +
-               (1. - radius * radius) * (1. - radius * radius);
+    Real_v d = r0sq * r0sq - 2. * r0sq * rsumsq + 4. * pt[2] * pt[2] + (1. - radius * radius) * (1. - radius * radius);
 
     Real_v x[4] = {vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength};
     int nsol    = 0;
 
     // special condition
-    if (vecCore::MaskFull(Abs(dir[2]) < 1E-3 && Abs(pt[2]) < 0.1 * radius)) {
+    if (Abs(dir[2]) < Real_v(1E-3) && Abs(pt[2]) < Real_v(0.1) * radius) {
       Real_v r0        = 1. - Sqrt((radius - pt[2]) * (radius + pt[2]));
       Real_v invdirxy2 = 1. / (1 - dir.z() * dir.z());
       Real_v b0        = (pt[0] * dir[0] + pt[1] * dir[1]) * invdirxy2;
       Real_v c0        = (pt[0] * pt[0] + (pt[1] - r0) * (pt[1] + r0)) * invdirxy2;
       Real_v delta     = b0 * b0 - c0;
-      if (vecCore::MaskFull(delta > 0)) {
+      if (delta > Real_v(0.)) {
         x[nsol] = -b0 - Sqrt(delta);
-        if (vecCore::MaskFull(x[nsol] > -tol)) nsol++;
+        if (x[nsol] > -tol) nsol++;
         x[nsol] = -b0 + Sqrt(delta);
-        if (vecCore::MaskFull(x[nsol] > -tol)) nsol++;
+        if (x[nsol] > -tol) nsol++;
       }
       r0    = 1. + Sqrt((radius - pt[2]) * (radius + pt[2]));
       c0    = (pt[0] * pt[0] + (pt[1] - r0) * (pt[1] + r0)) * invdirxy2;
       delta = b0 * b0 - c0;
-      if (vecCore::MaskFull(delta > 0)) {
+      if (delta > Real_v(0.)) {
         x[nsol] = -b0 - Sqrt(delta);
-        if (vecCore::MaskFull(x[nsol] > -tol)) nsol++;
+        if (x[nsol] > -tol) nsol++;
         x[nsol] = -b0 + Sqrt(delta);
-        if (vecCore::MaskFull(x[nsol] > -tol)) nsol++;
+        if (x[nsol] > -tol) nsol++;
       }
       if (nsol) {
         Sort4(x);
@@ -431,15 +513,16 @@ struct TorusImplementation2 {
 
     // look for first positive solution
     Real_v ndotd;
-    bool inner = vecCore::MaskFull(Abs(radius - torus.rmin()/torus.rtor()) < vecgeom::kTolerance);
+    bool inner = Abs(radius - torus.rmin() / torus.rtor()) < vecgeom::kTolerance;
     for (int i = 0; i < nsol; i++) {
-      if (vecCore::MaskFull(x[i] < -100)) continue;
+      if (x[i] < Real_v(-100.)) continue;
+      if (skipZero && Abs(x[i]) <= tol) continue;
 
       Vector3D<Real_v> r0   = pt + x[i] * dir;
       Vector3D<Real_v> norm = r0;
       r0.z()                = 0.;
       r0.Normalize();
-      //r0 *= torus.rtor();
+      // r0 *= torus.rtor();
       norm -= r0;
       // norm = pt
       // for (unsigned int ipt = 0; ipt < 3; ipt++)
@@ -447,41 +530,58 @@ struct TorusImplementation2 {
       // ndotd = norm[0] * dir[0] + norm[1] * dir[1] + norm[2] * dir[2];
       ndotd = norm.Dot(dir);
       if (inner ^ out) {
-        if (vecCore::MaskFull(ndotd < 0)) continue; // discard this solution
+        if (ndotd <= tol) continue; // discard this grazing solution
       } else {
-        if (vecCore::MaskFull(ndotd > 0)) continue; // discard this solution
+        if (ndotd >= -tol) continue; // discard this grazing solution
       }
 
       // The crossing point should be in the phi wedge
       if (torus.dphi() < vecgeom::kTwoPi) {
-        if (!vecCore::MaskFull(torus.GetWedge().ContainsWithBoundary<Real_v>(r0))) continue;
+        if (!torus.fPhiWedge.ContainsWithBoundary<Real_v>(r0)) continue;
       }
 
       s = x[i];
       // refine solution with Newton iterations
       Real_v eps   = vecgeom::kInfLength;
       Real_v delta = s * s * s * s + a * s * s * s + b * s * s + c * s + d;
-      Real_v eps0  = -delta / (4. * s * s * s + 3. * a * s * s + 2. * b * s + c);
-      int ntry     = 0;
-      while (vecCore::MaskFull(Abs(eps) > vecgeom::kTolerance)) {
-        if (vecCore::MaskFull(Abs(eps0) > 200)) break;
+      Real_v deriv = 4. * s * s * s + 3. * a * s * s + 2. * b * s + c;
+      Real_v eps0  = vecgeom::kInfLength;
+      if (deriv != Real_v(0.)) eps0 = -delta / deriv;
+      int ntry = 0;
+      while (Abs(eps) > vecgeom::kTolerance) {
+        if (Abs(eps0) > Real_v(200.)) break;
         s += eps0;
-        if (vecCore::MaskFull(Abs(s + eps0) < vecgeom::kTolerance)) break;
+        if (Abs(s + eps0) < vecgeom::kTolerance) break;
         delta = s * s * s * s + a * s * s * s + b * s * s + c * s + d;
-        eps   = -delta / (4. * s * s * s + 3. * a * s * s + 2. * b * s + c);
-        if (vecCore::MaskFull(Abs(eps) >= Abs(eps0))) break;
+        deriv = 4. * s * s * s + 3. * a * s * s + 2. * b * s + c;
+        if (delta == Real_v(0.) || deriv == Real_v(0.)) break;
+        eps = -delta / deriv;
+        if (Abs(eps) >= Abs(eps0)) break;
         ntry++;
         // Avoid infinite recursion
         if (ntry > 100) break;
         eps0 = eps;
       }
       // discard this solution
-      if (vecCore::MaskFull(s < -tol)) continue;
+      if (s < -tol) continue;
+      deriv = 4. * s * s * s + 3. * a * s * s + 2. * b * s + c;
+      if (inner ^ out) {
+        if (deriv <= tol) continue;
+      } else {
+        if (deriv >= -tol) continue;
+      }
       return Max(Real_v(0.), s);
     }
     return vecgeom::kInfLength;
   }
 
+  /// @brief Compute safety from an interior point to the torus boundary.
+  /// @details The radial safety is the distance to the nearest inner or outer
+  /// tube circle in the torus cross-section. For phi-cut tori, the result is
+  /// tightened with the wedge safety using direct cached wedge access.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] safety Conservative distance to the nearest exit boundary.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &torus,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
@@ -493,25 +593,31 @@ struct TorusImplementation2 {
       safety = Min(rad - torus.rmin(), torus.rmax() - rad);
     }
 
-    // TODO: extend implementation for phi sector case
     bool hasphi = (torus.dphi() < kTwoPi);
     if (hasphi) {
-      Real_v safetyPhi = torus.GetWedge().SafetyToOut<Real_v>(point);
+      Real_v safetyPhi = torus.fPhiWedge.SafetyToOut<Real_v>(point);
       safety           = Min(safetyPhi, safety);
     }
   }
 
+  /// @brief Test whether a point is contained by the torus.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] contains True when @p point is not outside.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &torus,
-                                                                    Vector3D<Real_v> const &point,
-                                                                    typename vecCore::Mask_v<Real_v> &contains)
+                                                                    Vector3D<Real_v> const &point, bool &contains)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v unused, outside;
+    bool unused  = false;
+    bool outside = false;
     TorusImplementation2::GenericKernelForContainsAndInside<Real_v, true, true>(torus, point, unused, outside);
     contains = !outside;
   }
 
+  /// @brief Classify a point as inside, outside, or on the torus surface.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] inside VecGeom inside code.
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &torus,
                                                                   Vector3D<Real_v> const &point, Inside_t &inside)
@@ -519,6 +625,16 @@ struct TorusImplementation2 {
     TorusImplementation2::InsideKernel<Real_v, Inside_t>(torus, point, inside);
   }
 
+  /// @brief Compute distance from an exterior point to the torus boundary.
+  /// @details The bounding tube is used as a cheap first stage. After the point
+  /// is propagated to that tube, the torus is scaled by `rtor`, phi-plane
+  /// candidates are checked against the radial annulus, and torus surface roots
+  /// are filtered by `ToBoundary`.
+  /// @param torus Torus runtime data.
+  /// @param point Query point, expected to be outside the torus.
+  /// @param direction Normalized propagation direction.
+  /// @param stepMax Maximum propagation step used by the bounding-tube stage.
+  /// @param[out] distance Distance to enter, `-1` for inside input.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &torus,
                                                                         Vector3D<Real_v> const &point,
@@ -526,18 +642,22 @@ struct TorusImplementation2 {
                                                                         Real_v const &stepMax, Real_v &distance)
   {
 
-    Vector3D<Real_v> localPoint     = point;
-    Vector3D<Real_v> localDirection = direction;
+    Vector3D<Real_v> localPoint            = point;
+    Vector3D<Real_v> const &localDirection = direction;
+    Real_v rtor                            = torus.rtor();
+    Real_v rmin2Scaled                     = torus.rmin2() / rtor / rtor;
+    Real_v rmax2Scaled                     = torus.rmax2() / rtor / rtor;
+    Real_v rminScaled                      = torus.rmin() / rtor;
+    Real_v rmaxScaled                      = torus.rmax() / rtor;
 
-    using Bool_v   = vecCore::Mask_v<Real_v>;
     using Inside_v = vecCore::Index_v<Real_v>;
 
     ////////First naive implementation
     distance = kInfLength;
 
     // Check Bounding Cylinder first
-    Bool_v inBounds;
-    Bool_v done         = Bool_v(false);
+    bool inBounds       = false;
+    bool done           = false;
     Inside_v inside     = Inside_v(EInside::kOutside);
     Real_v tubeDistance = kInfLength;
 
@@ -546,16 +666,19 @@ struct TorusImplementation2 {
     // bounding volume
     TubeImplementation<TubeTypes::HollowTube>::Contains(torus.GetBoundingTube().GetStruct(), localPoint, inBounds);
 
-    // only need to do this check if all particles (in vector) are outside ( otherwise useless )
-    TubeImplementation<TubeTypes::HollowTube>::DistanceToIn(torus.GetBoundingTube().GetStruct(), localPoint,
-                                                            localDirection, stepMax, tubeDistance);
+    // only need to do this check if the scalar point is outside.
+    if (!inBounds) {
+      TubeImplementation<TubeTypes::HollowTube>::DistanceToIn(torus.GetBoundingTube().GetStruct(), localPoint,
+                                                              localDirection, stepMax, tubeDistance);
+    } else {
+      tubeDistance = 0.;
+    }
 #else
     // call the tube functionality -- first of all we check whether we are inside
     // bounding volume
     TubeImplementation<TubeTypes::UniversalTube>::Contains(torus.GetBoundingTube().GetStruct(), localPoint, inBounds);
 
-    // only need to do this check if all particles (in vector) are outside ( otherwise useless )
-    // vecCore::Mask_v<Real_v> notInBounds { !inBounds };
+    // only need to do this check if the scalar point is outside.
     if (!inBounds) {
       TubeImplementation<TubeTypes::UniversalTube>::DistanceToIn(torus.GetBoundingTube().GetStruct(), localPoint,
                                                                  localDirection, stepMax, tubeDistance);
@@ -565,68 +688,77 @@ struct TorusImplementation2 {
 
 #endif // VECGEOM_NO_SPECIALIZATION
     if (inBounds) {
+      tubeDistance = Real_v(0.);
       // Check points on the wrong side (inside torus)
       TorusImplementation2::InsideKernel<Real_v, Inside_v>(torus, point, inside);
-      if (vecCore::MaskFull(inside == Inside_v(EInside::kInside))) {
-        done     = Bool_v(true);
+      if (inside == Inside_v(EInside::kInside)) {
+        done     = true;
         distance = Real_v(-1.);
       }
     } else {
-      done = Bool_v(vecCore::MaskFull(tubeDistance == kInfLength));
+      done = tubeDistance == kInfLength;
     }
 
-    if (vecCore::EarlyReturnAllowed()) {
-      if (vecCore::MaskFull(done)) {
-        return;
-      }
-    }
+    if (done) return;
 
     // Propagate the point to the bounding tube, as this will reduce the
     // coefficients of the quartic and improve precision of the solutions
     localPoint += tubeDistance * localDirection;
-    localPoint /= torus.rtor();
-    Bool_v hasphi = Bool_v(torus.dphi() < vecgeom::kTwoPi);
-    if (vecCore::MaskFull(hasphi)) {
+    localPoint /= rtor;
+    bool hasphi              = torus.dphi() < vecgeom::kTwoPi;
+    bool skipZeroPhiBoundary = false;
+    if (hasphi) {
       Real_v d1, d2;
 
-      auto wedge = torus.GetWedge();
+      auto const &wedge = torus.fPhiWedge;
+      skipZeroPhiBoundary =
+          wedge.template IsPointOnSurfaceAndMovingOut<Real_v, true, true>(localPoint, localDirection) ||
+          wedge.template IsPointOnSurfaceAndMovingOut<Real_v, false, true>(localPoint, localDirection);
       // checking distance to phi wedges
-      // NOTE: if the tube told me its hitting surface, this would be unnessecary
+      // NOTE: if the tube told me its hitting surface, this would be unnecessary
       wedge.DistanceToIn<Real_v>(localPoint, localDirection, d1, d2);
 
       // check phi intersections if bounding tube intersection is due to phi in which case we are done
-      if (vecCore::MaskFull(d1 != kInfLength)) {
+      if (d1 != kInfLength) {
         Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d1);
-        if (vecCore::MaskFull(daxis >= torus.rmin2()/torus.rtor()/torus.rtor() && daxis < torus.rmax2()/torus.rtor()/torus.rtor() && d1 > -kTolerance)) {
+        if (daxis >= rmin2Scaled && daxis < rmax2Scaled && d1 > -kTolerance) {
           distance = d1;
         }
       }
 
-      if (vecCore::MaskFull(d2 != kInfLength)) {
+      if (d2 != kInfLength) {
         Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d2);
-        if (vecCore::MaskFull(daxis >= torus.rmin2()/torus.rtor()/torus.rtor() && daxis < torus.rmax2()/torus.rtor()/torus.rtor() && d2 > -kTolerance)) {
+        if (daxis >= rmin2Scaled && daxis < rmax2Scaled && d2 > -kTolerance) {
           distance = Min(distance, d2);
         }
       }
     }
 
-    Real_v dd = ToBoundary<Real_v, false>(torus, localPoint, localDirection, torus.rmax()/torus.rtor(), false);
+    Real_v dd = ToBoundary<Real_v, false>(torus, localPoint, localDirection, rmaxScaled, false, skipZeroPhiBoundary);
 
     // in case of a phi opening we also need to check the Rmin surface
     if (torus.rmin() > 0.) {
-      Real_v ddrmin = ToBoundary<Real_v, true>(torus, localPoint, localDirection, torus.rmin()/torus.rtor(), false);
-      dd            = Min(dd, ddrmin);
+      Real_v ddrmin =
+          ToBoundary<Real_v, true>(torus, localPoint, localDirection, rminScaled, false, skipZeroPhiBoundary);
+      dd = Min(dd, ddrmin);
     }
     distance = Min(distance, dd);
-    distance *= torus.rtor();
+    distance *= rtor;
     distance += tubeDistance;
     // This has to be added because distance can become > kInfLength due to
     // missing early returns in CUDA. This makes comparisons to kInfLength fail.
-    if (vecCore::MaskFull(Abs(distance) > kInfLength)) distance = kInfLength;
+    if (Abs(distance) > kInfLength) distance = kInfLength;
 
     return;
   }
 
+  /// @brief Compute safety from an exterior point to the torus boundary.
+  /// @details Radial safety is based on the torus cross-section. For phi-cut
+  /// tori, wedge safety is combined only when the transverse radius is nonzero,
+  /// avoiding undefined phi direction at the z axis.
+  /// @param torus Torus runtime data.
+  /// @param point Query point.
+  /// @param[out] safety Conservative distance to the nearest entry boundary.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &torus,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -643,8 +775,8 @@ struct TorusImplementation2 {
     }
 
     bool hasphi = (torus.dphi() < kTwoPi);
-    if (hasphi && vecCore::MaskFull(rxy != 0.)) {
-      Real_v safetyPhi = torus.GetWedge().SafetyToIn<Real_v>(localPoint);
+    if (hasphi && rxy != Real_v(0.)) {
+      Real_v safetyPhi = torus.fPhiWedge.SafetyToIn<Real_v>(localPoint);
       safety           = Max(safetyPhi, safety);
     }
   }

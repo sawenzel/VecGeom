@@ -46,7 +46,7 @@ private:
   Precision fSPhi = 0.;              // starting angle
   Precision fDPhi = 0.;              // delta angle representing/defining the wedge
   Vector3D<Precision> fAlongVector1; // vector along the first plane
-  Vector3D<Precision> fAlongVector2; // vector aling the second plane
+  Vector3D<Precision> fAlongVector2; // vector along the second plane
 
   Vector3D<Precision> fNormalVector1; // normal vector for first plane
   // convention is that it points inwards
@@ -260,12 +260,12 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> We
     Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
 {
 
+  const Real_v minPhiBoundaryMotion(1.e-12);
+  const Real_v motion = dir.Dot(-GetNormal<ForStartPhi>());
   if (MovingOut)
-    return IsOnSurfaceGeneric<Real_v, ForStartPhi>(point) &&
-           (dir.Dot(-GetNormal<ForStartPhi>()) > Real_v(0.005 * kHalfTolerance));
+    return IsOnSurfaceGeneric<Real_v, ForStartPhi>(point) && (motion > minPhiBoundaryMotion);
   else
-    return IsOnSurfaceGeneric<Real_v, ForStartPhi>(point) &&
-           (dir.Dot(-GetNormal<ForStartPhi>()) < Real_v(0.005 * kHalfTolerance));
+    return IsOnSurfaceGeneric<Real_v, ForStartPhi>(point) && (motion < -minPhiBoundaryMotion);
 }
 
 template <typename Real_v, bool ForStartPhi>
@@ -334,8 +334,7 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::ContainsWithoutB
   return completelyinside;
 }
 
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::ContainsWithoutBoundary(
-    Vector3D<Precision> const &point) const
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::ContainsWithoutBoundary(Vector3D<Precision> const &point) const
 {
   bool completelyinside  = false;
   bool completelyoutside = false;
@@ -453,8 +452,9 @@ VECCORE_ATT_HOST_DEVICE typename vecCore::Mask_v<Real_v> Wedge::IsOnSurfaceGener
   return condition1 && condition2;
 }
 
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::IsOnSurfaceGeneric(
-    Vector3D<Precision> const &alongVector, Vector3D<Precision> const &normalVector, Vector3D<Precision> const &point)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool Wedge::IsOnSurfaceGeneric(Vector3D<Precision> const &alongVector,
+                                                                            Vector3D<Precision> const &normalVector,
+                                                                            Vector3D<Precision> const &point)
 {
   bool condition1 = alongVector.x() * point.x() + alongVector.y() * point.y() >= Precision(0.);
   if (!condition1) return false;
@@ -528,7 +528,6 @@ template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToIn(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
                                                  Real_v &distWedge1, Real_v &distWedge2) const
 {
-  using Bool_v = vecCore::Mask_v<Real_v>;
   // algorithm::first calculate projections of direction to both planes,
   // then calculate real distance along given direction,
   // distance can be negative
@@ -539,17 +538,17 @@ VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToIn(Vector3D<Real_v> const &point, 
   Real_v comp1 = dir.x() * fNormalVector1.x() + dir.y() * fNormalVector1.y();
   Real_v comp2 = dir.x() * fNormalVector2.x() + dir.y() * fNormalVector2.y();
 
-  Bool_v cmp1 = comp1 > Real_v(0.);
-  if (!vecCore::MaskEmpty(cmp1)) {
+  const Real_v minPhiBoundaryMotion(1.e-12);
+
+  if (comp1 > minPhiBoundaryMotion) {
     Real_v tmp = -(point.x() * fNormalVector1.x() + point.y() * fNormalVector1.y()) / comp1;
-    vecCore::MaskedAssign(tmp, tmp > Real_v(-kTolerance) && tmp < Real_v(0.), Real_v(0.));
-    vecCore::MaskedAssign(distWedge1, cmp1 && tmp >= Real_v(0.), tmp);
+    if (tmp > Real_v(-kTolerance) && tmp < Real_v(0.)) tmp = Real_v(0.);
+    if (tmp >= Real_v(0.)) distWedge1 = tmp;
   }
-  Bool_v cmp2 = comp2 > Real_v(0.);
-  if (!vecCore::MaskEmpty(cmp2)) {
+  if (comp2 > minPhiBoundaryMotion) {
     Real_v tmp = -(point.x() * fNormalVector2.x() + point.y() * fNormalVector2.y()) / comp2;
-    vecCore::MaskedAssign(tmp, tmp > Real_v(-kTolerance) && tmp < Real_v(0.), Real_v(0.));
-    vecCore::MaskedAssign(distWedge2, cmp2 && tmp >= Real_v(0.), tmp);
+    if (tmp > Real_v(-kTolerance) && tmp < Real_v(0.)) tmp = Real_v(0.);
+    if (tmp >= Real_v(0.)) distWedge2 = tmp;
   }
 }
 
@@ -557,9 +556,6 @@ template <typename Real_v>
 VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToOut(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir,
                                                   Real_v &distWedge1, Real_v &distWedge2) const
 {
-
-  using Bool_v = vecCore::Mask_v<Real_v>;
-
   // algorithm::first calculate projections of direction to both planes,
   // then calculate real distance along given direction,
   // distance can be negative
@@ -572,18 +568,18 @@ VECCORE_ATT_HOST_DEVICE void Wedge::DistanceToOut(Vector3D<Real_v> const &point,
   distWedge1 = kInfLength;
   distWedge2 = kInfLength;
 
-  Bool_v cmp1 = comp1 < Real_v(0.);
-  if (!vecCore::MaskEmpty(cmp1)) {
+  const Real_v minPhiBoundaryMotion(1.e-12);
+
+  if (comp1 < -minPhiBoundaryMotion) {
     Real_v tmp = -(point.x() * fNormalVector1.x() + point.y() * fNormalVector1.y()) / comp1;
-    vecCore::MaskedAssign(tmp, tmp > Real_v(-kTolerance) && tmp < Real_v(0.), Real_v(0.));
-    vecCore::MaskedAssign(distWedge1, cmp1 && tmp > Real_v(0.), tmp);
+    if (tmp > Real_v(-kTolerance) && tmp < Real_v(0.)) tmp = Real_v(0.);
+    if (tmp >= Real_v(0.)) distWedge1 = tmp;
   }
 
-  Bool_v cmp2 = comp2 < Real_v(0.);
-  if (!vecCore::MaskEmpty(cmp2)) {
+  if (comp2 < -minPhiBoundaryMotion) {
     Real_v tmp = -(point.x() * fNormalVector2.x() + point.y() * fNormalVector2.y()) / comp2;
-    vecCore::MaskedAssign(tmp, tmp > Real_v(-kTolerance) && tmp < Real_v(0.), Real_v(0.));
-    vecCore::MaskedAssign(distWedge2, cmp2 && tmp > Real_v(0.), tmp);
+    if (tmp > Real_v(-kTolerance) && tmp < Real_v(0.)) tmp = Real_v(0.);
+    if (tmp >= Real_v(0.)) distWedge2 = tmp;
   }
 }
 } // namespace VECGEOM_IMPL_NAMESPACE

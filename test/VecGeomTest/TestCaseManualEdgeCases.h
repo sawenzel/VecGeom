@@ -131,6 +131,18 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        "Outside ray has a sub-tolerance outward z component on the top cap plane; it must not report a cap-plane "
        "DistanceToIn hit because there is no owned continuation interval."},
 
+      // Sphere
+      {"sphere_narrow_phi_phi_plane_grazing", "sphere_narrow_phi", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(7.0183278628341847, 3.0503842933005898, -3.1897304680763678),
+       Vec_t(0.58396691489260943, 0.31306753242111229, 0.74898021499540546), false, Vec_t(0., 0., 0.), 0.,
+       "Narrow-phi sphere replay where the generated phi-plane grazing ray must not report both DistanceToIn and "
+       "DistanceToOut as zero."},
+      {"sphere_section_phi_plane_grazing", "sphere_section", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(-6.4694147812101477, 11.205355096293074, -10.260967364622779),
+       Vec_t(-0.45590986957403301, 0.36092696892014486, 0.81355879562027045), false, Vec_t(0., 0., 0.), 0.,
+       "Section sphere replay where the generated phi-plane grazing ray must not report both DistanceToIn and "
+       "DistanceToOut as zero."},
+
       // Boolean
       {"boolean_intersection_rotated_boxes_rotated_face_normal", "boolean_intersection_rotated_boxes", "normals",
        ShapeSampleCategory::kSurface, Vec_t(0.20710678118654757, -0.79289321881345243, 0.),
