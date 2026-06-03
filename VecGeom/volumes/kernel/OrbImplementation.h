@@ -2,8 +2,8 @@
 // conditions in the file LICENSE.txt in the top directory.
 // For the full list of authors see CONTRIBUTORS.txt and `git log`.
 
-/// \brief This file implements the algorithms for Orb
-/// \file volumes/kernel/orbImplementation.h
+/// @file OrbImplementation.h
+/// @brief Navigation kernels for the Orb solid.
 /// \author Raman Sehgal
 
 /// History notes:
@@ -32,41 +32,59 @@ template <typename T>
 struct OrbStruct;
 class UnplacedOrb;
 
+/// @brief Implements scalar navigation kernels for `UnplacedOrb`.
 struct OrbImplementation {
 
   using PlacedShape_t    = PlacedOrb;
   using UnplacedStruct_t = OrbStruct<Precision>;
   using UnplacedVolume_t = UnplacedOrb;
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a local point is contained in or on the orb.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local point to test.
+  /// @param inside Set to true unless the point is outside the outer tolerance band.
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &orb,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
-    Bool_v unused(false), outside(false);
-    GenericKernelForContainsAndInside<Real_v, Bool_v, false>(orb, point, unused, outside);
+    bool unused = false, outside = false;
+    GenericKernelForContainsAndInside<Real_v, false>(orb, point, unused, outside);
     inside = !outside;
   }
 
-  // BIG QUESTION: DO WE WANT TO GIVE ALL 3 TEMPLATE PARAMETERS
-  // -- OR -- DO WE WANT TO DEDUCE Bool_v, Index_t from Real_v???
+  /// @brief Classify a local point as inside, outside, or surface.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Inside_t Integer-like type used for `EInside` values.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local point to classify.
+  /// @param inside Set to `kInside`, `kOutside`, or `kSurface`.
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &orb,
                                                                   Vector3D<Real_v> const &point, Inside_t &inside)
   {
 
-    using Bool_v       = vecCore::Mask_v<Real_v>;
-    using InsideBool_v = vecCore::Mask_v<Inside_t>;
-    Bool_v completelyinside, completelyoutside;
-    GenericKernelForContainsAndInside<Real_v, Bool_v, true>(orb, point, completelyinside, completelyoutside);
+    bool completelyinside = false, completelyoutside = false;
+    GenericKernelForContainsAndInside<Real_v, true>(orb, point, completelyinside, completelyoutside);
     inside = EInside::kSurface;
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyoutside, Inside_t(EInside::kOutside));
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyinside, Inside_t(EInside::kInside));
+    if (completelyoutside) inside = Inside_t(EInside::kOutside);
+    if (completelyinside) inside = Inside_t(EInside::kInside);
   }
 
-  template <typename Real_v, typename Bool_v, bool ForInside>
+  /// @brief Compute strict inside/outside flags for point classification.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam ForInside When true, also compute the strict-inside flag.
+  /// @param orb Orb data containing the radius.
+  /// @param localPoint Local point to classify.
+  /// @param completelyinside Set when the point is inside the inner tolerance radius.
+  /// @param completelyoutside Set when the point is outside the outer tolerance radius.
+  ///
+  /// @details
+  /// This helper compares squared radii because classification only needs an
+  /// ordering against radial tolerance limits.
+  template <typename Real_v, bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      UnplacedStruct_t const &orb, Vector3D<Real_v> const &localPoint, Bool_v &completelyinside,
-      Bool_v &completelyoutside)
+      UnplacedStruct_t const &orb, Vector3D<Real_v> const &localPoint, bool &completelyinside, bool &completelyoutside)
   {
     Precision fR = orb.fR;
     Real_v rad2  = localPoint.Mag2();
@@ -77,118 +95,166 @@ struct OrbImplementation {
     return;
   }
 
+  /// @brief Compute the distance from outside the orb to the first entry.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param distance Set to the entry distance, `kInfLength`, or `-1` when the point is clearly inside.
+  ///
+  /// @details
+  /// `stepMax` is intentionally ignored. The setup uses squared radii for the
+  /// inside/surface predicates, then passes the precomputed radius squared and
+  /// radial projection to the quadratic helper.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &orb,
                                                                         Vector3D<Real_v> const &point,
                                                                         Vector3D<Real_v> const &direction,
                                                                         Real_v const & /*stepMax*/, Real_v &distance)
   {
-    using Bool_v         = vecCore::Mask_v<Real_v>;
-    distance             = kInfLength;
-    Real_v rad           = point.Mag();
-    Bool_v isPointInside = (rad < Real_v(orb.fR - kTolerance));
-    vecCore__MaskedAssignFunc(distance, isPointInside, Real_v(-1.));
-    Bool_v done = isPointInside;
-    if (vecCore::MaskFull(done)) return;
+    distance          = kInfLength;
+    Real_v rad2       = point.Mag2();
+    Real_v tolRadius  = Real_v(orb.fR - kTolerance);
+    Real_v tolRadius2 = tolRadius * tolRadius;
+    if (rad2 < tolRadius2) {
+      distance = Real_v(-1.);
+      return;
+    }
 
-    Real_v pDotV3D          = point.Dot(direction);
-    Bool_v isPointOnSurface = (rad >= Real_v(orb.fR - kTolerance)) && (rad <= Real_v(orb.fR + kTolerance));
-    Bool_v cond             = (isPointOnSurface && (pDotV3D < Real_v(0.)));
-    vecCore__MaskedAssignFunc(distance, !done && cond, Real_v(0.));
-    done |= cond;
-    if (vecCore::MaskFull(done)) return;
-    Real_v dist(kInfLength);
-    vecCore::MaskedAssign(
-        distance, !done && DetectIntersectionAndCalculateDistance<Real_v, true>(orb, point, direction, dist), dist);
+    Real_v pDotV3D        = point.Dot(direction);
+    tolRadius             = Real_v(orb.fR + kTolerance);
+    tolRadius2            = tolRadius * tolRadius;
+    bool isPointOnSurface = (rad2 <= tolRadius2);
+    if (isPointOnSurface) {
+      if (pDotV3D < Real_v(-kTolerance)) distance = Real_v(0.);
+      return;
+    }
+
+    DetectIntersectionAndCalculateDistance<Real_v, true>(orb, rad2, pDotV3D, distance);
   }
 
+  /// @brief Compute the distance from inside the orb to the first exit.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param distance Set to the exit distance, `kInfLength`, or `-1` when the point is clearly outside.
+  ///
+  /// @details
+  /// `stepMax` is intentionally ignored. The setup uses squared radii for the
+  /// outside/surface predicates, then passes the precomputed radius squared and
+  /// radial projection to the quadratic helper.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &orb,
                                                                          Vector3D<Real_v> const &point,
                                                                          Vector3D<Real_v> const &direction,
                                                                          Real_v const & /* stepMax */, Real_v &distance)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-
     distance = kInfLength;
 
-    Real_v rad            = point.Mag();
-    Bool_v isPointOutside = (rad > Real_v(orb.fR + kTolerance));
-    vecCore__MaskedAssignFunc(distance, isPointOutside, Real_v(-1.));
-    Bool_v done = isPointOutside;
-    if (vecCore::MaskFull(done)) return;
+    Real_v rad2       = point.Mag2();
+    Real_v tolRadius  = Real_v(orb.fR + kTolerance);
+    Real_v tolRadius2 = tolRadius * tolRadius;
+    if (rad2 > tolRadius2) {
+      distance = Real_v(-1.);
+      return;
+    }
 
-    Real_v pDotV3D          = point.Dot(direction);
-    Bool_v isPointOnSurface = (rad >= Real_v(orb.fR - kTolerance)) && (rad <= Real_v(orb.fR + kTolerance));
-    Bool_v cond             = (isPointOnSurface && (pDotV3D > Real_v(0.)));
-    vecCore__MaskedAssignFunc(distance, !done && cond, Real_v(0.));
-    done |= cond;
-    if (vecCore::MaskFull(done)) return;
-    Real_v dist(kInfLength);
-    vecCore::MaskedAssign(
-        distance, !done && DetectIntersectionAndCalculateDistance<Real_v, false>(orb, point, direction, dist), dist);
+    Real_v pDotV3D        = point.Dot(direction);
+    tolRadius             = Real_v(orb.fR - kTolerance);
+    tolRadius2            = tolRadius * tolRadius;
+    bool isPointOnSurface = (rad2 >= tolRadius2);
+    if (isPointOnSurface) {
+      if (pDotV3D >= Real_v(-kTolerance)) {
+        distance = Real_v(0.);
+        return;
+      }
+    }
 
-    return;
+    DetectIntersectionAndCalculateDistance<Real_v, false>(orb, rad2, pDotV3D, distance);
   }
 
+  /// @brief Compute safety from an outside point to the orb.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local point.
+  /// @param safety Set to radial safety, zero in the surface band, or `-1` when clearly inside.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &orb,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
   {
-    using Bool_v         = vecCore::Mask_v<Real_v>;
-    Real_v rad           = point.Mag();
-    safety               = rad - Real_v(orb.fR);
-    Bool_v isPointInside = (rad < Real_v(orb.fR - kTolerance));
-    vecCore__MaskedAssignFunc(safety, isPointInside, Real_v(-1.));
-    if (vecCore::MaskFull(isPointInside)) return;
+    Real_v rad = point.Mag();
+    safety     = rad - Real_v(orb.fR);
+    if (rad < Real_v(orb.fR - kTolerance)) {
+      safety = Real_v(-1.);
+      return;
+    }
 
-    Bool_v isPointOnSurface = (rad > Real_v(orb.fR - kTolerance)) && (rad < Real_v(orb.fR + kTolerance));
-    vecCore__MaskedAssignFunc(safety, isPointOnSurface, Real_v(0.));
+    if (rad > Real_v(orb.fR - kTolerance) && rad < Real_v(orb.fR + kTolerance)) safety = Real_v(0.);
   }
 
+  /// @brief Compute safety from an inside point to the orb boundary.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local point.
+  /// @param safety Set to radial safety, zero in the surface band, or `-1` when clearly outside.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &orb,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-
     Real_v rad = point.Mag();
     safety     = Real_v(orb.fR) - rad;
 
-    Bool_v isPointOutside = (rad > Real_v(orb.fR + kTolerance));
-    vecCore__MaskedAssignFunc(safety, isPointOutside, Real_v(-1.));
-    if (vecCore::MaskFull(isPointOutside)) return;
+    if (rad > Real_v(orb.fR + kTolerance)) {
+      safety = Real_v(-1.);
+      return;
+    }
 
-    Bool_v isPointOnSurface = (rad > Real_v(orb.fR - kTolerance)) && (rad < Real_v(orb.fR + kTolerance));
-    vecCore__MaskedAssignFunc(safety, isPointOnSurface, Real_v(0.));
+    if (rad > Real_v(orb.fR - kTolerance) && rad < Real_v(orb.fR + kTolerance)) safety = Real_v(0.);
   }
 
+  /// @brief Solve the radial ray-sphere intersection.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam ForDistanceToIn Selects the entry root when true, exit root otherwise.
+  /// @param orb Orb data containing the radius.
+  /// @param rad2 Squared radius of the start point.
+  /// @param pDotV3D Radial projection of the direction.
+  /// @param distance Set to the selected intersection distance when a valid root exists.
+  /// @return True when a valid root was selected.
+  ///
+  /// @details
+  /// The quadratic is `t^2 + 2 pDotV3D t + (rad2 - r^2) = 0`. Entry uses the
+  /// smaller root and requires inward motion; exit uses the larger root.
   template <typename Real_v, bool ForDistanceToIn>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static typename vecCore::Mask_v<Real_v>
-  DetectIntersectionAndCalculateDistance(UnplacedStruct_t const &orb, Vector3D<Real_v> const &point,
-                                         Vector3D<Real_v> const &direction, Real_v &distance)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool DetectIntersectionAndCalculateDistance(
+      UnplacedStruct_t const &orb, Real_v const &rad2, Real_v const &pDotV3D, Real_v &distance)
   {
 
-    using Bool_v   = vecCore::Mask_v<Real_v>;
-    Real_v rad2    = point.Mag2();
-    Real_v pDotV3D = point.Dot(direction);
-    Precision fR   = orb.fR;
-    Real_v c       = rad2 - fR * fR;
-    Real_v d2      = (pDotV3D * pDotV3D - c);
+    Real_v radius = Real_v(orb.fR);
+    Real_v c      = rad2 - radius * radius;
+    Real_v d2     = (pDotV3D * pDotV3D - c);
 
     if (ForDistanceToIn) {
-      Bool_v cond = ((d2 >= Real_v(0.)) && (pDotV3D <= Real_v(0.)));
-      vecCore__MaskedAssignFunc(distance, cond, (-pDotV3D - Sqrt(vecCore::math::Abs(d2))));
-      return cond;
+      if (d2 < Real_v(0.) || pDotV3D > Real_v(0.)) return false;
+      distance = -pDotV3D - Sqrt(d2);
+      return true;
     } else {
-      vecCore__MaskedAssignFunc(distance, (d2 >= Real_v(0.)), (-pDotV3D + Sqrt(vecCore::math::Abs(d2))));
-      return (d2 >= Real_v(0.));
+      if (d2 < Real_v(0.)) return false;
+      distance = -pDotV3D + Sqrt(d2);
+      return true;
     }
   }
 
+  /// @brief Compute the outward radial normal.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param orb Orb data containing the radius.
+  /// @param point Local point.
+  /// @param valid Set when the point is in the radial surface tolerance band.
+  /// @return Unit radial normal at `point`.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &orb, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &orb,
+                                                                                    Vector3D<Real_v> const &point,
+                                                                                    bool &valid)
   {
     Real_v rad2             = point.Mag2();
     Real_v invRadius        = Real_v(1.) / Sqrt(rad2);
@@ -197,8 +263,7 @@ struct OrbImplementation {
     Real_v tolRMaxO = orb.fR + kTolerance;
     Real_v tolRMaxI = orb.fR - kTolerance;
 
-    // Check radial surface
-    valid = ((rad2 <= tolRMaxO * tolRMaxO) && (rad2 >= tolRMaxI * tolRMaxI)); // means we are on surface
+    valid = ((rad2 <= tolRMaxO * tolRMaxO) && (rad2 >= tolRMaxI * tolRMaxI));
     return normal;
   }
 };

@@ -112,6 +112,12 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"tube_fullphi_outside_hit_consistency_radial", "tube_fullphi", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(7.5, 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the full-phi tube."},
+      // Orb
+      {"orb_surface_grazing_positive_x", "orb", "surface_exit", ShapeSampleCategory::kSurface, Vec_t(8., 0., 0.),
+       Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0., "Smooth +X surface grazing exit ray on the orb."},
+      {"orb_surface_shallow_inward_positive_x", "orb", "contracts", ShapeSampleCategory::kSurface, Vec_t(8., 0., 0.),
+       Vec_t(-1.e-6, 0.9999999999995, 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Smooth +X surface ray with a finite shallow inward radial component."},
       {"tube_fullphi_cap_grazing_entry_continuation", "tube_fullphi", "grazing_entry", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 20.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
        "Outside ray lies on the top cap plane and crosses the outer ring; if DistanceToIn accepts that grazing entry, "
@@ -182,10 +188,10 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        "Shallow inward ray from the exact outer shell where the section cone kernel reported the later crossing "
        "instead of the zero DistanceToIn entry."},
       {"generic_polycone_irregular_inside_near_outer_shell_safety_to_in", "generic_polycone_irregular", "contracts",
-      ShapeSampleCategory::kInside, Vec_t(7.9604176988052195, -2.9783436513347485, 0.30039621002943101),
-      Vec_t(-0.17271031333314549, 0.27234560960769244, 0.94657224584063371), false, Vec_t(0., 0., 0.), 0.,
-      "Inside point close to the irregular outer shell where SafetyToIn must keep the wrong-side negative "
-      "convention instead of being clamped to zero."},
+       ShapeSampleCategory::kInside, Vec_t(7.9604176988052195, -2.9783436513347485, 0.30039621002943101),
+       Vec_t(-0.17271031333314549, 0.27234560960769244, 0.94657224584063371), false, Vec_t(0., 0., 0.), 0.,
+       "Inside point close to the irregular outer shell where SafetyToIn must keep the wrong-side negative "
+       "convention instead of being clamped to zero."},
       {"generic_polycone_irregular_lower_corner_entering_to_out", "generic_polycone_irregular", "surface",
        ShapeSampleCategory::kSurface, Vec_t(-0.037247392199863581, 0.99930607546347894, 0.),
        Vec_t(0.5814130076837466, -0.20624047999702957, 0.78703480158550454), false, Vec_t(0., 0., 0.), 0.,

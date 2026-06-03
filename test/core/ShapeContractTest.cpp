@@ -293,6 +293,10 @@ bool IsManualGrazingEntryMethod(const std::string &method) { return method == "g
 
 bool IsManualGrazingMissMethod(const std::string &method) { return method == "grazing_miss"; }
 
+// TODO: Promote this manual-only surface exit check to a general all-shapes
+// surface contract after pre-existing non-orb DistanceToOut cases are cleaned up.
+bool IsManualSurfaceExitMethod(const std::string &method) { return method == "surface_exit"; }
+
 // Print the full executable contract so `-help` is enough to discover every
 // runner feature without reading the source.
 void PrintUsage(const char *argv0)
@@ -312,7 +316,7 @@ void PrintUsage(const char *argv0)
       << "             [-manual_case_name <name|all>] "
          "[-manual_method "
          "<contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|grazing_entry|"
-         "grazing_miss|all>]\n"
+         "grazing_miss|surface_exit|all>]\n"
       << "             [-manual_topology <inside|surface|edge|outside|all>]\n"
       << "             [-grazing_tolerance <value>]\n"
       << "             [-list_cases] [-list_families] [-list_test_families] [-list_manual_cases] [-help]\n\n";
@@ -576,10 +580,11 @@ void ValidateManualMethodSelection(const std::string &manual_method)
   if (manual_method == "all") return;
   if (IsManualGrazingEntryMethod(manual_method)) return;
   if (IsManualGrazingMissMethod(manual_method)) return;
+  if (IsManualSurfaceExitMethod(manual_method)) return;
   const auto parsed = ParseTestFamilySelection(manual_method);
   VECGEOM_VALIDATE(parsed != ShapeContractTestFamily::kManualEdgeCases && parsed != ShapeContractTestFamily::kAll,
                    << "Use -manual_method contracts, normals, surface, distance_to_out, distance_to_in, safeties, "
-                   << "hit_consistency, grazing_entry, grazing_miss, or all.");
+                   << "hit_consistency, grazing_entry, grazing_miss, surface_exit, or all.");
 }
 
 void ValidateManualTopologySelection(const std::string &manual_topology)
@@ -1558,6 +1563,52 @@ ManualGrazingMissReplay ReplayManualGrazingMiss(vecgeom::VPlacedVolume const *sh
   return replay;
 }
 
+struct ManualSurfaceExitReplay {
+  Vec_t point;
+  Vec_t direction;
+  vecgeom::EnumInside point_inside_result = vecgeom::EnumInside::kOutside;
+  Precision distance_to_out               = vecgeom::kInfLength;
+  std::vector<std::string> failures;
+
+  bool Passed() const { return failures.empty(); }
+};
+
+std::string DescribeManualSurfaceExitReplay(const ManualSurfaceExitReplay &replay)
+{
+  std::ostringstream out;
+  out << "point=" << vecgeom::test::FormatVec(replay.point) << "\n";
+  out << "direction=" << vecgeom::test::FormatVec(replay.direction) << "\n";
+  out << "Inside(point)=" << vecgeom::test::InsideLabel(replay.point_inside_result) << "\n";
+  out << "DistanceToOut=" << replay.distance_to_out << "\n";
+  if (replay.failures.empty()) {
+    out << "failing_contracts=none";
+    return out.str();
+  }
+  out << "failing_contracts:";
+  for (auto const &failure : replay.failures) {
+    out << "\n- " << failure;
+  }
+  return out.str();
+}
+
+ManualSurfaceExitReplay ReplayManualSurfaceExit(vecgeom::VPlacedVolume const *shape, const Vec_t &point,
+                                                const Vec_t &direction, Precision solid_tolerance)
+{
+  ManualSurfaceExitReplay replay;
+  replay.point               = point;
+  replay.direction           = direction;
+  replay.point_inside_result = shape->Inside(point);
+  if (!ManualPointIsEffectivelyOnSurface(shape, point, replay.point_inside_result, solid_tolerance)) {
+    replay.failures.push_back("surface_exit requires the start point to be on the surface within tolerance");
+  }
+
+  replay.distance_to_out = shape->DistanceToOut(point, direction);
+  if (!(replay.distance_to_out <= solid_tolerance)) {
+    replay.failures.push_back("surface_exit requires a zero or tolerance-limited DistanceToOut");
+  }
+  return replay;
+}
+
 void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, const ShapeContractOptions &options,
                             const std::string &executable_path, ShapeContractTier tier, bool verbose_on_success)
 {
@@ -1601,6 +1652,21 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     }
     if (verbose_on_success)
       std::cout << DescribeManualEdgeCase(manual_case) << "\n" << DescribeManualGrazingMissReplay(replay) << std::endl;
+    return;
+  }
+
+  if (IsManualSurfaceExitMethod(manual_case.target_family_name)) {
+    auto replay = ReplayManualSurfaceExit(shape.get(), samples.points[sample_index], samples.directions[sample_index],
+                                          solid_tolerance);
+    if (!ManualReplayPassed(replay)) {
+      VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
+                              << manual_case.solid_case_name << "' failed.\n"
+                              << DescribeManualEdgeCase(manual_case) << "\n"
+                              << DescribeManualSurfaceExitReplay(replay)
+                              << MakeManualEdgeCaseDebugHint(executable_path, tier, manual_case, grazing_tolerance));
+    }
+    if (verbose_on_success)
+      std::cout << DescribeManualEdgeCase(manual_case) << "\n" << DescribeManualSurfaceExitReplay(replay) << std::endl;
     return;
   }
 
@@ -1746,6 +1812,8 @@ void BenchmarkManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, c
                    << "Manual grazing_entry cases are convention assertions, not benchmark workloads.");
   VECGEOM_VALIDATE(!IsManualGrazingMissMethod(manual_case.target_family_name),
                    << "Manual grazing_miss cases are convention assertions, not benchmark workloads.");
+  VECGEOM_VALIDATE(!IsManualSurfaceExitMethod(manual_case.target_family_name),
+                   << "Manual surface_exit cases are convention assertions, not benchmark workloads.");
   const auto family = ParseTestFamilySelection(manual_case.target_family_name);
   auto workloads    = BuildReplayBenchmarkWorkloads(family, index);
 
