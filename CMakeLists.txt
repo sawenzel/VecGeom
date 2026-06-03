@@ -889,7 +889,11 @@ endif()
 ################################################################################
 # TESTING
 if(BUILD_TESTING)
-  # - Try bringing in GoogleTest
+  # Try using GoogleTest from the system/dev toolchain.
+  #
+  # Set CMAKE_REQUIRE_FIND_PACKAGE_GTest=ON to require a toolchain-provided
+  # package, or CMAKE_DISABLE_FIND_PACKAGE_GTest=ON to force the pinned local
+  # FetchContent fallback.
   set(VECGEOM_GTEST_MIN_VERSION 1.17.0)
   find_package(GTest ${VECGEOM_GTEST_MIN_VERSION} CONFIG QUIET)
 

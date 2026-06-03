@@ -89,6 +89,7 @@ set(config_options -DCMAKE_INSTALL_PREFIX=${CTEST_INSTALL_PREFIX}
                    -DVECGEOM_TEST_BENCHMARK=ON
                    -DVECGEOM_ROOT=ON
                    -DVECGEOM_CUDA_VOLUME_SPECIALIZATION=OFF
+                   -DCMAKE_DISABLE_FIND_PACKAGE_GTest=ON # Ignore cvmfs gtest
                    $ENV{ExtraCMakeOptions})
 
 ################################################################################
