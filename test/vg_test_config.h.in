@@ -1,0 +1,13 @@
+/*------------------------------- -*- C -*- ---------------------------------*
+ * Copyright VecGeom contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *---------------------------------------------------------------------------*/
+/*! \file vg_test_config.h
+ * Configuration-specific options for VecGeom tests.
+ *---------------------------------------------------------------------------*/
+#ifndef vg_test_config_h
+#define vg_test_config_h
+
+static char const vecgeom_source_dir[] = "@VECGEOM_SOURCE_DIR@";
+
+#endif /* vg_test_config_h */

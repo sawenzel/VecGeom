@@ -88,7 +88,7 @@ public:
   /// `GetNavIndex`.
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  NavIndex_t GetState() const { return fNavInd; }
+  NavIndex_t const &GetState() const { return fNavInd; }
 
   /// @brief Copy this state to another `NavStateIndex`.
   /// @details This copies only the compact state fields, not any global table

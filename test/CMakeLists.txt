@@ -1,5 +1,50 @@
+#------------------------------- -*- cmake -*- -------------------------------#
+# Copyright VecGeom contributors
+# SPDX-License-Identifier: Apache-2.0
+#-----------------------------------------------------------------------------#
+
+# CMake-provided module for test discovery
+include(GoogleTest)
+
+# Googletest harness setup
+file(TO_CMAKE_PATH "${PROJECT_SOURCE_DIR}" VECGEOM_SOURCE_DIR)
+configure_file(vg_test_config.h.in vg_test_config.h @ONLY)
+
+add_library(vg_test_lib
+  TestBase.cpp
+)
+set(_vg_test_libs
+  GTest::gtest  # For testing
+  vecgeom # Code to be tested
+)
+if(VECGEOM_GDML)
+  list(APPEND _vg_test_libs vgdml)
+endif()
+
+cuda_rdc_target_link_libraries(vg_test_lib PUBLIC ${_vg_test_libs})
+cuda_rdc_target_include_directories(vg_test_lib PUBLIC
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+#-----------------------------------------------------------------------------#
+
+add_executable(NavView_test navigation/NavView.test.cpp)
+cuda_rdc_target_link_libraries(NavView_test PUBLIC
+  vg_test_lib
+  GTest::gtest_main
+)
+cuda_rdc_target_include_directories(NavView_test PUBLIC
+  "${CMAKE_CURRENT_BINARY_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+if(VECGEOM_GDML)
+  # Currently all tests require GDML input
+  gtest_discover_tests(NavView_test)
+endif()
+
 ################################################################################
-## TESTING
+## OLD TESTING
 ################################################################################
 # Helper Macros/Functions
 ################################################################################
@@ -7,9 +52,13 @@
 function(vecgeom_add_test EXECUTABLE)
   get_filename_component(TARGET_NAME ${EXECUTABLE} NAME_WE)
   add_executable(${TARGET_NAME} ${EXECUTABLE})
-  cuda_rdc_target_link_libraries(${TARGET_NAME} PRIVATE vecgeom GTest::gtest_main)
+  cuda_rdc_target_link_libraries(${TARGET_NAME} PRIVATE
+    vecgeom
+    GTest::gtest_main
+  )
   add_test(${TARGET_NAME} ${TARGET_NAME})
 endfunction()
+
 ################################################################################
 
 add_definitions(-UNDEBUG) # ensure asserts are enabled in all tests
