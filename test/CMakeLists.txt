@@ -386,9 +386,6 @@ set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   multiunion_boxes:normals
   multiunion_boxes:distance_to_in
   multiunion_boxes:hit_consistency
-  hype:distance_to_in
-  hype:hit_consistency
-  hype:surface
   extruded_multilayer:surface
   )
 
@@ -423,6 +420,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   cone_narrow_phi
   generic_polycone_irregular
   generic_polycone_zigzag_profile
+  hype
   orb
   polycone_two_section_sharp_jump
   sphere_narrow_phi

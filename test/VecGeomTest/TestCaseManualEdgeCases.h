@@ -118,6 +118,14 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"orb_surface_shallow_inward_positive_x", "orb", "contracts", ShapeSampleCategory::kSurface, Vec_t(8., 0., 0.),
        Vec_t(-1.e-6, 0.9999999999995, 0.), false, Vec_t(0., 0., 0.), 0.,
        "Smooth +X surface ray with a finite shallow inward radial component."},
+      // Hype
+      {"hype_top_cap_tolerance_outward_exit", "hype", "surface_exit", ShapeSampleCategory::kSurface,
+       Vec_t(60., 0., 50. + vecgeom::kTolerance), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
+       "Tolerated top-cap surface start just outside z must have a zero outward DistanceToOut."},
+      {"hype_bottom_cap_tolerance_outward_exit", "hype", "surface_exit", ShapeSampleCategory::kSurface,
+       Vec_t(60., 0., -50. - vecgeom::kTolerance), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
+       "Tolerated bottom-cap surface start just outside z must have a zero outward DistanceToOut."},
+      // Tube
       {"tube_fullphi_cap_grazing_entry_continuation", "tube_fullphi", "grazing_entry", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 20.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
        "Outside ray lies on the top cap plane and crosses the outer ring; if DistanceToIn accepts that grazing entry, "
