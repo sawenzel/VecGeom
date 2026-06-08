@@ -467,6 +467,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   cuttube_section_inner
   cone_fullphi
   cone_narrow_phi
+  ellipsoid
   generic_polycone_irregular
   generic_polycone_zigzag_profile
   hype
