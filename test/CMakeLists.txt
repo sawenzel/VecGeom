@@ -427,11 +427,6 @@ set(SHAPE_CONTRACT_SOLID_CASES
 # this list should be resolved and go away
 set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
   elliptical_cone:surface
-  paraboloid:contracts
-  paraboloid:normals
-  paraboloid:surface
-  paraboloid:distance_to_in
-  paraboloid:hit_consistency
   multiunion_boxes:normals
   multiunion_boxes:distance_to_in
   multiunion_boxes:hit_consistency
@@ -472,6 +467,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   generic_polycone_zigzag_profile
   hype
   orb
+  paraboloid
   polycone_two_section_sharp_jump
   sphere_narrow_phi
   sphere_section

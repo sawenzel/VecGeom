@@ -146,6 +146,25 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        "Outside ray has a sub-tolerance outward z component on the top cap plane; it must not report a cap-plane "
        "DistanceToIn hit because there is no owned continuation interval."},
 
+      // Paraboloid
+      {"paraboloid_side_surface_normal", "paraboloid", "normals", ShapeSampleCategory::kSurface,
+       Vec_t(-5.4537221697500797, -5.8275575265773867, -1.3426524280024168),
+       Vec_t(-0.38200388098470184, -0.89699774286683653, 0.2224142176310373), false, Vec_t(0., 0., 0.), 0.,
+       "Parabolic-side surface replay where the normal must point topologically outward."},
+      {"paraboloid_side_surface_grazing", "paraboloid", "surface", ShapeSampleCategory::kSurface,
+       Vec_t(-5.4537221697500797, -5.8275575265773867, -1.3426524280024168),
+       Vec_t(-0.38200388098470184, -0.89699774286683653, 0.2224142176310373), false, Vec_t(0., 0., 0.), 0.,
+       "Parabolic-side grazing replay where DistanceToIn and DistanceToOut must not both collapse to zero."},
+      {"paraboloid_side_surface_shallow_entry", "paraboloid", "contracts", ShapeSampleCategory::kSurface,
+       Vec_t(8.2462112512353212, 0., 0.), Vec_t(-1.0186502561360584e-11, 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Parabolic-side surface ray with only sub-tolerance material continuation must not be accepted as an entry."},
+      {"paraboloid_top_edge_tangent", "paraboloid", "surface", ShapeSampleCategory::kEdge, Vec_t(10., 0., 10.),
+       Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Top cap/parabolic-side edge tangent must not report both DistanceToIn and DistanceToOut as zero."},
+      {"paraboloid_bottom_edge_tangent", "paraboloid", "surface", ShapeSampleCategory::kEdge, Vec_t(6., 0., -10.),
+       Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Bottom cap/parabolic-side edge tangent must not report both DistanceToIn and DistanceToOut as zero."},
+
       // Sphere
       {"sphere_narrow_phi_phi_plane_grazing", "sphere_narrow_phi", "surface", ShapeSampleCategory::kSurface,
        Vec_t(7.0183278628341847, 3.0503842933005898, -3.1897304680763678),
