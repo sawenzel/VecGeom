@@ -1268,58 +1268,69 @@ bool EvaluateSurfaceConventionSample(
     }
   }
 
-  Precision dist = volume->DistanceToIn(point, direction);
-  if (replay) replay->distance_to_in = dist;
-  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) < 0. && dist < kInfLength) {
-    bool ok = vecCore::math::Abs(dist * direction.Dot(normal)) <= solid_tolerance;
+  const Precision normal_dot_direction = direction.Dot(normal);
+  Precision distance_to_in             = volume->DistanceToIn(point, direction);
+
+  Vec_t norm(0., 0., 0.);
+  Precision distance_to_out = call_distance_to_out(volume, point, direction, norm);
+  if (replay) {
+    replay->distance_to_in  = distance_to_in;
+    replay->distance_to_out = distance_to_out;
+  }
+
+  const bool smooth_inward_ray   = surface_kind == ShapeSurfaceKind::kSmooth && normal_dot_direction < 0.;
+  const bool accepted_entry      = distance_to_in <= solid_tolerance;
+  const bool useful_continuation = distance_to_out > solid_tolerance;
+
+  if (smooth_inward_ray && useful_continuation) {
+    bool ok =
+        distance_to_in < kInfLength && vecCore::math::Abs(distance_to_in * normal_dot_direction) <= solid_tolerance;
     if (valid_normal && !ok) {
       passed = false;
       record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToInEntering},
                      "DistanceToIn for Surface Point entering into the Shape should be 0 within tolerance (VecGeom "
                      "convention)",
-                     dist);
+                     distance_to_in);
     }
   }
 
   const bool convex_shape = false;
-  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) > 0. && dist == kInfLength) {
+  if (surface_kind == ShapeSurfaceKind::kSmooth && normal_dot_direction > 0. && distance_to_in == kInfLength) {
     if (convex_shape) {
-      if (!vecgeom::test::ApproxEqual<Precision>(dist, static_cast<Precision>(kInfLength))) {
+      if (!vecgeom::test::ApproxEqual<Precision>(distance_to_in, static_cast<Precision>(kInfLength))) {
         passed = false;
         record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToInExiting},
-                       "DistanceToIn for Surface Point exiting the Shape should be > 0.", dist);
+                       "DistanceToIn for Surface Point exiting the Shape should be > 0.", distance_to_in);
       }
-    } else if (!(dist > 0.)) {
+    } else if (!(distance_to_in > 0.)) {
       passed = false;
       record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToInExiting},
-                     "DistanceToIn for Surface Point exiting the Shape should be > 0.", dist);
+                     "DistanceToIn for Surface Point exiting the Shape should be > 0.", distance_to_in);
     }
   }
 
-  Vec_t norm(0., 0., 0.);
-  dist = call_distance_to_out(volume, point, direction, norm);
-  if (replay) replay->distance_to_out = dist;
-  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) > 0. && dist == kInfLength) {
-    bool ok = (dist * direction.Dot(normal)) <= solid_tolerance;
+  if (surface_kind == ShapeSurfaceKind::kSmooth && normal_dot_direction > 0. && distance_to_out == kInfLength) {
+    bool ok = (distance_to_out * normal_dot_direction) <= solid_tolerance;
     if (!ok) {
       passed = false;
       record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToOutExiting},
                      "DistanceToOut for Surface Point exiting the shape should be <= tolerance (VecGeom convention)",
-                     dist);
+                     distance_to_out);
     }
   }
 
-  if (surface_kind == ShapeSurfaceKind::kSmooth && direction.Dot(normal) < 0.) {
-    if (!(dist > 0.)) {
+  if (smooth_inward_ray && accepted_entry) {
+    if (!useful_continuation) {
       if (valid_normal) {
         passed = false;
         record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToOutEntering},
-                       "DistanceToOut for Surface Point entering into the Shape should be > 0.", dist);
+                       "DistanceToOut for Surface Point entering into the Shape should be > tolerance.",
+                       distance_to_out);
       }
     }
   }
 
-  dist = volume->SafetyToIn(point);
+  Precision dist = volume->SafetyToIn(point);
   if (replay) replay->safety_to_in = dist;
   if (!(dist <= solid_tolerance)) {
     passed = false;
