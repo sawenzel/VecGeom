@@ -187,6 +187,55 @@ private:
   Precision fZeroBand = static_cast<Precision>(vecgeom::kTolerance);
 };
 
+class ShallowSurfaceVolume {
+public:
+  enum class Mode { kHappyPath, kMissInward, kLateOutward, kNegativeOutward, kToleranceNegativeOutward };
+
+  explicit ShallowSurfaceVolume(Mode mode) : fMode(mode) {}
+
+  vecgeom::EnumInside Inside(const Vec_t &) const { return vecgeom::EnumInside::kSurface; }
+
+  bool Normal(const Vec_t &, Vec_t &normal) const
+  {
+    normal = Vec_t(1., 0., 0.);
+    return true;
+  }
+
+  Precision DistanceToIn(const Vec_t &, const Vec_t &direction) const
+  {
+    if (direction.x() < 0.) return fMode == Mode::kMissInward ? vecgeom::kInfLength : 0.;
+    return 1.;
+  }
+
+  Precision SafetyToIn(const Vec_t &) const { return 0.; }
+
+  Precision SafetyToOut(const Vec_t &) const { return 0.; }
+
+  Precision DistanceToOut(const Vec_t &, const Vec_t &direction, Vec_t &normal) const
+  {
+    normal = Vec_t(1., 0., 0.);
+    if (direction.x() < 0.) return 2.;
+    if (direction.x() > 0.) {
+      if (fMode == Mode::kLateOutward) return 2.;
+      if (fMode == Mode::kNegativeOutward) return -1.;
+      if (fMode == Mode::kToleranceNegativeOutward) {
+        return -static_cast<Precision>(0.5) * vecgeom::test::ShapeSurfaceNegativeDistanceTolerance(vecgeom::kTolerance);
+      }
+      return 0.;
+    }
+    return 2.;
+  }
+
+  void Extent(Vec_t &min, Vec_t &max) const
+  {
+    min = Vec_t(-2., -2., -2.);
+    max = Vec_t(2., 2., 2.);
+  }
+
+private:
+  Mode fMode = Mode::kHappyPath;
+};
+
 auto MakeDistanceToOutCaller()
 {
   return [](ScriptedContractVolume const *volume, const Vec_t &point, const Vec_t &direction, Vec_t &normal) {
@@ -208,11 +257,33 @@ auto MakeGrazingSurfaceDistanceToOutCaller()
   };
 }
 
+auto MakeShallowSurfaceDistanceToOutCaller()
+{
+  return [](ShallowSurfaceVolume const *volume, const Vec_t &point, const Vec_t &direction, Vec_t &normal) {
+    return volume->DistanceToOut(point, direction, normal);
+  };
+}
+
 Precision SolidToleranceForCase(const char *case_name)
 {
   auto const *solid_case = vecgeom::test::FindTestCaseSolid(case_name);
   VECGEOM_ASSERT(solid_case != nullptr);
   return solid_case->solid_tolerance;
+}
+
+vecgeom::test::ShapeSurfaceCheckOptions SurfaceDistanceToOutFiniteOptions()
+{
+  vecgeom::test::ShapeSurfaceCheckOptions options;
+  options.require_surface_distance_to_out_finite = true;
+  return options;
+}
+
+vecgeom::test::ShapeSurfaceCheckOptions ShallowSurfaceOptions()
+{
+  vecgeom::test::ShapeSurfaceCheckOptions options;
+  options.require_surface_distance_to_out_finite = true;
+  options.enable_shallow_surface_rays            = true;
+  return options;
 }
 
 vecgeom::test::ShapeSampleSet MakeManualSamples(const std::vector<std::pair<Vec_t, Vec_t>> &inside_samples,
@@ -459,6 +530,93 @@ void CheckSurfaceRayNotBothZeroBit()
   VECGEOM_ASSERT(replay.failures.front().context.convention_bit == vecgeom::test::kSurfaceRayNotBothZero);
 }
 
+void CheckSurfaceDistanceToOutFiniteBit()
+{
+  ScriptedContractVolume volume;
+  ScriptedProfile surface_profile;
+  surface_profile.inside_result   = vecgeom::EnumInside::kSurface;
+  surface_profile.valid_normal    = false;
+  surface_profile.normal          = Vec_t(1., 0., 0.);
+  surface_profile.distance_to_in  = 1.;
+  surface_profile.distance_to_out = vecgeom::kInfLength;
+  surface_profile.safety_to_in    = 0.;
+  surface_profile.safety_to_out   = 0.;
+  volume.SetProfile(1, surface_profile);
+
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+
+  const auto options = SurfaceDistanceToOutFiniteOptions();
+  bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0., MakeDistanceToOutCaller(),
+                                                  sink, score, options);
+
+  VECGEOM_ASSERT(!passed);
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceDistanceToOutFinite));
+  VECGEOM_ASSERT(result.CountErrors() == 1);
+
+  auto const *violation = FindViolation(result, "DistanceToOut for Surface ray must be finite.");
+  VECGEOM_ASSERT(violation != nullptr);
+  VECGEOM_ASSERT(violation->convention_bit == vecgeom::test::kSurfaceDistanceToOutFinite);
+
+  auto replay = vecgeom::test::ReplayShapeSurfaceSample(&volume, view, samples.offset_surface, vecgeom::kTolerance, 0.,
+                                                        MakeDistanceToOutCaller(), options);
+  VECGEOM_ASSERT(!replay.Passed());
+  VECGEOM_ASSERT(replay.failures.size() == 1);
+  VECGEOM_ASSERT(replay.failures.front().context.convention_bit == vecgeom::test::kSurfaceDistanceToOutFinite);
+}
+
+void CheckSurfaceDistanceToOutRejectsNegativeBit()
+{
+  ScriptedContractVolume volume;
+  ScriptedProfile surface_profile;
+  surface_profile.inside_result   = vecgeom::EnumInside::kSurface;
+  surface_profile.valid_normal    = false;
+  surface_profile.distance_to_in  = 1.;
+  surface_profile.distance_to_out = -1.;
+  volume.SetProfile(1, surface_profile);
+
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+  const auto options  = SurfaceDistanceToOutFiniteOptions();
+  bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0., MakeDistanceToOutCaller(),
+                                                  sink, score, options);
+
+  VECGEOM_ASSERT(!passed);
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceDistanceToOutFinite));
+}
+
+void CheckSurfaceDistanceToOutAllowsToleranceNegativeBit()
+{
+  ScriptedContractVolume volume;
+  ScriptedProfile surface_profile;
+  surface_profile.inside_result   = vecgeom::EnumInside::kSurface;
+  surface_profile.valid_normal    = false;
+  surface_profile.distance_to_in  = 1.;
+  surface_profile.distance_to_out = -static_cast<Precision>(0.5) * vecgeom::kTolerance;
+  volume.SetProfile(1, surface_profile);
+
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+  const auto options  = SurfaceDistanceToOutFiniteOptions();
+  bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0., MakeDistanceToOutCaller(),
+                                                  sink, score, options);
+
+  VECGEOM_ASSERT(passed);
+  VECGEOM_ASSERT(score == 0);
+}
+
 void CheckSurfaceGrazingNotBothZeroBit()
 {
   GrazingSurfaceVolume volume;
@@ -489,6 +647,109 @@ void CheckSurfaceGrazingNotBothZeroBit()
   VECGEOM_ASSERT(replay.surface_kind == vecgeom::test::ShapeSurfaceKind::kSmooth);
   VECGEOM_ASSERT(replay.failures.size() == 1);
   VECGEOM_ASSERT(replay.failures.front().context.convention_bit == vecgeom::test::kSurfaceGrazingNotBothZero);
+}
+
+void CheckSurfaceShallowInwardBit()
+{
+  ShallowSurfaceVolume volume(ShallowSurfaceVolume::Mode::kMissInward);
+
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+
+  const auto options = ShallowSurfaceOptions();
+  bool passed        = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0.,
+                                                         MakeShallowSurfaceDistanceToOutCaller(), sink, score, options);
+
+  VECGEOM_ASSERT(!passed);
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceShallowInward));
+  VECGEOM_ASSERT(result.CountErrors() == 1);
+
+  auto const *violation =
+      FindViolation(result, "DistanceToIn for shallow inward Surface ray should be 0 within tolerance.");
+  VECGEOM_ASSERT(violation != nullptr);
+  VECGEOM_ASSERT(violation->convention_bit == vecgeom::test::kSurfaceShallowInward);
+
+  auto replay = vecgeom::test::ReplayShapeSurfaceSample(&volume, view, samples.offset_surface, vecgeom::kTolerance, 0.,
+                                                        MakeShallowSurfaceDistanceToOutCaller(), options);
+  VECGEOM_ASSERT(!replay.Passed());
+  VECGEOM_ASSERT(replay.checked_shallow_rays);
+  VECGEOM_ASSERT(replay.shallow_inward_distance_to_in == vecgeom::kInfLength);
+  VECGEOM_ASSERT(replay.shallow_inward_distance_to_out > vecgeom::kTolerance);
+  VECGEOM_ASSERT(replay.failures.size() == 1);
+  VECGEOM_ASSERT(replay.failures.front().context.convention_bit == vecgeom::test::kSurfaceShallowInward);
+}
+
+void CheckSurfaceShallowOutwardBit()
+{
+  ShallowSurfaceVolume volume(ShallowSurfaceVolume::Mode::kLateOutward);
+
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+
+  const auto options = ShallowSurfaceOptions();
+  bool passed        = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0.,
+                                                         MakeShallowSurfaceDistanceToOutCaller(), sink, score, options);
+
+  VECGEOM_ASSERT(!passed);
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceShallowOutward));
+  VECGEOM_ASSERT(result.CountErrors() == 1);
+
+  auto const *violation =
+      FindViolation(result, "DistanceToOut for shallow outward Surface ray should be 0 within tolerance.");
+  VECGEOM_ASSERT(violation != nullptr);
+  VECGEOM_ASSERT(violation->convention_bit == vecgeom::test::kSurfaceShallowOutward);
+
+  auto replay = vecgeom::test::ReplayShapeSurfaceSample(&volume, view, samples.offset_surface, vecgeom::kTolerance, 0.,
+                                                        MakeShallowSurfaceDistanceToOutCaller(), options);
+  VECGEOM_ASSERT(!replay.Passed());
+  VECGEOM_ASSERT(replay.checked_shallow_rays);
+  VECGEOM_ASSERT(replay.shallow_outward_distance_to_out > 1.);
+  VECGEOM_ASSERT(replay.failures.size() == 1);
+  VECGEOM_ASSERT(replay.failures.front().context.convention_bit == vecgeom::test::kSurfaceShallowOutward);
+}
+
+void CheckSurfaceShallowOutwardRejectsNegativeBit()
+{
+  ShallowSurfaceVolume volume(ShallowSurfaceVolume::Mode::kNegativeOutward);
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+  vecgeom::test::ShapeSurfaceCheckOptions options;
+  options.enable_shallow_surface_rays = true;
+  bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0.,
+                                                  MakeShallowSurfaceDistanceToOutCaller(), sink, score, options);
+
+  VECGEOM_ASSERT(!passed);
+  VECGEOM_ASSERT(score == (std::uint64_t(1) << vecgeom::test::kSurfaceShallowOutward));
+}
+
+void CheckSurfaceShallowOutwardAllowsToleranceNegativeBit()
+{
+  ShallowSurfaceVolume volume(ShallowSurfaceVolume::Mode::kToleranceNegativeOutward);
+  auto samples = MakeManualSamples({}, {{Vec_t(1., 0., 0.), Vec_t(0., 1., 0.)}}, {});
+  auto view    = vecgeom::test::MakeShapeContractSampleView(samples);
+
+  vecgeom::test::ShapeCheckResult result;
+  vecgeom::test::ShapeContractViolationSink sink(result, 1);
+  std::uint64_t score = 0;
+  vecgeom::test::ShapeSurfaceCheckOptions options;
+  options.enable_shallow_surface_rays = true;
+  bool passed = vecgeom::test::CheckSurfacePoints(&volume, view, vecgeom::kTolerance, 0.,
+                                                  MakeShallowSurfaceDistanceToOutCaller(), sink, score, options);
+
+  VECGEOM_ASSERT(passed);
+  VECGEOM_ASSERT(score == 0);
 }
 
 void CheckSurfaceGrazingToleranceTiltsRay()
@@ -578,8 +839,8 @@ void CheckConeClosingRingSurfaceNormalReplay()
   VECGEOM_ASSERT(score == 0);
   VECGEOM_ASSERT(result.CountErrors() == 0);
 
-  auto replay = vecgeom::test::ReplayShapeNormalSample(cone.get(), view, samples.offset_surface, vecgeom::kConeTolerance,
-                                                       distance_to_out);
+  auto replay = vecgeom::test::ReplayShapeNormalSample(cone.get(), view, samples.offset_surface,
+                                                       vecgeom::kConeTolerance, distance_to_out);
   VECGEOM_ASSERT(replay.Passed());
   VECGEOM_ASSERT(replay.valid_normal);
 }
@@ -1747,7 +2008,14 @@ int main()
   CheckOutsideDistanceToInBit();
   CheckAggregatedSummaryAcrossFamilies();
   CheckSurfaceRayNotBothZeroBit();
+  CheckSurfaceDistanceToOutFiniteBit();
+  CheckSurfaceDistanceToOutRejectsNegativeBit();
+  CheckSurfaceDistanceToOutAllowsToleranceNegativeBit();
   CheckSurfaceGrazingNotBothZeroBit();
+  CheckSurfaceShallowInwardBit();
+  CheckSurfaceShallowOutwardBit();
+  CheckSurfaceShallowOutwardRejectsNegativeBit();
+  CheckSurfaceShallowOutwardAllowsToleranceNegativeBit();
   CheckSurfaceGrazingToleranceTiltsRay();
   CheckCurvedSurfaceDetectorReprojectsSphereAndTubeTangentialProbes();
   CheckConeClosingRingSurfaceNormalReplay();

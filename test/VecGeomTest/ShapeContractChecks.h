@@ -57,38 +57,41 @@ enum ShapeConventionBit {
   kNormalOutsideEntryInward     = 24,
   kSurfaceRayNotBothZero        = 25,
   kSurfaceGrazingNotBothZero    = 26,
-  kDistanceToOutPositive        = 27,
-  kDistanceToOutWithinExtent    = 28,
-  kDistanceToOutAboveSafety     = 29,
-  kDistanceToOutOnSurface       = 30,
-  kDistanceToInApproachFinite   = 31,
-  kDistanceToInPositive         = 32,
-  kDistanceToInFinite           = 33,
-  kDistanceToInAboveSafety      = 34,
-  kDistanceToInWithinTarget     = 35,
-  kDistanceToInOnSurface        = 36,
-  kSafetyToOutPositive          = 37,
-  kSafetyToOutDistanceBound     = 38,
-  kSafetyToOutSafeSphere        = 39,
-  kSafetyToInPositive           = 40,
-  kSafetyToInDistanceBound      = 41,
-  kSafetyToInSafeSphere         = 42,
-  kHitInsideExitFinite          = 43,
-  kHitInsideExitOnSurface       = 44,
-  kHitInsideExitSafetyToIn      = 45,
-  kHitInsideExitSafetyToOut     = 46,
-  kHitInsideExitNormalAgreement = 47,
-  kHitOutsideEntryFinite        = 48,
-  kHitOutsideEntryOnSurface     = 49,
-  kHitOutsideEntrySafetyToIn    = 50,
-  kHitOutsideEntrySafetyToOut   = 51,
-  kHitOutsideEntryDistanceToIn  = 52,
-  kHitOutsideEntryDistanceToOut = 53,
-  kHitOutsideEntryDistanceSign  = 54,
-  kHitOutsideExitOnSurface      = 55,
-  kHitOutsideExitSafetyToIn     = 56,
-  kHitOutsideExitSafetyToOut    = 57,
-  kShapeConventionBitCount      = 58
+  kSurfaceDistanceToOutFinite   = 27,
+  kSurfaceShallowInward         = 28,
+  kSurfaceShallowOutward        = 29,
+  kDistanceToOutPositive        = 30,
+  kDistanceToOutWithinExtent    = 31,
+  kDistanceToOutAboveSafety     = 32,
+  kDistanceToOutOnSurface       = 33,
+  kDistanceToInApproachFinite   = 34,
+  kDistanceToInPositive         = 35,
+  kDistanceToInFinite           = 36,
+  kDistanceToInAboveSafety      = 37,
+  kDistanceToInWithinTarget     = 38,
+  kDistanceToInOnSurface        = 39,
+  kSafetyToOutPositive          = 40,
+  kSafetyToOutDistanceBound     = 41,
+  kSafetyToOutSafeSphere        = 42,
+  kSafetyToInPositive           = 43,
+  kSafetyToInDistanceBound      = 44,
+  kSafetyToInSafeSphere         = 45,
+  kHitInsideExitFinite          = 46,
+  kHitInsideExitOnSurface       = 47,
+  kHitInsideExitSafetyToIn      = 48,
+  kHitInsideExitSafetyToOut     = 49,
+  kHitInsideExitNormalAgreement = 50,
+  kHitOutsideEntryFinite        = 51,
+  kHitOutsideEntryOnSurface     = 52,
+  kHitOutsideEntrySafetyToIn    = 53,
+  kHitOutsideEntrySafetyToOut   = 54,
+  kHitOutsideEntryDistanceToIn  = 55,
+  kHitOutsideEntryDistanceToOut = 56,
+  kHitOutsideEntryDistanceSign  = 57,
+  kHitOutsideExitOnSurface      = 58,
+  kHitOutsideExitSafetyToIn     = 59,
+  kHitOutsideExitSafetyToOut    = 60,
+  kShapeConventionBitCount      = 61
 };
 
 // Keep the legacy message ordering stable because the convention bitset and the
@@ -123,6 +126,9 @@ inline const std::vector<std::string> &ShapeConventionMessages()
       "Normal()        : Inward at entry point from Outside ray",
       "Surface()       : DistanceToIn/Out not both zero for Surface ray",
       "Surface()       : DistanceToIn/Out not both zero for grazing ray",
+      "Surface()       : DistanceToOut finite for Surface ray",
+      "Surface()       : Shallow inward ray has zero DistanceToIn",
+      "Surface()       : Shallow outward ray has zero DistanceToOut",
       "DistanceToOut() : Positive for Inside Point",
       "DistanceToOut() : Finite and within extent for Inside Point",
       "DistanceToOut() : Above SafetyToOut for Inside Point",
@@ -265,7 +271,7 @@ inline bool IsNormalConventionBit(int convention_bit)
 
 inline bool IsSurfaceConventionBit(int convention_bit)
 {
-  return convention_bit == kSurfaceRayNotBothZero || convention_bit == kSurfaceGrazingNotBothZero;
+  return convention_bit >= kSurfaceRayNotBothZero && convention_bit <= kSurfaceShallowOutward;
 }
 
 inline bool IsDistanceToOutCheckBit(int convention_bit)
@@ -375,6 +381,9 @@ inline const char *ShapeContractGeometryFunctionName(const ShapeCheckContext &co
     return "vecgeom::VUnplacedVolume::ApproachSolid + vecgeom::VPlacedVolume::DistanceToIn + "
            "vecgeom::VPlacedVolume::Inside";
   case kSurfaceRayNotBothZero:
+  case kSurfaceDistanceToOutFinite:
+  case kSurfaceShallowInward:
+  case kSurfaceShallowOutward:
     return "vecgeom::VPlacedVolume::DistanceToIn + vecgeom::VPlacedVolume::DistanceToOut";
   case kSurfaceGrazingNotBothZero:
     return "vecgeom::VPlacedVolume::Normal + vecgeom::VPlacedVolume::DistanceToIn + "
@@ -488,7 +497,11 @@ inline const char *ShapeContractGeometryMethodName(const ShapeCheckContext &cont
     return "DistanceToIn";
   case kSurfaceRayNotBothZero:
   case kSurfaceGrazingNotBothZero:
+  case kSurfaceShallowInward:
     return "DistanceToIn";
+  case kSurfaceDistanceToOutFinite:
+  case kSurfaceShallowOutward:
+    return "DistanceToOut";
   case kDistanceToOutPositive:
   case kDistanceToOutWithinExtent:
   case kDistanceToOutAboveSafety:
@@ -566,6 +579,9 @@ inline const char *ShapeContractSupportFunctionName(const ShapeCheckContext &con
   case kSurfaceRayNotBothZero:
     return "vecgeom::VPlacedVolume::DistanceToOut";
   case kSurfaceGrazingNotBothZero:
+  case kSurfaceDistanceToOutFinite:
+  case kSurfaceShallowInward:
+  case kSurfaceShallowOutward:
     return "vecgeom::VPlacedVolume::Normal + vecgeom::VPlacedVolume::DistanceToOut";
   case kDistanceToInApproachFinite:
     return "vecgeom::VUnplacedVolume::ApproachSolid";
@@ -690,6 +706,17 @@ struct ShapeContractRayReplay {
 
 enum class ShapeSurfaceKind { kUnknown = 0, kSmooth, kEdgeCandidate };
 
+struct ShapeSurfaceCheckOptions {
+  bool require_surface_distance_to_out_finite = false;
+  bool enable_shallow_surface_rays            = false;
+};
+
+inline const ShapeSurfaceCheckOptions &DefaultShapeSurfaceCheckOptions()
+{
+  static const ShapeSurfaceCheckOptions options;
+  return options;
+}
+
 struct ShapeTangentialProbeReplay;
 
 template <typename ImplT>
@@ -760,8 +787,9 @@ struct ShapeSurfaceCheckSummary {
   std::uint64_t score = 0;
   bool surface_passed = true;
   bool grazing_passed = true;
+  bool shallow_passed = true;
 
-  bool Passed() const { return surface_passed && grazing_passed; }
+  bool Passed() const { return surface_passed && grazing_passed && shallow_passed; }
 };
 
 struct ShapeSurfaceRayReplay {
@@ -778,6 +806,13 @@ struct ShapeSurfaceRayReplay {
   Precision distance_to_out         = 0.;
   Precision grazing_distance_to_in  = 0.;
   Precision grazing_distance_to_out = 0.;
+  bool checked_shallow_rays         = false;
+  Vec_t shallow_inward_direction;
+  Vec_t shallow_outward_direction;
+  Precision shallow_inward_distance_to_in   = 0.;
+  Precision shallow_inward_distance_to_out  = 0.;
+  Precision shallow_outward_distance_to_in  = 0.;
+  Precision shallow_outward_distance_to_out = 0.;
   std::vector<vecgeom::EnumInside> tangential_probe_results;
   std::vector<ShapeTangentialProbeReplay> tangential_probe_details;
   std::vector<ShapeContractFailure> failures;
@@ -1008,6 +1043,14 @@ inline std::string DescribeShapeSurfaceRayReplay(const ShapeSurfaceRayReplay &re
     out << "grazing_direction=" << FormatVec(replay.grazing_direction) << "\n";
     out << "GrazingDistanceToIn=" << replay.grazing_distance_to_in << "\n";
     out << "GrazingDistanceToOut=" << replay.grazing_distance_to_out << "\n";
+  }
+  if (replay.checked_shallow_rays) {
+    out << "shallow_inward_direction=" << FormatVec(replay.shallow_inward_direction) << "\n";
+    out << "ShallowInwardDistanceToIn=" << replay.shallow_inward_distance_to_in << "\n";
+    out << "ShallowInwardDistanceToOut=" << replay.shallow_inward_distance_to_out << "\n";
+    out << "shallow_outward_direction=" << FormatVec(replay.shallow_outward_direction) << "\n";
+    out << "ShallowOutwardDistanceToIn=" << replay.shallow_outward_distance_to_in << "\n";
+    out << "ShallowOutwardDistanceToOut=" << replay.shallow_outward_distance_to_out << "\n";
   }
   if (!replay.tangential_probe_results.empty()) {
     out << "tangential_probes:";
@@ -1583,6 +1626,11 @@ inline Precision ShapeTangentialProbeDistanceLimit(Precision probe_step)
   return probe_step * static_cast<Precision>(4.);
 }
 
+inline Precision ShapeSurfaceNegativeDistanceTolerance(Precision solid_tolerance)
+{
+  return ShapeTangentialProbeDistanceLimit(ShapeTangentialProbeStep(solid_tolerance));
+}
+
 inline Precision ShapeTangentialNormalAgreementThreshold() { return static_cast<Precision>(0.95); }
 
 template <typename ImplT>
@@ -1632,6 +1680,18 @@ inline void ApplyGrazingTolerance(const Vec_t &normal_unit, Precision grazing_to
   // wider scan around the ideal tangent is needed for debugging or sampling.
   grazing_direction += grazing_tolerance * normal_unit;
   grazing_direction.Normalize();
+}
+
+inline Precision ShapeShallowSurfaceRayTilt(Precision solid_tolerance)
+{
+  return ShapeTangentialProbeBaseTolerance(solid_tolerance);
+}
+
+inline int ShapeShallowSurfaceRayStride() { return 16; }
+
+inline bool ShouldCheckShallowSurfaceRays(const ShapeCheckContext &context)
+{
+  return (context.sample_index % ShapeShallowSurfaceRayStride()) == 0;
 }
 
 template <typename ImplT>
@@ -1752,7 +1812,8 @@ bool EvaluateSurfacePointSample(
     ImplT const *volume, const Vec_t &point, const Vec_t &direction, Precision solid_tolerance,
     Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out, const ShapeCheckContext &context,
     const std::function<void(const ShapeCheckContext &, const std::string &, Precision)> &record_failure,
-    ShapeSurfaceRayReplay *replay = nullptr)
+    ShapeSurfaceRayReplay *replay           = nullptr,
+    const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
 {
   bool passed = true;
 
@@ -1791,6 +1852,13 @@ bool EvaluateSurfacePointSample(
     record_failure({context.sample_index, context.sample_group, kSurfaceRayNotBothZero},
                    "DistanceToIn and DistanceToOut cannot both be zero for Surface ray.", distance_to_out);
   }
+  auto check_distance_to_out_finite = [&](Precision distance, Precision negative_distance_tolerance) {
+    if (distance >= -negative_distance_tolerance && distance < kInfLength) return;
+    passed = false;
+    record_failure({context.sample_index, context.sample_group, kSurfaceDistanceToOutFinite},
+                   "DistanceToOut for Surface ray must be finite.", distance);
+  };
+  if (options.require_surface_distance_to_out_finite) check_distance_to_out_finite(distance_to_out, solid_tolerance);
 
   if (!valid_normal) return passed;
 
@@ -1806,8 +1874,9 @@ bool EvaluateSurfacePointSample(
   if (replay) replay->surface_kind = surface_kind;
   if (surface_kind != ShapeSurfaceKind::kSmooth) return passed;
 
-  Vec_t grazing_direction(0., 0., 0.);
-  if (!BuildPreferredTangentialDirection(normal_unit, direction, grazing_direction)) return passed;
+  Vec_t tangent_direction(0., 0., 0.);
+  if (!BuildPreferredTangentialDirection(normal_unit, direction, tangent_direction)) return passed;
+  Vec_t grazing_direction(tangent_direction);
   ApplyGrazingTolerance(normal_unit, grazing_tolerance, grazing_direction);
   if (replay) replay->grazing_direction = grazing_direction;
 
@@ -1823,6 +1892,64 @@ bool EvaluateSurfacePointSample(
                    "DistanceToIn and DistanceToOut cannot both be zero for grazing Surface ray.",
                    grazing_distance_to_out);
   }
+  if (options.require_surface_distance_to_out_finite) {
+    check_distance_to_out_finite(grazing_distance_to_out, solid_tolerance);
+  }
+
+  if (!options.enable_shallow_surface_rays || !ShouldCheckShallowSurfaceRays(context)) return passed;
+
+  const Precision shallow_tilt = ShapeShallowSurfaceRayTilt(solid_tolerance);
+  Vec_t shallow_inward_direction(tangent_direction - shallow_tilt * normal_unit);
+  shallow_inward_direction.Normalize();
+  Vec_t shallow_outward_direction(tangent_direction + shallow_tilt * normal_unit);
+  shallow_outward_direction.Normalize();
+
+  const Precision shallow_inward_distance_to_in = volume->DistanceToIn(point, shallow_inward_direction);
+  const Precision shallow_inward_distance_to_out =
+      call_distance_to_out(volume, point, shallow_inward_direction, distance_normal);
+  const Precision shallow_outward_distance_to_in = volume->DistanceToIn(point, shallow_outward_direction);
+  const Precision shallow_outward_distance_to_out =
+      call_distance_to_out(volume, point, shallow_outward_direction, distance_normal);
+  if (replay) {
+    replay->checked_shallow_rays            = true;
+    replay->shallow_inward_direction        = shallow_inward_direction;
+    replay->shallow_outward_direction       = shallow_outward_direction;
+    replay->shallow_inward_distance_to_in   = shallow_inward_distance_to_in;
+    replay->shallow_inward_distance_to_out  = shallow_inward_distance_to_out;
+    replay->shallow_outward_distance_to_in  = shallow_outward_distance_to_in;
+    replay->shallow_outward_distance_to_out = shallow_outward_distance_to_out;
+  }
+  if (options.require_surface_distance_to_out_finite) {
+    const Precision shallow_negative_distance_tolerance = ShapeSurfaceNegativeDistanceTolerance(solid_tolerance);
+    check_distance_to_out_finite(shallow_inward_distance_to_out, shallow_negative_distance_tolerance);
+    check_distance_to_out_finite(shallow_outward_distance_to_out, shallow_negative_distance_tolerance);
+  }
+
+  const Precision shallow_inward_projection = shallow_inward_direction.Dot(normal);
+  if (shallow_inward_distance_to_out > vecgeom::kTolerance) {
+    const bool shallow_inward_ok =
+        shallow_inward_distance_to_in < kInfLength &&
+        vecCore::math::Abs(shallow_inward_distance_to_in * shallow_inward_projection) <= solid_tolerance;
+    if (!shallow_inward_ok) {
+      passed = false;
+      record_failure({context.sample_index, context.sample_group, kSurfaceShallowInward},
+                     "DistanceToIn for shallow inward Surface ray should be 0 within tolerance.",
+                     shallow_inward_distance_to_in);
+    }
+  }
+
+  const Precision shallow_outward_projection          = shallow_outward_direction.Dot(normal);
+  const Precision shallow_negative_distance_tolerance = ShapeSurfaceNegativeDistanceTolerance(solid_tolerance);
+  const bool shallow_outward_ok =
+      shallow_outward_distance_to_out >= -shallow_negative_distance_tolerance &&
+      shallow_outward_distance_to_out < kInfLength &&
+      vecCore::math::Abs(shallow_outward_distance_to_out * shallow_outward_projection) <= solid_tolerance;
+  if (!shallow_outward_ok) {
+    passed = false;
+    record_failure({context.sample_index, context.sample_group, kSurfaceShallowOutward},
+                   "DistanceToOut for shallow outward Surface ray should be 0 within tolerance.",
+                   shallow_outward_distance_to_out);
+  }
 
   return passed;
 }
@@ -1830,7 +1957,8 @@ bool EvaluateSurfacePointSample(
 template <typename ImplT, typename DistanceToOutCaller>
 bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
                         Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out,
-                        ShapeContractViolationSink &sink, std::uint64_t &score)
+                        ShapeContractViolationSink &sink, std::uint64_t &score,
+                        const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
 {
   bool surface_points_passed = true;
   for (int i = 0; i < samples.max_points_surface + samples.max_points_edge; ++i) {
@@ -1843,7 +1971,8 @@ bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samp
         [&](const ShapeCheckContext &failure_context, const std::string &message, Precision distance) {
           if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
-        });
+        },
+        nullptr, options);
     surface_points_passed = surface_points_passed && sample_passed;
   }
   return surface_points_passed;
@@ -2914,15 +3043,21 @@ bool CheckOutsideEntryNormals(ImplT const *volume, const ShapeContractSampleView
 }
 
 template <typename ImplT, typename DistanceToOutCaller>
-ShapeSurfaceCheckSummary RunShapeSurfaceChecks(ImplT const *volume, const ShapeContractSampleView &samples,
-                                               Precision solid_tolerance, Precision grazing_tolerance,
-                                               DistanceToOutCaller &&call_distance_to_out,
-                                               ShapeContractViolationSink &sink)
+ShapeSurfaceCheckSummary RunShapeSurfaceChecks(
+    ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance, Precision grazing_tolerance,
+    DistanceToOutCaller &&call_distance_to_out, ShapeContractViolationSink &sink,
+    const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
 {
   ShapeSurfaceCheckSummary summary;
-  CheckSurfacePoints(volume, samples, solid_tolerance, grazing_tolerance, call_distance_to_out, sink, summary.score);
-  summary.surface_passed = (summary.score & (std::uint64_t(1) << kSurfaceRayNotBothZero)) == 0;
+  CheckSurfacePoints(volume, samples, solid_tolerance, grazing_tolerance, call_distance_to_out, sink, summary.score,
+                     options);
+  const std::uint64_t surface_mask =
+      (std::uint64_t(1) << kSurfaceRayNotBothZero) | (std::uint64_t(1) << kSurfaceDistanceToOutFinite);
+  const std::uint64_t shallow_mask =
+      (std::uint64_t(1) << kSurfaceShallowInward) | (std::uint64_t(1) << kSurfaceShallowOutward);
+  summary.surface_passed = (summary.score & surface_mask) == 0;
   summary.grazing_passed = (summary.score & (std::uint64_t(1) << kSurfaceGrazingNotBothZero)) == 0;
+  summary.shallow_passed = (summary.score & shallow_mask) == 0;
   return summary;
 }
 
@@ -2977,9 +3112,10 @@ ShapeHitConsistencyCheckSummary RunShapeHitConsistencyChecks(ImplT const *volume
 }
 
 template <typename ImplT, typename DistanceToOutCaller>
-ShapeSurfaceRayReplay ReplayShapeSurfaceSample(ImplT const *volume, const ShapeContractSampleView &samples,
-                                               int sample_index, Precision solid_tolerance, Precision grazing_tolerance,
-                                               DistanceToOutCaller &&call_distance_to_out)
+ShapeSurfaceRayReplay ReplayShapeSurfaceSample(
+    ImplT const *volume, const ShapeContractSampleView &samples, int sample_index, Precision solid_tolerance,
+    Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out,
+    const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
 {
   ShapeSurfaceRayReplay replay;
   const Vec_t point     = samples.Point(sample_index);
@@ -2997,7 +3133,7 @@ ShapeSurfaceRayReplay ReplayShapeSurfaceSample(ImplT const *volume, const ShapeC
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
     EvaluateSurfacePointSample(volume, point, direction, solid_tolerance, grazing_tolerance, call_distance_to_out,
-                               replay.context, record_failure, &replay);
+                               replay.context, record_failure, &replay, options);
     break;
   case ShapeSampleCategory::kInside:
   case ShapeSampleCategory::kOutside:

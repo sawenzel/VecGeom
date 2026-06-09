@@ -68,12 +68,22 @@ only be configured explicitly for a family that demonstrably needs them.
 | `DistanceToIn(point, dir)` on a surface point with exiting direction | positive |
 | `DistanceToOut(point, dir)` on a surface point with exiting direction | zero within tolerance |
 | `DistanceToOut(point, dir)` on a surface point with entering direction | positive |
+| `DistanceToOut(point, dir)` on any tested surface ray | finite |
+| derived shallow-inward smooth-surface ray with material continuation `> kTolerance` | `DistanceToIn` has zero projected displacement within tolerance |
+| derived shallow-outward smooth-surface ray | `DistanceToOut` has zero projected displacement within tolerance |
 | any tested direction on a surface point | `DistanceToIn` and `DistanceToOut` are not both `<= kTolerance` |
 
 The last rule is general. It is intentionally evaluated against `kTolerance`,
 not the per-solid `solid_tolerance`, because it checks whether the tested ray
 actually advances. Grazing directions are one important subset used by the
 tests to probe it.
+
+The stricter finite `DistanceToOut` and derived shallow-ray rules are enabled
+per solid case after that case passes the 10M surface-family check. For enabled
+cases, the `surface` helper derives exact-grazing rays for every smooth sampled
+surface point and shallow inward/outward rays for a deterministic sparse subset
+of those points, keeping the extra coverage broad without doubling the
+surface-family runtime.
 
 ### 3. Safety Rules
 
