@@ -297,6 +297,53 @@ bool IsManualGrazingMissMethod(const std::string &method) { return method == "gr
 // surface contract after pre-existing non-orb DistanceToOut cases are cleaned up.
 bool IsManualSurfaceExitMethod(const std::string &method) { return method == "surface_exit"; }
 
+bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
+{
+  // Keep generated shallow-ray checks opt-in until each solid passes the 10M
+  // surface contract with these stricter conventions enabled.
+  static constexpr const char *kOptInCases[] = {
+      "boolean_subtraction_exact_polycone_sections",
+      "boolean_subtraction_polyhedron_exact_radial_shell",
+      "boolean_subtraction_polyhedron_phi_seam_rotated",
+      "boolean_union_offset_boxes",
+      "box",
+      "cone_almost_cylinder",
+      "cone_almost_full_phi",
+      "cone_fullphi",
+      "cone_narrow_phi",
+      "cone_section",
+      "cone_thin_shell",
+      "ellipsoid",
+      "elliptical_tube",
+      "elliptical_tube_long",
+      "elliptical_tube_thin",
+      "generic_polycone_zigzag_profile",
+      "hype",
+      "multiunion_boxes",
+      "orb",
+      "polycone_many_section_alternating",
+      "polycone_nearly_repeated_z",
+      "polycone_two_section_sharp_jump",
+      "trd_boxlike",
+      "trd_extreme_aspect",
+      "tube_short_disk",
+  };
+  for (auto const *opt_in_case : kOptInCases) {
+    if (case_name == opt_in_case) return true;
+  }
+  return false;
+}
+
+vecgeom::test::ShapeSurfaceCheckOptions SurfaceCheckOptionsForCase(const std::string &case_name)
+{
+  vecgeom::test::ShapeSurfaceCheckOptions options;
+  if (HasStrictGeneratedSurfaceRayChecks(case_name)) {
+    options.require_surface_distance_to_out_finite = true;
+    options.enable_shallow_surface_rays            = true;
+  }
+  return options;
+}
+
 // Print the full executable contract so `-help` is enough to discover every
 // runner feature without reading the source.
 void PrintUsage(const char *argv0)
@@ -884,9 +931,10 @@ public:
     if (!fSurfaceOutcomeReady) {
       auto view = vecgeom::test::MakeShapeContractSampleView(Samples());
       vecgeom::test::ShapeContractViolationSink sink(fSurfaceOutcome.result, ViolationDisplayLimit(fTier));
-      fSurfaceOutcome.summary = vecgeom::test::RunShapeSurfaceChecks(
-          fShape.get(), view, fSolidTolerance, fGrazingTolerance, MakeDistanceToOutCaller(), sink);
-      fSurfaceOutcomeReady = true;
+      fSurfaceOutcome.summary = vecgeom::test::RunShapeSurfaceChecks(fShape.get(), view, fSolidTolerance,
+                                                                     fGrazingTolerance, MakeDistanceToOutCaller(), sink,
+                                                                     SurfaceCheckOptionsForCase(fSolidCase.name));
+      fSurfaceOutcomeReady    = true;
     }
     return fSurfaceOutcome;
   }
@@ -1704,7 +1752,8 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
   }
   case ShapeContractTestFamily::kSurface: {
     auto replay = vecgeom::test::ReplayShapeSurfaceSample(shape.get(), view, sample_index, solid_tolerance,
-                                                          grazing_tolerance, MakeDistanceToOutCaller());
+                                                          grazing_tolerance, MakeDistanceToOutCaller(),
+                                                          SurfaceCheckOptionsForCase(manual_case.solid_case_name));
     if (!ManualReplayPassed(replay)) {
       VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
                               << manual_case.solid_case_name << "' failed.\n"
@@ -1869,9 +1918,9 @@ void ReplaySurfaceSample(ShapeContractExecutionCache &cache, const ShapeContract
                    << "Replay index " << options.replay_index << " is outside [0, " << view.TotalPoints()
                    << ") for solid '" << cache.SolidCase().name << "'.");
 
-  auto replay =
-      vecgeom::test::ReplayShapeSurfaceSample(cache.Shape(), view, options.replay_index, cache.SolidTolerance(),
-                                              cache.GrazingTolerance(), MakeDistanceToOutCaller());
+  auto replay = vecgeom::test::ReplayShapeSurfaceSample(
+      cache.Shape(), view, options.replay_index, cache.SolidTolerance(), cache.GrazingTolerance(),
+      MakeDistanceToOutCaller(), SurfaceCheckOptionsForCase(cache.SolidCase().name));
   std::cout << vecgeom::test::DescribeShapeSurfaceRayReplay(replay) << std::endl;
 }
 
