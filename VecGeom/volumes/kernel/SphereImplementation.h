@@ -332,7 +332,7 @@ struct SphereImplementation {
     if (sphere.fRmin) {
       c  = rad2 - sphere.fRmin * sphere.fRmin;
       d2 = (pDotV3d * pDotV3d - c);
-      if (d2 >= Real_v(0.) && pDotV3d < Real_v(0.)) sd2 = -pDotV3d - Sqrt(d2);
+      if (d2 >= Real_v(0.) && pDotV3d < -kToleranceDist<Real_v>) sd2 = -pDotV3d - Sqrt(d2);
     }
 
     snxt = Min(sd1, sd2);

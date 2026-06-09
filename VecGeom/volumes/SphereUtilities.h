@@ -131,15 +131,15 @@ VECCORE_ATT_HOST_DEVICE bool IsPointOnRadialSurfaceAndMovingOut(UnplacedStruct_t
   // Rays from rmax+tolerance or rmin-tolerance can be moving out even if not going fully "backward"
   if (MovingOut) {
     if (ForInnerRadius) {
-      return IsPointOnInnerRadius<Real_v>(unplaced, point) && (dir.Dot(-point) > Real_v(kSqrtTolerance));
+      return IsPointOnInnerRadius<Real_v>(unplaced, point) && (dir.Dot(-point) > kToleranceDist<Real_v>);
     } else {
-      return IsPointOnOuterRadius<Real_v>(unplaced, point) && (dir.Dot(point) > Real_v(kSqrtTolerance));
+      return IsPointOnOuterRadius<Real_v>(unplaced, point) && (dir.Dot(point) > -kToleranceDist<Real_v>);
     }
   } else {
     if (ForInnerRadius) {
-      return IsPointOnInnerRadius<Real_v>(unplaced, point) && (dir.Dot(-point) < Real_v(-kSqrtTolerance));
+      return IsPointOnInnerRadius<Real_v>(unplaced, point) && (dir.Dot(-point) < -kToleranceDist<Real_v>);
     } else
-      return IsPointOnOuterRadius<Real_v>(unplaced, point) && (dir.Dot(point) < Real_v(-kSqrtTolerance));
+      return IsPointOnOuterRadius<Real_v>(unplaced, point) && (dir.Dot(point) < -kToleranceDist<Real_v>);
   }
 }
 
@@ -162,12 +162,12 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool IsThetaConeMotion(UnplacedStru
 {
   auto theta = ForStartTheta ? unplaced.fSTheta : unplaced.eTheta;
   if (ForStartTheta) {
-    if (MovingOut) return theta <= kHalfPi ? motion < Real_v(-kSqrtTolerance) : motion > Real_v(kSqrtTolerance);
-    return theta <= kHalfPi ? motion > Real_v(kSqrtTolerance) : motion < Real_v(-kSqrtTolerance);
+    if (MovingOut) return theta <= kHalfPi ? motion < -kToleranceDist<Real_v> : motion > kToleranceDist<Real_v>;
+    return theta <= kHalfPi ? motion > kToleranceDist<Real_v> : motion < -kToleranceDist<Real_v>;
   }
 
-  if (MovingOut) return theta <= kHalfPi ? motion > Real_v(kSqrtTolerance) : motion < Real_v(-kSqrtTolerance);
-  return theta <= kHalfPi ? motion < Real_v(-kSqrtTolerance) : motion > Real_v(kSqrtTolerance);
+  if (MovingOut) return theta <= kHalfPi ? motion > kToleranceDist<Real_v> : motion < -kToleranceDist<Real_v>;
+  return theta <= kHalfPi ? motion < -kToleranceDist<Real_v> : motion > kToleranceDist<Real_v>;
 }
 
 template <class Real_v, bool ForStartTheta, bool MovingOut>
