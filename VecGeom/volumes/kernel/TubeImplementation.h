@@ -47,8 +47,7 @@ namespace TubeUtilities {
  */
 template <typename Real_v, typename ShapeType, typename UnplacedVolumeType, bool onSurfaceT, bool includeSurface = true>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PointInCyclicalSector(UnplacedVolumeType const &volume,
-                                                                        Real_v const &x, Real_v const &y,
-                                                                        bool &ret)
+                                                                        Real_v const &x, Real_v const &y, bool &ret)
 {
   using namespace ::vecgeom::TubeTypes;
   // VECGEOM_VALIDATE(SectorType<ShapeType>::value != kNoAngle, << "ShapeType without a
@@ -106,9 +105,11 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PointInCyclicalSector(Unplaced
  * @return None. The result is written to @p dist and @p ok.
  */
 template <typename Real_v, typename UnplacedStruct_t, typename TubeType, bool LargestSolution, bool insectorCheck>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CircleTrajectoryIntersection(
-    Real_v const &b, Real_v const &c, UnplacedStruct_t const &tube, Vector3D<Real_v> const &pos,
-    Vector3D<Real_v> const &dir, Real_v &dist, bool &ok)
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CircleTrajectoryIntersection(Real_v const &b, Real_v const &c,
+                                                                               UnplacedStruct_t const &tube,
+                                                                               Vector3D<Real_v> const &pos,
+                                                                               Vector3D<Real_v> const &dir,
+                                                                               Real_v &dist, bool &ok)
 {
   using namespace ::vecgeom::TubeTypes;
 
@@ -136,8 +137,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CircleTrajectoryIntersection(
 
     if (checkPhiTreatment<TubeType>(tube)) {
       bool insector = false;
-      Real_v hitx = pos.x() + dist * dir.x();
-      Real_v hity = pos.y() + dist * dir.y();
+      Real_v hitx   = pos.x() + dist * dir.x();
+      Real_v hity   = pos.y() + dist * dir.y();
       PointInCyclicalSector<Real_v, TubeType, UnplacedStruct_t, false, true>(tube, hitx, hity, insector);
       // insector = tube.fPhiWedge.ContainsWithBoundary<Real_v>(
       // Vector3D<Real_v>(hitx, hity, hitz) );
@@ -227,8 +228,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PhiPlaneSafety(UnplacedStruct_
  * vector, i.e. `hitx * alongX + hity * alongY > 0`.
  * @param alongX X component of the phi-boundary along-vector.
  * @param alongY Y component of the phi-boundary along-vector.
- * @param normalX X component of the inward phi-plane normal.
- * @param normalY Y component of the inward phi-plane normal.
+ * @param normX X component of the inward phi-plane normal.
+ * @param normY Y component of the inward phi-plane normal.
  * @param tube Tube geometry providing z/r bounds.
  * @param pos Starting point of the trajectory.
  * @param dir Direction of the trajectory.
@@ -239,7 +240,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PhiPlaneSafety(UnplacedStruct_
 template <typename Real_v, typename UnplacedStruct_t, typename TubeType, bool PositiveDirectionOfPhiVector,
           bool insectorCheck>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PhiPlaneTrajectoryIntersection(
-    Precision alongX, Precision alongY, Precision normalX, Precision normalY, UnplacedStruct_t const &tube,
+    Precision alongX, Precision alongY, Precision normX, Precision normY, UnplacedStruct_t const &tube,
     Vector3D<Real_v> const &pos, Vector3D<Real_v> const &dir, Real_v &dist, bool &ok)
 {
 
@@ -247,8 +248,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PhiPlaneTrajectoryIntersection
 
   // approaching phi plane from the right side?
   // this depends whether we use it for DistanceToIn or DistanceToOut
-  // Note: wedge normals poing towards the wedge inside, by convention!
-  Real_v dirDotNorm = dir.x() * normalX + dir.y() * normalY;
+  // Note: wedge normals point towards the wedge inside, by convention!
+  Real_v dirDotNorm = dir.x() * normX + dir.y() * normY;
   if (insectorCheck)
     ok = (dirDotNorm > Real_v(0.)); // DistToIn  -- require tracks entering volume
   else
@@ -258,6 +259,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PhiPlaneTrajectoryIntersection
   dist            = (alongY * pos.x() - alongX * pos.y()) / NonZero(dirDotXY);
   // A.G to check validity, we have to compare with tolerance the safety rather than the distance to plane
   ok &= (dist * Abs(dirDotNorm)) > -kHalfTolerance;
+  if (ok && dist < Real_v(0.)) dist = Real_v(0.);
 
   if (insectorCheck) {
     Real_v hitx = pos.x() + dist * dir.x();
@@ -517,14 +519,15 @@ struct TubeImplementation {
     Real_v distz(0.);
     if (hasZPlanes) {
       distz = Abs(point.z()) - tube.fZ; // avoid a division for now
-      done = distz > kHalfTolerance && point.z() * dir.z() >= 0;
+      done  = distz > kHalfTolerance && point.z() * dir.z() >= 0;
       if (done) return;
     }
 
     // outside of outer tube and going away?
     Real_v rsq   = point.x() * point.x() + point.y() * point.y();
     Real_v rdotn = point.x() * dir.x() + point.y() * dir.y();
-    done = rsq > tube.fTolIrmax2 && rdotn >= 0;
+    Real_v nsq   = Real_v(1.) - dir.z() * dir.z();
+    done         = rsq > tube.fTolIrmax2 && rdotn >= 0;
     if (done) return;
 
     //=== Next, check all dimensions of the tube, whether points are inside -->
@@ -581,9 +584,12 @@ struct TubeImplementation {
     const Real_v absz = Abs(point.z());
 
     // point on outer cyl?
-    const bool isOnOuterSurface =
-        rsq >= tube.fTolIrmax2 && rsq <= tube.fTolOrmax2 && absz < (tube.fZ + kTolerance);
-    const bool movingInsideOuter = rdotn < -0.5 * kTolerance;
+    const bool isOnOuterSurface = rsq >= tube.fTolIrmax2 && rsq <= tube.fTolOrmax2 && absz < (tube.fZ + kTolerance);
+    bool movingInsideOuter      = false;
+    if (isOnOuterSurface) {
+      const Real_v radialProjectionTolerance = Real_v(0.5) * kToleranceDist<Real_v> * nsq;
+      movingInsideOuter                      = rdotn < -radialProjectionTolerance;
+    }
     if (isOnOuterSurface && !movingInsideOuter) {
       distance = kInfLength;
       return;
@@ -593,8 +599,7 @@ struct TubeImplementation {
     bool isOnSurfaceAndMovingInside = isOnOuterSurface && movingInsideOuter;
     if (checkRminTreatment<tubeTypeT>(tube)) {
       // point on inner cyl?
-      const bool isOnInnerSurface =
-          rsq >= tube.fTolOrmin2 && rsq <= tube.fTolIrmin2 && absz < (tube.fZ + kTolerance);
+      const bool isOnInnerSurface = rsq >= tube.fTolOrmin2 && rsq <= tube.fTolIrmin2 && absz < (tube.fZ + kTolerance);
       isOnSurfaceAndMovingInside |= isOnInnerSurface && rdotn > Real_v(0.);
     }
 
@@ -615,7 +620,7 @@ struct TubeImplementation {
     //=== Next step: intersection of the trajectories with the two circles
 
     // Here for values used in both rmin and rmax calculations
-    Real_v invnsq = Real_v(1.) / NonZero(Real_v(1.) - dir.z() * dir.z());
+    Real_v invnsq = Real_v(1.) / NonZero(nsq);
     Real_v b      = invnsq * rdotn;
 
     /*
@@ -624,7 +629,7 @@ struct TubeImplementation {
      * two
      * --> only consider the smallest solution of the quadratic equation
      */
-    Real_v crmax = invnsq * (rsq - tube.fRmax2);
+    Real_v crmax     = invnsq * (rsq - tube.fRmax2);
     Real_v dist_rmax = kInfLength;
     bool ok_rmax     = false;
     CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, false, true>(b, crmax, tube, point, dir,
@@ -664,7 +669,7 @@ struct TubeImplementation {
     if (checkPhiTreatment<tubeTypeT>(tube)) {
 
       Real_v dist_phi;
-      bool ok_phi = false;
+      bool ok_phi   = false;
       auto const &w = tube.fPhiWedge;
       PhiPlaneTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, SectorType<tubeTypeT>::value != kOnePi, true>(
           tube.fAlongPhi1x, tube.fAlongPhi1y, w.GetNormal1().x(), w.GetNormal1().y(), tube, point, dir, dist_phi,
@@ -716,7 +721,7 @@ struct TubeImplementation {
 
     // For points outside z-range, return -1
     Real_v distz = tube.fZ - Abs(point.z()); // avoid a division for now
-    if (distz < -kHalfTolerance) return; // distance is already set to -1
+    if (distz < -kHalfTolerance) return;     // distance is already set to -1
 
     Real_v rsq   = point.x() * point.x() + point.y() * point.y();
     Real_v rdotn = dir.x() * point.x() + dir.y() * point.y();
@@ -758,17 +763,20 @@ struct TubeImplementation {
     // The upper limit matches the direction for which a point on the surface could still hit the cylinder before
     // hitting the Z plane
     bool checkTube = invnsq < tube.fZ * tube.fZ * kInvTolerance * kInvTolerance;
-    const Real_v absz = Abs(point.z());
 
     /*
      * rmin
      */
 
     if (checkTube && checkRminTreatment<tubeTypeT>(tube)) {
-      const bool isOnInnerSurface =
-          rsq >= tube.fTolOrmin2 && rsq <= tube.fTolIrmin2 && absz < (tube.fZ + kTolerance);
+      bool isOnInnerSurface = false;
+      if (crmin <= tube.fTolIrmin2 - tube.fRmin2) {
+        isOnInnerSurface = crmin >= tube.fTolOrmin2 - tube.fRmin2;
+      }
       if (isOnInnerSurface) {
-        if (rdotn < -0.5 * kTolerance) distance = Real_v(0.);
+        const Real_v nsq                       = Real_v(1.) - dir.z() * dir.z();
+        const Real_v radialProjectionTolerance = Real_v(0.5) * kToleranceDist<Real_v> * nsq;
+        if (rdotn < -radialProjectionTolerance) distance = Real_v(0.);
       } else {
         Real_v dist_rmin = kInfLength;
         bool ok_rmin     = false;
@@ -784,12 +792,25 @@ struct TubeImplementation {
      */
 
     if (checkTube) {
-      Real_v dist_rmax = kInfLength;
-      bool ok_rmax     = false;
-      crmax *= invnsq;
-      CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, true, false>(b, crmax, tube, point, dir,
-                                                                                     dist_rmax, ok_rmax);
-      if (ok_rmax && dist_rmax < distance) distance = dist_rmax;
+      bool isOnOuterSurface = false;
+      if (crmax >= tube.fTolIrmax2 - tube.fRmax2) {
+        isOnOuterSurface = crmax <= tube.fTolOrmax2 - tube.fRmax2;
+      }
+      bool exitsOuterSurfaceImmediately = false;
+      if (isOnOuterSurface) {
+        const Real_v nsq             = Real_v(1.) - dir.z() * dir.z();
+        exitsOuterSurfaceImmediately = rdotn >= -Real_v(0.5) * kToleranceDist<Real_v> * nsq;
+      }
+      if (exitsOuterSurfaceImmediately) {
+        distance = Real_v(0.);
+      } else {
+        Real_v dist_rmax = kInfLength;
+        bool ok_rmax     = false;
+        crmax *= invnsq;
+        CircleTrajectoryIntersection<Real_v, UnplacedStruct_t, tubeTypeT, true, false>(b, crmax, tube, point, dir,
+                                                                                       dist_rmax, ok_rmax);
+        if (ok_rmax && dist_rmax < distance) distance = dist_rmax;
+      }
     }
 
     /* Phi planes
@@ -948,7 +969,7 @@ struct TubeImplementation {
 
     Real_v distZ = point.z() < Real_v(0.) ? vecCore::math::Abs(point.z() + unplaced.fZ)
                                           : vecCore::math::Abs(point.z() - unplaced.fZ);
-    distMin = Min(distMin, distZ);
+    distMin      = Min(distMin, distZ);
 
     if (unplaced.fDphi) {
       Vector3D<Real_v> normal1 = unplaced.fPhiWedge.GetNormal1();

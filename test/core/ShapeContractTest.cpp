@@ -331,6 +331,11 @@ bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
       "polycone_two_section_sharp_jump",
       "trd_boxlike",
       "trd_extreme_aspect",
+      "tube_almost_full_phi",
+      "tube_fullphi",
+      "tube_narrow_phi",
+      "tube_section",
+      "tube_thin_wall_long",
       "tube_short_disk",
   };
   for (auto const *opt_in_case : kOptInCases) {
