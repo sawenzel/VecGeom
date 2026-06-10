@@ -141,15 +141,32 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
     Real_v const &stepMax, Real_v &distance)
 {
   Vector3D<Real_v> propagated = point;
-  distance                     = InfinityLength<Real_v>();
+  distance                    = InfinityLength<Real_v>();
 
-  Inside_t cutplane_state = EInside::kOutside;
-  unplaced.GetCutPlanes().Inside<Real_v>(point, cutplane_state);
+  auto const &cutplanes = unplaced.GetCutPlanes();
+  auto const &plane0    = cutplanes.GetCutPlane(0);
+  auto const &plane1    = cutplanes.GetCutPlane(1);
+  const Real_v pdist0   = plane0.DistPlane(point);
+  const Real_v pdist1   = plane1.DistPlane(point);
+  const Real_v ndd0     = direction.Dot(Vector3D<Real_v>(plane0.GetNormal()));
+  const Real_v ndd1     = direction.Dot(Vector3D<Real_v>(plane1.GetNormal()));
+
+  Inside_t cutplane_state = (pdist0 < Real_v(0.0) && pdist1 < Real_v(0.0)) ? EInside::kInside : EInside::kOutside;
+  if (vecCore::math::Abs(pdist0) < Real_v(kTolerance) || vecCore::math::Abs(pdist1) < Real_v(kTolerance)) {
+    cutplane_state = EInside::kSurface;
+  }
 
   Inside_t tube_state = EInside::kOutside;
   TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v>(unplaced.GetTubeStruct(), point, tube_state);
 
-  if (cutplane_state == EInside::kOutside || (cutplane_state == EInside::kSurface && tube_state != EInside::kOutside)) {
+  if (cutplane_state == EInside::kOutside) {
+    tube_state = cutplane_state;
+  } else if (cutplane_state == EInside::kSurface && tube_state != EInside::kOutside) {
+    if ((vecCore::math::Abs(pdist0) < Real_v(kTolerance) && pdist1 < Real_v(kTolerance) && ndd0 < Real_v(0.)) ||
+        (vecCore::math::Abs(pdist1) < Real_v(kTolerance) && pdist0 < Real_v(kTolerance) && ndd1 < Real_v(0.))) {
+      distance = Real_v(0.);
+      return;
+    }
     tube_state = cutplane_state;
   }
 
@@ -160,14 +177,18 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
 
   Real_v dplanes = Real_v(0.);
   if (cutplane_state != EInside::kInside) {
-    unplaced.GetCutPlanes().DistanceToIn<Real_v>(point, direction, dplanes);
+    Real_v dplane0 = -InfinityLength<Real_v>();
+    if (ndd0 < Real_v(0.) && pdist0 > Real_v(-kTolerance)) dplane0 = -pdist0 / NonZero(ndd0);
+    Real_v dplane1 = -InfinityLength<Real_v>();
+    if (ndd1 < Real_v(0.) && pdist1 > Real_v(-kTolerance)) dplane1 = -pdist1 / NonZero(ndd1);
+    dplanes              = vecCore::math::Max(dplane0, dplane1);
     const bool hitplanes = vecCore::math::Abs(dplanes) < stepMax && dplanes > Real_v(-kTolerance);
     if (!hitplanes) return;
 
     propagated += dplanes * direction;
     // Hitting a cut plane does not guarantee that the propagated point is
     // already between the two cut planes.
-    unplaced.GetCutPlanes().Inside<Real_v>(propagated, cutplane_state);
+    cutplanes.Inside<Real_v>(propagated, cutplane_state);
     if (cutplane_state == EInside::kOutside) return;
 
     TubeImplementation<TubeTypes::UniversalTube>::Inside<Real_v>(unplaced.GetTubeStruct(), propagated, tube_state);
@@ -178,7 +199,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
   }
 
   Real_v dexit = InfinityLength<Real_v>();
-  unplaced.GetCutPlanes().DistanceToOut<Real_v>(propagated, direction, dexit);
+  cutplanes.DistanceToOut<Real_v>(propagated, direction, dexit);
 
   Real_v dtube = InfinityLength<Real_v>();
   TubeImplementation<TubeTypes::UniversalTube>::DistanceToInKernel<Real_v>(unplaced.GetTubeStruct(), propagated,
@@ -198,8 +219,37 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void CutTubeImplementation::Distanc
     UnplacedStruct_t const &unplaced, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction,
     Real_v const &stepMax, Real_v &distance)
 {
-  distance = InfinityLength<Real_v>();
-  unplaced.GetCutPlanes().DistanceToOut<Real_v>(point, direction, distance);
+  auto const &cutplanes = unplaced.GetCutPlanes();
+  auto const &plane0    = cutplanes.GetCutPlane(0);
+  auto const &plane1    = cutplanes.GetCutPlane(1);
+  const Real_v pdist0   = plane0.DistPlane(point);
+  const Real_v pdist1   = plane1.DistPlane(point);
+  const Real_v ndd0     = direction.Dot(Vector3D<Real_v>(plane0.GetNormal()));
+  const Real_v ndd1     = direction.Dot(Vector3D<Real_v>(plane1.GetNormal()));
+
+  Real_v dist0 = InfinityLength<Real_v>();
+  if (pdist0 > Real_v(kTolerance)) {
+    dist0 = -InfinityLength<Real_v>();
+  } else if (ndd0 > Real_v(0.) && pdist0 < Real_v(kTolerance)) {
+    dist0 = -pdist0 / NonZero(ndd0);
+  }
+
+  Real_v dist1 = InfinityLength<Real_v>();
+  if (pdist1 > Real_v(kTolerance)) {
+    dist1 = -InfinityLength<Real_v>();
+  } else if (ndd1 > Real_v(0.) && pdist1 < Real_v(kTolerance)) {
+    dist1 = -pdist1 / NonZero(ndd1);
+  }
+
+  distance = vecCore::math::Min(dist0, dist1);
+  if (distance < Real_v(0.)) {
+    if ((vecCore::math::Abs(pdist0) < Real_v(kTolerance) && pdist1 < Real_v(kTolerance) &&
+         ndd0 > -kToleranceDist<Real_v>) ||
+        (vecCore::math::Abs(pdist1) < Real_v(kTolerance) && pdist0 < Real_v(kTolerance) &&
+         ndd1 > -kToleranceDist<Real_v>)) {
+      distance = Real_v(0.);
+    }
+  }
 
   Real_v dtube = InfinityLength<Real_v>();
   TubeImplementation<TubeTypes::UniversalTube>::DistanceToOut<Real_v>(unplaced.GetTubeStruct(), point, direction,

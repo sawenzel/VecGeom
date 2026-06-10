@@ -313,6 +313,7 @@ bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
       "cone_narrow_phi",
       "cone_section",
       "cone_thin_shell",
+      "cuttube_section_inner",
       "ellipsoid",
       "elliptical_tube",
       "elliptical_tube_long",
