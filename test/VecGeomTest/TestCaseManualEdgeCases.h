@@ -281,11 +281,31 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
        Vec_t(-0.59316595886414847, 0.71320369634116421, -0.37348980276585314), false, Vec_t(0., 0., 0.), 0.,
        "Surface-family replay ray on the narrow-phi cone where DistanceToIn and DistanceToOut both collapse to zero "
        "in the 10M-point stress run."},
+      {"cone_narrow_phi_inner_surface_phi_entry", "cone_narrow_phi", "normals", ShapeSampleCategory::kOutside,
+       Vec_t(-6.1441232475786585, -6.905494206470741, 3.3662893389393158),
+       Vec_t(0.6551617812940832, 0.58006963578204196, 0.48402712524739061), false, Vec_t(0., 0., 0.), 0.,
+       "Outside-entry replay ray where an inner-cone candidate just outside the start-phi plane must not be accepted "
+       "before the real phi-plane entry."},
       {"polycone_nearly_repeated_z_inside_exit_shared_plane", "polycone_nearly_repeated_z", "normals",
        ShapeSampleCategory::kInside, Vec_t(5.4792351593165733, -34.959087641413987, 34.407379510600208),
        Vec_t(0.54113638620723326, 0.66772399699134932, -0.51119084045439689), false, Vec_t(0., 0., 0.), 0.,
        "Inside-exit replay ray from the 10M stress run where DistanceToOut lands on the nearly repeated shared-z "
        "plane but the propagated boundary point is still classified inside."},
+      {"polycone_nearly_repeated_z_conical_shared_plane_exit", "polycone_nearly_repeated_z", "surface",
+       ShapeSampleCategory::kSurface, Vec_t(18.486560116986055, -7.6320393213976239, 40.000999999225698),
+       Vec_t(-0.1413266423828419, -0.10968512041626184, 0.98386785419184342), false, Vec_t(0., 0., 0.), 0.,
+       "Surface replay from the 10M polycone_nearly_repeated_z stress run where a steep conical section side near "
+       "the z=40.001 shared plane must own the DistanceToOut start."},
+      {"polycone_hec_liquid_argon_internal_section_cap_inside", "polycone_hec_liquid_argon", "contracts",
+       ShapeSampleCategory::kInside, Vec_t(248.87806656871494, -275.26268266211776, 280.50000000945784),
+       Vec_t(0.32046639779611685, 0.05217843469949715, 0.94582170562738288), false, Vec_t(0., 0., 0.), 0.,
+       "HEC liquid-argon replay from gpu_region_boundary_reproducer.gdml where a point just above the internal "
+       "z=280.5 section join must classify as inside, not as an artificial cone-cap surface."},
+      {"polycone_cms_like_outer_surface_shallow_entry", "polycone_cms_like", "contracts", ShapeSampleCategory::kSurface,
+       Vec_t(-976.19849303455044, -1079.213487108427, 1362.7027647827215),
+       Vec_t(0.74011640214303753, -0.6694684497540464, -0.0635586820407682), false, Vec_t(0., 0., 0.), 0.,
+       "Surface-entry replay from the 10M polycone_cms_like stress run where an outer cylindrical section surface "
+       "point must be accepted by DistanceToIn despite a shallow inward normal component."},
       {"polycone_two_section_sharp_jump_surface_exit_exposed_annulus", "polycone_two_section_sharp_jump", "contracts",
        ShapeSampleCategory::kSurface, Vec_t(20., 0., -20.), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
        "Surface-exit ray on the exposed annulus of a repeated-z transition where the boundary point belongs only to "

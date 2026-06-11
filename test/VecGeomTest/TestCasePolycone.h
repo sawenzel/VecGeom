@@ -20,6 +20,15 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakePolyconeCmsLikeTestSolid()
       new vecgeom::SimplePolycone("test-polycone-cms-like", 0., vecgeom::kTwoPi, 15, z, rmin, rmax));
 }
 
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakePolyconeHecLiquidArgonTestSolid()
+{
+  const vecgeom::Precision z[4]    = {0., 280.5, 280.7, 816.7};
+  const vecgeom::Precision rmin[4] = {371., 371., 474., 474.};
+  const vecgeom::Precision rmax[4] = {2130., 2130., 2130., 2130.};
+  return std::unique_ptr<vecgeom::VPlacedVolume>(
+      new vecgeom::SimplePolycone("test-polycone-hec-liquid-argon", 0., vecgeom::kTwoPi, 4, z, rmin, rmax));
+}
+
 inline std::unique_ptr<vecgeom::VPlacedVolume> MakeGenericPolyconeIrregularTestSolid()
 {
   const int num_rz                   = 10;

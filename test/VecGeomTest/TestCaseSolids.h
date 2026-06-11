@@ -76,6 +76,7 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
   constexpr Precision kSecondOrderTolerance = vecgeom::kConeTolerance;
   constexpr Precision kEllipticTolerance    = 1.e-6;
 
+  // clang-format off
   static const std::vector<TestCaseSolid> solids = {
       // Box
       {"box", &MakeBoxTestSolid, "BoxImplementation", MakeFastContractSampling(10000, 19, 0),
@@ -183,6 +184,10 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
       {"polycone_cms_like", &MakePolyconeCmsLikeTestSolid,
        "PolyconeImplementation<vecgeom::cxx::ConeTypes::UniversalCone>",
        MakeFastContractSampling(10000, 37, 15, 4., 25.), MakeMediumContractSampling(100000, 37, 15, 4., 25.), {},
+       false, false, kSecondOrderTolerance},
+      {"polycone_hec_liquid_argon", &MakePolyconeHecLiquidArgonTestSolid,
+       "PolyconeImplementation<vecgeom::cxx::ConeTypes::UniversalCone>",
+       MakeFastContractSampling(10000, 63, 41, 4., 25.), MakeMediumContractSampling(100000, 63, 41, 4., 25.), {},
        false, false, kSecondOrderTolerance},
       {"generic_polycone_irregular", &MakeGenericPolyconeIrregularTestSolid, "GenericPolyconeImplementation",
        MakeFastContractSampling(10000, 38, 16, 4., 25.), MakeMediumContractSampling(100000, 38, 16, 4., 25.), {},
@@ -345,6 +350,7 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
        "BooleanImplementation<vecgeom::kSubtraction>", MakeFastContractSampling(10000, 93, 71, 4., 25.),
        MakeMediumContractSampling(100000, 93, 71, 4., 25.), {}, false, false, kSecondOrderTolerance},
   };
+  // clang-format on
   return solids;
 }
 

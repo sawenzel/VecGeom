@@ -1,9 +1,5 @@
-/*
- * ConeUtilities.h
- *
- *  Created on: June 01, 2017
- *      Author: Raman Sehgal
- */
+/// @file ConeUtilities.h
+/// @brief Shared local predicates and distance helpers for cone kernels.
 #ifndef VECGEOM_CONEUTILITIES_H_
 #define VECGEOM_CONEUTILITIES_H_
 
@@ -25,111 +21,91 @@ using UnplacedStruct_t = ConeStruct<Precision>;
 
 namespace ConeUtilities {
 
-/**
- * Determine whether a point lies inside a cylindrical sector defined by the
- * two rays that delimit its phi span.
- *
- * The same could be achieved using atan2 to calculate the angle formed
- * by the point, the origin and the X-axes, but this is a lot faster,
- * using only multiplications and comparisons
- *
- * (-x*starty + y*startx) >= 0: calculates whether going from the start vector to the point
- * we are traveling in the CCW direction (taking the shortest direction, of course)
- *
- * (-endx*y + endy*x) >= 0: calculates whether going from the point to the end vector
- * we are traveling in the CCW direction (taking the shortest direction, of course)
- *
- * For a sector smaller than pi, we need that BOTH of them hold true - if going from start, to the
- * point, and then to the end we are travelling in CCW, it's obvious the point is inside the
- * cylindrical sector.
- *
- * For a sector bigger than pi, only one of the conditions needs to be true. This is less obvious why.
- * Since the sector angle is greater than pi, it can be that one of the two vectors might be
- * farther than pi away from the point. In that case, the shortest direction will be CW, so even
- * if the point is inside, only one of the two conditions need to hold.
- *
- * If going from start to point is CCW, then certainly the point is inside as the sector
- * is larger than pi.
- *
- * If going from point to end is CCW, again, the point is certainly inside.
- *
- * The helper can choose the smaller-than-pi versus larger-than-pi test either
- * at compile time or at runtime, depending on what the cone type exposes.
- **/
+/// @brief Return the cached or runtime phi-span category used by sector tests.
+/// @tparam ShapeType Cone shape tag carrying the phi-sector category.
+/// @param volume Cone data with the runtime phi span for unknown-angle tags.
+/// @return True for one-pi and smaller-than-pi sectors.
+template <typename ShapeType>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsCyclicalSectorSmallerThanPi(UnplacedStruct_t const &volume)
+{
+  using namespace ::vecgeom::ConeTypes;
+  if (SectorType<ShapeType>::value == kUnknownAngle) return volume.fDPhi <= kPi;
+  return SectorType<ShapeType>::value == kOnePi || SectorType<ShapeType>::value == kSmallerThanPi;
+}
 
-#if (1)
+/// @brief Return whether the cone phi sector contains a local `(x,y)` point.
+/// @details The predicate uses only the signed cross products against the two
+/// phi boundary rays. For spans up to pi both side tests must pass; for wider
+/// sectors either side test is sufficient. The tolerance is explicit because
+/// distance checks conventionally use `kConeTolerance`, while Inside-consistent
+/// handoff checks use `kTolerance`.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ShapeType Cone shape tag carrying the phi-sector category.
+/// @tparam onSurfaceT If true, test only whether the point is on a phi plane.
+/// @tparam includeSurface If false, require a strict interior sector point.
+/// @param volume Cone data with cached phi boundary rays.
+/// @param x Local x coordinate.
+/// @param y Local y coordinate.
+/// @param[out] ret Result of the sector predicate.
+/// @param tolerance Signed-side tolerance for the two phi boundary tests.
 template <typename Real_v, typename ShapeType, bool onSurfaceT, bool includeSurface = true>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PointInCyclicalSector(UnplacedStruct_t const &volume,
                                                                                Real_v const &x, Real_v const &y,
-                                                                               bool &ret)
+                                                                               bool &ret,
+                                                                               Precision tolerance = kConeTolerance)
 {
-
-  using namespace ::vecgeom::ConeTypes;
-  // VECGEOM_VALIDATE(SectorType<ShapeType>::value != kNoAngle, << "ShapeType without a
-  // sector passed to PointInCyclicalSector");
-
-  // typedef Real_v Real_v;
-  // using vecgeom::ConeTypes::SectorType;
-  // using vecgeom::ConeTypes::EAngleType;
-
-  Real_v startx = volume.fAlongPhi1x; // GetAlongPhi1X();
-  Real_v starty = volume.fAlongPhi1y; // GetAlongPhi1Y();
-
-  Real_v endx = volume.fAlongPhi2x; // GetAlongPhi2X();
-  Real_v endy = volume.fAlongPhi2y; // GetAlongPhi2Y();
-
-  bool smallerthanpi;
-
-  if (SectorType<ShapeType>::value == kUnknownAngle)
-    smallerthanpi = volume.fDPhi <= M_PI;
-  else
-    smallerthanpi = SectorType<ShapeType>::value == kOnePi || SectorType<ShapeType>::value == kSmallerThanPi;
-
-  Real_v startCheck = (-x * starty) + (y * startx);
-  Real_v endCheck   = (-endx * y) + (endy * x);
-
-  if (onSurfaceT) {
-    // in this case, includeSurface is irrelevant
-    ret = (Abs(startCheck) <= kConeTolerance) || (Abs(endCheck) <= kConeTolerance);
-  } else {
-    if (smallerthanpi) {
-      if (includeSurface)
-        ret = (startCheck >= -kConeTolerance) && (endCheck >= -kConeTolerance);
-      else
-        ret = (startCheck >= kConeTolerance) && (endCheck >= kConeTolerance);
-    } else {
-      if (includeSurface)
-        ret = (startCheck >= -kConeTolerance) || (endCheck >= -kConeTolerance);
-      else
-        ret = (startCheck >= kConeTolerance) || (endCheck >= kConeTolerance);
-    }
-  }
-}
-
-#endif
-
-template <typename Real_v, typename ShapeType>
-VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ClassifyPointInCyclicalSector(UnplacedStruct_t const &volume,
-                                                                                       Real_v const &x, Real_v const &y,
-                                                                                       bool &inside, bool &outside)
-{
-  using namespace ::vecgeom::ConeTypes;
-
   Real_v startx = volume.fAlongPhi1x;
   Real_v starty = volume.fAlongPhi1y;
   Real_v endx   = volume.fAlongPhi2x;
   Real_v endy   = volume.fAlongPhi2y;
 
-  bool smallerthanpi;
-  if (SectorType<ShapeType>::value == kUnknownAngle)
-    smallerthanpi = volume.fDPhi <= kPi;
-  else
-    smallerthanpi = SectorType<ShapeType>::value == kOnePi || SectorType<ShapeType>::value == kSmallerThanPi;
+  Real_v startCheck = (-x * starty) + (y * startx);
+  Real_v endCheck   = (-endx * y) + (endy * x);
+  Real_v tol(tolerance);
+
+  if (onSurfaceT) {
+    ret = (Abs(startCheck) <= tol) || (Abs(endCheck) <= tol);
+  } else {
+    bool smallerthanpi = IsCyclicalSectorSmallerThanPi<ShapeType>(volume);
+    if (smallerthanpi) {
+      if (includeSurface)
+        ret = (startCheck >= -tol) && (endCheck >= -tol);
+      else
+        ret = (startCheck >= tol) && (endCheck >= tol);
+    } else {
+      if (includeSurface)
+        ret = (startCheck >= -tol) || (endCheck >= -tol);
+      else
+        ret = (startCheck >= tol) || (endCheck >= tol);
+    }
+  }
+}
+
+/// @brief Classify a point against the phi sector using Inside tolerances.
+/// @details Points in the tolerance band of a phi plane leave both `inside` and
+/// `outside` false so that `Inside` reports `kSurface`.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ShapeType Cone shape tag carrying the phi-sector category.
+/// @param volume Cone data with cached phi boundary rays.
+/// @param x Local x coordinate.
+/// @param y Local y coordinate.
+/// @param[out] inside True only for strictly inside sector points.
+/// @param[out] outside True only for strictly outside sector points.
+template <typename Real_v, typename ShapeType>
+VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ClassifyPointInCyclicalSector(UnplacedStruct_t const &volume,
+                                                                                       Real_v const &x, Real_v const &y,
+                                                                                       bool &inside, bool &outside)
+{
+  Real_v startx = volume.fAlongPhi1x;
+  Real_v starty = volume.fAlongPhi1y;
+  Real_v endx   = volume.fAlongPhi2x;
+  Real_v endy   = volume.fAlongPhi2y;
 
   Real_v startCheck = (-x * starty) + (y * startx);
   Real_v endCheck   = (-endx * y) + (endy * x);
   Real_v zero(0.);
   Real_v tol(kTolerance);
+  bool smallerthanpi = IsCyclicalSectorSmallerThanPi<ShapeType>(volume);
 
   if (smallerthanpi) {
     inside  = (startCheck > tol) && (endCheck > tol);
@@ -157,7 +133,12 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void ClassifyPointInCyclical
   inside |= !onSurface && !exactOutside;
 }
 
-#if (1)
+/// @brief Return the inner or outer cone radius at a local z coordinate.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ForInnerRadius Selects `rmin(z)` when true and `rmax(z)` otherwise.
+/// @param cone Cone data with cached slopes and offsets.
+/// @param pointZ Local z coordinate.
+/// @return Interpolated radius for the requested cone side.
 template <typename Real_v, bool ForInnerRadius>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v GetRadiusOfConeAtPoint(UnplacedStruct_t const &cone,
                                                                                   Real_v const pointZ)
@@ -179,23 +160,31 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Real_v GetRadiusOfConeAtPoin
   }
 }
 
-#endif
-
-/**
- * Intersect a trajectory with one cone phi plane.
- *
- * Points on the phi plane lie on `s * (alongX, alongY)`.
- * Points on the trajectory lie on `(x, y) + t * (vx, vy)`.
- * Therefore `s * (alongX, alongY) == (x, y) + t * (vx, vy)`, which gives
- * `t = (alongY * x - alongX * y) / (vy * alongX - vx * alongY)`.
- *
- * For two non-colinear phi planes we also require the hit point to stay on the
- * positive half-line of the chosen phi boundary.
- */
-
+/// @brief Intersect a trajectory with one cone phi plane.
+/// @details Points on the phi plane lie on `s * (alongX, alongY)`. Points on
+/// the trajectory lie on `(x, y) + t * (vx, vy)`, which gives
+/// `t = (alongY * x - alongX * y) / (vy * alongX - vx * alongY)`. For two
+/// non-colinear phi planes the hit must also stay on the positive half-line of
+/// the chosen phi boundary.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ConeType Cone shape tag.
+/// @tparam PositiveDirectionOfPhiVector Require the hit on the positive phi ray
+/// when true.
+/// @tparam insectorCheck True for DistanceToIn-style entering checks; false for
+/// DistanceToOut-style exiting checks.
+/// @param alongX Phi boundary ray x component.
+/// @param alongY Phi boundary ray y component.
+/// @param normal_x Inward phi-plane normal x component.
+/// @param normal_y Inward phi-plane normal y component.
+/// @param cone Cone data used for z and radial acceptance.
+/// @param pos Local start point.
+/// @param dir Local direction.
+/// @param[out] dist Distance to the phi-plane hit or `kInfLength`.
+/// @param[out] ok True only when the hit satisfies side, z, radial, and ray
+/// acceptance checks.
 template <typename Real_v, typename ConeType, bool PositiveDirectionOfPhiVector, bool insectorCheck>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryIntersection(
-    Precision alongX, Precision alongY, Precision normalX, Precision normalY, UnplacedStruct_t const &cone,
+    Precision alongX, Precision alongY, Precision normal_x, Precision normal_y, UnplacedStruct_t const &cone,
     Vector3D<Real_v> const &pos, Vector3D<Real_v> const &dir, Real_v &dist, bool &ok)
 {
   const Real_v zero(0.0);
@@ -203,10 +192,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryInter
 
   // Wedge normals point towards the wedge interior, so the admissible side
   // depends on whether the caller is searching for an entering or exiting hit.
-  if (insectorCheck)
-    ok = ((dir.x() * normalX) + (dir.y() * normalY) > zero); // DistToIn  -- require tracks entering volume
-  else
-    ok = ((dir.x() * normalX) + (dir.y() * normalY) < zero); // DistToOut -- require tracks leaving volume
+  const Real_v normalDot = (dir.x() * normal_x) + (dir.y() * normal_y);
+  ok                     = (insectorCheck ? normalDot : -normalDot) > zero;
   if (!ok) return;
 
   Real_v dirDotXY = (dir.y() * alongX) - (dir.x() * alongY);
@@ -245,20 +232,24 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void PhiPlaneTrajectoryInter
   }
 }
 
+/// @brief Return the normal of the selected conical surface at a local point.
+/// @details Inner-surface normals point toward the cone hole and outer-surface
+/// normals point away from the solid.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ForInnerSurface Selects the inner conical side when true.
+/// @param cone Cone data with cached normal factors.
+/// @param point Local point on the requested conical surface.
+/// @return Non-normalized outward normal for the requested solid side.
 template <typename Real_v, bool ForInnerSurface>
 VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> GetNormal(UnplacedStruct_t const &cone, Vector3D<Real_v> const &point)
 {
-
-  // typedef Real_v Real_v;
   Real_v rho = point.Perp();
   Vector3D<Real_v> norm(0., 0., 0.);
 
   if (ForInnerSurface) {
-    // Handling inner conical surface
     Precision rmin1 = cone.fRmin1;
     Precision rmin2 = cone.fRmin2;
     if ((rmin1 == rmin2) && (rmin1 != 0.)) {
-      // cone act like tube
       norm.Set(-point.x(), -point.y(), 0.);
     } else {
       Precision secRMin = cone.fSecRMin;
@@ -268,7 +259,6 @@ VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> GetNormal(UnplacedStruct_t const
     Precision rmax1 = cone.fRmax1;
     Precision rmax2 = cone.fRmax2;
     if ((rmax1 == rmax2) && (rmax1 != 0.)) {
-      // cone act like tube
       norm.Set(point.x(), point.y(), 0.);
     } else {
       Precision secRMax = cone.fSecRMax;
@@ -278,22 +268,39 @@ VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> GetNormal(UnplacedStruct_t const
   return norm;
 }
 
+/// @brief Check whether a point is on the selected conical surface.
+/// @details Uses the same squared-radial tolerance band as cone classification
+/// and normal selection so surface-start distance conventions stay aligned with
+/// Inside/Contains boundary handling.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ForInnerSurface Selects the inner conical side when true.
+/// @param cone Cone data with cached radial tolerances.
+/// @param point Local point to test.
+/// @return True when the point is within the selected radial tolerance band and
+/// inside the z extent.
 template <typename Real_v, bool ForInnerSurface>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnConicalSurface(UnplacedStruct_t const &cone,
                                                                             Vector3D<Real_v> const &point)
 {
-
-  using namespace ConeUtilities;
-  using namespace ConeTypes;
-  const Real_v rho       = point.Perp2();
-  const Real_v coneRad   = GetRadiusOfConeAtPoint<Real_v, ForInnerSurface>(cone, point.z());
-  const Real_v coneRad2  = coneRad * coneRad;
-  const Real_v tolerance = (ForInnerSurface) ? cone.fInnerTolerance : cone.fOuterTolerance;
-  return (rho >= (coneRad2 - tolerance * coneRad)) && (rho <= (coneRad2 + tolerance * coneRad)) &&
+  const Real_v rho           = point.Perp2();
+  const Real_v coneRad       = GetRadiusOfConeAtPoint<Real_v, ForInnerSurface>(cone, point.z());
+  const Real_v coneRad2      = coneRad * coneRad;
+  const Precision tolerance  = (ForInnerSurface) ? cone.fInnerTolerance : cone.fOuterTolerance;
+  const Real_v toleranceBand = Real_v(2. * tolerance) * coneRad;
+  return (rho >= coneRad2 - toleranceBand) && (rho <= coneRad2 + toleranceBand) &&
          (Abs(point.z()) < (cone.fDz + kConeTolerance));
 }
 
-// precondition: point is on cone surface - as returned from IsOnConicalSurface()
+/// @brief Test whether a surface-start direction leaves the selected cone side.
+/// @pre `point` is on the selected conical surface according to
+/// `IsOnConicalSurface`.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ForInnerSurface Selects the inner conical side when true.
+/// @param cone Cone data with cached normal factors.
+/// @param point Local point on the selected conical surface.
+/// @param direction Local direction.
+/// @return True when the direction has a non-negative dot product with the
+/// selected surface normal.
 template <typename Real_v, bool ForInnerSurface>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingOutsideConicalSurface(
     UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction)
@@ -301,7 +308,16 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingOutsideConicalS
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) >= Real_v(0.);
 }
 
-// precondition: point is on cone surface - as returned from IsOnConicalSurface()
+/// @brief Test whether a surface-start direction enters through the selected cone side.
+/// @pre `point` is on the selected conical surface according to
+/// `IsOnConicalSurface`.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam ForInnerSurface Selects the inner conical side when true.
+/// @param cone Cone data with cached normal factors.
+/// @param point Local point on the selected conical surface.
+/// @param direction Local direction.
+/// @return True when the direction has a non-positive dot product with the
+/// selected surface normal.
 template <typename Real_v, bool ForInnerSurface>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingInsideConicalSurface(UnplacedStruct_t const &cone,
                                                                                       Vector3D<Real_v> const &point,
@@ -310,6 +326,13 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsMovingInsideConicalSu
   return direction.Dot(GetNormal<Real_v, ForInnerSurface>(cone, point)) <= Real_v(0.);
 }
 
+/// @brief Check whether a local point lies on the start-phi boundary ray.
+/// @details The point must be on the positive half-line of the boundary ray and
+/// within `kTolerance` of its plane.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @param cone Cone data with cached start-phi ray.
+/// @param point Local point to test.
+/// @return True for points on the start-phi boundary ray.
 template <typename Real_v>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnStartPhi(UnplacedStruct_t const &cone,
                                                                       Vector3D<Real_v> const &point)
@@ -319,6 +342,13 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnStartPhi(UnplacedSt
          (Abs(startCheck) < Real_v(kTolerance));
 }
 
+/// @brief Check whether a local point lies on the end-phi boundary ray.
+/// @details The point must be on the positive half-line of the boundary ray and
+/// within `kTolerance` of its plane.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @param cone Cone data with cached end-phi ray.
+/// @param point Local point to test.
+/// @return True for points on the end-phi boundary ray.
 template <typename Real_v>
 VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnEndPhi(UnplacedStruct_t const &cone,
                                                                     Vector3D<Real_v> const &point)
@@ -330,13 +360,31 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnEndPhi(UnplacedStru
 
 } // namespace ConeUtilities
 
-/* This helper class keeps the generic template path and a scalar specialization side by side. */
+/// @brief Shared cone helper kernels for vector and scalar arithmetic paths.
+/// @details The generic template path and the scalar specialization intentionally
+/// stay side by side because the scalar path carries a few convention-preserving
+/// shortcuts that are cheaper than the vector mask machinery.
+/// @tparam Real_v Scalar or vector arithmetic type.
+/// @tparam coneTypeT Cone shape tag.
 template <class Real_v, class coneTypeT>
 class ConeHelpers {
 
 public:
   ConeHelpers() {}
   ~ConeHelpers() {}
+
+  /// @brief Find a valid conical-surface intersection for DistanceToIn/Out.
+  /// @details Surface starts may return zero distance when the direction crosses
+  /// the selected conical side and the phi-sector check accepts the point. Other
+  /// candidates are filtered by the quadratic root, z extent, and phi sector.
+  /// @tparam ForDistToIn True for entering-distance convention, false for
+  /// exiting-distance convention.
+  /// @tparam ForInnerSurface Selects the inner conical side when true.
+  /// @param cone Cone data with cached slopes, tolerances, and phi state.
+  /// @param point Local start point.
+  /// @param direction Local direction.
+  /// @param[out] distance Accepted distance when the method returns true.
+  /// @return True only when a valid conical-surface candidate is found.
   template <bool ForDistToIn, bool ForInnerSurface>
   VECCORE_ATT_HOST_DEVICE static bool DetectIntersectionAndCalculateDistanceToConicalSurface(
       UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, Vector3D<Real_v> const &direction, Real_v &distance)
@@ -363,7 +411,8 @@ public:
         }
 
         bool insector(false);
-        ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
+        ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, point.x(), point.y(), insector,
+                                                                             kTolerance);
         if (insector) {
           distance = zero;
           return true;
@@ -426,7 +475,6 @@ public:
 
     } else {
 
-      // if (rmax1 == rmax2) {
       if (cone.fOriginalRmax1 == cone.fOriginalRmax2) {
         b = pDotV2D;
         a = direction.Perp2();
@@ -435,7 +483,6 @@ public:
 
         Precision t = cone.fTanOuterApexAngle;
         Real_v newPz(0.);
-        // if (cone.fRmax2 > cone.fRmax1)
         if (cone.fOriginalRmax2 > cone.fOriginalRmax1)
           newPz = (point.z() + fDz + cone.fOuterConeApex) * t;
         else
@@ -476,12 +523,21 @@ public:
       Real_v hitx = point.x() + distance * direction.x();
       Real_v hity = point.y() + distance * direction.y();
       bool insector(false);
-      ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, hitx, hity, insector);
+      ConeUtilities::PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, hitx, hity, insector, kTolerance);
       if (!insector) return false;
     }
     return true;
   }
 
+  /// @brief Populate strict inside/outside masks for Contains and Inside.
+  /// @details Contains uses only the outside mask. Inside also requires the
+  /// strict inside mask; points not classified into either mask remain surface.
+  /// @tparam ForInside Whether to compute strict-inside information.
+  /// @param cone Cone data with cached radial and phi state.
+  /// @param point Local point to classify.
+  /// @param[out] completelyinside Strict inside mask, meaningful when
+  /// `ForInside` is true.
+  /// @param[out] completelyoutside Strict outside mask.
   template <bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
       UnplacedStruct_t const &cone, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &completelyinside,
@@ -491,10 +547,11 @@ public:
     typedef typename vecCore::Mask_v<Real_v> Bool_t;
 
     // very fast check on z-height
-    Real_v absz       = Abs(point[2]);
-    completelyoutside = absz > MakePlusTolerant<true>(cone.fDz, kConeTolerance);
+    constexpr Precision zTolerance = kTolerance;
+    Real_v absz                    = Abs(point[2]);
+    completelyoutside              = absz > MakePlusTolerant<true>(cone.fDz, zTolerance);
     if (ForInside) {
-      completelyinside = absz < MakeMinusTolerant<true>(cone.fDz, kConeTolerance);
+      completelyinside = absz < MakeMinusTolerant<true>(cone.fDz, zTolerance);
     }
     if (vecCore::MaskFull(completelyoutside)) {
       return;
@@ -539,6 +596,14 @@ public:
     }
   }
 
+  /// @brief Classify a local point as outside, surface, or inside.
+  /// @details The method maps the strict masks from
+  /// `GenericKernelForContainsAndInside` to `EInside`; unresolved tolerance-band
+  /// points remain `kSurface`.
+  /// @tparam Inside_v Classification storage type.
+  /// @param cone Cone data with cached radial and phi state.
+  /// @param point Local point to classify.
+  /// @param[out] inside Classification result.
   template <typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &cone,
                                                                   Vector3D<Real_v> const &point, Inside_v &inside)
@@ -554,6 +619,10 @@ public:
   }
 };
 
+/// @brief Scalar specialization of the shared cone helper kernels.
+/// @details Keeps scalar-only branch structure and direct booleans while
+/// preserving the same classification contracts as the generic path.
+/// @tparam coneTypeT Cone shape tag.
 template <class coneTypeT>
 class ConeHelpers<Precision, coneTypeT> {
 
@@ -561,6 +630,18 @@ public:
   ConeHelpers() {}
   ~ConeHelpers() {}
 
+  /// @brief Find a valid scalar conical-surface intersection for DistanceToIn/Out.
+  /// @details Surface starts may return zero distance when the direction crosses
+  /// the selected conical side and the phi-sector check accepts the point. Other
+  /// candidates are filtered by the quadratic root, z extent, and phi sector.
+  /// @tparam ForDistToIn True for entering-distance convention, false for
+  /// exiting-distance convention.
+  /// @tparam ForInnerSurface Selects the inner conical side when true.
+  /// @param cone Cone data with cached slopes, tolerances, and phi state.
+  /// @param point Local start point.
+  /// @param direction Local direction.
+  /// @param[out] distance Accepted distance when the method returns true.
+  /// @return True only when a valid conical-surface candidate is found.
   template <bool ForDistToIn, bool ForInnerSurface>
   VECCORE_ATT_HOST_DEVICE static bool DetectIntersectionAndCalculateDistanceToConicalSurface(
       UnplacedStruct_t const &cone, Vector3D<Precision> const &point, Vector3D<Precision> const &direction,
@@ -583,14 +664,15 @@ public:
         bool isMovingInside = normalDot <= 0.;
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
-          if (isMovingInside) { // && onConicalSurface
+          if (isMovingInside) {
             distance = 0.;
             return true;
           }
         } else {
           bool insector(false);
-          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
-          if (insector && isMovingInside) { // && onConicalSurface
+          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector,
+                                                                                  kTolerance);
+          if (insector && isMovingInside) {
             distance = 0.;
             return true;
           }
@@ -601,15 +683,16 @@ public:
         bool isMovingOutside = normalDot >= 0.;
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {
-          if (isMovingOutside) { // && onConicalSurface
+          if (isMovingOutside) {
             distance = 0.;
             return true;
           }
         } else {
           bool insector(false);
-          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector);
+          ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, point.x(), point.y(), insector,
+                                                                                  kTolerance);
 
-          if (insector && isMovingOutside) { // && onConicalSurface
+          if (insector && isMovingOutside) {
             distance = 0.;
             return true;
           }
@@ -670,7 +753,6 @@ public:
 
     } else {
 
-      /*if (cone.fRmax1 == cone.fRmax2) {*/
       if (cone.fOriginalRmax1 == cone.fOriginalRmax2) {
 
         a = direction.Perp2();
@@ -679,7 +761,6 @@ public:
       } else {
 
         Precision newPz(0.);
-        // if (cone.fRmax2 > cone.fRmax1)
         if (cone.fOriginalRmax2 > cone.fOriginalRmax1)
           newPz = (point.z() + cone.fDz + cone.fOuterConeApex) * cone.fTanOuterApexAngle;
         else
@@ -698,7 +779,7 @@ public:
       if (ForDistToIn) {
         if (b == 0. && delta == 0.) return false;
         if (b > 0.) {
-          distance = (-b - delta) / NonZero(a); // BE ATTENTIVE, not covers the condition for b==0.
+          distance = (-b - delta) / NonZero(a);
         } else {
           distance = (c / NonZero(-b + delta));
         }
@@ -717,10 +798,6 @@ public:
 
       if (distance < 0.) return false;
     }
-    /*   if (distance < 0.) {
-         distance = kInfLength;
-       }
-   */
     if (checkPhiTreatment<coneTypeT>(cone)) {
       Precision hitx(0), hity(0);
       bool insector(false);
@@ -729,22 +806,32 @@ public:
         hity = point.y() + distance * direction.y();
       }
 
-      ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, hitx, hity, insector);
+      ConeUtilities::PointInCyclicalSector<Precision, coneTypeT, false, true>(cone, hitx, hity, insector, kTolerance);
       ok &= ((insector) && (distance < kInfLength));
     }
     return ok;
   }
 
+  /// @brief Populate scalar strict inside/outside flags for Contains and Inside.
+  /// @details Contains uses only the outside flag. Inside also requires the
+  /// strict inside flag; points not classified into either flag remain surface.
+  /// @tparam ForInside Whether to compute strict-inside information.
+  /// @param cone Cone data with cached radial and phi state.
+  /// @param point Local point to classify.
+  /// @param[out] completelyinside Strict inside flag, meaningful when
+  /// `ForInside` is true.
+  /// @param[out] completelyoutside Strict outside flag.
   template <bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
       UnplacedStruct_t const &cone, Vector3D<Precision> const &point, bool &completelyinside, bool &completelyoutside)
   {
 
     // very fast check on z-height
-    Precision absz    = Abs(point[2]);
-    completelyoutside = absz > MakePlusTolerant<ForInside>(cone.fDz, kConeTolerance);
+    constexpr Precision zTolerance = kTolerance;
+    Precision absz                 = Abs(point[2]);
+    completelyoutside              = absz > MakePlusTolerant<true>(cone.fDz, zTolerance);
     if (ForInside) {
-      completelyinside = absz < MakeMinusTolerant<ForInside>(cone.fDz, kConeTolerance);
+      completelyinside = absz < MakeMinusTolerant<ForInside>(cone.fDz, zTolerance);
     }
     if (completelyoutside) return;
 
@@ -757,7 +844,7 @@ public:
     else
       rmax = cone.fOuterSlope * point.z() + cone.fOuterOffset;
 
-    completelyoutside |= r2 > MakePlusTolerantSquare<ForInside>(rmax, cone.fOuterTolerance);
+    completelyoutside |= r2 > MakePlusTolerantSquare<true>(rmax, cone.fOuterTolerance);
     if (ForInside) {
       completelyinside &= r2 < MakeMinusTolerantSquare<ForInside>(rmax, cone.fOuterTolerance);
     }
@@ -767,7 +854,7 @@ public:
     if (ConeTypes::checkRminTreatment<coneTypeT>(cone)) {
       Precision rmin = cone.fInnerSlope * point.z() + cone.fInnerOffset;
 
-      completelyoutside |= r2 <= MakeMinusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
+      completelyoutside |= r2 <= MakeMinusTolerantSquare<true>(rmin, cone.fInnerTolerance);
       if (ForInside) {
         completelyinside &= r2 > MakePlusTolerantSquare<ForInside>(rmin, cone.fInnerTolerance);
       }
@@ -783,6 +870,14 @@ public:
     }
   }
 
+  /// @brief Classify a scalar local point as outside, surface, or inside.
+  /// @details The method maps the strict flags from
+  /// `GenericKernelForContainsAndInside` to `EInside`; unresolved tolerance-band
+  /// points remain `kSurface`.
+  /// @tparam Inside_v Classification storage type.
+  /// @param cone Cone data with cached radial and phi state.
+  /// @param point Local point to classify.
+  /// @param[out] inside Classification result.
   template <typename Inside_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &cone,
                                                                   Vector3D<Precision> const &point, Inside_v &inside)
