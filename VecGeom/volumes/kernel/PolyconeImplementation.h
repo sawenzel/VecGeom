@@ -540,14 +540,14 @@ struct PolyconeImplementation {
       return true;
     }
     if (!lowOwns && !highOwns) {
-      const bool useLowConical = SectionPointOnConicalSurface(polycone.GetSection(lowIndex), point) &&
-                                 SectionEndHasForwardMaterial(polycone.GetSection(lowIndex), point, rho2, true, dir);
-      const bool useHighConical = SectionPointOnConicalSurface(polycone.GetSection(highIndex), point) &&
-                                  SectionEndHasForwardMaterial(polycone.GetSection(highIndex), point, rho2, false, dir);
+      const bool useLowConical  = SectionPointOnConicalSurface(polycone.GetSection(lowIndex), point);
+      const bool useHighConical = SectionPointOnConicalSurface(polycone.GetSection(highIndex), point);
       if (useLowConical || useHighConical) {
         // Steep near-repeated sections can put a real conical surface hit just
         // outside the endpoint-radius band while still inside the z tolerance
-        // of the shared plane. Let the conical side own such starts.
+        // of the shared plane. Let the conical side own such starts; the
+        // section cone decides whether this is a zero exit or a finite
+        // continuation.
         index = useLowConical ? lowIndex : highIndex;
         return true;
       }

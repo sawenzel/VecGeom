@@ -140,13 +140,13 @@ struct ConeImplementation {
     if (hasPhi && !ConeSurfaceCode::IsPhiHit(primary)) {
       const Real_v startCheck = (-hitPoint.x() * cone.fAlongPhi1y) + (hitPoint.y() * cone.fAlongPhi1x);
       const bool onStartPhi   = ((hitPoint.x() * cone.fAlongPhi1x) + (hitPoint.y() * cone.fAlongPhi1y) >= Real_v(0.)) &&
-                              (Abs(startCheck) < Real_v(kConeTolerance));
+                                (Abs(startCheck) < Real_v(kConeTolerance));
       if (onStartPhi) AddSurfaceHit(hit_info, ConeSurfaceCode::kPhiStart);
 
       if (SectorType<coneTypeT>::value != kOnePi) {
         const Real_v endCheck = (-cone.fAlongPhi2x * hitPoint.y()) + (cone.fAlongPhi2y * hitPoint.x());
         const bool onEndPhi   = ((hitPoint.x() * cone.fAlongPhi2x) + (hitPoint.y() * cone.fAlongPhi2y) >= Real_v(0.)) &&
-                              (Abs(endCheck) < Real_v(kConeTolerance));
+                                (Abs(endCheck) < Real_v(kConeTolerance));
         if (onEndPhi) AddSurfaceHit(hit_info, ConeSurfaceCode::kPhiEnd);
       }
     }
@@ -340,7 +340,7 @@ struct ConeImplementation {
 
       if (checkPhiTreatment<coneTypeT>(cone) && okz) {
         bool insector(false);
-        PointInCyclicalSector<Real_v, coneTypeT, false>(cone, hitx, hity, insector);
+        PointInCyclicalSector<Real_v, coneTypeT, false, true>(cone, hitx, hity, insector, kTolerance);
         okz = insector;
       }
       if (okz && RejectDegenerateClosingRingDistanceToInCandidate(cone, point, dir, distToZ)) okz = false;

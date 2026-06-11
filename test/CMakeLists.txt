@@ -356,6 +356,7 @@ set(SHAPE_CONTRACT_SOLID_CASES
   trapezoid_near_para
 
   polycone_cms_like
+  polycone_hec_liquid_argon
   generic_polycone_irregular
   polycone_two_section_sharp_jump
   polycone_many_section_alternating
@@ -468,6 +469,9 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   hype
   orb
   paraboloid
+  polycone_cms_like
+  polycone_hec_liquid_argon
+  polycone_nearly_repeated_z
   polycone_two_section_sharp_jump
   sphere_narrow_phi
   sphere_section
