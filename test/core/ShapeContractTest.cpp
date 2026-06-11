@@ -330,6 +330,8 @@ bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
       "polycone_many_section_alternating",
       "polycone_nearly_repeated_z",
       "polycone_two_section_sharp_jump",
+      "tet",
+      "tet_sliver_like",
       "trd_boxlike",
       "trd_extreme_aspect",
       "tube_almost_full_phi",
