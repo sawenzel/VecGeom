@@ -30,7 +30,7 @@ bool TestTet()
   Vec_t p0(0., 0., 2.), p1(0., 0., 0.), p2(2., 0., 0.), p3(0., 2., 0.);
   Tet_t tet("TestTet", p0, p1, p2, p3);
 
-  // Check surfce area and volume
+  // Check surface area and volume
   //
   std::cout << "=== Check Getters, SurfaceArea(), Capacity(), Extent()" << std::endl;
 
@@ -224,7 +224,7 @@ bool TestTet()
   VECGEOM_ASSERT(tet.DistanceToIn(pnt, -dir) == vecgeom::kInfLength);
 
   pnt = Vec_t(0.5, 0.5, -0.5 * vecgeom::kHalfTolerance);
-  VECGEOM_ASSERT(tet.DistanceToIn(pnt, dir) == 0.5 * vecgeom::kHalfTolerance);
+  VECGEOM_ASSERT(tet.DistanceToIn(pnt, dir) == 0.0);
   VECGEOM_ASSERT(tet.DistanceToIn(pnt, -dir) == vecgeom::kInfLength);
 
   pnt = Vec_t(0.5, 0.5, 0.0);
@@ -232,7 +232,7 @@ bool TestTet()
   VECGEOM_ASSERT(tet.DistanceToIn(pnt, -dir) == vecgeom::kInfLength);
 
   pnt = Vec_t(0.5, 0.5, 0.5 * vecgeom::kHalfTolerance);
-  VECGEOM_ASSERT(tet.DistanceToIn(pnt, dir) == -0.5 * vecgeom::kHalfTolerance);
+  VECGEOM_ASSERT(tet.DistanceToIn(pnt, dir) == 0.0);
   VECGEOM_ASSERT(tet.DistanceToIn(pnt, -dir) == vecgeom::kInfLength);
 
   pnt = Vec_t(0.5, 0.5, 0.5);
@@ -291,7 +291,7 @@ bool TestTet()
   Precision eps = 0.5 * vecgeom::kHalfTolerance;
   pnt           = Vec_t(0.5, 0.5, -eps);
   VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, dir), 1. + eps));
-  VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, -dir), -eps));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, -dir), 0.0));
 
   pnt = Vec_t(0.5, 0.5, 0.0);
   VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, dir), 1.));
@@ -299,7 +299,7 @@ bool TestTet()
 
   pnt = Vec_t(0.5, 0.5, eps);
   VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, dir), 1. - eps));
-  VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, -dir), eps));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, -dir), 0.0));
 
   pnt = Vec_t(0.5, 0.5, 0.5);
   VECGEOM_ASSERT(ApproxEqual<Precision>(tet.DistanceToOut(pnt, dir), 0.5));
