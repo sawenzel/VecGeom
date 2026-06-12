@@ -326,6 +326,8 @@ bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
       "hype",
       "multiunion_boxes",
       "orb",
+      "parallelepiped_general",
+      "parallelepiped_high_shear",
       "polycone_cms_like",
       "polycone_hec_liquid_argon",
       "polycone_many_section_alternating",

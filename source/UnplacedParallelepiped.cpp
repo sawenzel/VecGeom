@@ -71,7 +71,7 @@ void UnplacedParallelepiped::Print() const
 void UnplacedParallelepiped::Print(std::ostream &os) const
 {
   os << "UnplacedParallelepiped {" << GetX() << ", " << GetY() << ", " << GetZ() << ", " << GetTanAlpha() << ", "
-     << GetTanThetaCosPhi() << ", " << GetTanThetaSinPhi();
+     << GetTanThetaCosPhi() << ", " << GetTanThetaSinPhi() << "}";
 }
 
 //______________________________________________________________________________
