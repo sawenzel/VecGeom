@@ -17,6 +17,7 @@
 #include "VecGeom/base/Stopwatch.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -297,6 +298,8 @@ bool IsManualGrazingMissMethod(const std::string &method) { return method == "gr
 // surface contract after pre-existing non-orb DistanceToOut cases are cleaned up.
 bool IsManualSurfaceExitMethod(const std::string &method) { return method == "surface_exit"; }
 
+bool IsManualFiniteDistanceToOutMethod(const std::string &method) { return method == "finite_distance_to_out"; }
+
 bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
 {
   // Keep generated shallow-ray checks opt-in until each solid passes the 10M
@@ -379,7 +382,7 @@ void PrintUsage(const char *argv0)
       << "             [-manual_case_name <name|all>] "
          "[-manual_method "
          "<contracts|normals|surface|distance_to_out|distance_to_in|safeties|hit_consistency|grazing_entry|"
-         "grazing_miss|surface_exit|all>]\n"
+         "grazing_miss|surface_exit|finite_distance_to_out|all>]\n"
       << "             [-manual_topology <inside|surface|edge|outside|all>]\n"
       << "             [-grazing_tolerance <value>]\n"
       << "             [-list_cases] [-list_families] [-list_test_families] [-list_manual_cases] [-help]\n\n";
@@ -644,10 +647,11 @@ void ValidateManualMethodSelection(const std::string &manual_method)
   if (IsManualGrazingEntryMethod(manual_method)) return;
   if (IsManualGrazingMissMethod(manual_method)) return;
   if (IsManualSurfaceExitMethod(manual_method)) return;
+  if (IsManualFiniteDistanceToOutMethod(manual_method)) return;
   const auto parsed = ParseTestFamilySelection(manual_method);
   VECGEOM_VALIDATE(parsed != ShapeContractTestFamily::kManualEdgeCases && parsed != ShapeContractTestFamily::kAll,
                    << "Use -manual_method contracts, normals, surface, distance_to_out, distance_to_in, safeties, "
-                   << "hit_consistency, grazing_entry, grazing_miss, surface_exit, or all.");
+                   << "hit_consistency, grazing_entry, grazing_miss, surface_exit, finite_distance_to_out, or all.");
 }
 
 void ValidateManualTopologySelection(const std::string &manual_topology)
@@ -724,6 +728,9 @@ std::string DescribeManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_c
   }
   if (std::string(manual_case.target_family_name) == "surface") {
     out << " grazing_tolerance=" << manual_case.grazing_tolerance;
+  }
+  if (IsManualFiniteDistanceToOutMethod(manual_case.target_family_name)) {
+    out << " step_max=" << manual_case.step_max;
   }
   out << " description=\"" << manual_case.description << "\"";
   return out.str();
@@ -1673,6 +1680,69 @@ ManualSurfaceExitReplay ReplayManualSurfaceExit(vecgeom::VPlacedVolume const *sh
   return replay;
 }
 
+struct ManualFiniteDistanceToOutReplay {
+  Vec_t point;
+  Vec_t direction;
+  Precision step_max                      = vecgeom::kInfLength;
+  vecgeom::EnumInside point_inside_result = vecgeom::EnumInside::kOutside;
+  Precision full_distance_to_out          = vecgeom::kInfLength;
+  Precision finite_distance_to_out        = vecgeom::kInfLength;
+  std::vector<std::string> failures;
+
+  bool Passed() const { return failures.empty(); }
+};
+
+std::string DescribeManualFiniteDistanceToOutReplay(const ManualFiniteDistanceToOutReplay &replay)
+{
+  std::ostringstream out;
+  out << "point=" << vecgeom::test::FormatVec(replay.point) << "\n";
+  out << "direction=" << vecgeom::test::FormatVec(replay.direction) << "\n";
+  out << "stepMax=" << replay.step_max << "\n";
+  out << "Inside(point)=" << vecgeom::test::InsideLabel(replay.point_inside_result) << "\n";
+  out << "DistanceToOut(point, direction)=" << replay.full_distance_to_out << "\n";
+  out << "DistanceToOut(point, direction, stepMax)=" << replay.finite_distance_to_out << "\n";
+  if (replay.failures.empty()) {
+    out << "failing_contracts=none";
+    return out.str();
+  }
+  out << "failing_contracts:";
+  for (auto const &failure : replay.failures) {
+    out << "\n- " << failure;
+  }
+  return out.str();
+}
+
+ManualFiniteDistanceToOutReplay ReplayManualFiniteDistanceToOut(vecgeom::VPlacedVolume const *shape, const Vec_t &point,
+                                                                const Vec_t &direction, Precision step_max,
+                                                                Precision solid_tolerance)
+{
+  ManualFiniteDistanceToOutReplay replay;
+  replay.point               = point;
+  replay.direction           = direction;
+  replay.step_max            = step_max;
+  replay.point_inside_result = shape->Inside(point);
+
+  if (replay.point_inside_result == vecgeom::EnumInside::kOutside) {
+    replay.failures.push_back("finite_distance_to_out requires the start point to be inside or on the solid");
+  }
+  if (!(step_max > static_cast<Precision>(0.)) || !(step_max < vecgeom::kInfLength)) {
+    replay.failures.push_back("finite_distance_to_out requires a positive finite stepMax");
+    return replay;
+  }
+
+  replay.full_distance_to_out   = shape->DistanceToOut(point, direction);
+  replay.finite_distance_to_out = shape->DistanceToOut(point, direction, step_max);
+
+  if (!(replay.full_distance_to_out > step_max + solid_tolerance) ||
+      !(replay.full_distance_to_out < vecgeom::kInfLength)) {
+    replay.failures.push_back("full DistanceToOut must be finite and beyond stepMax for this regression ray");
+  }
+  if (std::abs(replay.finite_distance_to_out - step_max) > solid_tolerance) {
+    replay.failures.push_back("finite DistanceToOut must return stepMax when no boundary is found before stepMax");
+  }
+  return replay;
+}
+
 void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, const ShapeContractOptions &options,
                             const std::string &executable_path, ShapeContractTier tier, bool verbose_on_success)
 {
@@ -1731,6 +1801,23 @@ void ValidateManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, co
     }
     if (verbose_on_success)
       std::cout << DescribeManualEdgeCase(manual_case) << "\n" << DescribeManualSurfaceExitReplay(replay) << std::endl;
+    return;
+  }
+
+  if (IsManualFiniteDistanceToOutMethod(manual_case.target_family_name)) {
+    auto replay =
+        ReplayManualFiniteDistanceToOut(shape.get(), samples.points[sample_index], samples.directions[sample_index],
+                                        manual_case.step_max, solid_tolerance);
+    if (!ManualReplayPassed(replay)) {
+      VECGEOM_VALIDATE(false, << "Manual edge case '" << manual_case.name << "' for solid '"
+                              << manual_case.solid_case_name << "' failed.\n"
+                              << DescribeManualEdgeCase(manual_case) << "\n"
+                              << DescribeManualFiniteDistanceToOutReplay(replay)
+                              << MakeManualEdgeCaseDebugHint(executable_path, tier, manual_case, grazing_tolerance));
+    }
+    if (verbose_on_success)
+      std::cout << DescribeManualEdgeCase(manual_case) << "\n"
+                << DescribeManualFiniteDistanceToOutReplay(replay) << std::endl;
     return;
   }
 
@@ -1879,6 +1966,8 @@ void BenchmarkManualEdgeCase(const vecgeom::test::ManualEdgeCase &manual_case, c
                    << "Manual grazing_miss cases are convention assertions, not benchmark workloads.");
   VECGEOM_VALIDATE(!IsManualSurfaceExitMethod(manual_case.target_family_name),
                    << "Manual surface_exit cases are convention assertions, not benchmark workloads.");
+  VECGEOM_VALIDATE(!IsManualFiniteDistanceToOutMethod(manual_case.target_family_name),
+                   << "Manual finite_distance_to_out cases are convention assertions, not benchmark workloads.");
   const auto family = ParseTestFamilySelection(manual_case.target_family_name);
   auto workloads    = BuildReplayBenchmarkWorkloads(family, index);
 

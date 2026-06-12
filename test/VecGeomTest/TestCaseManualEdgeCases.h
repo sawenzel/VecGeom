@@ -50,6 +50,7 @@ struct ManualEdgeCase {
   Vec_t target_point;
   Precision grazing_tolerance = 0.;
   const char *description     = "";
+  Precision step_max          = vecgeom::kInfLength;
 };
 
 /**
@@ -90,6 +91,11 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"box_outside_hit_consistency_positive_x", "box", "hit_consistency", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 0.), Vec_t(0., 0., 0.), true, Vec_t(0., 0., 0.), 0.,
        "Outside -> inside propagated hit-consistency ray for the box."},
+      // Tessellated
+      {"tessellated_orb_inside_finite_step_exit", "tessellated_orb", "finite_distance_to_out",
+       ShapeSampleCategory::kInside, Vec_t(0., 0., 0.), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Inside ray whose tessellated exit is beyond the finite step limit; finite DistanceToOut must return stepMax.",
+       1.},
       // Tube
       {"tube_fullphi_surface_grazing_outer_r", "tube_fullphi", "surface", ShapeSampleCategory::kSurface,
        Vec_t(10., 0., 0.), Vec_t(0., 1., 0.), false, Vec_t(0., 0., 0.), 0.,

@@ -475,6 +475,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   polycone_two_section_sharp_jump
   sphere_narrow_phi
   sphere_section
+  tessellated_orb
   tube_fullphi
   )
 

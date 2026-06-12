@@ -184,6 +184,9 @@ struct TessellatedImplementation {
       return false; // do not stop here because we might see triangles
     };
     tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
+    if (distance == InfinityLength<Real_v>() && stepMax < InfinityLength<Real_v>()) {
+      distance = stepMax;
+    }
   }
 
   template <typename Real_v>
@@ -326,8 +329,8 @@ struct TessellatedImplementation {
   VECCORE_ATT_HOST_DEVICE static Real_v SafetySq(UnplacedStruct_t const &tessellated, Vector3D<Real_v> const &point,
                                                  int &isurf, Real_v limit_sq = InfinityLength<Real_v>())
   {
-    T safetysq      = limit_sq;
-    isurf           = -1;
+    T safetysq = limit_sq;
+    isurf      = -1;
     Vector3D<T> pointv(point);
 
     auto userhook = [&](BVHPointQueryContext<float> &ctx) {
