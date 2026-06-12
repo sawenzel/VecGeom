@@ -147,11 +147,14 @@ struct EllipticalConeImplementation {
     Real_v nz  = vecCore::math::Sqrt(Cr);
     Real_v sfr = (nz + pz0) * ellipticalcone.cosAxisMin;
     vecCore::MaskedAssign(nz, (vecCore::math::Abs(p.x()) + vecCore::math::Abs(p.y()) < Real_v(0.1) * kHalfTolerance),
-                          Real_v(1.));       // point is on z-axis
-    Real_v pzA = pz0 + ellipticalcone.dApex; // slightly shifted apex position for "flying away" check
+                          Real_v(1.));                 // point is on z-axis
+    Real_v pzA           = pz0 + ellipticalcone.dApex; // slightly shifted apex position for "flying away" check
+    Real_v lateralMotion = Br + nz * vz;
     Bool_v done =
-        (sfz >= -kHalfTolerance && pz * vz >= Real_v(0.)) || (sfr >= -kHalfTolerance && Br + nz * vz >= Real_v(0.)) ||
+        (sfz >= -kHalfTolerance && pz * vz >= Real_v(0.)) || (sfr >= -kHalfTolerance && lateralMotion >= Real_v(0.)) ||
         (pz0 * ellipticalcone.cosAxisMin > -kHalfTolerance && (Cr - pzA * pzA) <= Real_v(0.) && A >= Real_v(0.));
+    // lateralMotion is nz times the lateral-surface derivative; scale the tolerance by the same factor.
+    done |= sfz <= kHalfTolerance && vecCore::math::Abs(sfr) <= kHalfTolerance && lateralMotion >= -kHalfTolerance * nz;
 
     // 2) Check if scratching (D < eps & A > 0) or no intersection (D < 0)
     // 3) if (D < eps & A < 0) then trajectory traverses the apex area - continue calculation

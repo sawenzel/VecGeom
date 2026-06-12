@@ -245,7 +245,7 @@ struct MultiUnionImplementation {
 
     Vector3D<Real_v> local = munion.fVolumes[comp]->GetTransformation()->Transform(point);
     Vector3D<Real_v> ldir;
-    valid = munion.fVolumes[comp]->Normal(local, ldir);
+    valid = munion.fVolumes[comp]->GetUnplacedVolume()->Normal(local, ldir);
     if (valid) direction = munion.fVolumes[comp]->GetTransformation()->InverseTransformDirection(ldir);
     return direction;
   }
