@@ -522,6 +522,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processMulti
   for (auto const *const node : placedNodes) {
     multiUnionPtr->AddNode(node);
   }
+  multiUnionPtr->Close();
   return multiUnionPtr;
 }
 
@@ -1166,6 +1167,7 @@ vecgeom::VECGEOM_IMPL_NAMESPACE::VUnplacedVolume const *Middleware::processTesse
       processFacet(it, *anUnplacedTessellatedPtr);
     }
   }
+  anUnplacedTessellatedPtr->Close();
   return anUnplacedTessellatedPtr;
 }
 
