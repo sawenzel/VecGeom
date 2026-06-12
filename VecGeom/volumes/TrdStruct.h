@@ -115,7 +115,7 @@ struct TrdStruct {
     fCalfX      = 1. / Sqrt(1.0 + fFx * fFx);
     fCalfY      = 1. / Sqrt(1.0 + fFy * fFy);
     fToleranceX = kTolerance * Sqrt(fX2minusX1 * fX2minusX1 + 4 * fDZ * fDZ);
-    fToleranceY = kTolerance * Sqrt(fX2minusX1 * fX2minusX1 + 4 * fDZ * fDZ);
+    fToleranceY = kTolerance * Sqrt(fY2minusY1 * fY2minusY1 + 4 * fDZ * fDZ);
   }
 };
 } // namespace VECGEOM_IMPL_NAMESPACE

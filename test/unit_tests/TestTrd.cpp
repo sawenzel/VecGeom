@@ -52,6 +52,10 @@ bool TestTrd()
   Trd_t trd2("Test Trd", 10, 30, 20, 40, 40);
   Trd_t trd3("BABAR Trd", 0.14999999999999999, 0.14999999999999999, 24.707000000000001, 24.707000000000001,
              22.699999999999999);
+  TrdStruct<Precision> yDominantToleranceTrd(1., 1., 1., 1000., 1.);
+  Precision expectedYTolerance = kTolerance * std::sqrt(999. * 999. + 4.);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(yDominantToleranceTrd.fToleranceY, expectedYTolerance));
+  VECGEOM_ASSERT(yDominantToleranceTrd.fToleranceY > 100. * yDominantToleranceTrd.fToleranceX);
 
   // check Cubic volume
 

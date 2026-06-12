@@ -32,7 +32,7 @@ namespace TrdUtilities {
 /// result means it is on the CW/right side. The Trd inside checks pass
 /// already-shifted point coordinates so this origin-line test applies to each
 /// lateral face.
-/// @tparam Real_v Scalar or vector floating-point type used for point coordinates.
+/// @tparam Real_v Scalar floating-point type used for point coordinates.
 /// @param px Point x coordinate in the line-local frame.
 /// @param py Point y coordinate in the line-local frame.
 /// @param vx Line direction x component.
@@ -59,7 +59,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void PointLineOrientation(Real_v co
 /// lies within the finite Z range and within the varying half-width in the
 /// orthogonal `K` coordinate. Mirrored faces are handled by flipping `V` and
 /// `dirV` before applying the same formula.
-/// @tparam Real_v Scalar or vector floating-point type.
+/// @tparam Real_v Scalar floating-point type.
 /// @tparam forY Selects a Y-varying face when true, otherwise an X-varying face.
 /// @tparam mirroredPoint Selects the mirrored face of the same axis.
 /// @tparam toInside Selects the orientation convention for DistanceToIn versus DistanceToOut.
@@ -106,8 +106,19 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool FaceTrajectoryIntersection(Trd
   if (!ok) return false;
 
   // distance from trajectory to face
-  dist = (alongZ * (posV - v1) - alongV * (pos.z() + trd.fDZ)) / (dir.z() * alongV - dirV * alongZ + kTiny);
-  if (dist <= Real_v(MakeMinusTolerant<true>(0.))) return false;
+  Real_v signedDistance = alongZ * (posV - v1) - alongV * (pos.z() + trd.fDZ);
+  dist                  = signedDistance / (dir.z() * alongV - dirV * alongZ + kTiny);
+  if (dist <= Real_v(MakeMinusTolerant<true>(0.))) {
+    if constexpr (toInside) {
+      bool varyingFace      = (forY ? trd.fY2minusY1 : trd.fX2minusX1) != Precision(0.);
+      bool zeroSurfaceEntry = varyingFace && signedDistance <= Real_v(0.) &&
+                              signedDistance >= -Real_v(forY ? trd.fToleranceY : trd.fToleranceX);
+      if (!zeroSurfaceEntry) return false;
+      dist = Real_v(0.);
+    } else {
+      return false;
+    }
+  }
 
   // Validate that the candidate hits the bounded trapezoid face, not only its
   // infinite supporting plane.
@@ -123,7 +134,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE bool FaceTrajectoryIntersection(Trd
 }
 
 /// @brief Computes signed Trd safety from either inside or outside.
-/// @tparam Real_v Scalar or vector floating-point type.
+/// @tparam Real_v Scalar floating-point type.
 /// @tparam trdTypeT Trd specialization tag controlling whether Y varies with Z.
 /// @tparam inside True for SafetyToOut sign convention, false for SafetyToIn.
 /// @param trd Trd data structure with cached geometric coefficients.
@@ -154,7 +165,7 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void Safety(TrdStruct<Precision> co
 }
 
 /// @brief Classifies a local point against the unplaced Trd.
-/// @tparam Real_v Scalar or vector floating-point type.
+/// @tparam Real_v Scalar floating-point type.
 /// @tparam trdTypeT Trd specialization tag controlling whether Y varies with Z.
 /// @tparam surfaceT Enables tolerance bands and inside/surface distinction when true.
 /// @param trd Trd data structure with cached geometric coefficients.
@@ -226,15 +237,15 @@ struct TrdImplementation {
   using PlacedShape_t    = SPlacedTrd<UnplacedVolume_t>;
 
   /// @brief Tests whether a local point is inside or on the unplaced Trd.
-  /// @tparam Real_v Scalar or vector floating-point type.
-  /// @tparam Bool_v Boolean result type.
+  /// @tparam Real_v Scalar floating-point type.
+  /// @tparam Bool_t Boolean result type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Query point in the Trd local frame.
   /// @param inside Output containment flag, true for inside or surface points.
-  template <typename Real_v, typename Bool_v>
+  template <typename Real_v, typename Bool_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void UnplacedContains(UnplacedStruct_t const &trd,
                                                                             Vector3D<Real_v> const &point,
-                                                                            Bool_v &inside)
+                                                                            Bool_t &inside)
   {
 
     bool unused(false);
@@ -244,14 +255,14 @@ struct TrdImplementation {
   }
 
   /// @brief Tests whether a local point is inside or on the placed Trd.
-  /// @tparam Real_v Scalar or vector floating-point type.
-  /// @tparam Bool_v Boolean result type.
+  /// @tparam Real_v Scalar floating-point type.
+  /// @tparam Bool_t Boolean result type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Query point in the Trd local frame.
   /// @param inside Output containment flag, true for inside or surface points.
-  template <typename Real_v, typename Bool_v>
+  template <typename Real_v, typename Bool_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &trd,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, Bool_t &inside)
   {
 
     bool unused(false);
@@ -261,25 +272,26 @@ struct TrdImplementation {
   }
 
   /// @brief Classifies a local point as inside, outside, or surface.
-  /// @tparam Real_v Scalar or vector floating-point type.
-  /// @tparam Inside_v Integral inside-code result type.
+  /// @tparam Real_v Scalar floating-point type.
+  /// @tparam Inside_t Integral inside-code result type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Query point in the Trd local frame.
   /// @param inside Output classification using `EInside` values.
-  template <typename Real_v, typename Inside_v>
+  template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &trd,
-                                                                  Vector3D<Real_v> const &point, Inside_v &inside)
+                                                                  Vector3D<Real_v> const &point, Inside_t &inside)
   {
     bool inmask(false);
     bool outmask(false);
 
     TrdUtilities::UnplacedInside<Real_v, trdTypeT, true>(trd, point, inmask, outmask);
 
-    inside = outmask ? EInside::kOutside : (inmask ? EInside::kInside : EInside::kSurface);
+    inside =
+        outmask ? Inside_t(EInside::kOutside) : (inmask ? Inside_t(EInside::kInside) : Inside_t(EInside::kSurface));
   }
 
   /// @brief Computes distance from an outside point to the Trd boundary along a ray.
-  /// @tparam Real_v Scalar or vector floating-point type.
+  /// @tparam Real_v Scalar floating-point type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Ray origin in the Trd local frame.
   /// @param direction Unit ray direction in the Trd local frame.
@@ -372,7 +384,7 @@ struct TrdImplementation {
         Real_v xhit = point.x() + disty * direction.x();
         Real_v dx   = trd.fHalfX1plusX2 - trd.fFx * zhit;
         bool oky    = point.y() * direction.y() < 0 && disty > -kHalfTolerance && vecCore::math::Abs(xhit) < dx &&
-                   vecCore::math::Abs(zhit) < trd.fDZ;
+                      vecCore::math::Abs(zhit) < trd.fDZ;
         if (oky) distance = disty;
       }
     }
@@ -380,7 +392,7 @@ struct TrdImplementation {
   }
 
   /// @brief Computes distance from an inside point to the Trd boundary along a ray.
-  /// @tparam Real_v Scalar or vector floating-point type.
+  /// @tparam Real_v Scalar floating-point type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Ray origin in the Trd local frame.
   /// @param dir Unit ray direction in the Trd local frame.
@@ -472,14 +484,14 @@ struct TrdImplementation {
       Real_v xhit = point.x() + disty * dir.x();
       Real_v dx   = trd.fHalfX1plusX2 - trd.fFx * zhit;
       bool oky    = vecCore::math::Abs(xhit) < MakePlusTolerant<true>(dx) &&
-                 vecCore::math::Abs(zhit) < MakePlusTolerant<true>(trd.fDZ);
+                    vecCore::math::Abs(zhit) < MakePlusTolerant<true>(trd.fDZ);
       if (oky) distance = disty;
     }
     if (vecCore::math::Abs(distance) < kHalfTolerance) distance = Real_v(0.0);
   }
 
   /// @brief Computes safety from an outside point to the Trd boundary.
-  /// @tparam Real_v Scalar or vector floating-point type.
+  /// @tparam Real_v Scalar floating-point type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Query point in the Trd local frame.
   /// @param safety Output distance estimate to enter the Trd.
@@ -492,7 +504,7 @@ struct TrdImplementation {
   }
 
   /// @brief Computes safety from an inside point to the Trd boundary.
-  /// @tparam Real_v Scalar or vector floating-point type.
+  /// @tparam Real_v Scalar floating-point type.
   /// @param trd Trd data structure with cached geometric coefficients.
   /// @param point Query point in the Trd local frame.
   /// @param safety Output distance estimate to exit the Trd.
