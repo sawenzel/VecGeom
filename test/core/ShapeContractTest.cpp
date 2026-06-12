@@ -342,6 +342,7 @@ bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
       "tet_sliver_like",
       "trd_boxlike",
       "trd_extreme_aspect",
+      "trd_increasing_xy",
       "tube_almost_full_phi",
       "tube_fullphi",
       "tube_narrow_phi",
