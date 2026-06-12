@@ -11,6 +11,14 @@ foreach(_vgdml_test TestXercesBackend TestXercesFrontend TestXercesMiddleware Re
   cuda_rdc_target_link_libraries(${_vgdml_test} PUBLIC ${_exec_extra_libs} vgdml vecgeom)
 endforeach()
 
+add_executable(TestVGDMLBuilderClosure TestVGDMLBuilderClosure/TestVGDMLBuilderClosure.cpp)
+cuda_rdc_target_link_libraries(TestVGDMLBuilderClosure PUBLIC
+  ${_exec_extra_libs}
+  vg_test_lib
+  GTest::gtest_main
+)
+gtest_discover_tests(TestVGDMLBuilderClosure)
+
 # Middleware test also needs ROOT support
 if(VECGEOM_ROOT)
   cuda_rdc_target_link_libraries(TestXercesMiddleware PRIVATE VecGeomTest)
