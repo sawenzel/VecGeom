@@ -427,17 +427,13 @@ set(SHAPE_CONTRACT_SOLID_CASES
 
 # this list should be resolved and go away
 set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
-  elliptical_cone:surface
-  multiunion_boxes:normals
-  multiunion_boxes:distance_to_in
-  multiunion_boxes:hit_consistency
-  extruded_multilayer:surface
   )
 
 if(VECGEOM_TEST_STATIC_ANALYSIS)
   list(APPEND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
     extruded_multilayer:contracts
     extruded_multilayer:normals
+    extruded_multilayer:surface
     extruded_multilayer:distance_to_out
     extruded_multilayer:distance_to_in
     extruded_multilayer:safeties

@@ -50,7 +50,11 @@ public:
   void AddNode(VPlacedVolume const *volume) { fMultiUnion.AddNode(volume); }
 
   VECCORE_ATT_HOST_DEVICE
-  void Close() { fMultiUnion.Close(); }
+  void Close()
+  {
+    fMultiUnion.Close();
+    ComputeBBox();
+  }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
