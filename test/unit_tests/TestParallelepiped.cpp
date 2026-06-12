@@ -96,6 +96,15 @@ bool TestParallelepiped()
   VECGEOM_ASSERT(ApproxEqual<Precision>(minExtent, minBBox));
   VECGEOM_ASSERT(ApproxEqual<Precision>(maxExtent, maxBBox));
 
+  vecgeom::UnplacedParallelepiped mutablePara(dx, dy, dz, alpha, theta, phi);
+  mutablePara.SetDimensions(0.5 * dx, 0.75 * dy, 1.25 * dz);
+  mutablePara.SetAlpha(0.5 * alpha);
+  mutablePara.SetThetaAndPhi(0.5 * theta, 0.5 * phi);
+  mutablePara.Extent(minExtent, maxExtent);
+  mutablePara.GetBBox(minBBox, maxBBox);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(minExtent, minBBox));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(maxExtent, maxBBox));
+
   // Check Inside
 
   std::cout << "=== Check Inside()" << std::endl;
@@ -104,6 +113,11 @@ bool TestParallelepiped()
   VECGEOM_ASSERT(para.Inside(ponxside) == vecgeom::EInside::kSurface);
   VECGEOM_ASSERT(para.Inside(ponyside) == vecgeom::EInside::kSurface);
   VECGEOM_ASSERT(para.Inside(ponzside) == vecgeom::EInside::kSurface);
+  VECGEOM_ASSERT(para.Contains(pzero));
+  VECGEOM_ASSERT(para.Contains(ponxside));
+  VECGEOM_ASSERT(para.Contains(ponyside));
+  VECGEOM_ASSERT(para.Contains(ponzside));
+  VECGEOM_ASSERT(!para.Contains(pbigz));
 
   inside = para.Inside(ponzside + ponxside);
   VECGEOM_ASSERT(inside == vecgeom::EInside::kSurface);

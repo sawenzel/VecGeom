@@ -135,37 +135,63 @@ public:
   Precision GetCty() const { return fPara.fCty; }
 
   /// Setter for dimensions in x, y, z
-  /// @param dimension Vector with length in x, y, z
+  /// @param dimensions Vector with length in x, y, z
   VECCORE_ATT_HOST_DEVICE
-  void SetDimensions(Vector3D<Precision> const &dimensions) { fPara.fDimensions = dimensions; }
+  void SetDimensions(Vector3D<Precision> const &dimensions)
+  {
+    fPara.fDimensions = dimensions;
+    fPara.ComputeNormals();
+    ComputeBBox();
+  }
 
   /// Setter for dimensions in x, y, z
   /// @param dx Half length in x
   /// @param dy Half length in y
   /// @param dz Half length in z
   VECCORE_ATT_HOST_DEVICE
-  void SetDimensions(const Precision dx, const Precision dy, const Precision dz) { fPara.fDimensions.Set(dx, dy, dz); }
+  void SetDimensions(const Precision dx, const Precision dy, const Precision dz)
+  {
+    fPara.fDimensions.Set(dx, dy, dz);
+    fPara.ComputeNormals();
+    ComputeBBox();
+  }
 
   /// Setter for alpha
   /// @param alpha Angle between y-axis and the line joining centres of the faces at +/- dy
   VECCORE_ATT_HOST_DEVICE
-  void SetAlpha(const Precision alpha) { fPara.SetAlpha(alpha); }
+  void SetAlpha(const Precision alpha)
+  {
+    fPara.SetAlpha(alpha);
+    ComputeBBox();
+  }
 
   /// Setter for theta
   /// @param theta Polar angle
   VECCORE_ATT_HOST_DEVICE
-  void SetTheta(const Precision theta) { fPara.SetTheta(theta); }
+  void SetTheta(const Precision theta)
+  {
+    fPara.SetTheta(theta);
+    ComputeBBox();
+  }
 
   /// Setter for phi
   /// @param phi Azimuthal angle
   VECCORE_ATT_HOST_DEVICE
-  void SetPhi(const Precision phi) { fPara.SetPhi(phi); }
+  void SetPhi(const Precision phi)
+  {
+    fPara.SetPhi(phi);
+    ComputeBBox();
+  }
 
   /// Setter for theta and phi
   /// @param theta Polar angle
   /// @param phi Azimuthal angle
   VECCORE_ATT_HOST_DEVICE
-  void SetThetaAndPhi(const Precision theta, const Precision phi) { fPara.SetThetaAndPhi(theta, phi); }
+  void SetThetaAndPhi(const Precision theta, const Precision phi)
+  {
+    fPara.SetThetaAndPhi(theta, phi);
+    ComputeBBox();
+  }
 
   virtual int MemorySize() const final { return sizeof(*this); }
 
