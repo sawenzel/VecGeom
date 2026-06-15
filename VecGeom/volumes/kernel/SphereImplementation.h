@@ -183,15 +183,23 @@ struct SphereImplementation {
       c  = rad2 - sphere.fRmin * sphere.fRmin;
       d2 = pDotV3d * pDotV3d - c;
       if (d2 >= Real_v(0.)) sd2 = -pDotV3d + Sqrt(d2);
+      const bool innerTangentContinuation = (c <= Real_v(2. * kTolerance) * sphere.fRmin) &&
+                                            (c >= -Real_v(2. * kTolerance) * sphere.fRmin) &&
+                                            (pDotV3d >= -kToleranceDist<Real_v>);
 
       if (sphere.fFullSphere) {
-        if (sd2 > Real_v(kTolerance)) innerDist = sd2;
+        // Exact tangents on a concave inner sphere enter material at second
+        // order; DistanceToOut owns the complementary hollow-crossing side.
+        if (sd2 > Real_v(kTolerance) || (innerTangentContinuation && sd2 >= -Real_v(kTolerance))) {
+          innerDist = innerTangentContinuation ? Real_v(0.) : sd2;
+        }
       } else {
-        if (sd2 > Real_v(kTolerance) && sd2 < Real_v(kInfLength)) {
-          Vector3D<Real_v> tmpPt = point + sd2 * direction;
+        if (innerTangentContinuation || (sd2 > Real_v(kTolerance) && sd2 < Real_v(kInfLength))) {
+          const Real_v innerCandidate = innerTangentContinuation ? Real_v(0.) : sd2;
+          Vector3D<Real_v> tmpPt      = point + innerCandidate * direction;
           if (sphere.fPhiWedge.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside &&
               sphere.fThetaCone.Inside<Real_v, Inside_t>(tmpPt) != EInside::kOutside)
-            innerDist = sd2;
+            innerDist = innerCandidate;
         }
       }
     }
@@ -218,7 +226,8 @@ struct SphereImplementation {
                                              intsect2); //,cone1IntSecPt, cone2IntSecPt);
       bool cone1MovesIn    = false;
       bool cone1EntersApex = false;
-      bool candidateCone1  = intsect1 && (distTheta1 > Real_v(kTolerance));
+      bool cone1ZeroRoot   = intsect1 && (Abs(distTheta1) <= Real_v(kTolerance));
+      bool candidateCone1  = intsect1 && ((distTheta1 > Real_v(kTolerance)) || cone1ZeroRoot);
       Real_v pDotV2d       = point.x() * direction.x() + point.y() * direction.y();
       Real_v dirRho2       = direction.Perp2();
       Real_v pointZDir     = point.z() * direction.z();
@@ -229,13 +238,19 @@ struct SphereImplementation {
         candidateCone1 &= distCone1 >= rmin2 && distCone1 <= rmax2;
         if (candidateCone1) {
           Real_v motion1 = -direction.z();
+          Real_v a       = Real_v(0.);
           if (Abs(sphere.fSTheta - kHalfPi) > kTolerance) {
             Real_v tanTheta2 = Real_v(sphere.fThetaCone.GetTanSTheta2());
-            Real_v a         = dirRho2 - dirZ2 * tanTheta2;
+            a                = dirRho2 - dirZ2 * tanTheta2;
             Real_v b         = pDotV2d - pointZDir * tanTheta2;
             motion1          = b + distTheta1 * a;
           }
-          cone1MovesIn    = SphereUtilities::IsThetaConeMotion<Real_v, true, false>(sphere, motion1);
+          cone1MovesIn = SphereUtilities::IsThetaConeMotion<Real_v, true, false>(sphere, motion1);
+          // A zero theta-root with unresolved first-order motion can still
+          // enter material through the cone curvature.
+          if (cone1ZeroRoot && !cone1MovesIn && Abs(motion1) <= kToleranceDist<Real_v>) {
+            cone1MovesIn = (sphere.fSTheta <= kHalfPi) ? (a > Real_v(0.)) : (a < Real_v(0.));
+          }
           cone1EntersApex = (sphere.fRmin == 0.) && (distCone1 <= Real_v(kTolerance * kTolerance)) &&
                             sphere.fThetaCone.Contains<Real_v>(direction);
           if (!fullPhiSphere) cone1EntersApex &= sphere.fPhiWedge.Contains<Real_v>(direction);
@@ -244,19 +259,25 @@ struct SphereImplementation {
 
       bool cone2MovesIn    = false;
       bool cone2EntersApex = false;
-      bool candidateCone2  = intsect2 && (distTheta2 > Real_v(kTolerance));
+      bool cone2ZeroRoot   = intsect2 && (Abs(distTheta2) <= Real_v(kTolerance));
+      bool candidateCone2  = intsect2 && ((distTheta2 > Real_v(kTolerance)) || cone2ZeroRoot);
       if (candidateCone2) {
         distCone2 = rad2 + distTheta2 * (Real_v(2.) * pDotV3d + distTheta2);
         candidateCone2 &= distCone2 >= rmin2 && distCone2 <= rmax2;
         if (candidateCone2) {
           Real_v motion2 = -direction.z();
+          Real_v a       = Real_v(0.);
           if (Abs(sphere.eTheta - kHalfPi) > kTolerance) {
             Real_v tanTheta2 = Real_v(sphere.fThetaCone.GetTanETheta2());
-            Real_v a         = dirRho2 - dirZ2 * tanTheta2;
+            a                = dirRho2 - dirZ2 * tanTheta2;
             Real_v b         = pDotV2d - pointZDir * tanTheta2;
             motion2          = b + distTheta2 * a;
           }
-          cone2MovesIn    = SphereUtilities::IsThetaConeMotion<Real_v, false, false>(sphere, motion2);
+          cone2MovesIn = SphereUtilities::IsThetaConeMotion<Real_v, false, false>(sphere, motion2);
+          // Same zero-root rule for the end-theta cone.
+          if (cone2ZeroRoot && !cone2MovesIn && Abs(motion2) <= kToleranceDist<Real_v>) {
+            cone2MovesIn = (sphere.eTheta <= kHalfPi) ? (a < Real_v(0.)) : (a > Real_v(0.));
+          }
           cone2EntersApex = (sphere.fRmin == 0.) && (distCone2 <= Real_v(kTolerance * kTolerance)) &&
                             sphere.fThetaCone.Contains<Real_v>(direction);
           if (!fullPhiSphere) cone2EntersApex &= sphere.fPhiWedge.Contains<Real_v>(direction);
@@ -353,6 +374,37 @@ struct SphereImplementation {
       Real_v distTheta1(kInfLength);
       Real_v distTheta2(kInfLength);
       sphere.fThetaCone.DistanceToOut<Real_v>(point, direction, distTheta1, distTheta2, intsect1, intsect2);
+      if (intsect1 && Abs(distTheta1) <= Real_v(kTolerance)) {
+        Real_v motion1 = -direction.z();
+        Real_v a       = Real_v(0.);
+        if (Abs(sphere.fSTheta - kHalfPi) > kTolerance) {
+          Real_v tanTheta2 = Real_v(sphere.fThetaCone.GetTanSTheta2());
+          a                = direction.Perp2() - direction.z() * direction.z() * tanTheta2;
+          motion1 = point.x() * direction.x() + point.y() * direction.y() - point.z() * direction.z() * tanTheta2;
+        }
+        // From a theta surface, an inward/tangential material continuation
+        // must exit at the next boundary, not at the current zero root.
+        bool materialContinuation = SphereUtilities::IsThetaConeMotion<Real_v, true, false>(sphere, motion1);
+        if (!materialContinuation && Abs(motion1) <= kToleranceDist<Real_v>) {
+          materialContinuation = (sphere.fSTheta <= kHalfPi) ? (a > Real_v(0.)) : (a < Real_v(0.));
+        }
+        if (materialContinuation) intsect1 = false;
+      }
+      if (intsect2 && Abs(distTheta2) <= Real_v(kTolerance)) {
+        Real_v motion2 = -direction.z();
+        Real_v a       = Real_v(0.);
+        if (Abs(sphere.eTheta - kHalfPi) > kTolerance) {
+          Real_v tanTheta2 = Real_v(sphere.fThetaCone.GetTanETheta2());
+          a                = direction.Perp2() - direction.z() * direction.z() * tanTheta2;
+          motion2 = point.x() * direction.x() + point.y() * direction.y() - point.z() * direction.z() * tanTheta2;
+        }
+        // Same zero-root suppression for end-theta material continuation.
+        bool materialContinuation = SphereUtilities::IsThetaConeMotion<Real_v, false, false>(sphere, motion2);
+        if (!materialContinuation && Abs(motion2) <= kToleranceDist<Real_v>) {
+          materialContinuation = (sphere.eTheta <= kHalfPi) ? (a < Real_v(0.)) : (a > Real_v(0.));
+        }
+        if (materialContinuation) intsect2 = false;
+      }
       if (intsect2 && !intsect1) distThetaMin = distTheta2;
       if (!intsect2 && intsect1) distThetaMin = distTheta1;
       if (intsect2 && intsect1) distThetaMin = Min(distTheta1, distTheta2);

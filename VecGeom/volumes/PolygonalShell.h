@@ -50,7 +50,7 @@ public:
     const auto kS = fPolygon.fVertices.size();
     Precision area(0.);
     for (size_t i = 0; i < kS; ++i) {
-      // vertex lengh x (fUpperZ - fLowerZ)
+      // vertex length x (fUpperZ - fLowerZ)
       area += fPolygon.fLengthSqr[i];
     }
     return std::sqrt(area) * (fUpperZ - fLowerZ);
@@ -121,7 +121,7 @@ public:
         // we could already check if intersection within the known extent
         const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters);
 
-        vecCore::MaskedAssign(result, !done && intersects, dist);
+        vecCore::MaskedAssign(result, !done && intersects, Max(dist, Real_v(0.)));
         done |= intersects;
       }
       if (vecCore::MaskFull(done)) {
@@ -168,7 +168,7 @@ public:
         // we could already check if intersection within the known extent
         const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters);
 
-        vecCore__MaskedAssignFunc(result, intersects, Min(dist, result));
+        vecCore__MaskedAssignFunc(result, intersects, Min(Max(dist, Real_v(0.)), result));
       }
       // if (vecCore::MaskFull(done)) {
       //        return result;
@@ -316,7 +316,9 @@ VECCORE_ATT_HOST_DEVICE inline Precision PolygonalShell::DistanceToOutConvex(Vec
       if (tmax > dist) tmax = dist;
     }
   }
-  return tmax;
+  // Accepted surface exits may be slightly negative from plane arithmetic; the
+  // navigation convention is an immediate zero step, not a backwards step.
+  return Max(tmax, Precision(0.));
 }
 
 // template specialization for Distance functions

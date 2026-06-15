@@ -20,9 +20,8 @@
 // 4. For outside distance_to_in / hit_consistency style cases, set
 //    uses_target_point=true and provide a paired inside target_point instead of
 //    an explicit direction.
-// 5. Keep the case enabled here. If it exposes a real bug that is not fixed in
-//    the same merge request, disable only the manual_edge_cases CTest family
-//    for that solid in test/CMakeLists.txt.
+// 5. Manual cases registered for CTest must pass; fix known bugs before adding
+//    their reproducer to the registered manual set.
 
 #ifndef VECGEOM_TEST_VECGEOMTEST_TESTCASEMANUALEDGECASES_HH
 #define VECGEOM_TEST_VECGEOMTEST_TESTCASEMANUALEDGECASES_HH

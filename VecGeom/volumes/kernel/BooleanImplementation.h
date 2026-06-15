@@ -306,7 +306,28 @@ struct BooleanImplementation<kSubtraction> {
   {
     const auto distancel  = unplaced.fLeftVolume->PlacedDistanceToOut(point, direction, stepMax);
     const Real_v dinright = unplaced.fRightVolume->DistanceToIn(point, direction, stepMax);
-    distance              = Min(distancel, dinright);
+    Real_v rightEntry     = dinright;
+    if (dinright < Real_v(0.)) {
+      const auto rightState = unplaced.fRightVolume->Inside(point);
+      if (rightState == kInside) {
+        distance = Real_v(-1.);
+        return;
+      }
+      if (rightState == kSurface) {
+        Vector3D<Real_v> normal;
+        if (unplaced.fRightVolume->Normal(point, normal)) {
+          const Real_v projectedBPenetration = -normal.Dot(direction) * distancel;
+          // Entering B exits A-B only when the continuation into B before the
+          // left exit is larger than the distance tolerance.
+          if (projectedBPenetration > kToleranceDist<Real_v>) {
+            distance = Real_v(0.);
+            return;
+          }
+        }
+      }
+      rightEntry = Real_v(kInfLength);
+    }
+    distance = Min(distancel, rightEntry);
     return;
   }
 

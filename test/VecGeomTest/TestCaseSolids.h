@@ -3,9 +3,8 @@
  * @brief Central registry of sampled solid cases used by ShapeContractTest.
  *
  * The helper executable builds its `-case_name` and `-family` selections from
- * this registry. Every configured case stays locally runnable through the
- * executable, while CTest can selectively disable individual helper families
- * in test/CMakeLists.txt when a known bug is still under investigation.
+ * this registry. Every CTest-registered case is expected to pass all sampled
+ * helper families.
  *
  * See docs/shape_testing.md for the public contract-family descriptions,
  * tier behavior, and the end-to-end procedure for adding a new sampled solid.
@@ -26,10 +25,8 @@
 //      <build-dir>/test/ShapeContractTest -tier medium -test_family contracts -case_name <new_case>
 //      <build-dir>/test/ShapeContractTest -tier slow -test_family contracts -case_name <new_case>
 //      ctest --output-on-failure -R 'ShapeContractTest:'
-// 5. If the case fails and the bug is not fixed in the same merge request,
-//    keep it enabled here so it stays locally runnable, and add the failing
-//    family or tier/family entry to the SHAPE_CONTRACT_DISABLED_CTEST_* lists
-//    in test/CMakeLists.txt.
+// 5. If the case fails, fix the bug before adding the case to the CTest
+//    registry.
 
 #ifndef VECGEOM_TEST_VECGEOMTEST_TESTCASESOLIDS_HH
 #define VECGEOM_TEST_VECGEOMTEST_TESTCASESOLIDS_HH
@@ -75,6 +72,7 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
   constexpr Precision kPlanarTolerance      = vecgeom::kTolerance;
   constexpr Precision kSecondOrderTolerance = vecgeom::kConeTolerance;
   constexpr Precision kEllipticTolerance    = 1.e-6;
+  constexpr Precision kArb4Tolerance        = vecgeom::kToleranceArb4<Precision>;
 
   // clang-format off
   static const std::vector<TestCaseSolid> solids = {
@@ -257,7 +255,7 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
       // GenTrap
       {"gentrap_twisted", &MakeGenTrapTwistedTestSolid, "GenTrapImplementation",
        MakeFastContractSampling(10000, 67, 45, 4., 25.), MakeMediumContractSampling(100000, 67, 45, 4., 25.), {},
-       false, false, kPlanarTolerance},
+       false, false, kArb4Tolerance},
 
       // SExtru
       {"sextru_circular", &MakeSExtruCircularTestSolid, "SExtruImplementation",

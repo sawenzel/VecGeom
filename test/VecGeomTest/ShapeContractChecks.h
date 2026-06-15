@@ -91,7 +91,8 @@ enum ShapeConventionBit {
   kHitOutsideExitOnSurface      = 58,
   kHitOutsideExitSafetyToIn     = 59,
   kHitOutsideExitSafetyToOut    = 60,
-  kShapeConventionBitCount      = 61
+  kSurfaceTangentContinuation   = 61,
+  kShapeConventionBitCount      = 62
 };
 
 // Keep the legacy message ordering stable because the convention bitset and the
@@ -160,7 +161,8 @@ inline const std::vector<std::string> &ShapeConventionMessages()
       "Hit()           : DistanceToOut non-negative at Outside entry point",
       "Hit()           : Exit point on Surface after Outside entry point",
       "Hit()           : SafetyToIn within tolerance at Outside exit point",
-      "Hit()           : SafetyToOut within tolerance at Outside exit point"};
+      "Hit()           : SafetyToOut within tolerance at Outside exit point",
+      "Surface()       : Tangential material continuation has zero DistanceToIn"};
   return messages;
 }
 
@@ -271,7 +273,8 @@ inline bool IsNormalConventionBit(int convention_bit)
 
 inline bool IsSurfaceConventionBit(int convention_bit)
 {
-  return convention_bit >= kSurfaceRayNotBothZero && convention_bit <= kSurfaceShallowOutward;
+  return (convention_bit >= kSurfaceRayNotBothZero && convention_bit <= kSurfaceShallowOutward) ||
+         convention_bit == kSurfaceTangentContinuation;
 }
 
 inline bool IsDistanceToOutCheckBit(int convention_bit)
@@ -291,7 +294,7 @@ inline bool IsSafetyCheckBit(int convention_bit)
 
 inline bool IsHitConsistencyCheckBit(int convention_bit)
 {
-  return convention_bit >= kHitInsideExitFinite && convention_bit < kShapeConventionBitCount;
+  return convention_bit >= kHitInsideExitFinite && convention_bit <= kHitOutsideExitSafetyToOut;
 }
 
 inline const char *ShapeContractReplayFunctionName(const ShapeCheckContext &context)
@@ -388,6 +391,9 @@ inline const char *ShapeContractGeometryFunctionName(const ShapeCheckContext &co
   case kSurfaceGrazingNotBothZero:
     return "vecgeom::VPlacedVolume::Normal + vecgeom::VPlacedVolume::DistanceToIn + "
            "vecgeom::VPlacedVolume::DistanceToOut";
+  case kSurfaceTangentContinuation:
+    return "vecgeom::VPlacedVolume::Normal + vecgeom::VPlacedVolume::Inside + "
+           "vecgeom::VPlacedVolume::DistanceToIn + vecgeom::VPlacedVolume::DistanceToOut";
   case kDistanceToOutPositive:
     return "vecgeom::VPlacedVolume::DistanceToOut";
   case kDistanceToOutWithinExtent:
@@ -707,8 +713,9 @@ struct ShapeContractRayReplay {
 enum class ShapeSurfaceKind { kUnknown = 0, kSmooth, kEdgeCandidate };
 
 struct ShapeSurfaceCheckOptions {
-  bool require_surface_distance_to_out_finite = false;
-  bool enable_shallow_surface_rays            = false;
+  bool require_surface_distance_to_out_finite  = false;
+  bool enable_shallow_surface_rays             = false;
+  bool enable_tangential_material_continuation = false;
 };
 
 inline const ShapeSurfaceCheckOptions &DefaultShapeSurfaceCheckOptions()
@@ -722,7 +729,8 @@ struct ShapeTangentialProbeReplay;
 template <typename ImplT>
 ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, const Vec_t &normal_unit,
                                    Precision solid_tolerance, std::vector<vecgeom::EnumInside> *probe_results = nullptr,
-                                   std::vector<ShapeTangentialProbeReplay> *probe_details = nullptr);
+                                   std::vector<ShapeTangentialProbeReplay> *probe_details = nullptr,
+                                   bool *all_probe_points_on_surface                      = nullptr);
 
 inline const char *ShapeSurfaceKindLabel(ShapeSurfaceKind kind)
 {
@@ -784,12 +792,13 @@ struct ShapeNormalRayReplay {
 };
 
 struct ShapeSurfaceCheckSummary {
-  std::uint64_t score = 0;
-  bool surface_passed = true;
-  bool grazing_passed = true;
-  bool shallow_passed = true;
+  std::uint64_t score             = 0;
+  bool surface_passed             = true;
+  bool grazing_passed             = true;
+  bool shallow_passed             = true;
+  bool tangential_material_passed = true;
 
-  bool Passed() const { return surface_passed && grazing_passed && shallow_passed; }
+  bool Passed() const { return surface_passed && grazing_passed && shallow_passed && tangential_material_passed; }
 };
 
 struct ShapeSurfaceRayReplay {
@@ -809,10 +818,15 @@ struct ShapeSurfaceRayReplay {
   bool checked_shallow_rays         = false;
   Vec_t shallow_inward_direction;
   Vec_t shallow_outward_direction;
-  Precision shallow_inward_distance_to_in   = 0.;
-  Precision shallow_inward_distance_to_out  = 0.;
-  Precision shallow_outward_distance_to_in  = 0.;
-  Precision shallow_outward_distance_to_out = 0.;
+  Precision shallow_inward_distance_to_in       = 0.;
+  Precision shallow_inward_distance_to_out      = 0.;
+  Precision shallow_outward_distance_to_in      = 0.;
+  Precision shallow_outward_distance_to_out     = 0.;
+  bool checked_tangential_material_continuation = false;
+  Precision tangential_material_probe_step      = 0.;
+  Vec_t tangential_material_probe_point;
+  vecgeom::EnumInside tangential_material_probe_inside = vecgeom::EnumInside::kOutside;
+  bool all_tangential_probes_on_surface                = false;
   std::vector<vecgeom::EnumInside> tangential_probe_results;
   std::vector<ShapeTangentialProbeReplay> tangential_probe_details;
   std::vector<ShapeContractFailure> failures;
@@ -1052,6 +1066,12 @@ inline std::string DescribeShapeSurfaceRayReplay(const ShapeSurfaceRayReplay &re
     out << "ShallowOutwardDistanceToIn=" << replay.shallow_outward_distance_to_in << "\n";
     out << "ShallowOutwardDistanceToOut=" << replay.shallow_outward_distance_to_out << "\n";
   }
+  if (replay.checked_tangential_material_continuation) {
+    out << "tangential_material_probe_step=" << replay.tangential_material_probe_step << "\n";
+    out << "tangential_material_probe_point=" << FormatVec(replay.tangential_material_probe_point) << "\n";
+    out << "Inside(tangential_material_probe)=" << InsideLabel(replay.tangential_material_probe_inside) << "\n";
+  }
+  out << "all_tangential_probes_on_surface=" << replay.all_tangential_probes_on_surface << "\n";
   if (!replay.tangential_probe_results.empty()) {
     out << "tangential_probes:";
     for (size_t i = 0; i < replay.tangential_probe_results.size(); ++i) {
@@ -1645,6 +1665,13 @@ inline Precision ShapeExtentDistance(ImplT const *volume)
   return static_cast<Precision>(2.) * std::sqrt(maxX * maxX + maxY * maxY + maxZ * maxZ);
 }
 
+inline Precision ShapeTangentialMaterialProbeStep(Precision solid_tolerance, Precision extent_distance)
+{
+  const Precision base_tolerance = ShapeTangentialProbeBaseTolerance(solid_tolerance);
+  const Precision probe_extent   = std::max(base_tolerance, extent_distance);
+  return std::sqrt(base_tolerance * probe_extent);
+}
+
 inline bool BuildTangentialBasis(const Vec_t &normal_unit, Vec_t &tangent_a, Vec_t &tangent_b)
 {
   Vec_t reference(1., 0., 0.);
@@ -1684,7 +1711,9 @@ inline void ApplyGrazingTolerance(const Vec_t &normal_unit, Precision grazing_to
 
 inline Precision ShapeShallowSurfaceRayTilt(Precision solid_tolerance)
 {
-  return ShapeTangentialProbeBaseTolerance(solid_tolerance);
+  // Keep generated shallow rays outside the zero/tolerance ambiguity; exact
+  // tangents and material-continuation tangents are checked separately.
+  return static_cast<Precision>(2.) * ShapeTangentialProbeBaseTolerance(solid_tolerance);
 }
 
 inline int ShapeShallowSurfaceRayStride() { return 16; }
@@ -1780,7 +1809,8 @@ bool EvaluateTangentialNormalProbe(ImplT const *volume, const Vec_t &probe_point
 template <typename ImplT>
 ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, const Vec_t &normal_unit,
                                    Precision solid_tolerance, std::vector<vecgeom::EnumInside> *probe_results,
-                                   std::vector<ShapeTangentialProbeReplay> *probe_details)
+                                   std::vector<ShapeTangentialProbeReplay> *probe_details,
+                                   bool *all_probe_points_on_surface)
 {
   if (probe_results) probe_results->clear();
   if (probe_details) probe_details->clear();
@@ -1789,7 +1819,8 @@ ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, cons
   Vec_t tangent_b(0., 0., 0.);
   if (!BuildTangentialBasis(normal_unit, tangent_a, tangent_b)) return ShapeSurfaceKind::kUnknown;
 
-  bool all_probes_stable = true;
+  bool all_probes_stable  = true;
+  bool all_probes_surface = true;
   for (auto const &probe_step : ShapeTangentialProbeSteps(solid_tolerance)) {
     const std::array<Vec_t, 4> probes = {point + probe_step * tangent_a, point - probe_step * tangent_a,
                                          point + probe_step * tangent_b, point - probe_step * tangent_b};
@@ -1801,9 +1832,11 @@ ShapeSurfaceKind DetectSurfaceKind(ImplT const *volume, const Vec_t &point, cons
                                                         probe_details ? &probe_replay : nullptr, &probe_inside);
       if (probe_results) probe_results->push_back(probe_inside);
       if (probe_details) probe_details->push_back(probe_replay);
-      all_probes_stable = all_probes_stable && probe_passed;
+      all_probes_stable  = all_probes_stable && probe_passed;
+      all_probes_surface = all_probes_surface && probe_inside == vecgeom::EnumInside::kSurface;
     }
   }
+  if (all_probe_points_on_surface) *all_probe_points_on_surface = all_probes_surface;
   return all_probes_stable ? ShapeSurfaceKind::kSmooth : ShapeSurfaceKind::kEdgeCandidate;
 }
 
@@ -1813,7 +1846,7 @@ bool EvaluateSurfacePointSample(
     Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out, const ShapeCheckContext &context,
     const std::function<void(const ShapeCheckContext &, const std::string &, Precision)> &record_failure,
     ShapeSurfaceRayReplay *replay           = nullptr,
-    const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
+    const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions(), Precision max_extent_distance = 0.)
 {
   bool passed = true;
 
@@ -1868,10 +1901,14 @@ bool EvaluateSurfacePointSample(
   Vec_t normal_unit(normal);
   normal_unit /= normal_magnitude;
 
-  auto surface_kind = DetectSurfaceKind(volume, point, normal_unit, solid_tolerance,
-                                        replay ? &replay->tangential_probe_results : nullptr,
-                                        replay ? &replay->tangential_probe_details : nullptr);
-  if (replay) replay->surface_kind = surface_kind;
+  bool all_tangential_probes_on_surface = false;
+  auto surface_kind                     = DetectSurfaceKind(
+      volume, point, normal_unit, solid_tolerance, replay ? &replay->tangential_probe_results : nullptr,
+      replay ? &replay->tangential_probe_details : nullptr, &all_tangential_probes_on_surface);
+  if (replay) {
+    replay->surface_kind                     = surface_kind;
+    replay->all_tangential_probes_on_surface = all_tangential_probes_on_surface;
+  }
   if (surface_kind != ShapeSurfaceKind::kSmooth) return passed;
 
   Vec_t tangent_direction(0., 0., 0.);
@@ -1894,6 +1931,37 @@ bool EvaluateSurfacePointSample(
   }
   if (options.require_surface_distance_to_out_finite) {
     check_distance_to_out_finite(grazing_distance_to_out, solid_tolerance);
+  }
+
+  // Tangential material continuation is meant for curved concave boundaries. If
+  // all local tangent probes already sit on a surface plateau, a farther inside
+  // probe is a finite face/section transition rather than an immediate entry.
+  if (options.enable_tangential_material_continuation && ShouldCheckShallowSurfaceRays(context) &&
+      !all_tangential_probes_on_surface) {
+    const Precision extent_distance     = max_extent_distance > 0. ? max_extent_distance : ShapeExtentDistance(volume);
+    const Precision material_probe_step = ShapeTangentialMaterialProbeStep(solid_tolerance, extent_distance);
+    const Vec_t material_probe_point    = point + material_probe_step * grazing_direction;
+    const auto material_probe_inside    = volume->Inside(material_probe_point);
+    if (replay) {
+      replay->checked_tangential_material_continuation = true;
+      replay->tangential_material_probe_step           = material_probe_step;
+      replay->tangential_material_probe_point          = material_probe_point;
+      replay->tangential_material_probe_inside         = material_probe_inside;
+    }
+
+    if (material_probe_inside == vecgeom::EnumInside::kInside) {
+      const Precision zero_tolerance = ShapeTangentialProbeBaseTolerance(solid_tolerance);
+      const bool distance_to_in_zero = grazing_distance_to_in < kInfLength && grazing_distance_to_in <= zero_tolerance;
+      const bool distance_to_out_continues =
+          grazing_distance_to_out > zero_tolerance && grazing_distance_to_out < kInfLength;
+      if (!distance_to_in_zero || !distance_to_out_continues) {
+        passed = false;
+        record_failure({context.sample_index, context.sample_group, kSurfaceTangentContinuation},
+                       "Tangential Surface ray with material continuation should have zero DistanceToIn and finite "
+                       "advancing DistanceToOut.",
+                       distance_to_in_zero ? grazing_distance_to_out : grazing_distance_to_in);
+      }
+    }
   }
 
   if (!options.enable_shallow_surface_rays || !ShouldCheckShallowSurfaceRays(context)) return passed;
@@ -1958,7 +2026,8 @@ template <typename ImplT, typename DistanceToOutCaller>
 bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samples, Precision solid_tolerance,
                         Precision grazing_tolerance, DistanceToOutCaller &&call_distance_to_out,
                         ShapeContractViolationSink &sink, std::uint64_t &score,
-                        const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
+                        const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions(),
+                        Precision max_extent_distance           = 0.)
 {
   bool surface_points_passed = true;
   for (int i = 0; i < samples.max_points_surface + samples.max_points_edge; ++i) {
@@ -1972,7 +2041,7 @@ bool CheckSurfacePoints(ImplT const *volume, const ShapeContractSampleView &samp
           if (failure_context.convention_bit >= 0) score |= (std::uint64_t(1) << failure_context.convention_bit);
           sink.Record(message, point, direction, distance, failure_context);
         },
-        nullptr, options);
+        nullptr, options, max_extent_distance);
     surface_points_passed = surface_points_passed && sample_passed;
   }
   return surface_points_passed;
@@ -3049,15 +3118,18 @@ ShapeSurfaceCheckSummary RunShapeSurfaceChecks(
     const ShapeSurfaceCheckOptions &options = DefaultShapeSurfaceCheckOptions())
 {
   ShapeSurfaceCheckSummary summary;
+  const Precision max_extent_distance =
+      options.enable_tangential_material_continuation ? ShapeExtentDistance(volume) : 0.;
   CheckSurfacePoints(volume, samples, solid_tolerance, grazing_tolerance, call_distance_to_out, sink, summary.score,
-                     options);
+                     options, max_extent_distance);
   const std::uint64_t surface_mask =
       (std::uint64_t(1) << kSurfaceRayNotBothZero) | (std::uint64_t(1) << kSurfaceDistanceToOutFinite);
   const std::uint64_t shallow_mask =
       (std::uint64_t(1) << kSurfaceShallowInward) | (std::uint64_t(1) << kSurfaceShallowOutward);
-  summary.surface_passed = (summary.score & surface_mask) == 0;
-  summary.grazing_passed = (summary.score & (std::uint64_t(1) << kSurfaceGrazingNotBothZero)) == 0;
-  summary.shallow_passed = (summary.score & shallow_mask) == 0;
+  summary.surface_passed             = (summary.score & surface_mask) == 0;
+  summary.grazing_passed             = (summary.score & (std::uint64_t(1) << kSurfaceGrazingNotBothZero)) == 0;
+  summary.shallow_passed             = (summary.score & shallow_mask) == 0;
+  summary.tangential_material_passed = (summary.score & (std::uint64_t(1) << kSurfaceTangentContinuation)) == 0;
   return summary;
 }
 
@@ -3133,7 +3205,7 @@ ShapeSurfaceRayReplay ReplayShapeSurfaceSample(
   case ShapeSampleCategory::kSurface:
   case ShapeSampleCategory::kEdge:
     EvaluateSurfacePointSample(volume, point, direction, solid_tolerance, grazing_tolerance, call_distance_to_out,
-                               replay.context, record_failure, &replay, options);
+                               replay.context, record_failure, &replay, options, ShapeExtentDistance(volume));
     break;
   case ShapeSampleCategory::kInside:
   case ShapeSampleCategory::kOutside:

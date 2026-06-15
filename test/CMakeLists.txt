@@ -80,42 +80,14 @@ endfunction()
 
 function(add_shape_contract_case_tests TARGET_NAME TIER LABELS)
   foreach(SOLID_CASE ${ARGN})
-    set(ENABLED_FAMILIES contracts normals surface distance_to_out distance_to_in safeties hit_consistency)
-    foreach(FAMILY ${ENABLED_FAMILIES})
-      list(FIND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES ${SOLID_CASE}:${FAMILY} DISABLED_FAMILY_INDEX)
-      list(FIND SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES ${TIER}:${SOLID_CASE}:${FAMILY} DISABLED_TIER_FAMILY_INDEX)
-      if(DISABLED_FAMILY_INDEX GREATER -1 OR DISABLED_TIER_FAMILY_INDEX GREATER -1)
-        list(REMOVE_ITEM ENABLED_FAMILIES ${FAMILY})
-      endif()
-    endforeach()
-
-    list(LENGTH ENABLED_FAMILIES ENABLED_FAMILY_COUNT)
-    if(ENABLED_FAMILY_COUNT EQUAL 0)
-      continue()
-    endif()
-
-    if(ENABLED_FAMILY_COUNT EQUAL 7)
-      add_test(NAME ${TARGET_NAME}:${TIER}:${SOLID_CASE}
-        COMMAND ${TARGET_NAME} -tier ${TIER} -test_family all -case_name ${SOLID_CASE})
-      set_tests_properties(${TARGET_NAME}:${TIER}:${SOLID_CASE} PROPERTIES LABELS "${LABELS}")
-    else()
-      foreach(FAMILY ${ENABLED_FAMILIES})
-        add_test(NAME ${TARGET_NAME}:${TIER}:${FAMILY}:${SOLID_CASE}
-          COMMAND ${TARGET_NAME} -tier ${TIER} -test_family ${FAMILY} -case_name ${SOLID_CASE})
-        set_tests_properties(${TARGET_NAME}:${TIER}:${FAMILY}:${SOLID_CASE} PROPERTIES LABELS "${LABELS};${FAMILY}")
-      endforeach()
-    endif()
+    add_test(NAME ${TARGET_NAME}:${TIER}:${SOLID_CASE}
+      COMMAND ${TARGET_NAME} -tier ${TIER} -test_family all -case_name ${SOLID_CASE})
+    set_tests_properties(${TARGET_NAME}:${TIER}:${SOLID_CASE} PROPERTIES LABELS "${LABELS}")
   endforeach()
 endfunction()
 
 function(add_shape_manual_edge_case_tests TARGET_NAME TIER LABELS)
   foreach(SOLID_CASE ${ARGN})
-    list(FIND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES ${SOLID_CASE}:manual_edge_cases DISABLED_FAMILY_INDEX)
-    list(FIND SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES ${TIER}:${SOLID_CASE}:manual_edge_cases DISABLED_TIER_FAMILY_INDEX)
-    if(DISABLED_FAMILY_INDEX GREATER -1 OR DISABLED_TIER_FAMILY_INDEX GREATER -1)
-      continue()
-    endif()
-
     add_test(NAME ${TARGET_NAME}:${TIER}:manual_edge_cases:${SOLID_CASE}
       COMMAND ${TARGET_NAME} -tier ${TIER} -test_family manual_edge_cases -case_name ${SOLID_CASE})
     set_tests_properties(${TARGET_NAME}:${TIER}:manual_edge_cases:${SOLID_CASE}
@@ -425,27 +397,9 @@ set(SHAPE_CONTRACT_SOLID_CASES
   boolean_subtraction_polyhedron_near_coincident
   )
 
-# this list should be resolved and go away
-set(SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
-  )
-
 if(VECGEOM_TEST_STATIC_ANALYSIS)
-  list(APPEND SHAPE_CONTRACT_DISABLED_CTEST_CASE_FAMILIES
-    extruded_multilayer:contracts
-    extruded_multilayer:normals
-    extruded_multilayer:surface
-    extruded_multilayer:distance_to_out
-    extruded_multilayer:distance_to_in
-    extruded_multilayer:safeties
-    extruded_multilayer:hit_consistency
-    )
+  list(REMOVE_ITEM SHAPE_CONTRACT_SOLID_CASES extruded_multilayer)
 endif()
-
-# Keep the tier-specific hook for future plumbing, but medium findings are
-# intentionally promoted to the common family-disable list so fast/medium stay
-# aligned on the same enabled coverage.
-set(SHAPE_CONTRACT_DISABLED_CTEST_TIER_FAMILIES
-  )
 
 set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   box
@@ -459,6 +413,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   cuttube_section_inner
   cone_fullphi
   cone_narrow_phi
+  cone_thin_shell
   ellipsoid
   generic_polycone_irregular
   generic_polycone_zigzag_profile
@@ -475,10 +430,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   tube_fullphi
   )
 
-# Register one unit test per configured solid in the selected CTest tier while
-# keeping disabled coverage in family-scoped lists only. Disabled families stay
-# available through the ShapeContractTest executable for local debugging
-# without recompilation.
+# Register one unit test per configured solid in the selected CTest tier.
 set(SHAPE_CONTRACT_CTEST_TIERS ${VECGEOM_SHAPE_CONTRACT_CTEST_TIER})
 
 foreach(SHAPE_CONTRACT_CTEST_TIER_NAME ${SHAPE_CONTRACT_CTEST_TIERS})

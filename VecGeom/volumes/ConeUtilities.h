@@ -398,11 +398,12 @@ public:
     bool onConicalSurface = IsOnConicalSurface<Real_v, ForInnerSurface>(cone, point);
     if (onConicalSurface) {
       Vector3D<Real_v> normal = ConeUtilities::GetNormal<Real_v, ForInnerSurface>(cone, point);
-      if (vecCore::math::Abs(direction.Dot(normal)) == zero) return false;
+      Real_v normalDot        = direction.Dot(normal);
+      if (vecCore::math::Abs(normalDot) == zero && !(ForDistToIn && ForInnerSurface)) return false;
 
-      bool movingAcrossSurface =
-          ForDistToIn ? ConeUtilities::IsMovingInsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction)
-                      : ConeUtilities::IsMovingOutsideConicalSurface<Real_v, ForInnerSurface>(cone, point, direction);
+      // GetNormal() is not normalized, so use only the geometric sign here:
+      // fixed positive dot-product tolerances would be scale-dependent.
+      bool movingAcrossSurface = ForDistToIn ? normalDot <= zero : normalDot >= zero;
 
       if (movingAcrossSurface) {
         if (!checkPhiTreatment<coneTypeT>(cone)) {
@@ -658,9 +659,11 @@ public:
       // surface-start convention path and reuse it for the side test.
       Vector3D<Precision> normal = ConeUtilities::GetNormal<Precision, ForInnerSurface>(cone, point);
       Precision normalDot        = direction.Dot(normal);
-      if (vecCore::math::Abs(normalDot) == 0.) return false;
+      if (vecCore::math::Abs(normalDot) == 0. && !(ForDistToIn && ForInnerSurface)) return false;
 
       if (ForDistToIn) {
+        // GetNormal() is not normalized, so use only the geometric sign here:
+        // fixed positive dot-product tolerances would be scale-dependent.
         bool isMovingInside = normalDot <= 0.;
 
         if (!checkPhiTreatment<coneTypeT>(cone)) {

@@ -101,7 +101,14 @@ VECCORE_ATT_HOST_DEVICE bool IsPointMovingInsideOuterSurface(UnplacedStruct_t co
     vz = -vz;
     pz = -pz;
   }
-  return ((point.x() * direction.x() + point.y() * direction.y() - pz * hype.fTOut2 * vz) < -Real_v(kTolerance));
+  Real_v motion = point.x() * direction.x() + point.y() * direction.y() - pz * hype.fTOut2 * vz;
+  if (motion < -kToleranceDist<Real_v>) return true;
+  if (motion > kToleranceDist<Real_v>) return false;
+
+  // If first-order motion is unresolved, the hyperboloid quadratic term
+  // decides whether a sub-grazing ray continues into material.
+  Real_v curvature = direction.Perp2() - hype.fTOut2 * vz * vz;
+  return curvature < Real_v(0.);
 }
 
 /// @brief Test whether an inner-surface point moves into material.
@@ -123,7 +130,13 @@ VECCORE_ATT_HOST_DEVICE bool IsPointMovingInsideInnerSurface(UnplacedStruct_t co
     pz = -pz;
   }
 
-  return ((point.x() * direction.x() + point.y() * direction.y() - pz * hype.fTIn2 * vz) > Real_v(kTolerance));
+  Real_v motion = point.x() * direction.x() + point.y() * direction.y() - pz * hype.fTIn2 * vz;
+  if (motion > kToleranceDist<Real_v>) return true;
+  if (motion < -kToleranceDist<Real_v>) return false;
+
+  // Inner-surface material is toward increasing implicit radius.
+  Real_v curvature = direction.Perp2() - hype.fTIn2 * vz * vz;
+  return curvature > Real_v(0.);
 }
 
 /// @brief Test whether a boundary point has an entering direction.
@@ -197,14 +210,8 @@ VECCORE_ATT_HOST_DEVICE bool IsPointMovingOutsideOuterSurface(UnplacedStruct_t c
                                                               Vector3D<Real_v> const &point,
                                                               Vector3D<Real_v> const &direction)
 {
-  Real_v pz = point.z();
-  Real_v vz = direction.z();
-  if (vz < Real_v(0.)) {
-    pz = -pz;
-    vz = -vz;
-  }
-  Vector3D<Real_v> normHere(point.x(), point.y(), -point.z() * hype.fTOut2);
-  return normHere.Dot(direction) > Real_v(kTolerance);
+  Real_v motion = point.x() * direction.x() + point.y() * direction.y() - point.z() * hype.fTOut2 * direction.z();
+  return motion > Real_v(kTolerance);
 }
 
 /// @brief Test whether an inner-surface point moves out of material.
@@ -219,14 +226,8 @@ VECCORE_ATT_HOST_DEVICE bool IsPointMovingOutsideInnerSurface(UnplacedStruct_t c
                                                               Vector3D<Real_v> const &direction)
 {
 
-  Real_v pz = point.z();
-  Real_v vz = direction.z();
-  if (vz < Real_v(0.)) {
-    pz = -pz;
-    vz = -vz;
-  }
-  Vector3D<Real_v> normHere(-point.x(), -point.y(), point.z() * hype.fTIn2);
-  return (normHere.Dot(direction) > Real_v(kTolerance));
+  Real_v motion = point.x() * direction.x() + point.y() * direction.y() - point.z() * hype.fTIn2 * direction.z();
+  return motion < -Real_v(kTolerance);
 }
 
 /// @brief Test whether a point on the outer surface has an exiting direction.
@@ -359,7 +360,9 @@ VECCORE_ATT_HOST_DEVICE Real_v ApproxDistInside(Real_v pr, Real_v pz, Precision 
 /// @details The helper solves the quadratic for the selected hyperbolic surface,
 /// chooses the root matching the entry/exit convention, converts negative roots
 /// to infinity, and accepts only roots whose propagated z coordinate remains
-/// within the Hype z extent.
+/// within the Hype z extent. For exits, a current zero root is ignored when the
+/// ray is tangential to the selected hyperbolic surface and curvature keeps it
+/// in material.
 template <class Real_v, bool ForDistToIn, bool ForInnerSurface>
 class HypeHelpers {
 
@@ -391,6 +394,13 @@ public:
       else
         dist = (b > Real_v(0.)) ? ((-b - sqrtDisc) / a) : (c / (-b + sqrtDisc));
 
+      if (!ForDistToIn && Abs(c) < hype.innerRadToleranceLevel && Abs(b) <= kToleranceDist<Real_v> &&
+          dist <= kToleranceDist<Real_v> && a > Real_v(0.)) {
+        // Tangential inner-surface starts can remain in material to second
+        // order; ignore the current zero root and let another boundary exit.
+        dist = InfinityLength<Real_v>();
+      }
+
     } else {
       Real_v a    = direction.Perp2() - hype.fTOut2 * direction.z() * direction.z();
       Real_v b    = (direction.x() * point.x() + direction.y() * point.y() - hype.fTOut2 * direction.z() * point.z());
@@ -403,6 +413,13 @@ public:
         dist = (b >= Real_v(0.)) ? ((-b - sqrtDisc) / a) : (c / (-b + sqrtDisc));
       else
         dist = (b < Real_v(0.)) ? ((-b + sqrtDisc) / a) : (c / (-b - sqrtDisc));
+
+      if (!ForDistToIn && Abs(c) < hype.outerRadToleranceLevel && Abs(b) <= kToleranceDist<Real_v> &&
+          dist <= kToleranceDist<Real_v> && a < Real_v(0.)) {
+        // Same rule for the outer surface, where material is toward decreasing
+        // implicit radius.
+        dist = InfinityLength<Real_v>();
+      }
     }
 
     if (dist < Real_v(0.)) dist = InfinityLength<Real_v>();
