@@ -55,8 +55,9 @@ struct TriangularTile {
   T Distance(Vector3D<T> const &origin, Vector3D<T> const &dir, T rayEPS = 1e-8) const
   {
     // Moeller-Trumbore ray-triangle intersection
-    using Vertex_t    = Vector3D<T>;
-    constexpr T EPS   = 1e-8;
+    using Vertex_t = Vector3D<T>;
+    // Keep shallow but real facet crossings out of the "parallel" bucket.
+    constexpr T EPS   = kToleranceDist<T>;
     const auto &v0    = fVertices[0];
     const auto &v1    = fVertices[1];
     const auto &v2    = fVertices[2];
@@ -381,8 +382,7 @@ struct Tile {
   }
 
   template <bool ToIn>
-  VECCORE_ATT_HOST_DEVICE
-  T SafetySq(Vector3D<T> const &point) const
+  VECCORE_ATT_HOST_DEVICE T SafetySq(Vector3D<T> const &point) const
   {
     T safety = DistPlane(point);
     // Find the projection of the point on each plane

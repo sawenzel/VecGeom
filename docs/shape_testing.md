@@ -23,7 +23,6 @@ The existing `ShapeTester` and `shape_test*` executables still exist. This docum
 | sample group | The topology bucket of a sampled point: `inside`, `surface`, `outside`. `edge` exists in the model but is not generated automatically today. |
 | replay | Rerunning one recorded sampled ray with `-replay_index` so the exact failing point and direction can be inspected. |
 | manual edge case | A curated hand-written reproduction stored in `TestCaseManualEdgeCases.h`. |
-| disabled CTest family | A known-bad `(solid, helper family)` pair kept locally runnable through the executable, but omitted from CTest until fixed. |
 
 ## Test Families
 
@@ -69,6 +68,7 @@ only be configured explicitly for a family that demonstrably needs them.
 | `DistanceToOut(point, dir)` on a surface point with exiting direction | zero within tolerance |
 | `DistanceToOut(point, dir)` on a surface point with entering direction | positive |
 | `DistanceToOut(point, dir)` on any tested surface ray | finite |
+| derived exact-grazing smooth-surface ray with tangential material continuation | `DistanceToIn` is zero within tolerance and `DistanceToOut` is finite and advancing |
 | derived shallow-inward smooth-surface ray with material continuation `> kTolerance` | `DistanceToIn` has zero projected displacement within tolerance |
 | derived shallow-outward smooth-surface ray | `DistanceToOut` has zero projected displacement within tolerance |
 | any tested direction on a surface point | `DistanceToIn` and `DistanceToOut` are not both `<= kTolerance` |
@@ -78,12 +78,22 @@ not the per-solid `solid_tolerance`, because it checks whether the tested ray
 actually advances. Grazing directions are one important subset used by the
 tests to probe it.
 
-The stricter finite `DistanceToOut` and derived shallow-ray rules are enabled
-per solid case after that case passes the 10M surface-family check. For enabled
-cases, the `surface` helper derives exact-grazing rays for every smooth sampled
-surface point and shallow inward/outward rays for a deterministic sparse subset
-of those points, keeping the extra coverage broad without doubling the
+The finite `DistanceToOut`, derived shallow-ray, and exact tangential
+material-continuation rules are enabled for all registered solid cases. The
+`surface` helper derives exact-grazing rays for every smooth sampled surface
+point. A deterministic sparse subset also checks shallow inward/outward rays and
+exact tangential rays whose scale-aware forward probe is inside the solid,
+covering concave second-order material continuation without doubling the
 surface-family runtime.
+
+Tangential material continuation is not limited to first-order inward motion.
+For concave or hollow second-order boundaries, a ray with unresolved normal
+motion can still enter material through curvature. In that case
+`DistanceToIn` must accept the zero entry and `DistanceToOut` must ignore the
+current zero root when looking for the next exit. Plane-like surface plateaus
+and section seams are excluded from this exact-tangent rule because a farther
+inside probe there represents a finite face/section transition, not immediate
+curvature-driven material continuation.
 
 ### 3. Safety Rules
 
@@ -175,7 +185,9 @@ The local helper executable is always available for all tiers:
 .../ShapeContractTest -tier slow   ...
 ```
 
-`test/CMakeLists.txt` owns the shared disabled-family list. If a `(solid, helper family)` pair is known to fail, disable only that family in CTest. Keep the solid enabled in the registry so it stays locally runnable through the executable.
+CTest registers every configured solid case with all sampled helper families.
+If a new case exposes a real bug, fix the bug before adding that case to the
+CTest registry.
 
 ## Building and Running
 
@@ -310,7 +322,8 @@ cd <build-dir>
 ctest --output-on-failure -R 'ShapeContractTest:'
 ```
 
-6. If the case exposes a real bug that is not fixed in the same merge request, keep the case enabled in `TestCaseSolids.h` and disable only the failing helper family in `test/CMakeLists.txt`.
+6. If the case exposes a real bug, fix the bug before adding the case to
+   `SHAPE_CONTRACT_SOLID_CASES`.
 
 ## Adding a New Manual Edge Case
 
@@ -332,7 +345,9 @@ ctest --output-on-failure -R 'ShapeContractTest:'
   -manual_case_name <new_manual_case>
 ```
 
-6. If the manual case is intentionally a known failing reproduction, disable only `manual_edge_cases` for that solid in `test/CMakeLists.txt`.
+6. Manual cases registered for CTest must pass. Keep known-failing
+   reproductions out of the registered manual CTest set until the corresponding
+   bug is fixed.
 
 ## Code Map
 
@@ -342,5 +357,5 @@ ctest --output-on-failure -R 'ShapeContractTest:'
 | `test/VecGeomTest/ShapeContractChecks.h` | reusable helper-family implementations and replay helpers |
 | `test/VecGeomTest/TestCaseSolids.h` | sampled solid registry |
 | `test/VecGeomTest/TestCaseManualEdgeCases.h` | curated manual reproductions |
-| `test/CMakeLists.txt` | CTest registration and shared disabled-family list |
+| `test/CMakeLists.txt` | CTest registration for sampled and manual shape-contract cases |
 | `test/VecGeomTest/ShapeTester.*` | legacy wrapper and whole-solid compatibility path |

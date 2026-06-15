@@ -103,9 +103,12 @@ struct TessellatedImplementation {
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToInNoConv(UnplacedStruct_t const &tessellated,
                                                                               Vector3D<Real_v> const &point,
                                                                               Vector3D<Real_v> const &direction,
-                                                                              Real_v const &stepMax, Real_v &distance)
+                                                                              Real_v const &stepMax, Real_v &distance,
+                                                                              bool allow_surface_zero = false)
   {
-    distance = InfinityLength<Real_v>();
+    distance                        = InfinityLength<Real_v>();
+    bool found_surface_entry        = false;
+    Real_v surface_entry_projection = Real_v(0.);
 
     // NOTE: a quick intersection check against the outer bounding box is already done as part of the BVH
     // intersection and does not need to be done in addition here
@@ -113,7 +116,18 @@ struct TessellatedImplementation {
       const auto primID = ctx.primID;
       const auto &facet = tessellated.fFacets[primID];
       // we are checking a triangle. Rule out early by a simple normal check
-      const auto sp                = (facet.fNormal).Dot(direction);
+      const auto sp = facet.fNormal.Dot(direction);
+      if (allow_surface_zero && sp < -kToleranceDist<Real_v>) {
+        const auto plane_dist = (point - facet.fVertices[0]).Dot(facet.fNormal);
+        if (vecCore::math::Abs(plane_dist) < kToleranceDist<Real_v> &&
+            facet.template SafetySq<Real_v>(point) < kToleranceDistSquared<Real_v>) {
+          // Keep this as a fallback only: a positive ordinary intersection,
+          // when found within normal tolerance, must win over the surface-zero
+          // convention.
+          found_surface_entry      = true;
+          surface_entry_projection = Max(surface_entry_projection, -sp);
+        }
+      }
       const bool wrong_orientation = sp > 0.; // coming from outside the dot product must be negative
       if (wrong_orientation) {
         return false;
@@ -127,6 +141,10 @@ struct TessellatedImplementation {
       return false; // do not stop here
     };
     tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
+    if (found_surface_entry &&
+        (distance == InfinityLength<Real_v>() || distance * surface_entry_projection > kToleranceDist<Real_v>)) {
+      distance = Real_v(0.);
+    }
   }
 
   template <typename Real_v>
@@ -142,8 +160,11 @@ struct TessellatedImplementation {
       distance = Real_v(-1.);
       return;
     }
+    const bool allow_surface_zero = inside == kSurface;
+#else
+    const bool allow_surface_zero = false;
 #endif
-    DistanceToInNoConv<Real_v>(tessellated, point, direction, stepMax, distance);
+    DistanceToInNoConv<Real_v>(tessellated, point, direction, stepMax, distance, allow_surface_zero);
   }
 
   template <typename Real_v>
@@ -158,21 +179,21 @@ struct TessellatedImplementation {
       const auto primID = ctx.primID;
       const auto &facet = tessellated.fFacets[primID];
       // we are checking a triangle. Rule out early by a simple normal check
-      const auto sp                = (facet.fNormal).Dot(direction);
+      const auto sp                = facet.fNormal.Dot(direction);
       const bool wrong_orientation = sp < 0.; // coming from inside the dot product must be positive
-      if (wrong_orientation) {
-        return false;
-      }
-      const auto plane_dist = (point - facet.fVertices[0]).Dot(facet.fNormal);
-      // Accept t=0 for grazing exit rays that start numerically on the facet but can be missed by triangle
-      // intersection.
-      if (sp > 0. && vecCore::math::Abs(plane_dist) < kTolerance) {
+      const auto plane_dist        = (point - facet.fVertices[0]).Dot(facet.fNormal);
+      // Accept t=0 for tangent/outward surface starts on the current facet;
+      // genuinely inward starts must continue to the next exit surface.
+      if (sp >= -kToleranceDist<Real_v> && vecCore::math::Abs(plane_dist) < kToleranceDist<Real_v>) {
         const auto safety_sq = facet.template SafetySq<Real_v>(point);
-        if (safety_sq < kTolerance * kTolerance) {
+        if (safety_sq < kToleranceDistSquared<Real_v>) {
           distance     = Real_v(0.);
           ctx.step_max = 0.f;
           return true;
         }
+      }
+      if (wrong_orientation) {
+        return false;
       }
       // the -kHalfTolerance is to get 0 if we are on surface
       const auto this_dist = facet.Distance(point, direction, -kHalfTolerance); // /*, CAN GIVE EPSILON*/);

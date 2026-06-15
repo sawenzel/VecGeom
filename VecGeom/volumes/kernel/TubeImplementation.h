@@ -556,13 +556,19 @@ struct TubeImplementation {
     distance = Real_v(kInfLength);
 
     if (hasZPlanes) {
-      distz /= NonZeroAbs(dir.z());
+      const bool enteringZPlane = point.z() * dir.z() < Real_v(0.);
+      const bool zSurfaceEntry  = distz <= Real_v(0.) && Abs(distz) <= kHalfTolerance && enteringZPlane &&
+                                  Abs(dir.z()) * tube.fZ > kToleranceDist<Real_v>;
+      distz                     = zSurfaceEntry ? Real_v(0.) : distz / NonZeroAbs(dir.z());
       // std::cerr << "Dist : " << distz << std::endl;
 
       Real_v hitx = point.x() + distz * dir.x();
       Real_v hity = point.y() + distz * dir.y();
       Real_v r2   = hitx * hitx + hity * hity; // radius of intersection with z-plane
-      bool okz    = distz > -kHalfTolerance && (point.z() * dir.z() < 0);
+      // Surface cap entries are decided from plane distance before dividing
+      // by the shallow z projection, otherwise tolerated starts can look like
+      // sizeable negative path lengths.
+      bool okz = (zSurfaceEntry || distz > -kHalfTolerance) && enteringZPlane;
 
       okz &= (r2 <= tube.fRmax2);
       if (checkRminTreatment<tubeTypeT>(tube)) {
@@ -600,7 +606,8 @@ struct TubeImplementation {
     if (checkRminTreatment<tubeTypeT>(tube)) {
       // point on inner cyl?
       const bool isOnInnerSurface = rsq >= tube.fTolOrmin2 && rsq <= tube.fTolIrmin2 && absz < (tube.fZ + kTolerance);
-      isOnSurfaceAndMovingInside |= isOnInnerSurface && rdotn > Real_v(0.);
+      const Real_v radialProjectionTolerance = Real_v(0.5) * kToleranceDist<Real_v> * nsq;
+      isOnSurfaceAndMovingInside |= isOnInnerSurface && rdotn >= -radialProjectionTolerance;
     }
 
     if (!checkPhiTreatment<tubeTypeT>(tube)) {

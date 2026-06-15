@@ -505,9 +505,8 @@ VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void AcceleratedDistanceToOut<Preci
     if (vecCore::MaskEmpty(valid)) continue;
     VcPrecision directionProjection = plane.Dot(direction);
     // Because the point is behind the plane, the direction must be along the
-    // normal
-    // Keep the accelerated path aligned with the scalar tail for grazing rays.
-    valid &= directionProjection > kTolerance;
+    // normal. Use sign here so tolerated surface exits are not skipped.
+    valid &= directionProjection > 0.;
     if (vecCore::MaskEmpty(valid)) continue;
     distanceTest /= -NonZero(directionProjection);
     valid &= distanceTest < distance && distanceTest > -kTolerance / NonZero(directionProjection);
@@ -570,8 +569,8 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToOut(Vector3D<Real_v> co
       if (!valid) continue;
       Real_v directionProjection = direction.Dot(normal);
       // Because the point is behind the plane, the direction must be along the
-      // normal
-      valid = directionProjection > kTolerance;
+      // normal. Use sign here so tolerated surface exits are not skipped.
+      valid = directionProjection > Real_v(0.);
       if (!valid) continue;
       distanceTest /= -directionProjection;
       valid = distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
@@ -602,8 +601,8 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToOut(Vector3D<Real_v> co
       if (vecCore::MaskEmpty(valid)) continue;
       Real_v directionProjection = direction.Dot(normal);
       // Because the point is behind the plane, the direction must be along the
-      // normal
-      valid &= directionProjection > kTolerance;
+      // normal. Use sign here so tolerated surface exits are not skipped.
+      valid &= directionProjection > Real_v(0.);
       if (vecCore::MaskEmpty(valid)) continue;
       distanceTest /= -directionProjection;
       valid &= distanceTest < bestDistance && distanceTest > -kTolerance / directionProjection;
@@ -626,7 +625,7 @@ VECCORE_ATT_HOST_DEVICE Real_v Quadrilaterals::DistanceToOut(Vector3D<Real_v> co
     }
   }
 
-  if (bestDistance > -kTolerance) bestDistance = Max(bestDistance, Precision(0.));
+  if (bestDistance < InfinityLength<Real_v>()) bestDistance = Max(bestDistance, Real_v(0.));
   return bestDistance;
 }
 

@@ -300,73 +300,12 @@ bool IsManualSurfaceExitMethod(const std::string &method) { return method == "su
 
 bool IsManualFiniteDistanceToOutMethod(const std::string &method) { return method == "finite_distance_to_out"; }
 
-bool HasStrictGeneratedSurfaceRayChecks(const std::string &case_name)
-{
-  // Keep generated shallow-ray checks opt-in until each solid passes the 10M
-  // surface contract with these stricter conventions enabled.
-  static constexpr const char *kOptInCases[] = {
-      "boolean_subtraction_exact_polycone_sections",
-      "boolean_subtraction_polyhedron_exact_radial_shell",
-      "boolean_subtraction_polyhedron_phi_seam_rotated",
-      "boolean_union_offset_boxes",
-      "box",
-      "cone_almost_cylinder",
-      "cone_almost_full_phi",
-      "cone_fullphi",
-      "cone_narrow_phi",
-      "cone_section",
-      "cone_thin_shell",
-      "cuttube_section_inner",
-      "ellipsoid",
-      "elliptical_tube",
-      "elliptical_tube_long",
-      "elliptical_tube_thin",
-      "generic_polycone_irregular",
-      "generic_polycone_zigzag_profile",
-      "hype",
-      "multiunion_boxes",
-      "orb",
-      "parallelepiped_general",
-      "parallelepiped_high_shear",
-      "polycone_cms_like",
-      "polycone_hec_liquid_argon",
-      "polycone_many_section_alternating",
-      "polycone_nearly_repeated_z",
-      "polycone_two_section_sharp_jump",
-      "sphere_almost_full_phi",
-      "sphere_narrow_phi",
-      "sphere_narrow_theta",
-      "sphere_section",
-      "sphere_thin_shell",
-      "tet",
-      "tet_sliver_like",
-      "torus2_general",
-      "trd_boxlike",
-      "trd_extreme_aspect",
-      "trd_increasing_xy",
-      "trapezoid_corners",
-      "trapezoid_extreme_skew",
-      "trapezoid_near_para",
-      "tube_almost_full_phi",
-      "tube_fullphi",
-      "tube_narrow_phi",
-      "tube_section",
-      "tube_thin_wall_long",
-      "tube_short_disk",
-  };
-  for (auto const *opt_in_case : kOptInCases) {
-    if (case_name == opt_in_case) return true;
-  }
-  return false;
-}
-
-vecgeom::test::ShapeSurfaceCheckOptions SurfaceCheckOptionsForCase(const std::string &case_name)
+vecgeom::test::ShapeSurfaceCheckOptions SurfaceCheckOptionsForCase(const std::string &)
 {
   vecgeom::test::ShapeSurfaceCheckOptions options;
-  if (HasStrictGeneratedSurfaceRayChecks(case_name)) {
-    options.require_surface_distance_to_out_finite = true;
-    options.enable_shallow_surface_rays            = true;
-  }
+  options.require_surface_distance_to_out_finite  = true;
+  options.enable_shallow_surface_rays             = true;
+  options.enable_tangential_material_continuation = true;
   return options;
 }
 
