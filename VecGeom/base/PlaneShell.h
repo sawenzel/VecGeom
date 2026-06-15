@@ -252,6 +252,74 @@ public:
     return distOut;
   }
 
+  /// @brief Update a `DistanceToOut` result from a tolerated set of planes.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @param distanceTolerance Distance tolerance for the plane shell.
+  /// @param directionTolerance Projection threshold for an outward crossing.
+  /// @param[in,out] outside Set when @p point is outside any plane beyond tolerance.
+  /// @param[in,out] distance Current exit distance, updated with a nearer side-plane exit.
+  ///
+  /// @details Plane distances are negative inside and positive outside. A
+  /// tolerated surface point moving outward contributes a zero exit; a strictly
+  /// inside point contributes the nearest forward plane crossing.
+  template <typename Real_v>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void DistanceToOut(Vector3D<Real_v> const &point,
+                                                                  Vector3D<Real_v> const &dir,
+                                                                  Real_v const &distanceTolerance,
+                                                                  Real_v const &directionTolerance, bool &outside,
+                                                                  Real_v &distance) const
+  {
+    int i = 0;
+
+#if defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
+    if constexpr (vecCore::VectorSize<Real_v>() == 1) {
+      using VecReal          = vecgeom::VectorBackend::Real_v;
+      constexpr int kVecSize = static_cast<int>(vecCore::VectorSize<VecReal>());
+      for (; i <= N - kVecSize; i += kVecSize) {
+        VecReal pdist =
+            VecReal(fA + i) * point.x() + VecReal(fB + i) * point.y() + VecReal(fC + i) * point.z() + VecReal(fD + i);
+        VecReal proj = VecReal(fA + i) * dir.x() + VecReal(fB + i) * dir.y() + VecReal(fC + i) * dir.z();
+
+        auto outsidePlanes = pdist > distanceTolerance;
+        outside |= !vecCore::MaskEmpty(outsidePlanes);
+
+        auto exitingSurface = pdist >= -distanceTolerance;
+        exitingSurface &= pdist <= distanceTolerance;
+        exitingSurface &= proj > directionTolerance;
+        if (!vecCore::MaskEmpty(exitingSurface)) distance = Real_v(0.);
+
+        auto candidate = pdist < -distanceTolerance;
+        candidate &= proj > directionTolerance;
+        if (!vecCore::MaskEmpty(candidate)) {
+          VecReal denom            = proj;
+          denom(!candidate)        = Real_v(1.);
+          VecReal vdist            = -pdist / denom;
+          vdist(!candidate)        = InfinityLength<Real_v>();
+          Real_v candidateDistance = vdist.min();
+          if (candidateDistance < distance) distance = candidateDistance;
+        }
+      }
+    }
+#endif
+
+    for (; i < N; ++i) {
+      Real_v pdist = fA[i] * point.x() + fB[i] * point.y() + fC[i] * point.z() + fD[i];
+      Real_v proj  = fA[i] * dir.x() + fB[i] * dir.y() + fC[i] * dir.z();
+
+      outside |= pdist > distanceTolerance;
+      if (pdist < -distanceTolerance) {
+        if (proj > directionTolerance) {
+          Real_v vdist = -pdist / NonZero(proj);
+          if (vdist < distance) distance = vdist;
+        }
+      } else if (pdist <= distanceTolerance && proj > directionTolerance) {
+        distance = Real_v(0.);
+      }
+    }
+  }
+
   /// \return the safety distance to the planar shell when the point is located within the shell itself.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE void SafetyToIn(Vector3D<Real_v> const &point, Real_v &safety) const

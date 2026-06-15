@@ -1,16 +1,13 @@
 //===-- kernel/TrapezoidImplementation.h ----------------------------*- C++ -*-===//
 //===--------------------------------------------------------------------------===//
-///
-/// \file   kernel/TrapezoidImplementation.h
-/// \author Guilherme Lima (lima@fnal.gov)
-/// \brief This file implements the algorithms for the trapezoid
-///
-/// Implementation details: initially based on USolids algorithms and vectorized types.
-///
+/// @file TrapezoidImplementation.h
+/// @brief Navigation kernels for the trapezoid solid.
+/// @author Guilherme Lima (lima@fnal.gov)
 //===--------------------------------------------------------------------------===//
-///
-/// 140520  G. Lima   Created from USolids' UTrap algorithms
-/// 160722  G. Lima   Revision + moving to new backend structure
+
+/// History notes:
+/// 2014-05-20: Created from USolids' UTrap algorithms (G. Lima)
+/// 2016-07-22: Revision and migration to the backend structure (G. Lima)
 
 #ifndef VECGEOM_VOLUMES_KERNEL_TRAPEZOIDIMPLEMENTATION_H_
 #define VECGEOM_VOLUMES_KERNEL_TRAPEZOIDIMPLEMENTATION_H_
@@ -32,6 +29,11 @@ inline namespace VECGEOM_IMPL_NAMESPACE {
 class PlacedTrapezoid;
 class UnplacedTrapezoid;
 
+/// @brief Implements navigation kernels for `UnplacedTrapezoid`.
+/// @details The runtime data provides the z half-length and four cached
+/// outward side planes. Signed side-plane distances are negative inside,
+/// positive outside, and tolerance bands are resolved by each navigation entry
+/// point according to the queried convention.
 struct TrapezoidImplementation {
 
   using PlacedShape_t    = PlacedTrapezoid;
@@ -41,13 +43,28 @@ struct TrapezoidImplementation {
   using TrapSidePlane = TrapezoidStruct<Precision>::TrapSidePlane;
 #endif
 
-#ifndef VECGEOM_PLANESHELL
+  /// @brief Evaluate side-plane signed distances and direction projections.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data containing the cached side planes.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @param[out] pdist Signed distance to each side plane; positive is outside.
+  /// @param[out] proj Projection of @p dir on each outward side-plane normal.
+  /// @param[out] vdist Plane-crossing distance `-pdist/proj` for each side.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void EvaluateTrack(UnplacedStruct_t const &unplaced,
                                                                          Vector3D<Real_v> const &point,
                                                                          Vector3D<Real_v> const &dir, Real_v *pdist,
                                                                          Real_v *proj, Real_v *vdist)
   {
+#ifdef VECGEOM_PLANESHELL
+    auto const *fPlanes = unplaced.GetPlanes();
+    for (unsigned int i = 0; i < 4; ++i) {
+      pdist[i] = fPlanes->fA[i] * point.x() + fPlanes->fB[i] * point.y() + fPlanes->fC[i] * point.z() + fPlanes->fD[i];
+      proj[i]  = fPlanes->fA[i] * dir.x() + fPlanes->fB[i] * dir.y() + fPlanes->fC[i] * dir.z();
+      vdist[i] = -pdist[i] / NonZero(proj[i]);
+    }
+#else
     TrapSidePlane const *fPlanes = unplaced.GetPlanes();
     // loop over side planes - find pdist,proj for each side plane
     // auto-vectorizable part of loop
@@ -62,40 +79,51 @@ struct TrapezoidImplementation {
 
       vdist[i] = -pdist[i] / NonZero(proj[i]);
     }
-  }
 #endif
+  }
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a local point is contained in or on the trapezoid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point to test.
+  /// @param[out] inside Set to true unless @p point is outside a tolerated limiting plane.
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &unplaced,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
-    Bool_v unused(false), outside(false);
-    GenericKernelForContainsAndInside<Real_v, Bool_v, false>(unplaced, point, unused, outside);
+    bool unused = false, outside = false;
+    GenericKernelForContainsAndInside<Real_v, false>(unplaced, point, unused, outside);
     inside = !outside;
   }
 
-  // BIG QUESTION: DO WE WANT TO GIVE ALL 3 TEMPLATE PARAMETERS
-  // -- OR -- DO WE WANT TO DEDUCE Bool_v, Index_t from Real_v???
+  /// @brief Classify a local point as inside, outside, or surface.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Inside_t Integer-like type used for `EInside` values.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point to classify.
+  /// @param[out] inside Set to `kInside`, `kOutside`, or `kSurface`.
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &unplaced,
                                                                   Vector3D<Real_v> const &point, Inside_t &inside)
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v completelyInside(false), completelyOutside(false);
-    GenericKernelForContainsAndInside<Real_v, Bool_v, true>(unplaced, point, completelyInside, completelyOutside);
+    bool completelyInside = false, completelyOutside = false;
+    GenericKernelForContainsAndInside<Real_v, true>(unplaced, point, completelyInside, completelyOutside);
 
-    using InsideBool_v = vecCore::Mask_v<Inside_t>;
-    inside             = Inside_t(EInside::kSurface);
-    vecCore__MaskedAssignFunc(inside, (InsideBool_v)completelyOutside, Inside_t(EInside::kOutside));
-    vecCore__MaskedAssignFunc(inside, (InsideBool_v)completelyInside, Inside_t(EInside::kInside));
-
-    return;
+    inside = Inside_t(EInside::kSurface);
+    if (completelyOutside) inside = Inside_t(EInside::kOutside);
+    if (completelyInside) inside = Inside_t(EInside::kInside);
   }
 
-  template <typename Real_v, typename Bool_v, bool ForInside>
+  /// @brief Shared classification helper for containment and inside queries.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam ForInside When true, also compute the strict-inside flag.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point to classify.
+  /// @param[out] completelyInside Set when the point is separated from all limiting planes by the inside tolerance.
+  /// @param[out] completelyOutside Set when the point is outside any limiting plane beyond tolerance.
+  template <typename Real_v, bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      UnplacedStruct_t const &unplaced, Vector3D<Real_v> const &point, Bool_v &completelyInside,
-      Bool_v &completelyOutside)
+      UnplacedStruct_t const &unplaced, Vector3D<Real_v> const &point, bool &completelyInside, bool &completelyOutside)
   {
     // z-region
     completelyOutside = Abs(point[2]) > MakePlusTolerant<true>(unplaced.fDz);
@@ -119,26 +147,23 @@ struct TrapezoidImplementation {
       if (ForInside) {
         completelyInside = completelyInside && dist[i] < Real_v(MakeMinusTolerant<true>(0.));
       }
-      // if (vecCore::EarlyReturnMaxLength(completelyOutside,1) && vecCore::MaskFull(completelyOutside)) return;
     }
 #endif
-
-    return;
   }
 
-  ////////////////////////////////////////////////////////////////////////////
-  //
-  // Calculate distance to shape from outside - return kInfLength if no
-  // intersection.
-  //
-  // ALGORITHM: For each component (z-planes, side planes), calculate
-  // pair of minimum (smin) and maximum (smax) intersection values for
-  // which the particle is in the extent of the shape.  The point of
-  // entrance (exit) is found by the largest smin (smallest smax).
-  //
-  //  If largest smin > smallest smax, the trajectory does not reach
-  //  inside the shape.
-  //
+  /// @brief Compute the first entry distance from outside the trapezoid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param[out] distance Entry distance, `kInfLength` on miss, or `-1` for wrong-side candidates.
+  ///
+  /// @details For each limiting component (z slab and side planes), the
+  /// algorithm computes the ray interval for which the track is inside that
+  /// component. The entry point is the largest lower bound (`smin`), and the
+  /// exit point is the smallest upper bound (`smax`). If the largest lower
+  /// bound exceeds the smallest upper bound, the trajectory misses the shape.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &unplaced,
                                                                         Vector3D<Real_v> const &point,
@@ -146,8 +171,7 @@ struct TrapezoidImplementation {
                                                                         Real_v const &stepMax, Real_v &distance)
   {
     (void)stepMax;
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    distance     = kInfLength;
+    distance = kInfLength;
 
     //
     // Step 1: find range of distances along dir between Z-planes (smin, smax)
@@ -159,10 +183,10 @@ struct TrapezoidImplementation {
 
     // done = done || (dir.z()>0.0 && max < MakePlusTolerant<true>(0.));  // check if moving away towards +z
     // done = done || (dir.z()<0.0 && max > MakeMinusTolerant<true>(0.)); // check if moving away towards -z
-    Bool_v done(signZdir * max < Real_v(MakePlusTolerant<true>(0.0))); // if outside + moving away towards +/-z
+    bool done = signZdir * max < Real_v(MakePlusTolerant<true>(0.0)); // if outside + moving away towards +/-z
 
     // if all particles moving away, we're done
-    if (vecCore::EarlyReturnMaxLength(done, 1) && vecCore::MaskFull(done)) return;
+    if (done) return;
 
     // Step 1.b) General case:
     //   smax,smin are range of distances within z-range, taking direction into account.
@@ -178,7 +202,7 @@ struct TrapezoidImplementation {
 #ifdef VECGEOM_PLANESHELL
     // If disttoplanes is such that smin < dist < smax, then distance=disttoplanes
     Real_v disttoplanes = unplaced.GetPlanes()->DistanceToIn(point, dir, smin, smax);
-    vecCore::MaskedAssign(distance, !done, disttoplanes);
+    if (!done) distance = disttoplanes;
 
 #else
 
@@ -210,28 +234,39 @@ struct TrapezoidImplementation {
       done = done || (pdist[i] > Real_v(MakeMinusTolerant<true>(0.)) && comp[i] > Real_v(0.));
     }
     // if all particles moving away, we're done
-    if (vecCore::EarlyReturnMaxLength(done, 1) && vecCore::MaskFull(done)) return;
+    if (done) return;
 
     // this part does not auto-vectorize
     for (unsigned int i = 0; i < 4; ++i) {
       // if outside and moving away, return infinity
-      Bool_v posPoint = pdist[i] > Real_v(MakeMinusTolerant<true>(0.));
-      Bool_v posDir   = comp[i] > 0;
+      bool posPoint = pdist[i] > Real_v(MakeMinusTolerant<true>(0.));
+      bool posDir   = comp[i] > 0;
 
       // check if trajectory will intercept plane within current range (smin,smax), otherwise track misses shape
-      Bool_v interceptFromInside  = (!posPoint && posDir);
-      Bool_v interceptFromOutside = (posPoint && !posDir);
+      bool interceptFromInside  = (!posPoint && posDir);
+      bool interceptFromOutside = (posPoint && !posDir);
 
       //.. If dist is such that smin < dist < smax, then adjust either smin or smax
-      vecCore__MaskedAssignFunc(smax, interceptFromInside && vdist[i] < smax, vdist[i]);
-      vecCore__MaskedAssignFunc(smin, interceptFromOutside && vdist[i] > smin, vdist[i]);
+      if (interceptFromInside && vdist[i] < smax) smax = vdist[i];
+      if (interceptFromOutside && vdist[i] > smin) smin = vdist[i];
     }
 
-    vecCore::MaskedAssign(distance, !done && smin <= smax, smin);
-    vecCore__MaskedAssignFunc(distance, distance < Real_v(MakeMinusTolerant<true>(0.0)), Real_v(-1.));
+    if (!done && smin <= smax) distance = smin;
+    if (distance < Real_v(MakeMinusTolerant<true>(0.0))) distance = Real_v(-1.);
 #endif
   }
 
+  /// @brief Compute the first exit distance from inside or on the trapezoid surface.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param[out] distance Exit distance, zero for an immediate tolerated exit, or `-1` for outside input.
+  ///
+  /// @details The z planes and side planes are checked with distance and
+  /// direction tolerances. A start already outside any limiting plane reports
+  /// `-1`; a tolerated surface start moving outward reports zero.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &unplaced,
                                                                          Vector3D<Real_v> const &point,
@@ -239,70 +274,54 @@ struct TrapezoidImplementation {
                                                                          Real_v const &stepMax, Real_v &distance)
   {
     (void)stepMax;
-    using Bool_v = vecCore::Mask_v<Real_v>;
+    const Real_v distanceTolerance  = kToleranceDist<Real_v>;
+    const Real_v directionTolerance = kToleranceStrict<Real_v> * Real_v(unplaced.fInvProjectionScale);
 
     // step 0: if point is outside any plane --> return -1, otherwise initialize at Infinity
-    Bool_v outside = Abs(point.z()) > MakePlusTolerant<true>(unplaced.fDz);
-    distance       = vecCore::Blend(outside, Real_v(-1.0), InfinityLength<Real_v>());
-    Bool_v done(outside);
-    if (vecCore::EarlyReturnMaxLength(done, 1) && vecCore::MaskFull(done)) return;
+    bool outside = Abs(point.z()) > unplaced.fDz + distanceTolerance;
+    distance     = InfinityLength<Real_v>();
 
     //
     // Step 1: find range of distances along dir between Z-planes (smin, smax)
     //
 
-    Real_v distz = (Sign(dir.z()) * unplaced.fDz - point.z()) / NonZero(dir.z());
-    vecCore__MaskedAssignFunc(distance, !done && Abs(dir.z()) /** maxXY*/ > kTolerance, distz);
+    if (Abs(dir.z()) > directionTolerance) {
+      Real_v distz = (Sign(dir.z()) * unplaced.fDz - point.z()) / NonZero(dir.z());
+      if (Abs(Abs(point.z()) - unplaced.fDz) <= distanceTolerance && point.z() * dir.z() > Real_v(0.)) {
+        distance = Real_v(0.);
+      } else if (distz >= -distanceTolerance && distz < distance) {
+        distance = Max(distz, Real_v(0.));
+      }
+    }
 
     //
     // Step 2: find distances for intersections with side planes.
     //
 
-#ifdef VECGEOM_PLANESHELL
-    Real_v disttoplanes = unplaced.GetPlanes()->DistanceToOut(point, dir);
-    vecCore::MaskedAssign(distance, disttoplanes < distance, disttoplanes);
-
+#if defined(VECGEOM_PLANESHELL) && defined(VECGEOM_VC) && defined(VECGEOM_QUADRILATERAL_ACCELERATION)
+    unplaced.GetPlanes()->DistanceToOut(point, dir, distanceTolerance, directionTolerance, outside, distance);
 #else
-    //=== Here for VECGEOM_PLANESHELL_DISABLE
-
-    // loop over side planes - find pdist,Proj for each side plane
     Real_v pdist[4], proj[4], vdist[4];
-    // Real_v dist1(distance);
-    // EvaluateTrack<Real_v>(unplaced, point, dir, pdist, proj, vdist);
+    EvaluateTrack<Real_v>(unplaced, point, dir, pdist, proj, vdist);
 
-    TrapSidePlane const *fPlanes = unplaced.GetPlanes();
     for (unsigned int i = 0; i < 4; ++i) {
-      // Note: normal vector is pointing outside the volume (convention), therefore
-      // pdist>0 if point is outside  and  pdist<0 means inside
-      pdist[i] = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y() + fPlanes[i].fC * point.z() + fPlanes[i].fD;
-
-      // Proj is projection of dir over the normal vector of side plane, hence
-      // Proj > 0 if pointing ~same direction as normal and Proj<0 if pointing ~opposite to normal
-      proj[i] = fPlanes[i].fA * dir.x() + fPlanes[i].fB * dir.y() + fPlanes[i].fC * dir.z();
-
-      vdist[i] = -pdist[i] / NonZero(proj[i]);
-    }
-
-    // early return if point is outside of plane
-    // for (unsigned int i = 0; i < 4; ++i) {
-    //   done = done || (pdist[i] > MakePlusTolerant<true>(0.));
-    // }
-    // vecCore::MaskedAssign(dist1, done, Real_v(-1.0));
-    // if (vecCore::EarlyReturnMaxLength(done,1) && vecCore::MaskFull(done)) return;
-
-    // std::cerr<<"=== point="<< point <<", dir="<< dir <<", distance="<< distance <<"\n";
-    for (unsigned int i = 0; i < 4; ++i) {
-      // if track is pointing towards plane and vdist<distance, then distance=vdist
-      // vecCore__MaskedAssignFunc(dist1, !done && proj[i] > 0.0 && vdist[i] < dist1, vdist[i]);
-      vecCore__MaskedAssignFunc(distance, pdist[i] > MakePlusTolerant<true>(0.), Real_v(-1.0));
-      vecCore__MaskedAssignFunc(distance, proj[i] * unplaced.fDz > kTolerance && -Sign(pdist[i]) * vdist[i] < distance,
-                                -Sign(pdist[i]) * vdist[i]);
-      // std::cerr<<"i="<< i <<", pdist="<< pdist[i] <<", proj="<< proj[i] <<", vdist="<< vdist[i] <<" --> dist="<<
-      // dist1 <<", "<< distance <<"\n";
+      outside |= pdist[i] > distanceTolerance;
+      if (pdist[i] < -distanceTolerance) {
+        if (proj[i] > directionTolerance && vdist[i] < distance) distance = vdist[i];
+      } else if (pdist[i] <= distanceTolerance && proj[i] > directionTolerance) {
+        distance = Real_v(0.);
+      }
     }
 #endif
+
+    if (outside) distance = Real_v(-1.);
   }
 
+  /// @brief Compute safety from an exterior point to the trapezoid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point.
+  /// @param[out] safety Conservative distance to the nearest entry boundary.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &unplaced,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -320,25 +339,22 @@ struct TrapezoidImplementation {
       dist[i] = fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y() + fPlanes[i].fC * point.z() + fPlanes[i].fD;
     }
 
-    // for (int i = 0; i < 4; ++i) {
-    //   vecCore::MaskedAssign(safety, dist[i] > safety, dist[i]);
-    // }
     Real_v safmax = Max(Max(dist[0], dist[1]), Max(dist[2], dist[3]));
-    vecCore::MaskedAssign(safety, safmax > safety, safmax);
+    if (safmax > safety) safety = safmax;
 #endif
   }
 
+  /// @brief Compute safety from an interior point to leave the trapezoid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point.
+  /// @param[out] safety Conservative distance to the nearest exit boundary; negative for outside points.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &unplaced,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
     // If point is outside (wrong-side) --> safety to negative value
     safety = unplaced.fDz - Abs(point.z());
-
-    // If all test points are outside, we're done
-    // if (vecCore::EarlyReturnMaxLength(safety,1)) {
-    //   if (vecCore::MaskFull(safety < kHalfTolerance)) return;
-    // }
 
 #ifdef VECGEOM_PLANESHELL
     // Get safety over side planes
@@ -353,19 +369,25 @@ struct TrapezoidImplementation {
       dist[i] = -(fPlanes[i].fA * point.x() + fPlanes[i].fB * point.y() + fPlanes[i].fC * point.z() + fPlanes[i].fD);
     }
 
-    // unvectorizable loop
-    // for (int i = 0; i < 4; ++i) {
-    //   vecCore::MaskedAssign(safety, dist[i] < safety, dist[i]);
-    // }
-
     Real_v safmin = Min(Min(dist[0], dist[1]), Min(dist[2], dist[3]));
-    vecCore::MaskedAssign(safety, safmin < safety, safmin);
+    if (safmin < safety) safety = safmin;
 #endif
   }
 
+  /// @brief Compute a trapezoid surface normal.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param unplaced Trapezoid data.
+  /// @param point Local point.
+  /// @param[out] valid Set when @p point is close enough to a limiting surface.
+  /// @return Outward normal for the closest limiting plane, or a summed edge/corner normal.
+  ///
+  /// @details Side and z planes are compared using the local surface tolerance.
+  /// Points on multiple surfaces return the normalized sum of the contributing
+  /// outward normals.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &unplaced, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &unplaced,
+                                                                                    Vector3D<Real_v> const &point,
+                                                                                    bool &valid)
   {
 
     VECGEOM_CONST Precision delta = 1000. * kTolerance;
@@ -378,8 +400,7 @@ struct TrapezoidImplementation {
     safety = unplaced.GetPlanes()->NormalKernel(point, normal, edge);
 
 #else
-    // Loop over side planes
-    Vector3D<Real_v> cornerNormal;
+    // Loop over side planes; reuse the accumulator declared above.
     unsigned char surfaces = 0;
     // vectorizable loop
     TrapSidePlane const *fPlanes = unplaced.GetPlanes();
@@ -406,7 +427,7 @@ struct TrapezoidImplementation {
 #endif
 
     // check if normal is valid w.r.t. z-planes, and define normals based on safety (see above)
-    Real_v safz = vecCore::math::Abs(vecCore::math::Abs(point[2]) - unplaced.fDz);
+    Real_v safz = Abs(Abs(point[2]) - unplaced.fDz);
     if (edge && safz < kTolerance) {
       // The point is on a corner
       normal += Vector3D<Real_v>(0., 0., Sign(point.z()));

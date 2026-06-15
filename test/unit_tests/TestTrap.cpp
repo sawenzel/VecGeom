@@ -78,6 +78,16 @@ bool TestTrap()
   // std::cout<<" Trd-like capacity: "<< trap5.Capacity() <<"\n";
   // std::cout<<" Trd-like surface area: "<< trap5.SurfaceArea() <<"\n";
 
+  Trap_t largeTrap("Large shallow side exit", 1.e20, 0., 0., 1.e20, 1.e6, 1.e6, 0., 1.e20, 1.e6, 1.e6, 0.);
+  Vec_t shallowXExit(1.e-12, 1., 0.);
+  Dist = largeTrap.DistanceToOut(pzero, shallowXExit);
+  VECGEOM_ASSERT(Dist > 0.9e18 && Dist < 1.1e18);
+
+  Precision alpha = 1.55;
+  vecgeom::UnplacedTrapezoid alphaTrap(1.e6, 1.e20, 1.e20, alpha, 0., 0.);
+  Precision expectedInvProjectionScale = 1. / (1.e20 * (1. + 2. * vecgeom::Abs(vecgeom::Tan(alpha))));
+  VECGEOM_ASSERT(ApproxEqual<Precision>(alphaTrap.GetStruct().fInvProjectionScale, expectedInvProjectionScale));
+
   Vec_t Corners[8];
   Corners[0] = Vec_t(-3., -3., -3.);
   Corners[1] = Vec_t(3., -3., -3.);
