@@ -275,13 +275,34 @@ struct TorusImplementation2 {
       distance = Real_v(-1.);
       return;
     }
+    bool skipZeroOuterBoundary = false;
+    bool skipZeroInnerBoundary = false;
+    if (locus == Inside_v(EInside::kSurface)) {
+      bool radialExit = IsOnRadialSurfaceAndMoving<Real_v, false, true>(torus, point, dir) ||
+                        IsOnRadialSurfaceAndMovingTangentially<Real_v, false, false>(torus, point, dir) ||
+                        (hasrmin && (IsOnRadialSurfaceAndMoving<Real_v, true, true>(torus, point, dir) ||
+                                     IsOnRadialSurfaceAndMovingTangentially<Real_v, true, false>(torus, point, dir)));
+      skipZeroOuterBoundary = IsOnRadialSurfaceAndMovingTangentially<Real_v, false, true>(torus, point, dir);
+      skipZeroInnerBoundary = hasrmin && IsOnRadialSurfaceAndMovingTangentially<Real_v, true, true>(torus, point, dir);
+      auto const &wedge     = torus.fPhiWedge;
+      bool phiExit          = hasphi && InsideRadialCrossSection<Real_v>(torus, point) &&
+                              (wedge.template IsPointOnSurfaceAndMovingOut<Real_v, true, true>(point, dir) ||
+                               wedge.template IsPointOnSurfaceAndMovingOut<Real_v, false, true>(point, dir));
+      if (radialExit || phiExit) {
+        distance = Real_v(0.);
+        return;
+      }
+    }
 
     Vector3D<Real_v> scaledPoint = point / rtor;
-    Real_v distOut               = ToBoundary<Real_v, false>(torus, scaledPoint, dir, torus.rmax() / rtor, true);
+    Real_v distOut = skipZeroOuterBoundary
+                         ? ToBoundary<Real_v, false>(torus, scaledPoint, dir, torus.rmax() / rtor, true, true)
+                         : ToBoundary<Real_v, false>(torus, scaledPoint, dir, torus.rmax() / rtor, true);
     // ToBoundary<Backend, false, true>(torus, point, dir, torus.rmax());
     Real_v din(kInfLength);
     if (hasrmin) {
-      din = ToBoundary<Real_v, true>(torus, scaledPoint, dir, torus.rmin() / rtor, true);
+      din = skipZeroInnerBoundary ? ToBoundary<Real_v, true>(torus, scaledPoint, dir, torus.rmin() / rtor, true, true)
+                                  : ToBoundary<Real_v, true>(torus, scaledPoint, dir, torus.rmin() / rtor, true);
       // ToBoundary<Backend, true, true>(torus, point, dir, torus.rmin());
     }
     distance = Min(distOut, din);
@@ -318,7 +339,7 @@ struct TorusImplementation2 {
       }
     }
 
-    if (distance >= kInfLength) distance = Real_v(-1.);
+    if (distance >= kInfLength) distance = (locus == Inside_v(EInside::kSurface)) ? Real_v(0.) : Real_v(-1.);
   }
 
   /// @brief Classification helper used by `Contains` variants.
@@ -366,6 +387,87 @@ struct TorusImplementation2 {
     Real_v rxy   = Sqrt(point[0] * point[0] + point[1] * point[1]);
     Real_v radsq = (rxy - torus.rtor()) * (rxy - torus.rtor()) + point[2] * point[2];
     return radsq <= torus.rmax2() && radsq >= torus.rmin2();
+  }
+
+  template <typename Real_v, bool ForRmin, bool MovingOut>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnRadialSurfaceAndMoving(UnplacedStruct_t const &torus,
+                                                                                      Vector3D<Real_v> const &point,
+                                                                                      Vector3D<Real_v> const &dir)
+  {
+    Real_v radius = ForRmin ? torus.rmin() : torus.rmax();
+    if (radius == Real_v(0.)) return false;
+
+    Real_v rxy2 = point.x() * point.x() + point.y() * point.y();
+    if (rxy2 == Real_v(0.)) return false;
+
+    Real_v rxy    = Sqrt(rxy2);
+    Real_v dr     = rxy - torus.rtor();
+    Real_v radsq  = dr * dr + point.z() * point.z();
+    Real_v tolRad = Real_v(100. * vecgeom::kTolerance) * radius;
+    if (Abs(radsq - radius * radius) > tolRad) return false;
+
+    Real_v motion = dr * (point.x() * dir.x() + point.y() * dir.y()) / rxy + point.z() * dir.z();
+    if (ForRmin) motion = -motion;
+    return MovingOut ? motion > kToleranceDist<Real_v> : motion < -kToleranceDist<Real_v>;
+  }
+
+  template <typename Real_v, bool ForRmin, bool MovingToMaterial>
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static bool IsOnRadialSurfaceAndMovingTangentially(
+      UnplacedStruct_t const &torus, Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir)
+  {
+    Real_v radius = ForRmin ? torus.rmin() : torus.rmax();
+    if (radius == Real_v(0.)) return false;
+
+    Real_v rxy2 = point.x() * point.x() + point.y() * point.y();
+    if (rxy2 == Real_v(0.)) return false;
+
+    Real_v rxy    = Sqrt(rxy2);
+    Real_v dr     = rxy - torus.rtor();
+    Real_v radsq  = dr * dr + point.z() * point.z();
+    Real_v tolRad = Real_v(100. * vecgeom::kTolerance) * radius;
+    if (Abs(radsq - radius * radius) > tolRad) return false;
+
+    Real_v radialDot   = point.x() * dir.x() + point.y() * dir.y();
+    Real_v rxyDot      = radialDot / rxy;
+    Real_v firstMotion = dr * rxyDot + point.z() * dir.z();
+    if (Abs(firstMotion) > kToleranceDist<Real_v>) return false;
+
+    Real_v dirPerp2        = dir.x() * dir.x() + dir.y() * dir.y();
+    Real_v rxySecond       = (dirPerp2 * rxy2 - radialDot * radialDot) / (rxy2 * rxy);
+    Real_v rxyDot2         = rxyDot * rxyDot;
+    Real_v curvatureMotion = dr * rxySecond;
+    Real_v zMotion         = dir.z() * dir.z();
+    Real_v secondMotion    = rxyDot2 + curvatureMotion + zMotion;
+    Real_v secondTol       = kEpsilonT<Real_v> * (Abs(rxyDot2) + Abs(curvatureMotion) + Abs(zMotion));
+    // For zero first-order motion, use the local curvature of
+    // q=(rxy-rtor)^2+z^2. Material lies above rmin and below rmax.
+    bool materialSide = false;
+    bool classified   = false;
+    if (secondMotion > secondTol) {
+      classified   = true;
+      materialSide = ForRmin;
+    } else if (secondMotion < -secondTol) {
+      classified   = true;
+      materialSide = !ForRmin;
+    } else {
+      // Neutral radial tangents split at third order except at tube apexes,
+      // where azimuthal tangents move to larger q only at fourth order.
+      Real_v tangentialPerp2 = dirPerp2 - rxyDot2;
+      Real_v tangentialTol   = kEpsilonT<Real_v> * (Abs(dirPerp2) + Abs(rxyDot2));
+      Real_v thirdSign       = rxyDot * tangentialPerp2;
+      Real_v thirdTol        = Abs(rxyDot) * tangentialTol;
+      if (thirdSign > thirdTol) {
+        classified   = true;
+        materialSide = ForRmin;
+      } else if (thirdSign < -thirdTol) {
+        classified   = true;
+        materialSide = !ForRmin;
+      } else if (Abs(dr) <= kToleranceDist<Real_v> && tangentialPerp2 > tangentialTol) {
+        classified   = true;
+        materialSide = ForRmin;
+      }
+    }
+    return classified && (MovingToMaterial ? materialSide : !materialSide);
   }
 
   /// @brief Return inside/surface/outside classification for a point.
@@ -451,7 +553,7 @@ struct TorusImplementation2 {
   /// @param dir Normalized propagation direction.
   /// @param radius Scaled tube radius, either `rmax/rtor` or `rmin/rtor`.
   /// @param out True for distance-to-out filtering, false for distance-to-in.
-  /// @param skipZero Ignore zero-distance roots from an already leaving phi
+  /// @param skipZero Ignore zero-distance roots from the current radial
   /// boundary.
   /// @return Accepted scaled distance, or `kInfLength` when no crossing applies.
   template <typename Real_v, bool ForRmin>
@@ -466,18 +568,43 @@ struct TorusImplementation2 {
     // to the torus is decreasing while moving along the given direction.
 
     // Compute coefficients of the quartic
-    Real_v s                 = vecgeom::kInfLength;
-    VECGEOM_CONST Real_v tol = 100. * vecgeom::kTolerance;
-    Real_v r0sq              = pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2];
-    Real_v rdotn             = pt[0] * dir[0] + pt[1] * dir[1] + pt[2] * dir[2];
-    Real_v rsumsq            = 1. + radius * radius;
-    Real_v a                 = 4. * rdotn;
-    Real_v b                 = 2. * (r0sq + 2. * rdotn * rdotn - rsumsq + 2. * dir[2] * dir[2]);
-    Real_v c                 = 4. * (r0sq * rdotn - rsumsq * rdotn + 2. * pt[2] * dir[2]);
+    Real_v s                    = vecgeom::kInfLength;
+    VECGEOM_CONST Real_v tol    = 100. * vecgeom::kTolerance;
+    VECGEOM_CONST Real_v dirTol = kToleranceDist<Real_v>;
+    Real_v r0sq                 = pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2];
+    Real_v rdotn                = pt[0] * dir[0] + pt[1] * dir[1] + pt[2] * dir[2];
+    Real_v rsumsq               = 1. + radius * radius;
+    Real_v a                    = 4. * rdotn;
+    Real_v b                    = 2. * (r0sq + 2. * rdotn * rdotn - rsumsq + 2. * dir[2] * dir[2]);
+    Real_v c                    = 4. * (r0sq * rdotn - rsumsq * rdotn + 2. * pt[2] * dir[2]);
     Real_v d = r0sq * r0sq - 2. * r0sq * rsumsq + 4. * pt[2] * pt[2] + (1. - radius * radius) * (1. - radius * radius);
 
     Real_v x[4] = {vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength, vecgeom::kInfLength};
     int nsol    = 0;
+
+    // Skipping a tangent entry can leave t^2 * (t^2 + a*t + b).
+    // Solve the deflated quadratic so Newton cannot collapse the next root
+    // back onto the skipped surface root.
+    if (skipZero && out && Abs(c) <= dirTol && Abs(d) <= tol) {
+      Real_v discriminant = a * a - Real_v(4.) * b;
+      if (discriminant >= Real_v(0.)) {
+        Real_v sqrtDiscriminant = Sqrt(discriminant);
+        Real_v candidate[2]     = {Real_v(0.5) * (-a - sqrtDiscriminant), Real_v(0.5) * (-a + sqrtDiscriminant)};
+        if (candidate[1] < candidate[0]) {
+          Real_v tmp   = candidate[0];
+          candidate[0] = candidate[1];
+          candidate[1] = tmp;
+        }
+        for (int i = 0; i < 2; ++i) {
+          if (candidate[i] <= tol) continue;
+          Vector3D<Real_v> r0 = pt + candidate[i] * dir;
+          r0.z()              = 0.;
+          r0.Normalize();
+          if (torus.dphi() < vecgeom::kTwoPi && !torus.fPhiWedge.ContainsWithBoundary<Real_v>(r0)) continue;
+          return candidate[i];
+        }
+      }
+    }
 
     // special condition
     if (Abs(dir[2]) < Real_v(1E-3) && Abs(pt[2]) < Real_v(0.1) * radius) {
@@ -530,9 +657,9 @@ struct TorusImplementation2 {
       // ndotd = norm[0] * dir[0] + norm[1] * dir[1] + norm[2] * dir[2];
       ndotd = norm.Dot(dir);
       if (inner ^ out) {
-        if (ndotd <= tol) continue; // discard this grazing solution
+        if (ndotd <= dirTol) continue; // discard this grazing solution
       } else {
-        if (ndotd >= -tol) continue; // discard this grazing solution
+        if (ndotd >= -dirTol) continue; // discard this grazing solution
       }
 
       // The crossing point should be in the phi wedge
@@ -540,7 +667,8 @@ struct TorusImplementation2 {
         if (!torus.fPhiWedge.ContainsWithBoundary<Real_v>(r0)) continue;
       }
 
-      s = x[i];
+      s                  = x[i];
+      Real_v preRefinedS = s;
       // refine solution with Newton iterations
       Real_v eps   = vecgeom::kInfLength;
       Real_v delta = s * s * s * s + a * s * s * s + b * s * s + c * s + d;
@@ -564,11 +692,18 @@ struct TorusImplementation2 {
       }
       // discard this solution
       if (s < -tol) continue;
+      if (skipZero && Abs(s) <= tol) {
+        // For tangential exits, Newton can collapse the second root back onto
+        // the skipped surface root. Keep the pre-refined positive root when it
+        // is outside the zero-distance tolerance.
+        if (out && preRefinedS > tol) return preRefinedS;
+        continue;
+      }
       deriv = 4. * s * s * s + 3. * a * s * s + 2. * b * s + c;
       if (inner ^ out) {
-        if (deriv <= tol) continue;
+        if (deriv <= dirTol) continue;
       } else {
-        if (deriv >= -tol) continue;
+        if (deriv >= -dirTol) continue;
       }
       return Max(Real_v(0.), s);
     }
@@ -649,6 +784,8 @@ struct TorusImplementation2 {
     Real_v rmax2Scaled                     = torus.rmax2() / rtor / rtor;
     Real_v rminScaled                      = torus.rmin() / rtor;
     Real_v rmaxScaled                      = torus.rmax() / rtor;
+    bool hasphi                            = torus.dphi() < vecgeom::kTwoPi;
+    bool hasrmin                           = torus.rmin() > 0.;
 
     using Inside_v = vecCore::Index_v<Real_v>;
 
@@ -656,10 +793,11 @@ struct TorusImplementation2 {
     distance = kInfLength;
 
     // Check Bounding Cylinder first
-    bool inBounds       = false;
-    bool done           = false;
-    Inside_v inside     = Inside_v(EInside::kOutside);
-    Real_v tubeDistance = kInfLength;
+    bool inBounds                = false;
+    bool done                    = false;
+    Inside_v inside              = Inside_v(EInside::kOutside);
+    Real_v tubeDistance          = kInfLength;
+    bool skipZeroSurfaceBoundary = false;
 
 #ifndef VECGEOM_NO_SPECIALIZATION
     // call the tube functionality -- first of all we check whether we are inside
@@ -694,6 +832,30 @@ struct TorusImplementation2 {
       if (inside == Inside_v(EInside::kInside)) {
         done     = true;
         distance = Real_v(-1.);
+      } else if (inside == Inside_v(EInside::kSurface)) {
+        bool radialEntry = IsOnRadialSurfaceAndMoving<Real_v, false, false>(torus, point, direction) ||
+                           (hasrmin && IsOnRadialSurfaceAndMoving<Real_v, true, false>(torus, point, direction));
+        bool radialTangentEntry =
+            IsOnRadialSurfaceAndMovingTangentially<Real_v, false, true>(torus, point, direction) ||
+            (hasrmin && IsOnRadialSurfaceAndMovingTangentially<Real_v, true, true>(torus, point, direction));
+        bool radialExit =
+            IsOnRadialSurfaceAndMoving<Real_v, false, true>(torus, point, direction) ||
+            IsOnRadialSurfaceAndMovingTangentially<Real_v, false, false>(torus, point, direction) ||
+            (hasrmin && (IsOnRadialSurfaceAndMoving<Real_v, true, true>(torus, point, direction) ||
+                         IsOnRadialSurfaceAndMovingTangentially<Real_v, true, false>(torus, point, direction)));
+        auto const &wedge       = torus.fPhiWedge;
+        bool inRadialDisk       = hasphi && InsideRadialCrossSection<Real_v>(torus, point);
+        bool phiEntry           = hasphi && inRadialDisk &&
+                                  (wedge.template IsPointOnSurfaceAndMovingOut<Real_v, true, false>(point, direction) ||
+                                   wedge.template IsPointOnSurfaceAndMovingOut<Real_v, false, false>(point, direction));
+        bool phiExit            = hasphi && inRadialDisk &&
+                                  (wedge.template IsPointOnSurfaceAndMovingOut<Real_v, true, true>(point, direction) ||
+                                   wedge.template IsPointOnSurfaceAndMovingOut<Real_v, false, true>(point, direction));
+        skipZeroSurfaceBoundary = radialExit || phiExit;
+        if ((radialEntry || radialTangentEntry || phiEntry) && !skipZeroSurfaceBoundary) {
+          distance = Real_v(0.);
+          return;
+        }
       }
     } else {
       done = tubeDistance == kInfLength;
@@ -705,13 +867,12 @@ struct TorusImplementation2 {
     // coefficients of the quartic and improve precision of the solutions
     localPoint += tubeDistance * localDirection;
     localPoint /= rtor;
-    bool hasphi              = torus.dphi() < vecgeom::kTwoPi;
-    bool skipZeroPhiBoundary = false;
+    bool skipZeroPhiBoundary = skipZeroSurfaceBoundary;
     if (hasphi) {
       Real_v d1, d2;
 
       auto const &wedge = torus.fPhiWedge;
-      skipZeroPhiBoundary =
+      skipZeroPhiBoundary |=
           wedge.template IsPointOnSurfaceAndMovingOut<Real_v, true, true>(localPoint, localDirection) ||
           wedge.template IsPointOnSurfaceAndMovingOut<Real_v, false, true>(localPoint, localDirection);
       // checking distance to phi wedges
@@ -719,14 +880,14 @@ struct TorusImplementation2 {
       wedge.DistanceToIn<Real_v>(localPoint, localDirection, d1, d2);
 
       // check phi intersections if bounding tube intersection is due to phi in which case we are done
-      if (d1 != kInfLength) {
+      if (d1 != kInfLength && !(skipZeroPhiBoundary && Abs(d1) <= kTolerance)) {
         Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d1);
         if (daxis >= rmin2Scaled && daxis < rmax2Scaled && d1 > -kTolerance) {
           distance = d1;
         }
       }
 
-      if (d2 != kInfLength) {
+      if (d2 != kInfLength && !(skipZeroPhiBoundary && Abs(d2) <= kTolerance)) {
         Real_v daxis = DistSqrToTorusR(localPoint, localDirection, d2);
         if (daxis >= rmin2Scaled && daxis < rmax2Scaled && d2 > -kTolerance) {
           distance = Min(distance, d2);

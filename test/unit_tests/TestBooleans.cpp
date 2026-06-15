@@ -8,6 +8,7 @@
 #include "VecGeom/volumes/BooleanVolume.h"
 #include "VecGeom/volumes/Tube.h"
 #include "VecGeom/volumes/Box.h"
+#include "VecGeom/volumes/Torus2.h"
 #include "ApproxEqual.h"
 #include <cmath>
 
@@ -164,6 +165,32 @@ int TestBooleans()
     // this singular candidate must not be accepted as a result surface point.
     VECGEOM_ASSERT(placedSubtraction->Inside(Vec3D_t(2., 0., 0.)) != EInside::kSurface);
   }
+  {
+    UnplacedBox hostBox(60., 60., 60.);
+    UnplacedTorus2 hollowTorus(5., 10., 30., 0., vecgeom::kTwoPi);
+    LogicalVolume hostLogical("subtraction_hollow_torus_host", &hostBox);
+    LogicalVolume torusLogical("subtraction_hollow_torus_cutter", &hollowTorus);
+    auto *host  = hostLogical.Place();
+    auto *torus = torusLogical.Place();
+    UnplacedBooleanVolume<kSubtraction> subtraction(kSubtraction, host, torus);
+    LogicalVolume subtractionLogical("subtraction_hollow_torus", &subtraction);
+    auto *placedSubtraction = subtractionLogical.Place();
+
+    const Vec3D_t nearSideNeutral(27.5, 0., std::sqrt(75.) / 2.);
+    const Vec3D_t nearSideHollowDir(-0.25, std::sqrt(11. / 12.), -1. / std::sqrt(48.));
+    Precision d = placedSubtraction->DistanceToIn(nearSideNeutral, nearSideHollowDir);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(d, 0.));
+    d = placedSubtraction->DistanceToOut(nearSideNeutral, nearSideHollowDir);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(d, 30.));
+
+    const Vec3D_t apex(30., 0., 5.);
+    const Vec3D_t azimuthal(0., 1., 0.);
+    const Precision apexExit = std::sqrt((30. + std::sqrt(75.)) * (30. + std::sqrt(75.)) - 30. * 30.);
+    d                        = placedSubtraction->DistanceToOut(apex, azimuthal);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(d, 0.));
+    d = placedSubtraction->DistanceToIn(apex, azimuthal);
+    VECGEOM_ASSERT(ApproxEqual<Precision>(d, apexExit));
+  }
 
   {
     double d = placedholes1->DistanceToIn(Vec3D_t(0., 0., 0.), Vec3D_t(0., 0., 1.));
@@ -267,7 +294,8 @@ int TestBooleans()
     // needs fix
     // double d = placedcombinedboolean->DistanceToIn(Vec3D_t(0., 0., 0.), Vec3D_t(1., 0., 0.));
     // VECGEOM_ASSERT(d <= 0.);
-  } {
+  }
+  {
     double d = placedcombinedboolean->DistanceToIn(Vec3D_t(-20., 0., 0.), Vec3D_t(1., -0., -0.));
     VECGEOM_ASSERT(ApproxEqual<Precision>(d, 10.));
   }
@@ -304,7 +332,8 @@ int TestBooleans()
     // double d = placedcombinedboolean->DistanceToIn(Vec3D_t(-L / 4 - tube.rmax(), -L / 4., 0.), Vec3D_t(-0, -0,
     // -1.));
     // VECGEOM_ASSERT(d == kInfLength);
-  } {
+  }
+  {
     // needs reworking + verification
     // double d = placedcombinedboolean->DistanceToIn(Vec3D_t(-L / 4 - tube.rmax() - 0.01, -L / 4., 0.), Vec3D_t(-0, -0,
     // -1.));
@@ -346,7 +375,4 @@ int TestBooleans()
   return 0;
 }
 
-int main(int argc, char *argv[])
-{
-  return TestBooleans();
-}
+int main(int argc, char *argv[]) { return TestBooleans(); }
