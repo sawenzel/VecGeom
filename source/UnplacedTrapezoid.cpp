@@ -164,11 +164,8 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision dx1, Precision dx2, Precision dy1
 
 UnplacedTrapezoid::UnplacedTrapezoid(Precision dx, Precision dy, Precision dz, Precision alpha, Precision theta,
                                      Precision phi)
-    : fTrap(dz, theta, phi, dy, dx, dx, alpha, dy, dx, dx, alpha)
+    : fTrap(dz, theta, phi, dy, dx, dx, vecgeom::Tan(alpha), dy, dx, dx, vecgeom::Tan(alpha))
 {
-  // TODO: validate alpha usage here
-  fTrap.fTanAlpha1 = std::tan(alpha);
-  fTrap.fTanAlpha2 = fTrap.fTanAlpha1;
   MakePlanes();
   fGlobalConvexity = true;
   ComputeBBox();
@@ -182,8 +179,8 @@ UnplacedTrapezoid::UnplacedTrapezoid(Precision xbox, Precision ybox, Precision z
 #ifndef VECCORE_CUDA
   if (xbox <= 0 || ybox <= 0 || zbox <= 0) {
     VECGEOM_LOG(warning) << "Invalid input length parameters for Solid: "
-                 "UnplacedTrapezoid X="
-              << xbox << ", Y=" << ybox << ", Z=" << zbox;
+                            "UnplacedTrapezoid X="
+                         << xbox << ", Y=" << ybox << ", Z=" << zbox;
   }
 #endif
 
@@ -423,10 +420,7 @@ void UnplacedTrapezoid::GetParametersList(int, Precision *aArray) const
 */
 
 VECCORE_ATT_HOST_DEVICE
-UnplacedTrapezoid *UnplacedTrapezoid::Clone() const
-{
-  return new UnplacedTrapezoid(*this);
-}
+UnplacedTrapezoid *UnplacedTrapezoid::Clone() const { return new UnplacedTrapezoid(*this); }
 
 VECCORE_ATT_HOST_DEVICE
 void UnplacedTrapezoid::Print() const
@@ -516,6 +510,13 @@ void UnplacedTrapezoid::fromCornersToParameters(TrapCorners const pt)
 
   fTrap.fTheta = atan(sqrt(fTrap.fTthetaSphi * fTrap.fTthetaSphi + fTrap.fTthetaCphi * fTrap.fTthetaCphi));
   fTrap.fPhi   = atan2(fTrap.fTthetaSphi, fTrap.fTthetaCphi);
+
+  Precision maxX      = Max(Max(fTrap.fDx1, fTrap.fDx2), Max(fTrap.fDx3, fTrap.fDx4));
+  Precision maxY      = Max(fTrap.fDy1, fTrap.fDy2);
+  Precision maxLength = Max(fTrap.fDz, Max(maxX, maxY));
+  Precision tiltScale =
+      1. + Abs(fTrap.fTthetaCphi) + Abs(fTrap.fTthetaSphi) + Abs(fTrap.fTanAlpha1) + Abs(fTrap.fTanAlpha2);
+  fTrap.fInvProjectionScale = 1. / Max(1., maxLength * tiltScale);
 
 #ifndef VECCORE_CUDA
   // check planarity of all four sides
@@ -623,7 +624,7 @@ bool UnplacedTrapezoid::MakeAPlane(const Vec3D &p1, const Vec3D &p2, const Vec3D
   plane.fC = normalVector.z();
   plane.fD = d;
 
-  unsigned int iplane = (&plane - fTrap.fPlanes); // pointer arithmetics used here
+  unsigned int iplane = (&plane - fTrap.fPlanes); // pointer arithmetic used here
 #endif
 
   fTrap.sideAreas[iplane] = 0.5 * ((p2 - p1).Cross(p3 - p1).Mag() + (p3 - p1).Cross(p4 - p1).Mag());
@@ -650,7 +651,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], 0);
 #else
-  good                = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
+  good = MakeAPlane(pt[0], pt[1], pt[5], pt[4], fTrap.fPlanes[0]);
 #endif
 
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
@@ -661,7 +662,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], 1);
 #else
-  good                = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
+  good = MakeAPlane(pt[2], pt[6], pt[7], pt[3], fTrap.fPlanes[1]);
 #endif
 
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
@@ -672,7 +673,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], 2);
 #else
-  good                = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
+  good = MakeAPlane(pt[0], pt[4], pt[6], pt[2], fTrap.fPlanes[2]);
 #endif
 
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
@@ -683,7 +684,7 @@ bool UnplacedTrapezoid::MakePlanes(TrapCorners const pt)
 #ifdef VECGEOM_PLANESHELL
   good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], 3);
 #else
-  good                = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);
+  good = MakeAPlane(pt[1], pt[3], pt[7], pt[5], fTrap.fPlanes[3]);
 #endif
 
 #ifndef VECCORE_CUDA_DEVICE_COMPILATION
@@ -755,10 +756,7 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu(DevicePtr<cuda::VU
                                           this->alpha2());
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu() const
-{
-  return CopyToGpuImpl<UnplacedTrapezoid>();
-}
+DevicePtr<cuda::VUnplacedVolume> UnplacedTrapezoid::CopyToGpu() const { return CopyToGpuImpl<UnplacedTrapezoid>(); }
 
 #endif // VECGEOM_CUDA_INTERFACE
 

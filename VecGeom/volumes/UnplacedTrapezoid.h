@@ -56,7 +56,7 @@ public:
   UnplacedTrapezoid(const Precision dz, const Precision theta, const Precision phi, const Precision dy1,
                     const Precision dx1, const Precision dx2, const Precision Alpha1, const Precision dy2,
                     const Precision dx3, const Precision dx4, const Precision Alpha2)
-      : fTrap(dz, theta, phi, dy1, dx1, dx2, std::tan(Alpha1), dy2, dx3, dx4, std::tan(Alpha2))
+      : fTrap(dz, theta, phi, dy1, dx1, dx2, vecgeom::Tan(Alpha1), dy2, dx3, dx4, vecgeom::Tan(Alpha2))
   {
     fGlobalConvexity = true;
     MakePlanes();
@@ -312,7 +312,7 @@ public:
   std::string GetEntityType() const { return "Trapezoid"; }
 
   template <typename T>
-  VECCORE_ATT_HOST_DEVICE void GetParametersList(int aNumber, T *aArray) const;
+  VECCORE_ATT_HOST_DEVICE void GetParametersList(int, T *aArray) const;
 
   VECCORE_ATT_HOST_DEVICE
   UnplacedTrapezoid *Clone() const;
@@ -359,12 +359,12 @@ public:
   // Note: use of ATan() makes this one slow -- to be avoided
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetAlpha1() const { return vecCore::math::ATan(fTrap.fTanAlpha1); }
+  Precision GetAlpha1() const { return vecgeom::ATan(fTrap.fTanAlpha1); }
 
   // Note: use of Atan() makes this one slow -- to be avoided
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
-  Precision GetAlpha2() const { return vecCore::math::ATan(fTrap.fTanAlpha2); }
+  Precision GetAlpha2() const { return vecgeom::ATan(fTrap.fTanAlpha2); }
 
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE

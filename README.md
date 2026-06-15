@@ -56,8 +56,8 @@ The table below shows the available CMake options for VecGeom that may be used t
 |VECGEOM_BVH_SINGLE|ON if surface|Enable single precision for BVH traversal|
 |VECGEOM_INPLACE_TRANSFORMATIONS|ON|Put transformation as members rather than pointers into PlacedVolume objects|
 |VECGEOM_NO_SPECIALIZATION|ON|Disable specialization of volumes|
-|VECGEOM_PLANESHELL|ON|Enable the use of PlaneShell class for the trapezoid|
-|VECGEOM_QUADRILATERAL_ACCELERATION|ON|Enable SIMD vectorization when looping over quadrilaterals|
+|VECGEOM_PLANESHELL|ON|Use PlaneShell storage for trapezoid side planes. Always enabled; `OFF` is deprecated and ignored|
+|VECGEOM_QUADRILATERAL_ACCELERATION|ON for Vc|Enable SIMD vectorization when looping over quadrilaterals. Always enabled with the Vc backend; unavailable for non-Vc builds|
 |VECGEOM_SANITIZER|OFF|Enable memory sanitizer|
 |VECGEOM_SINGLE_PRECISION|OFF|Use single precision throughout the package|
 |VECGEOM_USE_SURF|ON if CUDA|Enable surface model for navigation|

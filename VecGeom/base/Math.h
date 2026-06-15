@@ -95,6 +95,7 @@ VECGEOM_CONST double kInfinityDbl = std::numeric_limits<double>::infinity();
 // NOTE: numerous downstream classes depend on transitive veccore includes and math functions.
 using vecCore::math::Abs;
 using vecCore::math::ACos;
+using vecCore::math::ATan;
 using vecCore::math::ATan2;
 using vecCore::math::Cbrt;
 using vecCore::math::CopySign;
@@ -104,6 +105,7 @@ using vecCore::math::Pow;
 using vecCore::math::Sign;
 using vecCore::math::Sin;
 using vecCore::math::Sqrt;
+using vecCore::math::Tan;
 
 // Min/Max are forwarding definitions instead of using-declarations so they are VecGeom-owned overload
 // candidates. Scalar calls cannot rely on ADL to find VecCore, and local definitions give VecGeom a

@@ -63,6 +63,7 @@ struct TrapezoidStruct {
 
   T sideAreas[6]; // including z-planes
   Vector3D<T> normals[6];
+  T fInvProjectionScale; ///< Conservative inverse size used to scale shallow direction cuts
 
 public:
   /// \brief Constructors
@@ -89,11 +90,17 @@ public:
   VECCORE_ATT_HOST_DEVICE
   void CalculateCached()
   {
-    fTthetaCphi = vecCore::math::Tan(fTheta) * vecCore::math::Cos(fPhi);
-    fTthetaSphi = vecCore::math::Tan(fTheta) * vecCore::math::Sin(fPhi);
-    // Recalculate theta and phi for consistency with Geant4 
-    fTheta = vecCore::math::ATan(vecCore::math::Abs(vecCore::math::Tan(fTheta)));
-    fPhi = vecCore::math::ATan2(fTthetaSphi, fTthetaCphi);
+    fTthetaCphi = Tan(fTheta) * Cos(fPhi);
+    fTthetaSphi = Tan(fTheta) * Sin(fPhi);
+    // Recalculate theta and phi for consistency with Geant4
+    fTheta = ATan(Abs(Tan(fTheta)));
+    fPhi   = ATan2(fTthetaSphi, fTthetaCphi);
+
+    T maxX              = Max(Max(fDx1, fDx2), Max(fDx3, fDx4));
+    T maxY              = Max(fDy1, fDy2);
+    T maxLength         = Max(fDz, Max(maxX, maxY));
+    T tiltScale         = T(1.) + Abs(fTthetaCphi) + Abs(fTthetaSphi) + Abs(fTanAlpha1) + Abs(fTanAlpha2);
+    fInvProjectionScale = T(1.) / Max(T(1.), maxLength * tiltScale);
   }
 
 public:

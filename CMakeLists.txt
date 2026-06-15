@@ -155,7 +155,16 @@ else()
 endif()
 
 # Implementation options
-option(VECGEOM_PLANESHELL "Enable the use of PlaneShell class for the trapezoid." ON)
+option(VECGEOM_PLANESHELL "Use PlaneShell storage for trapezoid side planes. Always enabled; OFF is deprecated and ignored." ON)
+if(NOT VECGEOM_PLANESHELL)
+  message(WARNING "Deprecated configuration option: VECGEOM_PLANESHELL=OFF is ignored. "
+    "PlaneShell storage for trapezoid side planes is always enabled."
+  )
+endif()
+set(VECGEOM_PLANESHELL ON CACHE BOOL
+  "Use PlaneShell storage for trapezoid side planes. Always enabled; OFF is deprecated and ignored."
+  FORCE
+)
 option(VECGEOM_INPLACE_TRANSFORMATIONS "Put transformation as members rather than pointers into PlacedVolume objects" ON)
 option(VECGEOM_USE_SURF "Enable surface model navigation" ${_default_surf})
 
@@ -177,21 +186,18 @@ option(VECGEOM_NO_WRONGSIDE_CONV
 # request, then derive the effective macro from VECGEOM_BACKEND so switching a
 # build tree from scalar to vc re-enables the default.
 set(_VECGEOM_QUAD_ACCEL_DOC
-  "Enable SIMD vectorization when looping over quadrilaterals (in Polyhedron) for Vc builds."
+  "Enable SIMD vectorization when looping over quadrilaterals for Vc builds. Always enabled with the Vc backend."
 )
-get_property(_VECGEOM_QUAD_ACCEL_CACHE_TYPE CACHE VECGEOM_QUADRILATERAL_ACCELERATION PROPERTY TYPE)
-if(VECGEOM_BACKEND STREQUAL "vc" AND _VECGEOM_QUAD_ACCEL_CACHE_TYPE STREQUAL "INTERNAL")
-  set(VECGEOM_QUADRILATERAL_ACCELERATION ON CACHE BOOL "${_VECGEOM_QUAD_ACCEL_DOC}" FORCE)
-endif()
-option(VECGEOM_QUADRILATERAL_ACCELERATION
-  "${_VECGEOM_QUAD_ACCEL_DOC}"
-  ON
-)
+option(VECGEOM_QUADRILATERAL_ACCELERATION "${_VECGEOM_QUAD_ACCEL_DOC}" ON)
 set(_VECGEOM_QUAD_ACCEL_REQUESTED ${VECGEOM_QUADRILATERAL_ACCELERATION})
 if(NOT VECGEOM_BACKEND STREQUAL "vc")
   set(VECGEOM_QUADRILATERAL_ACCELERATION OFF)
-elseif(_VECGEOM_QUAD_ACCEL_REQUESTED)
-  set(VECGEOM_QUADRILATERAL_ACCELERATION ON)
+else()
+  if(NOT _VECGEOM_QUAD_ACCEL_REQUESTED)
+    message(WARNING "Deprecated configuration option: VECGEOM_QUADRILATERAL_ACCELERATION=OFF is ignored "
+                    "for VECGEOM_BACKEND=vc. Quadrilateral SIMD acceleration is always enabled for Vc builds.")
+  endif()
+  set(VECGEOM_QUADRILATERAL_ACCELERATION ON CACHE BOOL "${_VECGEOM_QUAD_ACCEL_DOC}" FORCE)
 endif()
 
 # Special cuda-dependent volume specialization
