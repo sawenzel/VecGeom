@@ -75,6 +75,8 @@ bool testTorus()
   Torus_t t6("t6", 100, 150, 200, 0, vecgeom::kPi / 3);
   Torus_t *clad = new Torus_t("clad", 0., 10., 100., 0., vecgeom::kPi); // external
   Torus_t *core = new Torus_t("core", 0., 5, 100, 0., vecgeom::kPi);    // internal
+  Torus_t hollowTangent("Hollow tangent Torus", 5., 10., 30., 0., vecgeom::kTwoPi);
+  Torus_t hollowSectorTangent("Hollow sector tangent Torus", 5., 10., 30., 0.25 * vecgeom::kPi, 0.75 * vecgeom::kPi);
 
   Torus_t *cmsEECool3 = new Torus_t("cmsEECool3", 0, 6, 1640, 0.09599, 1.4312);
   Vec_t temp1         = Vec_t(-0.646752, -0.762700, -0.000012);
@@ -265,6 +267,35 @@ bool testTorus()
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0));
   Dist = t2.DistanceToIn(ponrmin, vmy);
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 20));
+  Dist = t2.DistanceToIn(ponrmax, vxy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, vecgeom::kInfLength));
+  Dist = hollowTangent.DistanceToIn(Vec_t(35., 0., 0.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  Dist = hollowTangent.DistanceToOut(Vec_t(35., 0., 0.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, std::sqrt(40. * 40. - 35. * 35.)));
+  const Vec_t nearSideNeutral(27.5, 0., std::sqrt(75.) / 2.);
+  const Vec_t nearSideHollowDir(-0.25, std::sqrt(11. / 12.), -1. / std::sqrt(48.));
+  Dist = hollowTangent.DistanceToIn(nearSideNeutral, nearSideHollowDir);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 30.));
+  Dist = hollowTangent.DistanceToOut(nearSideNeutral, nearSideHollowDir);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  const Precision apexExit = std::sqrt((30. + std::sqrt(75.)) * (30. + std::sqrt(75.)) - 30. * 30.);
+  Dist                     = hollowTangent.DistanceToIn(Vec_t(30., 0., 5.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  Dist = hollowTangent.DistanceToOut(Vec_t(30., 0., 5.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, apexExit));
+  Dist = hollowTangent.DistanceToIn(Vec_t(30., 0., -5.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  Dist = hollowTangent.DistanceToOut(Vec_t(30., 0., -5.), vy);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, apexExit));
+  Dist = hollowSectorTangent.DistanceToIn(Vec_t(0., 35., 0.), vmx);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  Dist = hollowSectorTangent.DistanceToOut(Vec_t(0., 35., 0.), vmx);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, std::sqrt(40. * 40. - 35. * 35.)));
+  Dist = hollowSectorTangent.DistanceToIn(Vec_t(0., 20., 0.), vmx);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 0.));
+  Dist = hollowSectorTangent.DistanceToOut(Vec_t(0., 20., 0.), vmx);
+  VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 15.));
 
   Dist = t3.DistanceToIn(ponrtor, vy);
   VECGEOM_ASSERT(ApproxEqual<Precision>(Dist, 40));
