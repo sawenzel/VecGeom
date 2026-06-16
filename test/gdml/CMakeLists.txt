@@ -4,6 +4,10 @@
 #    \authors Author:  Dmitry Savin
 #
 #    \license Distributed under the Apache license 2.0
+
+# CMake-provided module for test discovery
+include(GoogleTest)
+
 # Executable for Backend/Frontend/Middleware/Schema types
 foreach(_vgdml_test TestXercesBackend TestXercesFrontend TestXercesMiddleware ReadMiddlewareData
                     TestVGDMLAuxiliary TestVGDMLNavigation TestBVHNavigator TestVGDMLVolumeAuxiliaryInfo)

@@ -226,6 +226,7 @@ public:
    */
   LogicalVolume *FindLogicalVolume(char const *const label);
 
+  VECGEOM_FORCE_INLINE uint NumLogicalVolumes() const { return fLogicalVolumesArray.size(); }
   VECGEOM_FORCE_INLINE LogicalVolume *GetLogicalVolume(const uint id) const { return fLogicalVolumesArray[id]; }
 
   /**

@@ -11,6 +11,8 @@
 #include "VecGeom/volumes/PlacedVolume.h"
 
 namespace vecgeom {
+class NavView;
+
 namespace test {
 //---------------------------------------------------------------------------//
 
@@ -21,8 +23,14 @@ public:
 
   virtual void LoadWorld() = 0;
 
-  // GDML or test identifier
-  virtual std::string GetBasename() const = 0;
+  // GDML or test identifier: use test harness name as default
+  virtual std::string GetBasename() const;
+
+  // Get the "top" logical volume from a navigation view
+  std::string LvStr(NavView const &) const;
+
+  // Get a slash-joined path string from a nav view's state
+  std::string PathStr(NavView const &) const;
 
 private:
   void SetUpVolumeTracking();
@@ -39,8 +47,6 @@ class CustomTestBase : public TestBase {
 public:
   // Build the world volume and set in GeoManager
   void LoadWorld() final;
-  // Use test suite name
-  std::string GetBasename() const final;
 
   // Implement this to create custom volumes
   virtual cxx::VPlacedVolume *MakeWorld() = 0;
@@ -49,7 +55,7 @@ public:
 /*!
  * Base class to load a world via VGDML.
  *
- * Implement \c GetBasename to return the name component of a file in \c VecGeom/test/gdml/gdmls .
+ * Implement \c GetBasename to return the name component of a file in \c VecGeom/test/{GetGdmlDir}/{GetBasename}.gdml .
  *
  * \par Example:
  * \code
@@ -73,6 +79,9 @@ public:
 
   //! Default length is mm but many test GDML files use cm
   virtual UnitLength GetUnitLength() const { return UnitLength::mm; }
+
+  //! GDML base directory relative to test dir
+  virtual std::string GetGdmlDir() const { return "gdml/gdmls"; }
 
   void LoadWorld() final;
 };

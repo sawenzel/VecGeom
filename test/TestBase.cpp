@@ -5,11 +5,14 @@
 //! \file TestBase.cpp
 //---------------------------------------------------------------------------//
 #include "TestBase.h"
+#include <fstream>
+#include <sstream>
 
 #include "VecGeom/management/ABBoxManager.h"
 #include "VecGeom/management/BVHManager.h"
 #include "VecGeom/management/GeoManager.h"
 #include "VecGeom/management/Logger.h"
+#include "VecGeom/navigation/NavView.h"
 #include "VecGeom/base/Assert.h"
 #include "vg_test_config.h"
 
@@ -69,6 +72,17 @@ void TestBase::SetUp()
   }
 }
 
+//! Use the GoogleTest harness to set a base name for geometry
+std::string TestBase::GetBasename() const
+{
+  auto *ut = ::testing::UnitTest::GetInstance();
+  VECGEOM_ASSERT(ut);
+  auto *test = ut->current_test_info();
+  VECGEOM_VALIDATE(test, << "cannot get default GDML filename when run outside test");
+  return test->test_suite_name();
+}
+
+//! Set up VecGeom internals after loading
 void TestBase::SetUpVolumeTracking()
 {
   using ABBoxManager_t = ABBoxManager<Precision>;
@@ -87,18 +101,48 @@ void TestBase::SetUpVolumeTracking()
   }
 }
 
+//! Get the "top" logical volume from a navigation view
+std::string TestBase::LvStr(NavView const &nav) const
+{
+  if (nav.IsOutside()) {
+    return "[OUTSIDE]";
+  }
+  auto &geo_manager = vecgeom::GeoManager::Instance();
+  auto lv_id        = nav.GetLogicalVolumeId();
+  if (lv_id >= geo_manager.NumLogicalVolumes()) {
+    return "[INVALID]";
+  }
+  auto *lv = geo_manager.GetLogicalVolume(lv_id);
+  if (!lv) {
+    return "[NULL]";
+  }
+  return lv->GetLabel();
+}
+
+//! Get a slash-joined path string from a nav view's state
+std::string TestBase::PathStr(NavView const &nav) const
+{
+  if (nav.IsOutside()) return "/";
+
+  // Create temporary state based on opaque path
+  NavView::NavState state{nav.GetOpaquePath()};
+
+  std::ostringstream ss;
+  for (int lev = 0, end_lev = state.GetLevel() + 1; lev < end_lev; ++lev) {
+    ss << '/';
+    auto *pv = state.At(lev);
+    if (pv) {
+      ss << pv->GetLabel();
+    } else {
+      ss << "[NULL]";
+    }
+  }
+  return std::move(ss).str();
+}
+
 //---------------------------------------------------------------------------//
 // CustomTestBase
 //---------------------------------------------------------------------------//
-
-//! Use the GoogleTest harness to set a base name for repeable geometry
-std::string CustomTestBase::GetBasename() const
-{
-  auto *ut = ::testing::UnitTest::GetInstance();
-  VECGEOM_ASSERT(ut);
-  auto *test = ut->current_test_info();
-  return test->test_suite_name();
-}
 
 //! Dispatch to the custom test's load function
 void CustomTestBase::LoadWorld()
@@ -120,9 +164,16 @@ void GdmlTestBase::LoadWorld()
 {
   // Construct absolute path to GDML input
   std::string filename = vecgeom_source_dir;
-  filename += "/test/gdml/gdmls/";
+  filename += "/test/";
+  filename += this->GetGdmlDir();
+  filename += '/';
   filename += this->GetBasename();
   filename += ".gdml";
+
+  {
+    std::ifstream file{filename};
+    ASSERT_TRUE(file) << "GDML file expected at '" << filename << "' is not readable";
+  }
 
   auto unit_system = this->GetUnitLength();
   auto mm_value    = (unit_system == UnitLength::mm ? 1.0 : unit_system == UnitLength::cm ? 0.1 : 0.0);
@@ -135,6 +186,7 @@ void GdmlTestBase::LoadWorld()
                         /* verbose = */ false);
 #else
   FAIL() << "VGDML is not enabled: cannot run test";
+  (void)sizeof(mm_value);
 #endif
 }
 
