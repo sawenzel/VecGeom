@@ -1,3 +1,6 @@
+/// @file PolygonalShell.h
+/// @brief Z-aligned side-shell helper for simple extruded polygons.
+
 #ifndef VECGEOM_POLYGONAL_SHELL_H
 #define VECGEOM_POLYGONAL_SHELL_H
 
@@ -11,8 +14,10 @@ VECGEOM_DEVICE_DECLARE_CONV(class, PolygonalShell);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
-// a set of z-axis aligned rectangles
-// looking from the z - direction the rectangles form a convex or concave polygon
+/// @brief Side-shell representation for a polygon extruded between two z planes.
+/// @details Each polygon edge defines one z-aligned rectangular side surface.
+/// The shell provides side-only distance helpers used by `SExtruImplementation`;
+/// cap handling stays in the SExtru kernel.
 class PolygonalShell : AlignedBase {
 
 private:
@@ -83,96 +88,99 @@ public:
     return fPolygon.IsConvex() ? DistanceToInConvex(point, dir) : DistanceToInConcave(point, dir);
   }
 
+  /// @brief Compute the first side-shell entry for a convex polygon.
+  /// @details Intersects candidate side planes, then filters by z range and
+  /// segment ownership. Convex shells can return as soon as the first valid
+  /// side hit is found.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @return Side entry distance or `kInfLength` when no side is hit.
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v DistanceToInConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v done(false);
+    bool done = false;
     Real_v result(kInfLength);
     const auto S = fPolygon.fVertices.size();
 
     for (size_t i = 0; i < S; ++i) { // side/rectangle index
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
-      const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj >= -kTolerance;
-      if (vecCore::MaskEmpty(sidecorrect)) {
-        continue;
-      }
+      const Real_v proj      = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
+      const bool sidecorrect = proj >= -kTolerance;
+      if (!sidecorrect) continue;
 
       // the distance to the plane (specialized for fNormalsZ == 0)
       const Real_v pdist = fPolygon.fA[i] * point.x() + fPolygon.fB[i] * point.y() + fPolygon.fD[i];
 
-      const Bool_v moving_away = pdist > kTolerance;
-      if (vecCore::MaskFull(moving_away)) {
-        continue;
-      }
+      const bool moving_away = pdist > kTolerance;
+      if (moving_away) continue;
 
       const Real_v dist = -pdist / NonZero(proj);
 
       // propagate to plane (first just z)
       const Real_v zInters(point.z() + dist * dir.z());
-      const Bool_v zRangeOk = (zInters <= fUpperZ) && (zInters >= fLowerZ);
-      if (!vecCore::MaskEmpty(zRangeOk)) {
+      const Real_v tolerance = kToleranceDist<Real_v>;
+      const bool zRangeOk    = (zInters <= fUpperZ + tolerance) && (zInters >= fLowerZ - tolerance);
+      if (zRangeOk) {
         // check intersection with rest of rectangle
         const Real_v xInters(point.x() + dist * dir.x());
         const Real_v yInters(point.y() + dist * dir.y());
 
         // we could already check if intersection within the known extent
-        const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters);
+        const bool intersects = fPolygon.OnSegment<Real_v, Precision, bool>(i, xInters, yInters);
 
-        vecCore::MaskedAssign(result, !done && intersects, Max(dist, Real_v(0.)));
-        done |= intersects;
+        if (!done && intersects) {
+          result = Max(dist, Real_v(0.));
+          done   = true;
+        }
       }
-      if (vecCore::MaskFull(done)) {
-        return result;
-      }
+      if (done) return result;
     }
     return result;
   }
 
+  /// @brief Compute the nearest side-shell entry for a concave polygon.
+  /// @details Concave shells may expose multiple side planes to the ray, so all
+  /// accepted plane/segment candidates are reduced to the nearest non-negative
+  /// entry distance.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @return Side entry distance or `kInfLength` when no side is hit.
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v DistanceToInConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
     Real_v result(kInfLength);
     const auto S = fPolygon.fVertices.size();
 
     for (size_t i = 0; i < S; ++i) { // side/rectangle index
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
-      const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj >= -kTolerance;
-      if (vecCore::MaskEmpty(sidecorrect)) {
-        continue;
-      }
+      const Real_v proj      = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
+      const bool sidecorrect = proj >= -kTolerance;
+      if (!sidecorrect) continue;
 
       // the distance to the plane (specialized for fNormalsZ == 0)
       const Real_v pdist = fPolygon.fA[i] * point.x() + fPolygon.fB[i] * point.y() + fPolygon.fD[i];
 
-      const Bool_v moving_away = pdist > kTolerance;
-      if (vecCore::MaskFull(moving_away)) {
-        continue;
-      }
+      const bool moving_away = pdist > kTolerance;
+      if (moving_away) continue;
 
       const Real_v dist = -pdist / NonZero(proj);
 
       // propagate to plane (first just z)
       const Real_v zInters(point.z() + dist * dir.z());
-      const Bool_v zRangeOk = (zInters <= fUpperZ) && (zInters >= fLowerZ);
-      if (!vecCore::MaskEmpty(zRangeOk)) {
+      const Real_v tolerance = kToleranceDist<Real_v>;
+      const bool zRangeOk    = (zInters <= fUpperZ + tolerance) && (zInters >= fLowerZ - tolerance);
+      if (zRangeOk) {
         // check intersection with rest of rectangle
         const Real_v xInters(point.x() + dist * dir.x());
         const Real_v yInters(point.y() + dist * dir.y());
 
         // we could already check if intersection within the known extent
-        const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters);
+        const bool intersects = fPolygon.OnSegment<Real_v, Precision, bool>(i, xInters, yInters);
 
-        vecCore__MaskedAssignFunc(result, intersects, Min(Max(dist, Real_v(0.)), result));
+        if (intersects) result = Min(Max(dist, Real_v(0.)), result);
       }
-      // if (vecCore::MaskFull(done)) {
-      //        return result;
-      //      }
     }
     return result;
   }
@@ -185,104 +193,124 @@ public:
     return fPolygon.IsConvex() ? DistanceToOutConvex(point, dir) : DistanceToOutConcave(point, dir);
   }
 
-  // convex distance to out; checks for hits and aborts loop if hit found
-  // NOTE: this kernel is the same as DistanceToIn apart from the comparisons for early return
-  // these could become a template parameter
+  /// @brief Compute the first side-shell exit for a convex polygon.
+  /// @details This is the exit counterpart of `DistanceToInConvex`: candidate
+  /// side-plane intersections are filtered by z range and segment ownership.
+  /// Tolerated side-surface starts moving outward return zero.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @return Side exit distance or `kInfLength` when no side is hit.
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v DistanceToOutConvex(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    Bool_v done(false);
+    bool done = false;
     Real_v result(kInfLength);
     const auto S = fPolygon.fVertices.size();
 
     for (size_t i = 0; i < S; ++i) { // side/rectangle index
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
-      const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj <= -kTolerance;
-      if (vecCore::MaskEmpty(sidecorrect)) {
-        continue;
-      }
+      const Real_v proj = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
 
       // the distance to the plane (specialized for fNormalsZ == 0)
       const Real_v pdist = fPolygon.fA[i] * point.x() + fPolygon.fB[i] * point.y() + fPolygon.fD[i];
 
-      const Bool_v moving_away = pdist < -kTolerance;
-      if (vecCore::MaskFull(moving_away)) {
-        continue;
+      // Tolerated side-surface starts moving out are immediate exits.
+      const bool surfaceExit = (Abs(pdist) <= kToleranceDist<Real_v>) && (proj < Real_v(0.)) &&
+                               (point.z() <= fUpperZ + kToleranceDist<Real_v>) &&
+                               (point.z() >= fLowerZ - kToleranceDist<Real_v>) &&
+                               fPolygon.OnSegment<Real_v, Precision, bool>(i, point.x(), point.y());
+      if (!done && surfaceExit) {
+        result = Real_v(0.);
+        done   = true;
       }
+      if (done) return result;
+
+      const bool sidecorrect = proj <= -kTolerance;
+      if (!sidecorrect) continue;
+
+      const bool moving_away = pdist < -kTolerance;
+      if (moving_away) continue;
 
       const Real_v dist = -pdist / NonZero(proj);
 
       // propagate to plane (first just z)
       const Real_v zInters(point.z() + dist * dir.z());
-      const Bool_v zRangeOk = (zInters <= fUpperZ) && (zInters >= fLowerZ) && sidecorrect && !moving_away;
-      if (!vecCore::MaskEmpty(zRangeOk)) {
+      const Real_v tolerance = kToleranceDist<Real_v>;
+      const bool zRangeOk =
+          (zInters <= fUpperZ + tolerance) && (zInters >= fLowerZ - tolerance) && sidecorrect && !moving_away;
+      if (zRangeOk) {
         // check intersection with rest of rectangle
         const Real_v xInters(point.x() + dist * dir.x());
         const Real_v yInters(point.y() + dist * dir.y());
 
         // we could already check if intersection within the known extent
-        const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters) && zRangeOk &&
-                                  (dist >= -Real_v(kTolerance));
+        const bool intersects =
+            fPolygon.OnSegment<Real_v, Precision, bool>(i, xInters, yInters) && (dist >= -Real_v(kTolerance));
 
-        vecCore::MaskedAssign(result, !done && intersects, dist);
-        done |= intersects;
+        if (!done && intersects) {
+          result = dist;
+          done   = true;
+        }
       }
-      if (vecCore::MaskFull(done)) {
-        return result;
-      }
+      if (done) return result;
     }
     return result;
   }
 
-  // DistanceToOut for the concave case
-  // we should ideally combine this with the other kernel
+  /// @brief Compute the nearest side-shell exit for a concave polygon.
+  /// @details Concave shells may have multiple valid side candidates, so the
+  /// nearest accepted plane/segment hit is selected. Tolerated side-surface
+  /// starts moving outward return zero.
+  /// @param point Local start point.
+  /// @param dir Unit local direction.
+  /// @return Side exit distance or `kInfLength` when no side is hit.
   template <typename Real_v>
   VECCORE_ATT_HOST_DEVICE Real_v DistanceToOutConcave(Vector3D<Real_v> const &point, Vector3D<Real_v> const &dir) const
   {
-    using Bool_v = vecCore::Mask_v<Real_v>;
     Real_v result(kInfLength);
     const auto S = fPolygon.fVertices.size();
 
     for (size_t i = 0; i < S; ++i) { // side/rectangle index
       // approaching from right side?
       // under the assumption that surface normals points "inwards"
-      const Real_v proj        = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
-      const Bool_v sidecorrect = proj < -kTolerance;
-      if (vecCore::MaskEmpty(sidecorrect)) {
-        continue;
-      }
+      const Real_v proj = fPolygon.fA[i] * dir.x() + fPolygon.fB[i] * dir.y();
 
       // the distance to the plane (specialized for fNormalsZ == 0)
       const Real_v pdist = fPolygon.fA[i] * point.x() + fPolygon.fB[i] * point.y() + fPolygon.fD[i];
 
-      const Bool_v moving_away = pdist < -kTolerance;
-      if (vecCore::MaskFull(moving_away)) {
-        continue;
-      }
+      // Tolerated side-surface starts moving out are immediate exits.
+      const bool surfaceExit = (Abs(pdist) <= kToleranceDist<Real_v>) && (proj < Real_v(0.)) &&
+                               (point.z() <= fUpperZ + kToleranceDist<Real_v>) &&
+                               (point.z() >= fLowerZ - kToleranceDist<Real_v>) &&
+                               fPolygon.OnSegment<Real_v, Precision, bool>(i, point.x(), point.y());
+      if (surfaceExit) return Real_v(0.);
+
+      const bool sidecorrect = proj < -kTolerance;
+      if (!sidecorrect) continue;
+
+      const bool moving_away = pdist < -kTolerance;
+      if (moving_away) continue;
 
       const Real_v dist = -pdist / NonZero(proj);
 
       // propagate to plane (first just z)
       const Real_v zInters(point.z() + dist * dir.z());
-      const Bool_v zRangeOk = (zInters <= fUpperZ) && (zInters >= fLowerZ) && sidecorrect && !moving_away;
-      if (!vecCore::MaskEmpty(zRangeOk)) {
+      const Real_v tolerance = kToleranceDist<Real_v>;
+      const bool zRangeOk =
+          (zInters <= fUpperZ + tolerance) && (zInters >= fLowerZ - tolerance) && sidecorrect && !moving_away;
+      if (zRangeOk) {
         // check intersection with rest of rectangle
         const Real_v xInters(point.x() + dist * dir.x());
         const Real_v yInters(point.y() + dist * dir.y());
 
         // we could already check if intersection within the known extent
-        const Bool_v intersects = fPolygon.OnSegment<Real_v, Precision, Bool_v>(i, xInters, yInters) && zRangeOk &&
-                                  (dist >= -Real_v(kTolerance));
+        const bool intersects =
+            fPolygon.OnSegment<Real_v, Precision, bool>(i, xInters, yInters) && (dist >= -Real_v(kTolerance));
 
-        vecCore__MaskedAssignFunc(result, intersects, Min(dist, result));
-        // done |= intersects;
+        // Accepted negative roots are tolerated surface starts, not backward exits.
+        if (intersects) result = Min(Max(dist, Real_v(0.)), result);
       }
-      // if (vecCore::MaskFull(done)) {
-      //  return result;
-      //}
     }
     return result;
   }
