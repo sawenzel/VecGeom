@@ -363,6 +363,7 @@ set(SHAPE_CONTRACT_SOLID_CASES
 
   # SExtru
   sextru_circular
+  sextru_concave
 
   # Extruded
   extruded_multilayer
@@ -424,6 +425,7 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   polycone_hec_liquid_argon
   polycone_nearly_repeated_z
   polycone_two_section_sharp_jump
+  sextru_concave
   sphere_narrow_phi
   sphere_section
   tessellated_orb

@@ -1,6 +1,7 @@
 //===-- kernel/ExtrudedImplementation.h ----------------------------------*- C++ -*-===//
 //===--------------------------------------------------------------------------===//
 /// @file ExtrudedImplementation.h
+/// @brief Navigation dispatcher for simple and tessellated extruded solids.
 /// @author mihaela.gheata@cern.ch
 
 #ifndef VECGEOM_VOLUMES_KERNEL_EXTRUDEDIMPLEMENTATION_H_
@@ -26,19 +27,23 @@ class PlacedExtruded;
 class ExtrudedStruct;
 class UnplacedExtruded;
 
+/// @brief Dispatches extruded-solid navigation to SExtru or tessellated helpers.
+/// @details Single-section simple extrusions use `SExtruImplementation`.
+/// General multi-section extrusions use tessellated helpers, with an optional
+/// host-only per-section path when `fUseTslSections` is enabled.
 struct ExtrudedImplementation {
 
   using PlacedShape_t    = PlacedExtruded;
   using UnplacedStruct_t = ExtrudedStruct;
   using UnplacedVolume_t = UnplacedExtruded;
 
-  template <typename Real_v, typename Bool_v>
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &extruded,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, bool &inside)
   {
     inside = false;
     if (extruded.fIsSxtru) {
-      SExtruImplementation::Contains<Real_v, Bool_v>(extruded.fSxtruHelper, point, inside);
+      SExtruImplementation::Contains<Real_v>(extruded.fSxtruHelper, point, inside);
       return;
     }
 
@@ -51,7 +56,7 @@ struct ExtrudedImplementation {
       return;
     }
 #endif
-    TessellatedImplementation::Contains<Real_v, Bool_v>(extruded.fTslRuntimeHelper, point, inside);
+    TessellatedImplementation::Contains<Real_v, bool>(extruded.fTslRuntimeHelper, point, inside);
   }
 
   template <typename Real_v, typename Inside_v>
@@ -103,8 +108,8 @@ struct ExtrudedImplementation {
       sign[0]  = invdir.x() < 0;
       sign[1]  = invdir.y() < 0;
       sign[2]  = invdir.z() < 0;
-      distance = BoxImplementation::IntersectCachedKernel2<Real_v, Real_v>(&extruded.fTslRuntimeHelper.fMinExtent, point,
-                                                                           invdir, sign.x(), sign.y(), sign.z(),
+      distance = BoxImplementation::IntersectCachedKernel2<Real_v, Real_v>(&extruded.fTslRuntimeHelper.fMinExtent,
+                                                                           point, invdir, sign.x(), sign.y(), sign.z(),
                                                                            -kTolerance, InfinityLength<Real_v>());
       if (distance >= stepMax) return;
 
@@ -190,8 +195,9 @@ struct ExtrudedImplementation {
   }
 
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &extruded, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &extruded,
+                                                                                    Vector3D<Real_v> const &point,
+                                                                                    bool &valid)
   {
     // Computes the normal on a surface and returns it as a unit vector
     if (extruded.fIsSxtru) return SExtruImplementation::NormalKernel<Real_v>(extruded.fSxtruHelper, point, valid);

@@ -140,6 +140,26 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"hype_bottom_cap_tolerance_outward_exit", "hype", "surface_exit", ShapeSampleCategory::kSurface,
        Vec_t(60., 0., -50. - vecgeom::kTolerance), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
        "Tolerated bottom-cap surface start just outside z must have a zero outward DistanceToOut."},
+      // SExtru
+      {"sextru_concave_reentrant_vertex_notch_exit", "sextru_concave", "surface_exit", ShapeSampleCategory::kEdge,
+       Vec_t(1., -1., 0.), Vec_t(0.70710678118654757, 0.70710678118654757, 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the reentrant vertex of the concave notch and immediately leaves into the missing quadrant."},
+      {"sextru_concave_reentrant_vertex_material_entry", "sextru_concave", "surface", ShapeSampleCategory::kEdge,
+       Vec_t(1., -1., 0.), Vec_t(-0.70710678118654757, -0.70710678118654757, 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the reentrant vertex of the concave notch and enters the owned material region."},
+      {"sextru_concave_notch_wrong_side_conventions", "sextru_concave", "contracts", ShapeSampleCategory::kOutside,
+       Vec_t(2., 2., 0.), Vec_t(-0.9759000729485332, 0.19518001458970663, 0.097590007294853315), false,
+       Vec_t(0., 0., 0.), 0.,
+       "Ray starts in the concave notch outside the solid; wrong-side DistanceToOut and SafetyToOut must stay "
+       "negative while DistanceToIn can enter through the vertical notch wall."},
+      {"sextru_concave_inside_infinite_side_plane_exit", "sextru_concave", "distance_to_out",
+       ShapeSampleCategory::kInside, Vec_t(1., -2., 0.), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Inside point lies on the infinite extension of the concave notch side plane but must exit through the owned "
+       "outer side rectangle."},
+      {"sextru_concave_side_tolerance_outward_exit", "sextru_concave", "surface_exit", ShapeSampleCategory::kSurface,
+       Vec_t(4. + 0.5 * vecgeom::kTolerance, -2., 0.), Vec_t(1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,
+       "Tolerated side-surface point moving outward must clamp the near-zero side hit to zero, not return a "
+       "negative backward step."},
       // Tube
       {"tube_fullphi_cap_grazing_entry_continuation", "tube_fullphi", "grazing_entry", ShapeSampleCategory::kOutside,
        Vec_t(12., 0., 20.), Vec_t(-1., 0., 0.), false, Vec_t(0., 0., 0.), 0.,

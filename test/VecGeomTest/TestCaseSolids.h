@@ -261,6 +261,9 @@ inline const std::vector<TestCaseSolid> &GetTestCaseSolids()
       {"sextru_circular", &MakeSExtruCircularTestSolid, "SExtruImplementation",
        MakeFastContractSampling(10000, 68, 46, 4., 25.), MakeMediumContractSampling(100000, 68, 46, 4., 25.), {},
        false, false, kPlanarTolerance},
+      {"sextru_concave", &MakeSExtruConcaveTestSolid, "SExtruImplementation",
+       MakeFastContractSampling(10000, 76, 54, 4., 25.), MakeMediumContractSampling(100000, 76, 54, 4., 25.), {},
+       false, false, kPlanarTolerance},
 
       // Extruded
       {"extruded_multilayer", &MakeExtrudedMultiLayerTestSolid, "ExtrudedImplementation",

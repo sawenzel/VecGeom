@@ -20,6 +20,14 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakeSExtruCircularTestSolid()
   return std::unique_ptr<vecgeom::VPlacedVolume>(new vecgeom::SimpleSExtru("test-sextru-circular", n, x, y, -5., 10.));
 }
 
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakeSExtruConcaveTestSolid()
+{
+  constexpr size_t n      = 6;
+  vecgeom::Precision x[n] = {-4., 4., 4., 1., 1., -4.};
+  vecgeom::Precision y[n] = {-4., -4., -1., -1., 4., 4.};
+  return std::unique_ptr<vecgeom::VPlacedVolume>(new vecgeom::SimpleSExtru("test-sextru-concave", n, x, y, -5., 10.));
+}
+
 } // namespace test
 } // namespace vecgeom
 
