@@ -236,7 +236,7 @@ VECGEOM_FUNCTION bool NavView::IsOutside() const { return cur_state_.IsOutside()
  */
 VECGEOM_FUNCTION auto NavView::GetLogicalVolumeId() const -> LogicalVolumeId
 {
-  VECGEOM_VALIDATE(!cur_state_.IsOutside(), << "cannot query ID while outside");
+  VECGEOM_NAV_VALIDATE(!cur_state_.IsOutside(), << "cannot query ID while outside");
   return cur_state_.GetLogicalId();
 }
 
@@ -248,7 +248,7 @@ VECGEOM_FUNCTION auto NavView::GetLogicalVolumeId() const -> LogicalVolumeId
  */
 VECGEOM_FUNCTION auto NavView::GetPlacedVolumeId() const -> PlacedVolumeId
 {
-  VECGEOM_VALIDATE(!cur_state_.IsOutside(), << "cannot query ID while outside");
+  VECGEOM_NAV_VALIDATE(!cur_state_.IsOutside(), << "cannot query ID while outside");
   auto *pv = cur_state_.Top();
   VECGEOM_ASSERT(pv);
   return pv->id();

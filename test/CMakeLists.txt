@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #-----------------------------------------------------------------------------#
 
-# CMake-provided module for test discovery
-include(GoogleTest)
-
 # Googletest harness setup
 file(TO_CMAKE_PATH "${PROJECT_SOURCE_DIR}" VECGEOM_SOURCE_DIR)
 configure_file(vg_test_config.h.in vg_test_config.h @ONLY)
@@ -29,19 +26,34 @@ cuda_rdc_target_include_directories(vg_test_lib PUBLIC
 
 #-----------------------------------------------------------------------------#
 
-add_executable(NavView_test navigation/NavView.test.cpp)
-cuda_rdc_target_link_libraries(NavView_test PUBLIC
-  vg_test_lib
-  GTest::gtest_main
-)
-cuda_rdc_target_include_directories(NavView_test PUBLIC
-  "${CMAKE_CURRENT_BINARY_DIR}"
-  "${CMAKE_CURRENT_SOURCE_DIR}"
-)
-if(VECGEOM_GDML)
-  # Currently all tests require GDML input
-  gtest_discover_tests(NavView_test)
-endif()
+# New test from navigation/NavView.Box.test.cpp
+# Target name: navigation_NavView_Box_test
+# Executable name: test/navigation_NavView_Box
+function(vecgeom_add_gdml_test dir classname gdml)
+  set(_target ${dir}_${classname}_${gdml}_test)
+  add_executable("${_target}" "${dir}/${classname}.${gdml}.test.cpp")
+  set_property(TARGET ${_target} PROPERTY
+    OUTPUT_NAME "${dir}_${classname}_${gdml}"
+  )
+  cuda_rdc_target_link_libraries(${_target} PUBLIC
+    vg_test_lib
+    GTest::gtest_main
+  )
+  set(_props
+    FAIL_REGULAR_EXPRESSION "no tests were run"
+    REQUIRED_FILES "${CMAKE_CURRENT_SOURCE_DIR}/${dir}/data/${gdml}.gdml"
+  )
+  if(NOT VECGEOM_GDML)
+    list(APPEND _props DISABLED True)
+  endif()
+
+  set(_test "${dir}/${classname}:${gdml}")
+  add_test(NAME "${_test}" COMMAND "$<TARGET_FILE:${_target}>")
+  set_tests_properties("${_test}" PROPERTIES ${_props})
+endfunction()
+
+vecgeom_add_gdml_test(navigation NavView Box)
+vecgeom_add_gdml_test(navigation NavView FourLevels)
 
 ################################################################################
 ## OLD TESTING
