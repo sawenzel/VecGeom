@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
       timer.Start();
       for (int i = 0; i < npoints; ++i)
         stsl->DistanceToIn(start, dirs[i]);
-      double trun = timer.Stop();
-      printf("n=%d ngrid=%d nfacets=%d  build time=%g run time=%g\n", i, ngrid1, nfacets1, tbuild, trun);
+      double runTime = timer.Stop();
+      printf("n=%d ngrid=%d nfacets=%d  build time=%g run time=%g\n", i, ngrid1, nfacets1, tbuild, runTime);
       delete tsl1;
       ngrid1 = sqrt2 * double(ngrid1);
     }
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
         break;
       }
       bool contains;
-      TessellatedImplementation::Contains<Precision, bool>(tsl, point, contains);
+      TessellatedImplementation::Contains<Precision>(tsl, point, contains);
       if (contains) pm.SetNextPoint(point[0], point[1], point[2]);
     }
 

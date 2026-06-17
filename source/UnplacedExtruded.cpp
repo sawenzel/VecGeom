@@ -9,6 +9,7 @@
 #include "VecGeom/base/RNG.h"
 
 #include "VecGeom/management/VolumeFactory.h"
+#include <cstddef> // offsetof
 
 #ifndef VECCORE_CUDA
 #include "VecGeom/volumes/UnplacedImplAs.h"
@@ -27,6 +28,16 @@
 #endif
 
 namespace vecgeom {
+
+#ifdef VECCORE_CUDA
+inline
+#endif
+    namespace cuda {
+
+template <typename Real_t>
+BVH<Real_t> *AllocateDeviceBVHBuffer(size_t n);
+} // namespace cuda
+
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECCORE_CUDA
@@ -117,6 +128,9 @@ UnplacedExtruded *Maker<UnplacedExtruded>::MakeInstance(const size_t nvertices, 
 
 void UnplacedExtruded::Print() const
 {
+#ifdef VECCORE_CUDA
+  printf("UnplacedExtruded");
+#else
   std::cerr << "UnplacedExtruded: vertices {";
   int nvert = GetNVertices();
   Precision x, y;
@@ -133,6 +147,7 @@ void UnplacedExtruded::Print() const
     std::cerr << "orig: (" << sect.fOrigin.x() << ", " << sect.fOrigin.y() << ", " << sect.fOrigin.z()
               << ") scl = " << sect.fScale << std::endl;
   }
+#endif
 }
 
 void UnplacedExtruded::Print(std::ostream &os) const
@@ -294,13 +309,14 @@ SolidMesh *UnplacedExtruded::CreateMesh3D(Transformation3D const &trans, size_t 
 #ifdef VECCORE_CUDA
 VECCORE_ATT_DEVICE VPlacedVolume *UnplacedExtruded::Create(LogicalVolume const *const logical_volume,
                                                            Transformation3D const *const transformation, const int id,
+                                                           const int copy_no, const int child_id,
                                                            VPlacedVolume *const placement)
 {
   if (placement) {
-    new (placement) SpecializedExtruded(logical_volume, transformation, id);
+    new (placement) SpecializedExtruded(logical_volume, transformation, id, copy_no, child_id);
     return placement;
   }
-  return new SpecializedExtruded(logical_volume, transformation, id);
+  return new SpecializedExtruded(logical_volume, transformation, id, copy_no, child_id);
 }
 #else
 VPlacedVolume *UnplacedExtruded::Create(LogicalVolume const *const logical_volume,
@@ -318,14 +334,14 @@ VECCORE_ATT_DEVICE
 VPlacedVolume *UnplacedExtruded::SpecializedVolume(LogicalVolume const *const volume,
                                                    Transformation3D const *const transformation,
 #ifdef VECCORE_CUDA
-                                                   const int id,
+                                                   const int id, const int copy_no, const int child_id,
 #endif
                                                    VPlacedVolume *const placement) const
 {
 
   return VolumeFactory::CreateByTransformation<UnplacedExtruded>(volume, transformation,
 #ifdef VECCORE_CUDA
-                                                                 id,
+                                                                 id, copy_no, child_id,
 #endif
                                                                  placement);
 }
@@ -347,50 +363,51 @@ std::ostream &UnplacedExtruded::StreamInfo(std::ostream &os) const
 
 DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const in_gpu_ptr) const
 {
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-  return CopyToGpuImpl<UnplacedExtruded>(in_gpu_ptr);
-#else
-  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
-  return DevicePtr<cuda::VUnplacedVolume>(nullptr);
-#endif
+  if (GetStruct().fIsSxtru) {
+    auto const &shell      = GetStruct().fSxtruHelper;
+    auto const &vertices   = shell.GetPolygon().GetVertices();
+    Precision const *x_cpu = vertices.x();
+    Precision const *y_cpu = vertices.y();
+    const auto nvertices   = vertices.size();
+    Precision *x_gpu_ptr   = AllocateOnGpu<Precision>(nvertices * sizeof(Precision));
+    Precision *y_gpu_ptr   = AllocateOnGpu<Precision>(nvertices * sizeof(Precision));
+    vecgeom::CopyToGpu(x_cpu, x_gpu_ptr, sizeof(Precision) * nvertices);
+    vecgeom::CopyToGpu(y_cpu, y_gpu_ptr, sizeof(Precision) * nvertices);
+
+    auto final_gpu_ptr = CopyToGpuImpl<UnplacedExtruded>(in_gpu_ptr, static_cast<int>(nvertices), x_gpu_ptr, y_gpu_ptr,
+                                                         shell.GetLowerZ(), shell.GetUpperZ(), fGlobalConvexity);
+
+    FreeFromGpu(x_gpu_ptr);
+    FreeFromGpu(y_gpu_ptr);
+    return final_gpu_ptr;
+  }
+
+  auto const &runtime = GetStruct().fTslRuntimeHelper;
+  VECGEOM_VALIDATE(runtime.fNFacets > 0 && runtime.fFacets != nullptr && runtime.fBVH != nullptr,
+                   << "Attempted to copy UnplacedExtruded without initialized tessellated runtime data");
+
+  auto gpu_bvh_ptr = cuda::AllocateDeviceBVHBuffer<float>(1);
+  runtime.fBVH->CopyToGpu(gpu_bvh_ptr);
+
+  size_t nfacets      = runtime.fNFacets;
+  auto gpu_facets_ptr = AllocateOnGpu<cuda::TriangularTile<double>>(sizeof(TriangularTile<double>) * nfacets);
+  vecgeom::CopyToGpu((char *)runtime.fFacets, (char *)gpu_facets_ptr, sizeof(TriangularTile<double>) * nfacets);
+
+  auto final_gpu_ptr =
+      CopyToGpuImpl<UnplacedExtruded>(in_gpu_ptr, nfacets, gpu_facets_ptr, gpu_bvh_ptr, fGlobalConvexity);
+
+  const auto *this_bytes                  = reinterpret_cast<const char *>(this);
+  const auto *runtime_bytes               = reinterpret_cast<const char *>(&runtime);
+  const std::size_t runtime_struct_offset = static_cast<std::size_t>(runtime_bytes - this_bytes);
+  // Preserve the device facet/BVH pointers set by the GPU constructor; copy only host-computed metadata.
+  constexpr std::size_t first_pointer_offset_in_runtime = offsetof(TessellatedRuntimeStruct<Precision>, fFacets);
+  vecgeom::CopyToGpu((char *)this + runtime_struct_offset, (char *)(in_gpu_ptr.GetPtr()) + runtime_struct_offset,
+                     first_pointer_offset_in_runtime);
+
+  return final_gpu_ptr;
 }
 
-DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu() const
-{
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-  return CopyToGpuImpl<UnplacedExtruded>();
-#else
-  VECGEOM_VALIDATE(0, << "Attempted to copy UnplacedExtruded to GPU.  This is not yet supported");
-  return DevicePtr<cuda::VUnplacedVolume>(nullptr);
-#endif
-}
-
-#ifndef HYBRID_NAVIGATOR_PORTED_TO_CUDA
-template <>
-size_t DevicePtr<vecgeom::cuda::SpecializedVolImplHelper<vecgeom::cuda::ExtrudedImplementation>>::SizeOf()
-{
-  return 0;
-}
-
-template <>
-template <>
-void DevicePtr<cuda::SpecializedVolImplHelper<cuda::ExtrudedImplementation>>::Construct(
-    DevicePtr<vecgeom::cuda::LogicalVolume>, DevicePtr<vecgeom::cuda::Transformation3D>, unsigned int, int, int) const
-{
-  return;
-}
-
-template <>
-void ConstructManyOnGpu<cuda::SpecializedVolImplHelper<cuda::ExtrudedImplementation>
-                        /*, ... inferred from arguments */>(
-    std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs, DevicePtr<cuda::LogicalVolume> const *logical,
-    DevicePtr<cuda::Transformation3D> const *trafo, decltype(std::declval<VPlacedVolume>().id()) const *ids,
-    decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,
-    decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds)
-{
-}
-
-#endif
+DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu() const { return CopyToGpuImpl<UnplacedExtruded>(); }
 
 #endif // VECGEOM_CUDA_INTERFACE
 
@@ -402,13 +419,9 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedExtruded>::SizeOf();
 template void DevicePtr<cuda::UnplacedExtruded>::Construct() const;
-template <>
-void ConstructManyOnGpu<cuda::SpecializedVolImplHelper<cuda::ExtrudedImplementation>
-                        /*, ... inferred from arguments */>(
-    std::size_t nElement, DevicePtr<cuda::VPlacedVolume> const *gpu_ptrs, DevicePtr<cuda::LogicalVolume> const *logical,
-    DevicePtr<cuda::Transformation3D> const *trafo, decltype(std::declval<VPlacedVolume>().id()) const *ids,
-    decltype(std::declval<VPlacedVolume>().GetCopyNo()) const *copyNos,
-    decltype(std::declval<VPlacedVolume>().GetChildId()) const *childIds);
+template void DevicePtr<cuda::UnplacedExtruded>::Construct(size_t, TriangularTile<double> *, BVH<float> *, bool) const;
+template void DevicePtr<cuda::UnplacedExtruded>::Construct(int, Precision *, Precision *, Precision, Precision,
+                                                           bool) const;
 
 } // namespace cxx
 

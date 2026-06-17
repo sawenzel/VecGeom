@@ -36,8 +36,8 @@ public:
   }
 #else
   __device__ PlacedExtruded(LogicalVolume const *const logicalVolume, Transformation3D const *const transformation,
-                            const int id)
-      : Base(logicalVolume, transformation, id)
+                            const int id, const int copy_no, const int child_id)
+      : Base(logicalVolume, transformation, id, copy_no, child_id)
   {
   }
 #endif

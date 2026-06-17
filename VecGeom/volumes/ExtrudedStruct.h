@@ -52,7 +52,7 @@ class ExtrudedStruct {
   };
 
   template <typename Facets_t>
-  VECCORE_ATT_HOST_DEVICE void TriangulatePolygon(Facets_t &facets) const
+  void TriangulatePolygon(Facets_t &facets) const
   {
     const size_t nvertices = GetNVertices();
     vector_t<size_t> vtx;
@@ -108,7 +108,6 @@ public:
 
     // TODO(VecGeom-release-transition): remove together with the compatibility
     // fields above. New visualization/export code should use GetMeshHelper().
-    VECCORE_ATT_HOST_DEVICE
     void FillFrom(TessellatedStruct<3, Precision> const &tsl)
     {
       fVertices.clear();
@@ -174,14 +173,12 @@ public:
   ExtrudedStruct() {}
 
   /** @brief Constructor providing polygon vertices and sections */
-  VECCORE_ATT_HOST_DEVICE
   ExtrudedStruct(int nvertices, XtruVertex2 const *vertices, int nsections, XtruSection const *sections)
   {
     Initialize(nvertices, vertices, nsections, sections);
   }
 
   // Constructor used during Specialization for nsections == 2
-  VECCORE_ATT_HOST_DEVICE
   ExtrudedStruct(size_t nvertices, const Precision *x, const Precision *y, Precision zmin, Precision zmax)
   {
     XtruVertex2 *vertices = new XtruVertex2[nvertices];
@@ -222,19 +219,22 @@ public:
   {
     if (fInitialized) return;
     VECGEOM_ASSERT(nsections > 1 && nvertices > 2);
-    fZPlanes         = new Precision[nsections];
-    fZPlanes[0]      = sections[0].fOrigin.z();
+    fZPlanes    = new Precision[nsections];
+    fZPlanes[0] = sections[0].fOrigin.z();
+#ifndef VECGEOM_ENABLE_CUDA
     bool degenerated = false;
+#endif
     for (size_t i = 1; i < (size_t)nsections; ++i) {
       fZPlanes[i] = sections[i].fOrigin.z();
       // Make sure sections are defined in increasing order
       VECGEOM_VALIDATE(fZPlanes[i] >= fZPlanes[i - 1], << "Extruded sections not defined in increasing Z order");
+#ifndef VECGEOM_ENABLE_CUDA
       if (fZPlanes[i] - fZPlanes[i - 1] < kTolerance) degenerated = true;
+#endif
     }
 #ifndef VECGEOM_ENABLE_CUDA
     if (!degenerated) fUseTslSections = true;
 #endif
-    (void)degenerated; // silence the compiler
     // Check if this is an SXtru
     if (nsections == 2 && (sections[0].fOrigin - sections[1].fOrigin).Perp2() < kTolerance &&
         vecCore::math::Abs(sections[0].fScale - sections[1].fScale) < kTolerance)
@@ -257,7 +257,6 @@ public:
   }
 
   /** @brief Construct facets based on vertices and sections */
-  VECCORE_ATT_HOST_DEVICE
   void CreateTessellated(size_t nvertices, XtruVertex2 const *vertices, size_t nsections, XtruSection const *sections)
   {
     TessellatedStruct<3, Precision> tsl_builder_struct;
@@ -362,7 +361,6 @@ public:
   }
 
   /** Return true if i is on the line through i1, i2 */
-  VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsSameLine(size_t i, size_t i1, size_t i2) const
   {
@@ -386,7 +384,6 @@ public:
   }
 
   /** @brief Return true if point i is on the line through i1, i2 and lies between i1 and i2 */
-  VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsSameLineSegment(size_t i, size_t i1, size_t i2) const
   {
@@ -400,7 +397,6 @@ public:
   }
 
   /** @brief Return true if i and j are on the same side of the line through i1, i2 */
-  VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsSameSide(size_t i, size_t j, size_t i1, size_t i2) const
   {
@@ -413,7 +409,6 @@ public:
   }
 
   /** Return true if i is inside of triangle (i1, i2, i3) or on its edges, else returns false */
-  VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsPointInside(size_t i1, size_t i2, size_t i3, size_t i) const
   {
@@ -433,7 +428,6 @@ public:
   }
 
   /** @brief Check if the polygon segments (i0, i1) and (i1, i2) make a convex side */
-  VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   bool IsConvexSide(size_t i0, size_t i1, size_t i2) const
   {

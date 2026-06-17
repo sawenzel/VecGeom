@@ -1,6 +1,7 @@
 //===-- kernel/TessellatedImplementation.h ----------------------------------*- C++ -*-===//
 //===--------------------------------------------------------------------------===//
 /// @file TessellatedImplementation.h
+/// @brief Navigation kernels for tessellated runtime solids.
 /// @author mihaela.gheata@cern.ch, sandro.wenzel@cern.ch
 
 #ifndef VECGEOM_VOLUMES_KERNEL_TESSELLATEDIMPLEMENTATION_H_
@@ -26,15 +27,26 @@ template <size_t NVERT, typename T>
 class TessellatedStruct;
 class UnplacedTessellated;
 
+/// @brief Implements tessellated-solid navigation using BVH facet queries.
+/// @details Point classification uses a fixed test ray and parity counting.
+/// Distance and safety helpers query the runtime facet BVH and leave public
+/// wrong-side sentinels to the wrapper methods.
 struct TessellatedImplementation {
 
   using PlacedShape_t    = PlacedTessellated;
   using UnplacedStruct_t = TessellatedRuntimeStruct<Precision>;
   using UnplacedVolume_t = UnplacedTessellated;
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a point is inside the closed tessellated shell.
+  /// @details A bounding-box rejection is followed by a parity count of facet
+  /// intersections along the cached test direction.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point to test.
+  /// @param[out] contains True when the parity count indicates containment.
+  template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &tessellated,
-                                                                    Vector3D<Real_v> const &point, Bool_v &contains)
+                                                                    Vector3D<Real_v> const &point, bool &contains)
   {
     // quick check against bounding box
     contains = false;
@@ -58,9 +70,18 @@ struct TessellatedImplementation {
     contains = (parity_counter % 2 == 1);
   }
 
-  template <typename Real_v, typename Inside_v>
+  /// @brief Classify a local point as inside, outside, or surface.
+  /// @details Uses the same parity count as `Contains`, but with a
+  /// tolerance-expanded bounding box and an early surface test based on the
+  /// perpendicular distance to a hit facet along the cached test direction.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Inside_t Integer-like type used for `EInside` values.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point to classify.
+  /// @param[out] inside Set to `kInside`, `kOutside`, or `kSurface`.
+  template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &tessellated,
-                                                                  Vector3D<Real_v> const &point, Inside_v &inside)
+                                                                  Vector3D<Real_v> const &point, Inside_t &inside)
   {
     // quick check against (tolerance enlarged) bounding box
     bool contains = false;
@@ -96,9 +117,20 @@ struct TessellatedImplementation {
       return;
     }
     contains = (parity_counter % 2 == 1);
-    inside   = contains ? Inside_v(kInside) : Inside_v(kOutside);
+    inside   = contains ? Inside_t(kInside) : Inside_t(kOutside);
   }
 
+  /// @brief Compute entry distance without wrong-side classification.
+  /// @details The BVH traversal rejects facets whose normal faces away from an
+  /// incoming ray. Surface starts can be recorded as a zero-entry fallback, but
+  /// an ordinary positive intersection within tolerance wins when present.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Nearest entry candidate or `kInfLength`.
+  /// @param allow_surface_zero Allow a tolerated surface start to return zero.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToInNoConv(UnplacedStruct_t const &tessellated,
                                                                               Vector3D<Real_v> const &point,
@@ -147,6 +179,15 @@ struct TessellatedImplementation {
     }
   }
 
+  /// @brief Compute distance from an outside or surface point to enter.
+  /// @details Performs public wrong-side classification before delegating to
+  /// the no-convention helper. Inside starts return `-1`.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Entry distance, `-1`, or `kInfLength`.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &tessellated,
                                                                         Vector3D<Real_v> const &point,
@@ -167,6 +208,16 @@ struct TessellatedImplementation {
     DistanceToInNoConv<Real_v>(tessellated, point, direction, stepMax, distance, allow_surface_zero);
   }
 
+  /// @brief Compute exit distance without wrong-side classification.
+  /// @details The BVH traversal considers outward-facing facets and accepts
+  /// tolerated tangent/outward starts as zero exits on the current facet.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Nearest exit candidate, `stepMax` when no exit is
+  /// found before a finite limit, or `kInfLength` for an unbounded miss.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOutNoConv(UnplacedStruct_t const &tessellated,
                                                                                Vector3D<Real_v> const &point,
@@ -210,6 +261,16 @@ struct TessellatedImplementation {
     }
   }
 
+  /// @brief Compute distance from an inside or surface point to leave.
+  /// @details Performs public wrong-side classification before delegating to
+  /// the no-convention helper. Outside starts return `-1`.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Exit distance, `-1`, `stepMax` for finite-limit
+  /// misses, or `kInfLength`.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &tessellated,
                                                                          Vector3D<Real_v> const &point,
@@ -227,6 +288,13 @@ struct TessellatedImplementation {
     DistanceToOutNoConv<Real_v>(tessellated, point, direction, stepMax, distance);
   }
 
+  /// @brief Compute unsigned safety to enter without wrong-side classification.
+  /// @details Uses cached surface anchor points to seed an upper BVH query
+  /// limit, then asks the facet BVH for a squared safety estimate.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] safety Non-negative entry safety.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToInNoConv(UnplacedStruct_t const &tessellated,
                                                                             Vector3D<Real_v> const &point,
@@ -258,6 +326,14 @@ struct TessellatedImplementation {
     }
   }
 
+  /// @brief Compute safety from an outside or surface point to enter.
+  /// @details Performs public wrong-side classification before delegating to
+  /// the no-convention helper. Inside starts return `-1`, and surface starts
+  /// return zero.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] safety Entry safety, `-1`, or zero for surface starts.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &tessellated,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -278,6 +354,13 @@ struct TessellatedImplementation {
     SafetyToInNoConv<Real_v>(tessellated, point, safety);
   }
 
+  /// @brief Compute unsigned safety to leave without wrong-side classification.
+  /// @details Uses cached surface anchor points to seed an upper BVH query
+  /// limit, then asks the facet BVH for a squared safety estimate.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] safety Non-negative exit safety.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOutNoConv(UnplacedStruct_t const &tessellated,
                                                                              Vector3D<Real_v> const &point,
@@ -309,6 +392,14 @@ struct TessellatedImplementation {
     }
   }
 
+  /// @brief Compute safety from an inside or surface point to leave.
+  /// @details Performs public wrong-side classification before delegating to
+  /// the no-convention helper. Outside starts return `-1`, and surface starts
+  /// return zero.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] safety Exit safety, `-1`, or zero for surface starts.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &tessellated,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
@@ -329,9 +420,16 @@ struct TessellatedImplementation {
     SafetyToOutNoConv<Real_v>(tessellated, point, safety);
   }
 
+  /// @brief Compute the normal of the closest tessellated facet.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] valid True when a closest facet was identified.
+  /// @return Facet normal, or zero when @p valid is false.
   template <typename Real_v>
-  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &tessellated, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+  VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &tessellated,
+                                                                                    Vector3D<Real_v> const &point,
+                                                                                    bool &valid)
   {
     // Computes the normal on a surface and returns it as a unit vector
     int isurf = -1;
@@ -346,6 +444,15 @@ struct TessellatedImplementation {
     return Vector3D<Real_v>(0., 0., 0.);
   }
 
+  /// @brief Query the BVH for squared distance to the closest relevant facet.
+  /// @tparam Real_v Floating-point scalar type returned to callers.
+  /// @tparam ToIn Selects the BVH side convention for entry or exit safety.
+  /// @tparam T Internal precision used for facet safety comparisons.
+  /// @param tessellated Runtime tessellated data.
+  /// @param point Local point.
+  /// @param[out] isurf Index of the closest visited facet, or `-1`.
+  /// @param limit_sq Initial squared-distance limit for BVH pruning.
+  /// @return Squared safety estimate returned by the BVH query.
   template <typename Real_v, bool ToIn, typename T = float>
   VECCORE_ATT_HOST_DEVICE static Real_v SafetySq(UnplacedStruct_t const &tessellated, Vector3D<Real_v> const &point,
                                                  int &isurf, Real_v limit_sq = InfinityLength<Real_v>())
