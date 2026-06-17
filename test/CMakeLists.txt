@@ -492,6 +492,7 @@ if(VECGEOM_ROOT)
     globalbenchmarks/NavigationKernelBenchmarker.cpp
     globalbenchmarks/TraceTrack.cpp
     globalbenchmarks/XRayBenchmarkFromROOTFile.cpp
+    globalbenchmarks/BVHBenchmark.cpp
     # ???
     services/NavigationSpecializerTest.cpp
     services/LibraryGenerator.cpp)
