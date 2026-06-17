@@ -767,8 +767,6 @@ if(VECGEOM_ENABLE_CUDA)
     ResultComparator
     UnplacedMultiUnion
     PlacedMultiUnion
-    UnplacedExtruded
-    PlacedExtruded
     SolidMesh)
 
   foreach(SRC_FILE ${VECGEOM_COMMON_SRCS})

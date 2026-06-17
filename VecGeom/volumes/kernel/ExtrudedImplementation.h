@@ -37,6 +37,11 @@ struct ExtrudedImplementation {
   using UnplacedStruct_t = ExtrudedStruct;
   using UnplacedVolume_t = UnplacedExtruded;
 
+  /// @brief Test whether a local point is inside or on the tolerated surface.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local point to classify.
+  /// @param[out] inside True when @p point is contained by the selected helper.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &extruded,
                                                                     Vector3D<Real_v> const &point, bool &inside)
@@ -56,17 +61,27 @@ struct ExtrudedImplementation {
       return;
     }
 #endif
-    TessellatedImplementation::Contains<Real_v, bool>(extruded.fTslRuntimeHelper, point, inside);
+    TessellatedImplementation::Contains<Real_v>(extruded.fTslRuntimeHelper, point, inside);
   }
 
-  template <typename Real_v, typename Inside_v>
+  /// @brief Classify a local point as inside, outside, or surface.
+  /// @details Dispatches to the simple-extruded helper, the host-only
+  /// per-section tessellated helper, or the runtime tessellated helper. The
+  /// per-section path promotes points on the first or last z section to
+  /// `kSurface` when they are within tolerance of the section plane.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Inside_t Integer-like type used for `EInside` values.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local point to classify.
+  /// @param[out] inside Set to `kInside`, `kOutside`, or `kSurface`.
+  template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &extruded,
-                                                                  Vector3D<Real_v> const &point, Inside_v &inside)
+                                                                  Vector3D<Real_v> const &point, Inside_t &inside)
   {
     inside = EInside::kOutside;
 
     if (extruded.fIsSxtru) {
-      SExtruImplementation::Inside<Real_v, Inside_v>(extruded.fSxtruHelper, point, inside);
+      SExtruImplementation::Inside<Real_v, Inside_t>(extruded.fSxtruHelper, point, inside);
       return;
     }
 
@@ -89,9 +104,20 @@ struct ExtrudedImplementation {
       return;
     }
 #endif
-    TessellatedImplementation::Inside<Real_v, Inside_v>(extruded.fTslRuntimeHelper, point, inside);
+    TessellatedImplementation::Inside<Real_v, Inside_t>(extruded.fTslRuntimeHelper, point, inside);
   }
 
+  /// @brief Compute distance from an outside or surface point to enter the solid.
+  /// @details Simple extrusions are delegated to `SExtruImplementation`.
+  /// General extrusions use the tessellated runtime helper unless the optional
+  /// host-only section accelerator is compiled in.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Entry distance, `-1` for wrong-side starts in public
+  /// helper paths, or `kInfLength` when no entry is found.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &extruded,
                                                                         Vector3D<Real_v> const &point,
@@ -162,6 +188,15 @@ struct ExtrudedImplementation {
       TessellatedImplementation::DistanceToIn<Real_v>(extruded.fTslRuntimeHelper, point, direction, stepMax, distance);
   }
 
+  /// @brief Compute distance from an inside or surface point to leave the solid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Maximum distance to consider.
+  /// @param[out] distance Exit distance, `-1` for wrong-side starts in public
+  /// helper paths, or the tessellated helper miss convention for finite
+  /// `stepMax` limits.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &extruded,
                                                                          Vector3D<Real_v> const &point,
@@ -174,6 +209,12 @@ struct ExtrudedImplementation {
       TessellatedImplementation::DistanceToOut<Real_v>(extruded.fTslRuntimeHelper, point, direction, stepMax, distance);
   }
 
+  /// @brief Compute safety from an outside point to enter the solid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local point.
+  /// @param[out] safety Conservative distance to the nearest entry boundary,
+  /// with public helper sentinels supplied by the selected implementation.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &extruded,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
@@ -184,6 +225,12 @@ struct ExtrudedImplementation {
       TessellatedImplementation::SafetyToIn<Real_v>(extruded.fTslRuntimeHelper, point, safety);
   }
 
+  /// @brief Compute safety from an inside point to leave the solid.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local point.
+  /// @param[out] safety Conservative distance to the nearest exit boundary,
+  /// with public helper sentinels supplied by the selected implementation.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &extruded,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
@@ -194,6 +241,12 @@ struct ExtrudedImplementation {
       TessellatedImplementation::SafetyToOut<Real_v>(extruded.fTslRuntimeHelper, point, safety);
   }
 
+  /// @brief Compute a surface normal from the selected extruded helper.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param extruded Runtime extruded data.
+  /// @param point Local surface point.
+  /// @param[out] valid True when a surface normal could be assigned.
+  /// @return Outward normal, or a fallback vector when @p valid is false.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(UnplacedStruct_t const &extruded,
                                                                                     Vector3D<Real_v> const &point,

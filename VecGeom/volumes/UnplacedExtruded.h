@@ -34,8 +34,7 @@ public:
   VECCORE_ATT_HOST_DEVICE
   UnplacedExtruded() : fXtru() { ComputeBBox(); }
 
-  /** @brief Constructor providing polygone vertices and sections */
-  VECCORE_ATT_HOST_DEVICE
+  /** @brief Constructor providing polygon vertices and sections */
   UnplacedExtruded(int nvertices, XtruVertex2 const *vertices, int nsections, XtruSection const *sections)
       : fXtru(nvertices, vertices, nsections, sections)
   {
@@ -43,12 +42,33 @@ public:
     ComputeBBox();
   }
 
-  VECCORE_ATT_HOST_DEVICE
   UnplacedExtruded(int nvertices, const Precision *x, const Precision *y, Precision zmin, Precision zmax)
       : fXtru(nvertices, x, y, zmin, zmax)
   {
     fGlobalConvexity = fXtru.IsConvexPolygon();
     ComputeBBox();
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  UnplacedExtruded(size_t ntriangles, TriangularTile<double> *triangle_ptr, BVH<float> *bvh, bool globalConvexity)
+      : fXtru()
+  {
+    // CUDA copies use the compact tessellated runtime helper; host section data is not needed on device.
+    fXtru.fInitialized      = true;
+    fXtru.fIsSxtru          = false;
+    fXtru.fTslRuntimeHelper = TessellatedRuntimeStruct<Precision>(ntriangles, triangle_ptr, bvh);
+    fGlobalConvexity        = globalConvexity;
+  }
+
+  VECCORE_ATT_HOST_DEVICE
+  UnplacedExtruded(int nvertices, Precision *x, Precision *y, Precision lowerz, Precision upperz, bool globalConvexity)
+      : fXtru()
+  {
+    // Preserve the host SExtru dispatch on CUDA copies so safeties use the same helper.
+    fXtru.fInitialized = true;
+    fXtru.fIsSxtru     = true;
+    fXtru.fSxtruHelper.Init(nvertices, x, y, lowerz, upperz);
+    fGlobalConvexity = globalConvexity;
   }
 
   VECCORE_ATT_HOST_DEVICE
@@ -59,7 +79,6 @@ public:
   ExtrudedStruct const &GetStruct() const { return fXtru; }
 
   /** @brief Initialize */
-  VECCORE_ATT_HOST_DEVICE
   void Initialize(int nvertices, XtruVertex2 const *vertices, int nsections, XtruSection const *sections)
   {
     fXtru.Initialize(nvertices, vertices, nsections, sections);
@@ -83,7 +102,7 @@ public:
 
   auto GetMeshHelper() const { return fXtru.GetMeshHelper(); }
 
-  /** @brief Get the polygone vertex i */
+  /** @brief Get the polygon vertex i */
   VECCORE_ATT_HOST_DEVICE
   VECGEOM_FORCE_INLINE
   void GetVertex(int i, Precision &x, Precision &y) const { fXtru.GetVertex(i, x, y); }
@@ -92,13 +111,11 @@ public:
   void Extent(Vector3D<Precision> &aMin, Vector3D<Precision> &aMax) const override;
 
   // Computes capacity of the shape in [length^3]
-  VECCORE_ATT_HOST_DEVICE
   Precision Capacity() const override;
 
   // VECCORE_ATT_HOST_DEVICE
   Precision SurfaceArea() const override;
 
-  VECCORE_ATT_HOST_DEVICE
   int ChooseSurface() const;
 
   Vector3D<Precision> SamplePointOnSurface() const override;
@@ -121,15 +138,11 @@ public:
   VECCORE_ATT_DEVICE
   static VPlacedVolume *Create(LogicalVolume const *const logical_volume, Transformation3D const *const transformation,
 #ifdef VECCORE_CUDA
-                               const int id,
+                               const int id, const int copy_no, const int child_id,
 #endif
                                VPlacedVolume *const placement = NULL);
 #ifdef VECGEOM_CUDA_INTERFACE
-#ifdef HYBRID_NAVIGATOR_PORTED_TO_CUDA
   virtual size_t DeviceSizeOf() const override { return DevicePtr<cuda::UnplacedExtruded>::SizeOf(); }
-#else
-  virtual size_t DeviceSizeOf() const override { return 0; }
-#endif
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu() const override;
   virtual DevicePtr<cuda::VUnplacedVolume> CopyToGpu(DevicePtr<cuda::VUnplacedVolume> const gpu_ptr) const override;
 #endif
@@ -151,7 +164,7 @@ private:
   virtual VPlacedVolume *SpecializedVolume(LogicalVolume const *const volume,
                                            Transformation3D const *const transformation,
 #ifdef VECCORE_CUDA
-                                           const int id,
+                                           const int id, const int copy_no, const int child_id,
 #endif
                                            VPlacedVolume *const placement = NULL) const override; // final;
 };
