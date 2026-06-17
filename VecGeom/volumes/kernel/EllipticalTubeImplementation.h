@@ -2,8 +2,8 @@
 // conditions in the file LICENSE.txt in the top directory.
 // For the full list of authors see CONTRIBUTORS.txt and `git log`.
 
-/// This file implements the algorithms for EllipticalTube
-/// @file volumes/kernel/EllipticalTubeImplementation.h
+/// @file EllipticalTubeImplementation.h
+/// @brief Navigation kernels for the elliptical tube solid.
 /// @author Raman Sehgal, Evgueni Tcherniaev
 
 #ifndef VECGEOM_VOLUMES_KERNEL_ELLIPTICALTUBEIMPLEMENTATION_H_
@@ -28,51 +28,67 @@ template <typename T>
 struct EllipticalTubeStruct;
 class UnplacedEllipticalTube;
 
+/// @brief Implements scalar navigation kernels for `UnplacedEllipticalTube`.
+///
+/// @details
+/// The implementation maps the elliptical cross-section to a circular cylinder
+/// with cached x/y scale factors, then combines the lateral-cylinder interval
+/// with the z-slab interval for distance queries.
 struct EllipticalTubeImplementation {
 
   using PlacedShape_t    = PlacedEllipticalTube;
   using UnplacedStruct_t = EllipticalTubeStruct<Precision>;
   using UnplacedVolume_t = UnplacedEllipticalTube;
 
-  template <typename Real_v, typename Bool_v>
+  /// @brief Test whether a local point is contained in or on the elliptical tube.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Bool_t Boolean-like output type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point to test.
+  /// @param inside Set to true unless @p point is outside the tolerated surface.
+  template <typename Real_v, typename Bool_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Contains(UnplacedStruct_t const &ellipticaltube,
-                                                                    Vector3D<Real_v> const &point, Bool_v &inside)
+                                                                    Vector3D<Real_v> const &point, Bool_t &inside)
   {
-    Bool_v unused(false), outside(false);
-    GenericKernelForContainsAndInside<Real_v, Bool_v, false>(ellipticaltube, point, unused, outside);
+    bool unused = false, outside = false;
+    GenericKernelForContainsAndInside<Real_v, bool, false>(ellipticaltube, point, unused, outside);
     inside = !outside;
   }
 
-  // BIG QUESTION: DO WE WANT TO GIVE ALL 3 TEMPLATE PARAMETERS
-  // -- OR -- DO WE WANT TO DEDUCE Bool_v, Index_t from Real_v???
+  /// @brief Classify a local point as inside, outside, or surface.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Inside_t Integer-like type used for `EInside` values.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point to classify.
+  /// @param inside Set to `kInside`, `kOutside`, or `kSurface`.
   template <typename Real_v, typename Inside_t>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void Inside(UnplacedStruct_t const &ellipticaltube,
                                                                   Vector3D<Real_v> const &point, Inside_t &inside)
   {
-
-    using Bool_v       = vecCore::Mask_v<Real_v>;
-    using InsideBool_v = vecCore::Mask_v<Inside_t>;
-    Bool_v completelyinside, completelyoutside;
-    GenericKernelForContainsAndInside<Real_v, Bool_v, true>(ellipticaltube, point, completelyinside, completelyoutside);
-    inside = EInside::kSurface;
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyoutside, Inside_t(EInside::kOutside));
-    vecCore::MaskedAssign(inside, (InsideBool_v)completelyinside, Inside_t(EInside::kInside));
+    bool completelyinside = false, completelyoutside = false;
+    GenericKernelForContainsAndInside<Real_v, bool, true>(ellipticaltube, point, completelyinside, completelyoutside);
+    inside = Inside_t(EInside::kSurface);
+    if (completelyoutside) inside = Inside_t(EInside::kOutside);
+    if (completelyinside) inside = Inside_t(EInside::kInside);
   }
 
-  template <typename Real_v, typename Bool_v, bool ForInside>
+  /// @brief Compute strict inside/outside flags for point classification.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @tparam Bool_t Boolean-like output type.
+  /// @tparam ForInside When true, also compute the strict-inside flag.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point to classify.
+  /// @param completelyinside Set when @p point is separated from all surfaces by the inside tolerance.
+  /// @param completelyoutside Set when @p point is outside the tolerated surface.
+  ///
+  /// @details
+  /// The radial part is evaluated after scaling the cross-section to a circle;
+  /// the maximum of radial excess and z-slab excess determines classification.
+  template <typename Real_v, typename Bool_t, bool ForInside>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void GenericKernelForContainsAndInside(
-      UnplacedStruct_t const &ellipticaltube, Vector3D<Real_v> const &point, Bool_v &completelyinside,
-      Bool_v &completelyoutside)
+      UnplacedStruct_t const &ellipticaltube, Vector3D<Real_v> const &point, Bool_t &completelyinside,
+      Bool_t &completelyoutside)
   {
-    /* TODO : Logic to check where the point is inside or not.
-    **
-    ** if ForInside is false then it will only check if the point is outside,
-    ** and is used by Contains function
-    **
-    ** if ForInside is true then it will check whether the point is inside or outside,
-    ** and if neither inside nor outside then it is on the surface.
-    ** and is used by Inside function
-    */
     Real_v x      = point.x() * ellipticaltube.fSx;
     Real_v y      = point.y() * ellipticaltube.fSy;
     Real_v distR  = ellipticaltube.fQ1 * (x * x + y * y) - ellipticaltube.fQ2;
@@ -84,22 +100,35 @@ struct EllipticalTubeImplementation {
     return;
   }
 
+  /// @brief Compute the distance from outside the elliptical tube to first entry.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param distance Set to the entry distance or `kInfLength` when there is no valid entry.
+  ///
+  /// @details
+  /// Far starts moving toward the solid are shifted closer to the bounding
+  /// sphere before solving. The radial equation is solved in scaled cylinder
+  /// coordinates and intersected with the z-slab interval. Near-tangent
+  /// lateral candidates are rejected with the cached scratch threshold.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToIn(UnplacedStruct_t const &ellipticaltube,
                                                                         Vector3D<Real_v> const &point,
                                                                         Vector3D<Real_v> const &direction,
                                                                         Real_v const & /*stepMax*/, Real_v &distance)
   {
-    /* TODO :  Logic to calculate Distance from outside point to the EllipticalTube surface */
-    using Bool_v = vecCore::Mask_v<Real_v>;
-    distance     = kInfLength;
+    distance = kInfLength;
     Real_v offset(0.);
     Vector3D<Real_v> pcur(point);
 
     // Move point closer, if required
     Real_v Rfar2(1024. * ellipticaltube.fRsph * ellipticaltube.fRsph); // 1024 = 32 * 32
-    vecCore__MaskedAssignFunc(pcur, ((pcur.Mag2() > Rfar2) && (direction.Dot(point) < Real_v(0.))),
-                              pcur + (offset = pcur.Mag() - Real_v(2.) * ellipticaltube.fRsph) * direction);
+    if ((pcur.Mag2() > Rfar2) && (direction.Dot(point) < Real_v(0.))) {
+      offset = pcur.Mag() - Real_v(2.) * ellipticaltube.fRsph;
+      pcur += offset * direction;
+    }
 
     // Scale elliptical tube to cylinder
     Real_v px = pcur.x() * ellipticaltube.fSx;
@@ -123,25 +152,25 @@ struct EllipticalTubeImplementation {
     Real_v D  = B * B - A * C;
 
     // Check if point leaving shape
-    Real_v distZ       = vecCore::math::Abs(pz) - ellipticaltube.fDz;
-    Real_v distR       = ellipticaltube.fQ1 * rr - ellipticaltube.fQ2;
-    Bool_v parallelToZ = (A < kEpsilon || vecCore::math::Abs(vz) >= Real_v(1.));
-    Bool_v leaving     = (distZ >= -kHalfTolerance && pz * vz >= Real_v(0.)) ||
-                     (distR >= -kHalfTolerance && (B >= Real_v(0.) || parallelToZ));
+    Real_v distZ     = vecCore::math::Abs(pz) - ellipticaltube.fDz;
+    Real_v distR     = ellipticaltube.fQ1 * rr - ellipticaltube.fQ2;
+    bool parallelToZ = (A < kEpsilon || vecCore::math::Abs(vz) >= Real_v(1.));
+    bool leaving     = (distZ >= -kHalfTolerance && pz * vz >= Real_v(0.)) ||
+                       (distR >= -kHalfTolerance && (B >= Real_v(0.) || parallelToZ));
 
     // Two special cases where D <= 0:
     //   1) trajectory parallel to Z axis (A = 0, B = 0, C - any, D = 0)
     //   2) touch (D = 0) or no intersection (D < 0) with lateral surface
-    vecCore__MaskedAssignFunc(distance, !leaving && parallelToZ, tzmin + offset);   // 1)
-    Bool_v done = (leaving || parallelToZ || D <= A * A * ellipticaltube.fScratch); // 2)
+    if (!leaving && parallelToZ) distance = tzmin + offset;                       // 1)
+    bool done = (leaving || parallelToZ || D <= A * A * ellipticaltube.fScratch); // 2)
+    if (done) return;
 
     // if (D <= A * A * ellipticaltube.fScratch) std::cerr << "=== SCRATCH D = " << D << std::endl;
 
     // Find roots of the quadratic
-    Real_v tmp(0.), t1(0.), t2(0.);
-    vecCore__MaskedAssignFunc(tmp, !done, -B - vecCore::math::CopySign(vecCore::math::Sqrt(D), B));
-    vecCore__MaskedAssignFunc(t1, !done, tmp / A);
-    vecCore__MaskedAssignFunc(t2, !done, C / tmp);
+    Real_v tmp   = -B - vecCore::math::CopySign(vecCore::math::Sqrt(D), B);
+    Real_v t1    = tmp / A;
+    Real_v t2    = C / tmp;
     Real_v trmin = vecCore::math::Min(t1, t2);
     Real_v trmax = vecCore::math::Max(t1, t2);
 
@@ -149,18 +178,27 @@ struct EllipticalTubeImplementation {
     // No special check for inside points, for inside points distance will be negative
     Real_v tin  = vecCore::math::Max(tzmin, trmin);
     Real_v tout = vecCore::math::Min(tzmax, trmax);
-    vecCore__MaskedAssignFunc(distance, !done && (tout - tin) >= kHalfTolerance, tin + offset);
+    if ((tout - tin) >= kHalfTolerance) distance = tin + offset;
   }
 
+  /// @brief Compute the distance from inside the elliptical tube to first exit.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local start point.
+  /// @param direction Unit local direction.
+  /// @param stepMax Unused by this implementation.
+  /// @param distance Set to the exit distance, or `-1` when @p point is clearly outside.
+  ///
+  /// @details
+  /// The method intersects the forward z-slab exit with the forward root of
+  /// the scaled lateral-cylinder quadratic. Tangential or non-intersecting
+  /// lateral candidates leave the cap distance as the selected exit.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void DistanceToOut(UnplacedStruct_t const &ellipticaltube,
                                                                          Vector3D<Real_v> const &point,
                                                                          Vector3D<Real_v> const &direction,
                                                                          Real_v const & /* stepMax */, Real_v &distance)
   {
-    /* TODO :  Logic to calculate Distance from inside point to the EllipticalTube surface */
-    using Bool_v = vecCore::Mask_v<Real_v>;
-
     // Scale elliptical tube to cylinder
     Real_v px = point.x() * ellipticaltube.fSx;
     Real_v py = point.y() * ellipticaltube.fSy;
@@ -170,17 +208,19 @@ struct EllipticalTubeImplementation {
     Real_v vz = direction.z();
 
     // Check if point is outside ("wrong side")
-    Real_v rr      = px * px + py * py;
-    Real_v distR   = ellipticaltube.fQ1 * rr - ellipticaltube.fQ2;
-    Real_v distZ   = vecCore::math::Abs(pz) - ellipticaltube.fDz;
-    Bool_v outside = vecCore::math::Max(distR, distZ) > kHalfTolerance;
-    distance       = Real_v(0.);
-    vecCore__MaskedAssignFunc(distance, outside, Real_v(-1.));
+    Real_v rr    = px * px + py * py;
+    Real_v distR = ellipticaltube.fQ1 * rr - ellipticaltube.fQ2;
+    Real_v distZ = vecCore::math::Abs(pz) - ellipticaltube.fDz;
+    bool outside = vecCore::math::Max(distR, distZ) > kHalfTolerance;
+    distance     = Real_v(0.);
+    if (outside) {
+      distance = Real_v(-1.);
+      return;
+    }
 
     // Find intersection with Z planes
     Real_v tzmax = kMaximum;
-    vecCore__MaskedAssignFunc(tzmax, vz != Real_v(0.),
-                              (vecCore::math::CopySign(Real_v(ellipticaltube.fDz), vz) - pz) / vz);
+    if (vz != Real_v(0.)) tzmax = (vecCore::math::CopySign(Real_v(ellipticaltube.fDz), vz) - pz) / vz;
 
     // Find intersection with lateral surface, solve equation: A t^2 + 2B t + C = 0
     Real_v A = vx * vx + vy * vy;
@@ -191,80 +231,99 @@ struct EllipticalTubeImplementation {
     // Two cases where D <= 0:
     //   1) trajectory parallel to Z axis (A = 0, B = 0, C - any, D = 0)
     //   2) touch (D = 0) or no intersection (D < 0) with lateral surface
-    Bool_v parallelToZ = (A < kEpsilon || vecCore::math::Abs(vz) >= Real_v(1.));
-    vecCore__MaskedAssignFunc(distance, (!outside && parallelToZ), tzmax); // 1)
-    Bool_v done = (outside || parallelToZ || D <= Real_v(0.));             // 2)
-    // Bool_v done = (outside || parallelToZ || D < A * A * ellipticaltube.fScratch); // alternative 2)
+    bool parallelToZ = (A < kEpsilon || vecCore::math::Abs(vz) >= Real_v(1.));
+    if (parallelToZ) {
+      distance = tzmax; // 1)
+      return;
+    }
+    bool done = (D <= Real_v(0.)); // 2)
+    if (done) return;
 
     // Set distance
-    vecCore__MaskedAssignFunc(distance, !done && B >= Real_v(0.),
-                              vecCore::math::Min(tzmax, -C / (vecCore::math::Sqrt(D) + B)));
-    vecCore__MaskedAssignFunc(distance, !done && B < Real_v(0.),
-                              vecCore::math::Min(tzmax, (vecCore::math::Sqrt(D) - B) / A));
+    Real_v sqrtD = vecCore::math::Sqrt(D);
+    if (B >= Real_v(0.)) {
+      distance = vecCore::math::Min(tzmax, -C / (sqrtD + B));
+    } else {
+      distance = vecCore::math::Min(tzmax, (sqrtD - B) / A);
+    }
   }
 
+  /// @brief Compute safety from an outside point to the elliptical tube.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point.
+  /// @param safety Set to the maximum of radial and z-slab safety, clamped to zero in the surface band.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToIn(UnplacedStruct_t const &ellipticaltube,
                                                                       Vector3D<Real_v> const &point, Real_v &safety)
   {
-    /* TODO :  Logic to calculate Safety from outside point to the EllipticalTube surface */
     Real_v x     = point.x() * ellipticaltube.fSx;
     Real_v y     = point.y() * ellipticaltube.fSy;
     Real_v distR = vecCore::math::Sqrt(x * x + y * y) - ellipticaltube.fR;
     Real_v distZ = vecCore::math::Abs(point.z()) - ellipticaltube.fDz;
 
     safety = vecCore::math::Max(distR, distZ);
-    vecCore::MaskedAssign(safety, vecCore::math::Abs(safety) <= kHalfTolerance, Real_v(0.));
+    if (vecCore::math::Abs(safety) <= kHalfTolerance) safety = Real_v(0.);
   }
 
+  /// @brief Compute safety from an inside point to leave the elliptical tube.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point.
+  /// @param safety Set to the smaller remaining distance to the lateral surface or z cap.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static void SafetyToOut(UnplacedStruct_t const &ellipticaltube,
                                                                        Vector3D<Real_v> const &point, Real_v &safety)
   {
-    /* TODO :  Logic to calculate Safety from inside point to the EllipticalTube surface */
     Real_v x     = point.x() * ellipticaltube.fSx;
     Real_v y     = point.y() * ellipticaltube.fSy;
     Real_v distR = ellipticaltube.fR - vecCore::math::Sqrt(x * x + y * y);
     Real_v distZ = ellipticaltube.fDz - vecCore::math::Abs(point.z());
 
     safety = vecCore::math::Min(distR, distZ);
-    vecCore::MaskedAssign(safety, vecCore::math::Abs(safety) <= kHalfTolerance, Real_v(0.));
+    if (vecCore::math::Abs(safety) <= kHalfTolerance) safety = Real_v(0.);
   }
 
+  /// @brief Compute an outward surface normal.
+  /// @tparam Real_v Floating-point scalar type.
+  /// @param ellipticaltube Cached elliptical tube data.
+  /// @param point Local point.
+  /// @param valid Set when @p point is in the tolerated surface band.
+  /// @return Unit normal on the lateral surface, cap, or their averaged edge normal.
+  ///
+  /// @details
+  /// Lateral normals use the gradient of the unscaled ellipse. If the point is
+  /// not on a tolerated surface, a nearest-surface fallback is returned with
+  /// @p valid set to false.
   template <typename Real_v>
   VECGEOM_FORCE_INLINE VECCORE_ATT_HOST_DEVICE static Vector3D<Real_v> NormalKernel(
-      UnplacedStruct_t const &ellipticaltube, Vector3D<Real_v> const &point, typename vecCore::Mask_v<Real_v> &valid)
+      UnplacedStruct_t const &ellipticaltube, Vector3D<Real_v> const &point, bool &valid)
   {
-    // Computes the normal on a surface and returns it as a unit vector
-    //   In case if the point is further than kHalfTolerance from the surface, set valid=false
-    //   Must return a valid vector (even if the point is not on the surface)
-    //
-    //   On an edge provide an average normal of the corresponding base and lateral surface
     Vector3D<Real_v> normal(0.);
     valid = true;
 
     Real_v x     = point.x() * ellipticaltube.fSx;
     Real_v y     = point.y() * ellipticaltube.fSy;
     Real_v distR = ellipticaltube.fQ1 * (x * x + y * y) - ellipticaltube.fQ2;
-    vecCore__MaskedAssignFunc(
-        normal, vecCore::math::Abs(distR) <= kHalfTolerance,
-        Vector3D<Real_v>(point.x() * ellipticaltube.fDDy, point.y() * ellipticaltube.fDDx, 0.).Unit());
+    if (vecCore::math::Abs(distR) <= kHalfTolerance) {
+      normal = Vector3D<Real_v>(point.x() * ellipticaltube.fDDy, point.y() * ellipticaltube.fDDx, 0.).Unit();
+    }
 
     Real_v distZ = vecCore::math::Abs(point.z()) - ellipticaltube.fDz;
-    vecCore__MaskedAssignFunc(normal[2], vecCore::math::Abs(distZ) <= kHalfTolerance, vecCore::math::Sign(point[2]));
-    vecCore__MaskedAssignFunc(normal, normal.Mag2() > 1., normal.Unit());
+    if (vecCore::math::Abs(distZ) <= kHalfTolerance) normal[2] = vecCore::math::Sign(point[2]);
+    if (normal.Mag2() > Real_v(1.)) normal = normal.Unit();
 
-    vecCore::Mask_v<Real_v> done = normal.Mag2() > Real_v(0.);
-    if (vecCore::MaskFull(done)) return normal;
+    bool done = normal.Mag2() > Real_v(0.);
+    if (done) return normal;
 
     // Point is not on the surface - normally, this should never be
     // Return normal to the nearest surface
-    vecCore__MaskedAssignFunc(valid, !done, false);
-    vecCore__MaskedAssignFunc(normal[2], !done, vecCore::math::Sign(point[2]));
-    vecCore__MaskedAssignFunc(distR, !done, vecCore::math::Sqrt(x * x + y * y) - ellipticaltube.fR);
-    vecCore__MaskedAssignFunc(
-        normal, !done && distR > distZ && (x * x + y * y) > Real_v(0.),
-        Vector3D<Real_v>(point.x() * ellipticaltube.fDDy, point.y() * ellipticaltube.fDDx, 0.).Unit());
+    valid     = false;
+    normal[2] = vecCore::math::Sign(point[2]);
+    distR     = vecCore::math::Sqrt(x * x + y * y) - ellipticaltube.fR;
+    if (distR > distZ && (x * x + y * y) > Real_v(0.)) {
+      normal = Vector3D<Real_v>(point.x() * ellipticaltube.fDDy, point.y() * ellipticaltube.fDDx, 0.).Unit();
+    }
     return normal;
   }
 };
