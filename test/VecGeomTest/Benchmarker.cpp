@@ -568,11 +568,11 @@ int Benchmarker::RunInsideBenchmark()
   Inside_t *const insideUnspecialized = AllocateAligned<Inside_t>();
 #ifdef VECGEOM_ROOT
   bool *const containsRoot = AllocateAligned<bool>();
-  outputLabelsContains << " - ROOT";
+  if (fOkToRunROOT) outputLabelsContains << " - ROOT";
 #endif
 #ifdef VECGEOM_GEANT4
   ::EInside *const insideGeant4 = AllocateAligned<::EInside>();
-  outputLabelsInside << " - Geant4";
+  if (fOkToRunG4) outputLabelsInside << " - Geant4";
 #endif
 #ifdef VECGEOM_ENABLE_CUDA
   bool *const containsCuda   = AllocateAligned<bool>();
@@ -1989,8 +1989,8 @@ void Benchmarker::RunToOutGeant4(Precision *distances, Precision *safeties)
         int p                           = index + i;
         const Vector3D<Precision> point = (*fPointPool)[p];
         const Vector3D<Precision> dir   = (*fDirectionPool)[p];
-        distances[i]                    = v->Geant4()->DistanceToOut(G4ThreeVector(point[0], point[1], point[2]),
-                                                                     G4ThreeVector(dir[0], dir[1], dir[2]), false, NULL, NULL);
+        distances[i] = v->Geant4()->DistanceToOut(G4ThreeVector(point[0], point[1], point[2]),
+                                                  G4ThreeVector(dir[0], dir[1], dir[2]), false, NULL, NULL);
       }
     }
   }

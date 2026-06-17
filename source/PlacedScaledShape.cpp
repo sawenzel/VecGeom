@@ -15,15 +15,9 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECCORE_ATT_HOST_DEVICE
-void PlacedScaledShape::PrintType() const
-{
-  printf("PlacedScaledShape");
-}
+void PlacedScaledShape::PrintType() const { printf("PlacedScaledShape"); }
 
-void PlacedScaledShape::PrintType(std::ostream &os) const
-{
-  os << "PlacedScaledShape";
-}
+void PlacedScaledShape::PrintType(std::ostream &os) const { os << "PlacedScaledShape"; }
 
 #ifndef VECCORE_CUDA
 
@@ -36,7 +30,9 @@ VPlacedVolume const *PlacedScaledShape::ConvertToUnspecialized() const
 TGeoShape const *PlacedScaledShape::ConvertToRoot() const
 {
   UnplacedScaledShape const *unplaced = const_cast<UnplacedScaledShape *>(GetUnplacedVolume());
-  return new TGeoScaledShape(GetLabel().c_str(), (TGeoShape *)unplaced->fScaled.fPlaced->ConvertToRoot(),
+  auto *rootShape                     = (TGeoShape *)unplaced->fScaled.fPlaced->ConvertToRoot();
+  if (!rootShape) return nullptr;
+  return new TGeoScaledShape(GetLabel().c_str(), rootShape,
                              new TGeoScale(unplaced->fScaled.fScale.Scale()[0], unplaced->fScaled.fScale.Scale()[1],
                                            unplaced->fScaled.fScale.Scale()[2]));
 }

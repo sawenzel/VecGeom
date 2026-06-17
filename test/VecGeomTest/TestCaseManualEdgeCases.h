@@ -214,6 +214,17 @@ inline const std::vector<ManualEdgeCase> &GetManualEdgeCases()
       {"boolean_nested_transformed_subtraction_inner_cut_grazing", "boolean_nested_transformed_subtraction", "surface",
        ShapeSampleCategory::kSurface, Vec_t(2.8, 0., 0.), Vec_t(0., 0., 1.), false, Vec_t(0., 0., 0.), 0.,
        "Ray starts on the transformed cutter inner face that remains as the nested subtraction boundary."},
+      {"boolean_subtraction_box_halfspace_cut_plane_exit", "boolean_subtraction_box_halfspace", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(0., 0., 0.), Vec_t(0., 0., -1.), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the finite clipping plane made by subtracting the half-space from the host box."},
+      {"boolean_subtraction_tube_halfspace_cut_plane_exit", "boolean_subtraction_tube_halfspace", "contracts",
+       ShapeSampleCategory::kSurface, Vec_t(0.5, -0.5, 0.), Vec_t(0., -0.70710678118654757, -0.70710678118654757),
+       false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the finite clipping plane made by subtracting the oblique half-space from the transformed tube."},
+      {"boolean_subtraction_halfspace_union_from_box_cut_plane_exit", "boolean_subtraction_halfspace_union_from_box",
+       "contracts", ShapeSampleCategory::kSurface, Vec_t(5., -0.5, 0.),
+       Vec_t(0., -0.70710678118654757, -0.70710678118654757), false, Vec_t(0., 0., 0.), 0.,
+       "Ray starts on the exposed oblique half-space plane of the nested union cutter outside the removed tube."},
       // These polyhedron-left subtraction probes complement random sampling by
       // hitting edge starts, shared planes, and grazing rays that are otherwise
       // zero-measure topologies.

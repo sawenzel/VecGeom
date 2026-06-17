@@ -28,6 +28,14 @@ namespace BooleanHelper {
 VECCORE_ATT_HOST_DEVICE
 BooleanStruct const *GetBooleanStruct(VUnplacedVolume const *unplaced);
 
+bool ContainsHalfSpace(VUnplacedVolume const *unplaced);
+
+bool HasRootUnsupportedHalfSpaceUnion(VUnplacedVolume const *unplaced);
+
+bool IsFiniteBody(VPlacedVolume const *placed);
+
+bool IsFiniteBody(VUnplacedVolume const *unplaced);
+
 VECCORE_ATT_HOST_DEVICE
 size_t CountBooleanNodes(VUnplacedVolume const *unplaced, size_t &nunion, size_t &nintersection, size_t &nsubtraction);
 
@@ -62,11 +70,13 @@ public:
       : fBoolean(op, left, right)
   {
     fGlobalConvexity = false;
-    VUnplacedVolume::ComputeBBox();
 #ifndef VECCORE_CUDA
+    VUnplacedVolume::ComputeBBox();
     if (fBoolean.fLeftVolume->IsAssembly() || fBoolean.fRightVolume->IsAssembly()) {
       throw std::runtime_error("Trying to make boolean out of assembly which is not supported\n");
     }
+#else
+    VUnplacedVolume::ComputeBBox();
 #endif
   }
 

@@ -13,6 +13,7 @@ set(TEST_EXECUTABLES_BENCHMARK
   ${PROJECT_SOURCE_DIR}/test/benchmark/BoxUnionHollowTubeBenchmark_virtual.cpp
   ${PROJECT_SOURCE_DIR}/test/benchmark/BoxIntersectHollowTubeBenchmark_virtual.cpp
   ${PROJECT_SOURCE_DIR}/test/benchmark/BoxUnionBoxBenchmark_virtual.cpp
+  ${PROJECT_SOURCE_DIR}/test/benchmark/BoxMinusHalfSpaceUnionBenchmark.cpp
   ${PROJECT_SOURCE_DIR}/test/benchmark/3LevelSubtractionBenchmark_virtual.cpp
   ${PROJECT_SOURCE_DIR}/test/benchmark/TorusBenchmark2.cpp
   ${PROJECT_SOURCE_DIR}/test/benchmark/TrapezoidBenchmark.cpp

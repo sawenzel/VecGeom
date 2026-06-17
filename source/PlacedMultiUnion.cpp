@@ -17,15 +17,9 @@ namespace vecgeom {
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 VECCORE_ATT_HOST_DEVICE
-void PlacedMultiUnion::PrintType() const
-{
-  printf("PlacedMultiUnion");
-}
+void PlacedMultiUnion::PrintType() const { printf("PlacedMultiUnion"); }
 
-void PlacedMultiUnion::PrintType(std::ostream &s) const
-{
-  s << "PlacedMultiUnion";
-}
+void PlacedMultiUnion::PrintType(std::ostream &s) const { s << "PlacedMultiUnion"; }
 
 #ifndef VECCORE_CUDA
 
@@ -41,7 +35,10 @@ G4VSolid const *PlacedMultiUnion::ConvertToGeant4() const
   const UnplacedMultiUnion *unplaced = GetUnplacedVolume();
   for (size_t i = 0; i < unplaced->GetNumberOfSolids(); ++i) {
     G4VSolid *g4solid = (G4VSolid *)unplaced->GetNode(i)->ConvertToGeant4();
-    VECGEOM_VALIDATE(g4solid, << "Cannot convert component to Geant4 solid");
+    if (!g4solid) {
+      delete munion;
+      return nullptr;
+    }
     auto trans = unplaced->GetNode(i)->GetTransformation();
     // Vector3D<double> point(1, 1, 1);
     // Vector3D<double> pnew = trans->Transform(point);
@@ -60,7 +57,7 @@ G4VSolid const *PlacedMultiUnion::ConvertToGeant4() const
 
 #endif // VECCORE_CUDA
 
-} // End impl namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
 
 #ifdef VECCORE_CUDA
 
@@ -68,4 +65,4 @@ VECGEOM_DEVICE_INST_PLACED_VOLUME_ALLSPEC(SpecializedMultiUnion)
 
 #endif
 
-} // End global namespace
+} // namespace vecgeom

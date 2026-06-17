@@ -654,6 +654,7 @@ set(VECGEOM_COMMON_SRCS
   source/PlacedEllipsoid.cpp
   source/PlacedCoaxialCones.cpp
   source/PlacedGenericPolycone.cpp
+  source/PlacedHalfSpace.cpp
   source/PlacedCutTube.cpp
   source/PlacedTorus2.cpp
   source/PlacedTrd.cpp
@@ -678,6 +679,7 @@ set(VECGEOM_COMMON_SRCS
   source/UnplacedBox.cpp
   source/UnplacedSExtruVolume.cpp
   source/UnplacedHype.cpp
+  source/UnplacedHalfSpace.cpp
   source/UnplacedTrd.cpp
   source/UnplacedParaboloid.cpp
   source/UnplacedParallelepiped.cpp

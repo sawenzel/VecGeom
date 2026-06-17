@@ -35,6 +35,16 @@
 
 namespace vecgeom {
 
+#ifdef VECGEOM_GEANT4
+namespace {
+bool HasGeant4UnsupportedHalfSpace(VPlacedVolume const *left, VPlacedVolume const *right)
+{
+  return BooleanHelper::ContainsHalfSpace(left->GetUnplacedVolume()) ||
+         BooleanHelper::ContainsHalfSpace(right->GetUnplacedVolume());
+}
+} // namespace
+#endif
+
 template <>
 VECCORE_ATT_HOST_DEVICE void PlacedBooleanVolume<kUnion>::PrintType() const
 {
@@ -159,14 +169,18 @@ G4VSolid const *PlacedBooleanVolume<kUnion>::ConvertToGeant4() const
   if (!left->GetTransformation()->IsIdentity()) {
     VECGEOM_LOG(warning) << "Left transformations are not implemented\n";
   }
+  if (HasGeant4UnsupportedHalfSpace(left, right)) return nullptr;
+
+  auto const *leftSolid  = left->ConvertToGeant4();
+  auto const *rightSolid = right->ConvertToGeant4();
+  if (!leftSolid || !rightSolid) return nullptr;
 
   Transformation3D const *rightm = right->GetTransformation();
   G4RotationMatrix *g4rot        = new G4RotationMatrix();
   auto rot                       = rightm->Rotation();
   // HepRep3x3 seems? to be column major order:
   g4rot->set(CLHEP::HepRep3x3(rot[0], rot[3], rot[6], rot[1], rot[4], rot[7], rot[2], rot[5], rot[8]));
-  return new G4UnionSolid(GetLabel(), const_cast<G4VSolid *>(left->ConvertToGeant4()),
-                          const_cast<G4VSolid *>(right->ConvertToGeant4()), g4rot,
+  return new G4UnionSolid(GetLabel(), const_cast<G4VSolid *>(leftSolid), const_cast<G4VSolid *>(rightSolid), g4rot,
                           G4ThreeVector(rightm->Translation(0), rightm->Translation(1), rightm->Translation(2)));
 }
 template <>
@@ -178,14 +192,19 @@ G4VSolid const *PlacedBooleanVolume<kIntersection>::ConvertToGeant4() const
   if (!left->GetTransformation()->IsIdentity()) {
     VECGEOM_LOG(warning) << "Left transformations are not implemented";
   }
+  if (HasGeant4UnsupportedHalfSpace(left, right)) return nullptr;
+
+  auto const *leftSolid  = left->ConvertToGeant4();
+  auto const *rightSolid = right->ConvertToGeant4();
+  if (!leftSolid || !rightSolid) return nullptr;
 
   Transformation3D const *rightm = right->GetTransformation();
   G4RotationMatrix *g4rot        = new G4RotationMatrix();
   auto rot                       = rightm->Rotation();
   // HepRep3x3 seems? to be column major order:
   g4rot->set(CLHEP::HepRep3x3(rot[0], rot[3], rot[6], rot[1], rot[4], rot[7], rot[2], rot[5], rot[8]));
-  return new G4IntersectionSolid(GetLabel(), const_cast<G4VSolid *>(left->ConvertToGeant4()),
-                                 const_cast<G4VSolid *>(right->ConvertToGeant4()), g4rot,
+  return new G4IntersectionSolid(GetLabel(), const_cast<G4VSolid *>(leftSolid), const_cast<G4VSolid *>(rightSolid),
+                                 g4rot,
                                  G4ThreeVector(rightm->Translation(0), rightm->Translation(1), rightm->Translation(2)));
 }
 template <>
@@ -197,13 +216,19 @@ G4VSolid const *PlacedBooleanVolume<kSubtraction>::ConvertToGeant4() const
   if (!left->GetTransformation()->IsIdentity()) {
     VECGEOM_LOG(warning) << "Left transformations are not implemented";
   }
+  if (HasGeant4UnsupportedHalfSpace(left, right)) return nullptr;
+
+  auto const *leftSolid  = left->ConvertToGeant4();
+  auto const *rightSolid = right->ConvertToGeant4();
+  if (!leftSolid || !rightSolid) return nullptr;
+
   Transformation3D const *rightm = right->GetTransformation();
   G4RotationMatrix *g4rot        = new G4RotationMatrix();
   auto rot                       = rightm->Rotation();
   // HepRep3x3 seems? to be column major order:
   g4rot->set(CLHEP::HepRep3x3(rot[0], rot[3], rot[6], rot[1], rot[4], rot[7], rot[2], rot[5], rot[8]));
-  return new G4SubtractionSolid(GetLabel(), const_cast<G4VSolid *>(left->ConvertToGeant4()),
-                                const_cast<G4VSolid *>(right->ConvertToGeant4()), g4rot,
+  return new G4SubtractionSolid(GetLabel(), const_cast<G4VSolid *>(leftSolid), const_cast<G4VSolid *>(rightSolid),
+                                g4rot,
                                 G4ThreeVector(rightm->Translation(0), rightm->Translation(1), rightm->Translation(2)));
 }
 #endif

@@ -17,6 +17,7 @@
 #include "VecGeom/volumes/UnplacedTube.h"
 #include "VecGeom/volumes/UnplacedCutTube.h"
 #include "VecGeom/volumes/UnplacedCone.h"
+#include "VecGeom/volumes/UnplacedHalfSpace.h"
 #include "VecGeom/volumes/UnplacedTrapezoid.h"
 #include "VecGeom/volumes/UnplacedTorus2.h"
 #include "VecGeom/volumes/UnplacedPolycone.h"
@@ -241,6 +242,22 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
       fNeededHeaderFiles.insert("volumes/UnplacedBox.h");
     }
 
+    // ******* TREAT THE HALF-SPACE *********
+    else if (dynamic_cast<UnplacedHalfSpace const *>(l->GetUnplacedVolume())) {
+      UnplacedHalfSpace const *shape = dynamic_cast<UnplacedHalfSpace const *>(l->GetUnplacedVolume());
+
+      line << " new UnplacedHalfSpace( ";
+      line << shape->GetPoint().x() << " , ";
+      line << shape->GetPoint().y() << " , ";
+      line << shape->GetPoint().z() << " , ";
+      line << shape->GetNormal().x() << " , ";
+      line << shape->GetNormal().y() << " , ";
+      line << shape->GetNormal().z();
+      line << " )";
+
+      fNeededHeaderFiles.insert("volumes/UnplacedHalfSpace.h");
+    }
+
     // ******* TREAT THE TUBE *********
     else if (dynamic_cast<UnplacedTube const *>(l->GetUnplacedVolume())) {
       UnplacedTube const *shape = dynamic_cast<UnplacedTube const *>(l->GetUnplacedVolume());
@@ -406,7 +423,7 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
       line << shape->GetSideCount() << " , ";
       line << shape->GetZSegmentCount() + 1 << " , ";
       //                std::vector<double> rmin, rmax, z;
-      //                // serialize the arrays as tempary std::vector
+      //                // serialize the arrays as temporary std::vector
       //                shape->ReconstructSectionArrays( z,rmin,rmax );
       //
       //                if( z.size() != rmax.size() || rmax.size() != rmin.size() ){
@@ -535,7 +552,7 @@ void GeomCppExporter::DumpLogicalVolumes(std::ostream &dumps, std::ostream &exte
     lvoldefinitions << "LogicalVolume *" << fLVolumeToStringMap[l] << "= nullptr;\n";
     externdeclarations << "extern LogicalVolume *" << fLVolumeToStringMap[l] << ";\n";
 
-    // if we came here, we dumped this logical volume; so register it as beeing treated
+    // if we came here, we dumped this logical volume; so register it as being treated
     fListofTreatedLogicalVolumes.push_back(l);
   } // end loop over logical volumes
 }
@@ -652,7 +669,7 @@ void GeomCppExporter::DumpGeometry(std::ostream &s)
 
   // generate code that reproduces the geometry hierarchy
   DumpGeomHierarchy(geomhierarchy, lvlist);
-  // dito for the booleans
+  // ditto for the booleans
   DumpGeomHierarchy(geomhierarchy, boollvlist);
 
   s << header.str();

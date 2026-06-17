@@ -229,6 +229,7 @@ set(TEST_EXECUTABLES_CORE
   core/TestTessellatedMesh.cpp
   # to be enabled when running cleanly
   unit_tests/TestBooleans.cpp
+  unit_tests/TestHalfSpace.cpp
   core/AssemblyTest.cpp
   core/TestMakeInstance.cpp
   core/TestMaskedAssign.cpp
@@ -396,6 +397,9 @@ set(SHAPE_CONTRACT_SOLID_CASES
   boolean_intersection_rotated_tube_cone
   boolean_intersection_nested_union
   boolean_subtraction_box_tube
+  boolean_subtraction_box_halfspace
+  boolean_subtraction_tube_halfspace
+  boolean_subtraction_halfspace_union_from_box
   boolean_subtraction_tube_from_cone
   boolean_subtraction_union_from_box
   boolean_subtraction_exact_phi_wedge
@@ -418,6 +422,9 @@ set(SHAPE_CONTRACT_MANUAL_EDGE_CASE_SOLID_CASES
   box
   boolean_intersection_rotated_boxes
   boolean_nested_transformed_subtraction
+  boolean_subtraction_box_halfspace
+  boolean_subtraction_tube_halfspace
+  boolean_subtraction_halfspace_union_from_box
   boolean_subtraction_polyhedron_exact_z_slab
   boolean_subtraction_polyhedron_exact_radial_shell
   boolean_subtraction_polyhedron_side_cut_tube
@@ -641,6 +648,7 @@ set(TEST_EXECUTABLES_SHAPETESTER
   shape_tester/shape_testPolyhedron.cpp
   shape_tester/shape_testTorus2.cpp
   shape_tester/shape_testCutTube.cpp
+  shape_tester/shape_testHalfSpace.cpp
   shape_tester/shape_testExtruded.cpp
   shape_tester/shape_testMultiUnion.cpp
   shape_tester/shape_testTessellated.cpp

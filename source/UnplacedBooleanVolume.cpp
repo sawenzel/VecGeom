@@ -15,163 +15,31 @@
 #include "VecGeom/base/RNG.h"
 #include "VecGeom/volumes/LogicalVolume.h"
 #include "VecGeom/volumes/PlacedVolume.h"
+#include "VecGeom/volumes/UnplacedHalfSpace.h"
+#ifndef VECCORE_CUDA
+#include "VecGeom/volumes/UnplacedAssembly.h"
+#include "VecGeom/volumes/UnplacedMultiUnion.h"
+#include "VecGeom/volumes/UnplacedScaledShape.h"
+#endif
 
 #ifdef VECGEOM_CUDA_INTERFACE
 #include "VecGeom/management/CudaManager.h"
 #endif
+
+#include <cmath>
+#include <map>
+#include <vector>
 
 namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 
 #ifndef VECCORE_CUDA
-template <>
-Vector3D<Precision> UnplacedBooleanVolume<kUnion>::SamplePointOnSurface() const
-{
-  // implementation taken from G4
-  int counter = 0;
-  Vector3D<Precision> p;
-
-  Precision arearatio(0.5);
-  Precision leftarea, rightarea;
-
-  // calculating surface area can be expensive
-  // until there is a caching mechanism in place, we will cache these values here
-  // in a static map
-  // the caching mechanism will be put into place with the completion of the move to UnplacedVolume interfaces
-  static std::map<size_t, Precision> idtoareamap;
-  auto leftid = GetLeft()->GetLogicalVolume()->id();
-  if (idtoareamap.find(leftid) != idtoareamap.end()) {
-    leftarea = idtoareamap[leftid];
-  } else { // insert
-    leftarea = const_cast<VPlacedVolume *>(GetLeft())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(leftid, leftarea));
-  }
-
-  auto rightid = GetRight()->GetLogicalVolume()->id();
-  if (idtoareamap.find(rightid) != idtoareamap.end()) {
-    rightarea = idtoareamap[rightid];
-  } else { // insert
-    rightarea = const_cast<VPlacedVolume *>(GetRight())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(rightid, rightarea));
-  }
-
-  if (leftarea > 0. && rightarea > 0.) {
-    arearatio = leftarea / (leftarea + rightarea);
-  }
-  do {
-    counter++;
-    if (counter > 1000) {
-      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
-      return p;
-    }
-
-    auto *selected((RNG::Instance().uniform() < arearatio) ? GetLeft() : GetRight());
-    auto transf = selected->GetTransformation();
-    p           = transf->InverseTransform(selected->GetUnplacedVolume()->SamplePointOnSurface());
-  } while (Inside(p) != vecgeom::kSurface);
-  return p;
-}
-
-template <>
-Vector3D<Precision> UnplacedBooleanVolume<kIntersection>::SamplePointOnSurface() const
-{
-  // implementation taken from G4
-  int counter = 0;
-  Vector3D<Precision> p;
-
-  Precision arearatio(0.5);
-  Precision leftarea, rightarea;
-
-  // calculating surface area can be expensive
-  // until there is a caching mechanism in place, we will cache these values here
-  // in a static map
-  // the caching mechanism will be put into place with the completion of the move to UnplacedVolume interfaces
-  static std::map<size_t, Precision> idtoareamap;
-  auto leftid = GetLeft()->GetLogicalVolume()->id();
-  if (idtoareamap.find(leftid) != idtoareamap.end()) {
-    leftarea = idtoareamap[leftid];
-  } else { // insert
-    leftarea = const_cast<VPlacedVolume *>(GetLeft())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(leftid, leftarea));
-  }
-
-  auto rightid = GetRight()->GetLogicalVolume()->id();
-  if (idtoareamap.find(rightid) != idtoareamap.end()) {
-    rightarea = idtoareamap[rightid];
-  } else { // insert
-    rightarea = const_cast<VPlacedVolume *>(GetRight())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(rightid, rightarea));
-  }
-
-  if (leftarea > 0. && rightarea > 0.) {
-    arearatio = leftarea / (leftarea + rightarea);
-  }
-  do {
-    counter++;
-    if (counter > 1000) {
-      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
-      return p;
-    }
-
-    auto *selected((RNG::Instance().uniform() < arearatio) ? GetLeft() : GetRight());
-    auto transf = selected->GetTransformation();
-    p           = transf->InverseTransform(selected->GetUnplacedVolume()->SamplePointOnSurface());
-  } while (Inside(p) != vecgeom::kSurface);
-  return p;
-}
-
-template <>
-Vector3D<Precision> UnplacedBooleanVolume<kSubtraction>::SamplePointOnSurface() const
-{
-  // implementation taken from G4
-  int counter = 0;
-  Vector3D<Precision> p;
-
-  Precision arearatio(0.5);
-  Precision leftarea, rightarea;
-
-  // calculating surface area can be expensive
-  // until there is a caching mechanism in place, we will cache these values here
-  // in a static map
-  // the caching mechanism will be put into place with the completion of the move to UnplacedVolume interfaces
-  static std::map<size_t, Precision> idtoareamap;
-  auto leftid = GetLeft()->GetLogicalVolume()->id();
-  if (idtoareamap.find(leftid) != idtoareamap.end()) {
-    leftarea = idtoareamap[leftid];
-  } else { // insert
-    leftarea = const_cast<VPlacedVolume *>(GetLeft())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(leftid, leftarea));
-  }
-
-  auto rightid = GetRight()->GetLogicalVolume()->id();
-  if (idtoareamap.find(rightid) != idtoareamap.end()) {
-    rightarea = idtoareamap[rightid];
-  } else { // insert
-    rightarea = const_cast<VPlacedVolume *>(GetRight())->SurfaceArea();
-    idtoareamap.insert(std::pair<size_t, Precision>(rightid, rightarea));
-  }
-
-  if (leftarea > 0. && rightarea > 0.) {
-    arearatio = leftarea / (leftarea + rightarea);
-  }
-  do {
-    counter++;
-    if (counter > 1000) {
-      VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
-      return p;
-    }
-
-    auto *selected((RNG::Instance().uniform() < arearatio) ? GetLeft() : GetRight());
-    auto transf = selected->GetTransformation();
-    p           = transf->InverseTransform(selected->GetUnplacedVolume()->SamplePointOnSurface());
-  } while (Inside(p) != vecgeom::kSurface);
-  return p;
-}
-
 VECCORE_ATT_HOST_DEVICE
 BooleanStruct const *BooleanHelper::GetBooleanStruct(VUnplacedVolume const *unplaced)
 {
+  if (!unplaced) return nullptr;
+
   UnplacedBooleanVolume<kUnion> const *buni = dynamic_cast<UnplacedBooleanVolume<kUnion> const *>(unplaced);
   BooleanStruct const *bstruct              = (buni) ? &buni->GetStruct() : nullptr;
 
@@ -187,6 +55,341 @@ BooleanStruct const *BooleanHelper::GetBooleanStruct(VUnplacedVolume const *unpl
     bstruct = (bsub) ? &bsub->GetStruct() : nullptr;
   }
   return bstruct;
+}
+
+bool BooleanHelper::ContainsHalfSpace(VUnplacedVolume const *unplaced)
+{
+  if (!unplaced) return false;
+  if (unplaced->GetType() == ESolidType::halfspace) return true;
+
+  auto const *scaled = dynamic_cast<UnplacedScaledShape const *>(unplaced);
+  if (scaled) return ContainsHalfSpace(scaled->GetPlaced()->GetUnplacedVolume());
+
+  auto const *multiUnion = dynamic_cast<UnplacedMultiUnion const *>(unplaced);
+  if (multiUnion) {
+    for (size_t i = 0; i < multiUnion->GetNumberOfSolids(); ++i) {
+      if (ContainsHalfSpace(multiUnion->GetNode(i)->GetUnplacedVolume())) return true;
+    }
+    return false;
+  }
+
+  auto const *assembly = dynamic_cast<UnplacedAssembly const *>(unplaced);
+  if (assembly) {
+    if (!assembly->GetLogicalVolume()) return false;
+    for (auto const *daughter : assembly->GetLogicalVolume()->GetDaughters()) {
+      if (ContainsHalfSpace(daughter->GetUnplacedVolume())) return true;
+    }
+    return false;
+  }
+
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
+  if (!bstruct) return false;
+
+  return ContainsHalfSpace(bstruct->fLeftVolume->GetUnplacedVolume()) ||
+         ContainsHalfSpace(bstruct->fRightVolume->GetUnplacedVolume());
+}
+
+bool BooleanHelper::HasRootUnsupportedHalfSpaceUnion(VUnplacedVolume const *unplaced)
+{
+  if (!unplaced) return false;
+
+  auto const *scaled = dynamic_cast<UnplacedScaledShape const *>(unplaced);
+  if (scaled) return HasRootUnsupportedHalfSpaceUnion(scaled->GetPlaced()->GetUnplacedVolume());
+
+  auto const *multiUnion = dynamic_cast<UnplacedMultiUnion const *>(unplaced);
+  if (multiUnion) {
+    for (size_t i = 0; i < multiUnion->GetNumberOfSolids(); ++i) {
+      if (HasRootUnsupportedHalfSpaceUnion(multiUnion->GetNode(i)->GetUnplacedVolume())) return true;
+    }
+    return false;
+  }
+
+  auto const *assembly = dynamic_cast<UnplacedAssembly const *>(unplaced);
+  if (assembly) {
+    if (!assembly->GetLogicalVolume()) return false;
+    for (auto const *daughter : assembly->GetLogicalVolume()->GetDaughters()) {
+      if (HasRootUnsupportedHalfSpaceUnion(daughter->GetUnplacedVolume())) return true;
+    }
+    return false;
+  }
+
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
+  if (!bstruct) return false;
+
+  VUnplacedVolume const *leftUnplaced  = bstruct->fLeftVolume->GetUnplacedVolume();
+  VUnplacedVolume const *rightUnplaced = bstruct->fRightVolume->GetUnplacedVolume();
+  if (bstruct->fOp == kUnion && (ContainsHalfSpace(leftUnplaced) || ContainsHalfSpace(rightUnplaced))) return true;
+
+  return HasRootUnsupportedHalfSpaceUnion(leftUnplaced) || HasRootUnsupportedHalfSpaceUnion(rightUnplaced);
+}
+
+bool BooleanHelper::IsFiniteBody(VPlacedVolume const *placed)
+{
+  return placed && IsFiniteBody(placed->GetUnplacedVolume());
+}
+
+bool BooleanHelper::IsFiniteBody(VUnplacedVolume const *unplaced)
+{
+  if (!unplaced) return false;
+  if (unplaced->GetType() == ESolidType::halfspace) return false;
+
+  auto const *scaled = dynamic_cast<UnplacedScaledShape const *>(unplaced);
+  if (scaled) return IsFiniteBody(scaled->GetPlaced());
+
+  auto const *multiUnion = dynamic_cast<UnplacedMultiUnion const *>(unplaced);
+  if (multiUnion) {
+    for (size_t i = 0; i < multiUnion->GetNumberOfSolids(); ++i) {
+      if (!IsFiniteBody(multiUnion->GetNode(i))) return false;
+    }
+    return true;
+  }
+
+  auto const *assembly = dynamic_cast<UnplacedAssembly const *>(unplaced);
+  if (assembly) {
+    if (!assembly->GetLogicalVolume()) return true;
+    for (auto const *daughter : assembly->GetLogicalVolume()->GetDaughters()) {
+      if (!IsFiniteBody(daughter)) return false;
+    }
+    return true;
+  }
+
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
+  if (!bstruct) return true;
+
+  if (bstruct->fOp == kSubtraction) return IsFiniteBody(bstruct->fLeftVolume);
+  if (bstruct->fOp == kUnion) return IsFiniteBody(bstruct->fLeftVolume) && IsFiniteBody(bstruct->fRightVolume);
+  return IsFiniteBody(bstruct->fLeftVolume) || IsFiniteBody(bstruct->fRightVolume);
+}
+
+namespace {
+
+struct HalfSpacePlane {
+  Vector3D<Precision> fPoint;
+  Vector3D<Precision> fNormal;
+};
+
+struct SurfaceOperand {
+  VPlacedVolume const *fPlaced = nullptr;
+  std::vector<Transformation3D const *> fTransformsToRoot;
+  Precision fArea = 0.;
+};
+
+constexpr int kBooleanSurfaceSampleAttempts = 1000;
+
+void TransformPlaneToParent(Transformation3D const *transform, HalfSpacePlane &plane)
+{
+  plane.fPoint  = transform->InverseTransform(plane.fPoint);
+  plane.fNormal = transform->InverseTransformDirection(plane.fNormal);
+  if (plane.fNormal.Mag2() > 0.) plane.fNormal.Normalize();
+}
+
+void CollectHalfSpacePlanes(VPlacedVolume const *placed, std::vector<HalfSpacePlane> &planes)
+{
+  if (!placed) return;
+
+  VUnplacedVolume const *unplaced = placed->GetUnplacedVolume();
+  if (unplaced->GetType() == ESolidType::halfspace) {
+    auto const *halfspace = static_cast<UnplacedHalfSpace const *>(unplaced);
+    HalfSpacePlane plane{halfspace->GetPoint(), halfspace->GetNormal()};
+    TransformPlaneToParent(placed->GetTransformation(), plane);
+    planes.push_back(plane);
+    return;
+  }
+
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
+  if (!bstruct) return;
+
+  std::vector<HalfSpacePlane> localPlanes;
+  CollectHalfSpacePlanes(bstruct->fLeftVolume, localPlanes);
+  CollectHalfSpacePlanes(bstruct->fRightVolume, localPlanes);
+  for (auto &plane : localPlanes) {
+    TransformPlaneToParent(placed->GetTransformation(), plane);
+    planes.push_back(plane);
+  }
+}
+
+bool ExtentIsFinite(Vector3D<Precision> const &lower, Vector3D<Precision> const &upper)
+{
+  for (int i = 0; i < 3; ++i) {
+    if (!std::isfinite(lower[i]) || !std::isfinite(upper[i])) return false;
+    if (lower[i] <= -0.5 * kInfLength || upper[i] >= 0.5 * kInfLength) return false;
+    if (!(lower[i] < upper[i])) return false;
+  }
+  return true;
+}
+
+bool SamplePointOnPlaneInBBox(HalfSpacePlane const &plane, Vector3D<Precision> const &lower,
+                              Vector3D<Precision> const &upper, Vector3D<Precision> &point)
+{
+  const Precision nx = std::fabs(plane.fNormal.x());
+  const Precision ny = std::fabs(plane.fNormal.y());
+  const Precision nz = std::fabs(plane.fNormal.z());
+  int solveAxis      = 0;
+  if (ny > nx && ny >= nz) {
+    solveAxis = 1;
+  } else if (nz > nx && nz > ny) {
+    solveAxis = 2;
+  }
+  if (std::fabs(plane.fNormal[solveAxis]) <= 0.) return false;
+
+  const int u      = (solveAxis + 1) % 3;
+  const int v      = (solveAxis + 2) % 3;
+  point[u]         = RNG::Instance().uniform(lower[u], upper[u]);
+  point[v]         = RNG::Instance().uniform(lower[v], upper[v]);
+  point[solveAxis] = plane.fPoint[solveAxis] - (plane.fNormal[u] * (point[u] - plane.fPoint[u]) +
+                                                plane.fNormal[v] * (point[v] - plane.fPoint[v])) /
+                                                   plane.fNormal[solveAxis];
+
+  for (int i = 0; i < 3; ++i) {
+    if (point[i] < lower[i] - kTolerance || point[i] > upper[i] + kTolerance) return false;
+  }
+  return true;
+}
+
+Precision CachedSurfaceArea(VPlacedVolume const *placed)
+{
+  // Calculating surface area can be expensive. Keep the legacy per-logical
+  // volume cache for finite non-half-space operands.
+  static std::map<size_t, Precision> idtoareamap;
+  auto id = placed->GetLogicalVolume()->id();
+  auto it = idtoareamap.find(id);
+  if (it != idtoareamap.end()) return it->second;
+
+  Precision area = placed->SurfaceArea();
+  idtoareamap.insert(std::pair<size_t, Precision>(id, area));
+  return area;
+}
+
+void CollectFiniteSurfaceOperands(VPlacedVolume const *placed, std::vector<Transformation3D const *> const &ancestors,
+                                  std::vector<SurfaceOperand> &operands)
+{
+  if (!placed) return;
+
+  VUnplacedVolume const *unplaced = placed->GetUnplacedVolume();
+  if (!BooleanHelper::ContainsHalfSpace(unplaced)) {
+    const Precision area = CachedSurfaceArea(placed);
+    if (std::isfinite(area) && area > 0.) {
+      SurfaceOperand operand;
+      operand.fPlaced = placed;
+      operand.fArea   = area;
+      operand.fTransformsToRoot.push_back(placed->GetTransformation());
+      operand.fTransformsToRoot.insert(operand.fTransformsToRoot.end(), ancestors.begin(), ancestors.end());
+      operands.push_back(operand);
+    }
+    return;
+  }
+
+  BooleanStruct const *bstruct = BooleanHelper::GetBooleanStruct(unplaced);
+  if (!bstruct) return;
+
+  // Descend through half-space-containing Boolean nodes instead of calling
+  // their sampled SurfaceArea() just to build selection weights.
+  std::vector<Transformation3D const *> childAncestors;
+  childAncestors.push_back(placed->GetTransformation());
+  childAncestors.insert(childAncestors.end(), ancestors.begin(), ancestors.end());
+  CollectFiniteSurfaceOperands(bstruct->fLeftVolume, childAncestors, operands);
+  CollectFiniteSurfaceOperands(bstruct->fRightVolume, childAncestors, operands);
+}
+
+template <BooleanOperation Op>
+bool SampleConstituentSurface(UnplacedBooleanVolume<Op> const &volume, std::vector<SurfaceOperand> const &operands,
+                              Vector3D<Precision> &point)
+{
+  Precision totalArea = 0.;
+  for (auto const &operand : operands)
+    totalArea += operand.fArea;
+  if (totalArea <= 0.) return false;
+
+  Precision select     = RNG::Instance().uniform(0., totalArea);
+  auto const *selected = &operands.back();
+  for (auto const &operand : operands) {
+    select -= operand.fArea;
+    if (select <= 0.) {
+      selected = &operand;
+      break;
+    }
+  }
+
+  point = selected->fPlaced->GetUnplacedVolume()->SamplePointOnSurface();
+  for (auto const *transform : selected->fTransformsToRoot)
+    point = transform->InverseTransform(point);
+  return volume.Inside(point) == vecgeom::kSurface;
+}
+
+template <BooleanOperation Op>
+bool PrepareHalfSpacePlaneSampling(UnplacedBooleanVolume<Op> const &volume, Vector3D<Precision> &lower,
+                                   Vector3D<Precision> &upper, std::vector<HalfSpacePlane> &planes)
+{
+  volume.Extent(lower, upper);
+  if (!ExtentIsFinite(lower, upper)) return false;
+
+  CollectHalfSpacePlanes(volume.GetLeft(), planes);
+  CollectHalfSpacePlanes(volume.GetRight(), planes);
+  return !planes.empty();
+}
+
+template <BooleanOperation Op>
+bool TrySampleHalfSpacePlaneSurface(UnplacedBooleanVolume<Op> const &volume, Vector3D<Precision> const &lower,
+                                    Vector3D<Precision> const &upper, std::vector<HalfSpacePlane> const &planes,
+                                    Vector3D<Precision> &point)
+{
+  if (planes.empty()) return false;
+
+  size_t planeIndex = static_cast<size_t>(RNG::Instance().uniform(0., static_cast<Precision>(planes.size())));
+  if (planeIndex >= planes.size()) planeIndex = planes.size() - 1;
+
+  Vector3D<Precision> candidate;
+  if (!SamplePointOnPlaneInBBox(planes[planeIndex], lower, upper, candidate)) return false;
+  if (volume.Inside(candidate) == vecgeom::kSurface) {
+    point = candidate;
+    return true;
+  }
+  return false;
+}
+
+template <BooleanOperation Op>
+Vector3D<Precision> SampleBooleanSurface(UnplacedBooleanVolume<Op> const &volume)
+{
+  Vector3D<Precision> point;
+  const bool hasHalfSpace = BooleanHelper::ContainsHalfSpace(&volume);
+  std::vector<SurfaceOperand> operands;
+  CollectFiniteSurfaceOperands(volume.GetLeft(), {}, operands);
+  CollectFiniteSurfaceOperands(volume.GetRight(), {}, operands);
+
+  Vector3D<Precision> lower, upper;
+  std::vector<HalfSpacePlane> planes;
+  const bool canSampleHalfSpacePlane = hasHalfSpace && PrepareHalfSpacePlaneSampling(volume, lower, upper, planes);
+
+  for (int counter = 0; counter < kBooleanSurfaceSampleAttempts; ++counter) {
+    if (canSampleHalfSpacePlane && RNG::Instance().uniform() < 0.5 &&
+        TrySampleHalfSpacePlaneSurface(volume, lower, upper, planes, point))
+      return point;
+    if (SampleConstituentSurface(volume, operands, point)) return point;
+    if (canSampleHalfSpacePlane && TrySampleHalfSpacePlaneSurface(volume, lower, upper, planes, point)) return point;
+  }
+
+  VECGEOM_LOG(error) << "Could not generate point on surface for boolean";
+  return point;
+}
+
+} // namespace
+
+template <>
+Vector3D<Precision> UnplacedBooleanVolume<kUnion>::SamplePointOnSurface() const
+{
+  return SampleBooleanSurface(*this);
+}
+
+template <>
+Vector3D<Precision> UnplacedBooleanVolume<kIntersection>::SamplePointOnSurface() const
+{
+  return SampleBooleanSurface(*this);
+}
+
+template <>
+Vector3D<Precision> UnplacedBooleanVolume<kSubtraction>::SamplePointOnSurface() const
+{
+  return SampleBooleanSurface(*this);
 }
 
 VECCORE_ATT_HOST_DEVICE
@@ -323,7 +526,7 @@ VECCORE_ATT_DEVICE VPlacedVolume *UnplacedBooleanVolume<kSubtraction>::Specializ
                                                                                     placement);
 
 #else
-  // Compiling the above code with nvcc 6.5 faile with the error:
+  // Compiling the above code with nvcc 6.5 fails with the error:
   // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
   // at least when optimized.
   return nullptr;
@@ -347,7 +550,7 @@ VECCORE_ATT_DEVICE VPlacedVolume *UnplacedBooleanVolume<kUnion>::SpecializedVolu
                                                                               placement);
 
 #else
-  // Compiling the above code with nvcc 6.5 faile with the error:
+  // Compiling the above code with nvcc 6.5 fails with the error:
   // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
   // at least when optimized.
   return nullptr;
@@ -371,7 +574,7 @@ VECCORE_ATT_DEVICE VPlacedVolume *UnplacedBooleanVolume<kIntersection>::Speciali
                                                                                      placement);
 
 #else
-  // Compiling the above code with nvcc 6.5 faile with the error:
+  // Compiling the above code with nvcc 6.5 fails with the error:
   // nvcc error   : 'ptxas' died due to signal 11 (Invalid memory reference)
   // at least when optimized.
   return nullptr;
