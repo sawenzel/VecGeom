@@ -31,6 +31,7 @@
 #include "VecGeom/volumes/UnplacedPolycone.h"
 #include "VecGeom/volumes/UnplacedScaledShape.h"
 #include "VecGeom/volumes/UnplacedGenTrap.h"
+#include "VecGeom/volumes/UnplacedHalfSpace.h"
 #include "VecGeom/volumes/UnplacedSExtruVolume.h"
 #include "VecGeom/volumes/UnplacedExtruded.h"
 #include "VecGeom/volumes/PlanarPolygon.h"
@@ -61,6 +62,7 @@
 #include "TGeoScaledShape.h"
 #include "TGeoEltu.h"
 #include "TGeoTessellated.h"
+#include "TGeoHalfSpace.h"
 
 #include <iostream>
 #include <list>
@@ -378,6 +380,16 @@ VUnplacedVolume *RootGeoManager::Convert(TGeoShape const *const shape)
 
     unplaced_volume =
         GeoManager::MakeInstance<UnplacedBox>(box->GetDX() * LUnit(), box->GetDY() * LUnit(), box->GetDZ() * LUnit());
+  }
+
+  // THE HALF-SPACE
+  if (shape->IsA() == TGeoHalfSpace::Class()) {
+    TGeoHalfSpace *const halfspace = const_cast<TGeoHalfSpace *>(static_cast<TGeoHalfSpace const *>(shape));
+    const double *point            = halfspace->GetPoint();
+    const double *normal           = halfspace->GetNorm();
+    unplaced_volume                = GeoManager::MakeInstance<UnplacedHalfSpace>(
+        Vector3D<Precision>(point[0] * LUnit(), point[1] * LUnit(), point[2] * LUnit()),
+        Vector3D<Precision>(normal[0], normal[1], normal[2]));
   }
 
   // THE TUBE

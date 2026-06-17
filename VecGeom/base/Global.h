@@ -100,6 +100,7 @@ enum class ESolidType : char {
   extruded,
   gentrap,
   genericpolycone,
+  halfspace,
   hyperboloid,
   multiunion,
   orb,

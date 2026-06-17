@@ -22,7 +22,13 @@ namespace vecgeom {
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
 class UnplacedScaledShape;
+class VUnplacedVolume;
 class Scale3D;
+#ifndef VECCORE_CUDA
+namespace BooleanHelper {
+bool IsFiniteBody(VPlacedVolume const *placed);
+}
+#endif
 } // namespace VECGEOM_IMPL_NAMESPACE
 
 /**
@@ -134,7 +140,15 @@ public:
   /**
    * Set the world volume defining the entry point to the geometry.
    */
-  void SetWorld(VPlacedVolume const *const w) { fWorld = w; }
+  void SetWorld(VPlacedVolume const *const w)
+  {
+#ifndef VECCORE_CUDA
+    if (w) {
+      VECGEOM_VALIDATE(BooleanHelper::IsFiniteBody(w), << "Volumes placed in geometry must be finite bodies");
+    }
+#endif
+    fWorld = w;
+  }
 
   /**
    * Set the world volume and close geometry.

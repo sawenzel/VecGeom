@@ -3,6 +3,7 @@
 
 #include "VolumePointers.h"
 #include "VecGeom/volumes/PlacedVolume.h"
+#include "VecGeom/volumes/UnplacedBooleanVolume.h"
 #include <iostream>
 
 #ifdef VECGEOM_ROOT
@@ -41,10 +42,7 @@ VolumePointers::VolumePointers(VolumePointers const &other)
   ConvertVolume();
 }
 
-VolumePointers::~VolumePointers()
-{
-  Deallocate();
-}
+VolumePointers::~VolumePointers() { Deallocate(); }
 
 VolumePointers &VolumePointers::operator=(VolumePointers const &other)
 {
@@ -58,7 +56,9 @@ void VolumePointers::ConvertVolume()
 {
   if (!fUnspecialized) fUnspecialized = fSpecialized->ConvertToUnspecialized();
 #ifdef VECGEOM_ROOT
-  if (!fRoot) fRoot = fSpecialized->ConvertToRoot();
+  if (!fRoot && !BooleanHelper::HasRootUnsupportedHalfSpaceUnion(fSpecialized->GetUnplacedVolume())) {
+    fRoot = fSpecialized->ConvertToRoot();
+  }
 #endif
 #ifdef VECGEOM_GEANT4
   if (!fGeant4) fGeant4 = fSpecialized->ConvertToGeant4();
@@ -80,5 +80,5 @@ void VolumePointers::Deallocate()
   */
 }
 
-} // End impl namespace
-} // End global namespace
+} // namespace VECGEOM_IMPL_NAMESPACE
+} // namespace vecgeom

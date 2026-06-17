@@ -4,6 +4,7 @@
 #include "VecGeom/volumes/BooleanVolume.h"
 #include "VecGeom/volumes/Box.h"
 #include "VecGeom/volumes/Cone.h"
+#include "VecGeom/volumes/HalfSpace.h"
 #include "VecGeom/volumes/Polyhedron.h"
 #include "VecGeom/volumes/Polycone.h"
 #include "VecGeom/volumes/Tube.h"
@@ -146,6 +147,57 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanSubtractionBoxTubeTest
       new vecgeom::UnplacedBooleanVolume<vecgeom::kSubtraction>(vecgeom::kSubtraction, left, hole));
 }
 
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanSubtractionBoxHalfSpaceTestSolid()
+{
+  auto *left =
+      MakeLeakedStandalonePlacedVolume("test-bool-subtraction-halfspace-left", new vecgeom::UnplacedBox(8., 8., 8.));
+  auto *halfspace = MakeLeakedStandalonePlacedVolume(
+      "test-bool-subtraction-halfspace-cutter",
+      new vecgeom::UnplacedHalfSpace(vecgeom::Vector3D<vecgeom::Precision>(0., 0., 0.),
+                                     vecgeom::Vector3D<vecgeom::Precision>(0., 0., 1.)));
+  return MakeStandalonePlacedTestSolid(
+      "test-boolean-subtraction-box-halfspace",
+      new vecgeom::UnplacedBooleanVolume<vecgeom::kSubtraction>(vecgeom::kSubtraction, left, halfspace));
+}
+
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanSubtractionTubeHalfSpaceTestSolid()
+{
+  vecgeom::Transformation3D tube_transform(0.5, -0.5, 0., 0., 25., 20.);
+  auto *tube      = MakeLeakedStandalonePlacedVolume("test-bool-subtraction-tube-halfspace-left",
+                                                     new vecgeom::GenericUnplacedTube(0., 3., 10., 0., vecgeom::kTwoPi),
+                                                     &tube_transform);
+  auto *halfspace = MakeLeakedStandalonePlacedVolume(
+      "test-bool-subtraction-tube-halfspace-cutter",
+      new vecgeom::UnplacedHalfSpace(vecgeom::Vector3D<vecgeom::Precision>(0.5, -0.5, 0.),
+                                     vecgeom::Vector3D<vecgeom::Precision>(0., 1., 1.)));
+  return MakeStandalonePlacedTestSolid(
+      "test-boolean-subtraction-tube-halfspace",
+      new vecgeom::UnplacedBooleanVolume<vecgeom::kSubtraction>(vecgeom::kSubtraction, tube, halfspace));
+}
+
+inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanSubtractionHalfSpaceUnionFromBoxTestSolid()
+{
+  auto *box = MakeLeakedStandalonePlacedVolume("test-bool-subtraction-halfspace-union-box",
+                                               new vecgeom::UnplacedBox(10., 10., 10.));
+  vecgeom::Transformation3D tube_transform(0.5, -0.5, 0., 0., 25., 20.);
+  auto *tube      = MakeLeakedStandalonePlacedVolume("test-bool-subtraction-halfspace-union-tube",
+                                                     new vecgeom::GenericUnplacedTube(0., 3., 10., 0., vecgeom::kTwoPi),
+                                                     &tube_transform);
+  auto *halfspace = MakeLeakedStandalonePlacedVolume(
+      "test-bool-subtraction-halfspace-union-halfspace",
+      new vecgeom::UnplacedHalfSpace(vecgeom::Vector3D<vecgeom::Precision>(0.5, -0.5, 0.),
+                                     vecgeom::Vector3D<vecgeom::Precision>(0., 1., 1.)));
+  // Keep the navigated tree canonical: Boolean union assumes bounded
+  // constituents for DistanceToOut, while the equivalent nested subtraction
+  // uses the half-space only as a direct cutter.
+  auto *box_cut =
+      MakeLeakedBooleanNode<vecgeom::kSubtraction>("test-bool-subtraction-halfspace-union-box-cut", box, halfspace);
+
+  return MakeStandalonePlacedTestSolid(
+      "test-boolean-subtraction-halfspace-union-from-box",
+      new vecgeom::UnplacedBooleanVolume<vecgeom::kSubtraction>(vecgeom::kSubtraction, box_cut, tube));
+}
+
 inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanSubtractionTubeFromConeTestSolid()
 {
   auto *cone = MakeLeakedStandalonePlacedVolume(
@@ -195,9 +247,9 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanUnionOfSubtractionsTes
   auto *box =
       MakeLeakedStandalonePlacedVolume("test-bool-union-subtractions-box", new vecgeom::UnplacedBox(3., 3., 3.));
   vecgeom::Transformation3D box_tube_transform(0.5, 0., 0.);
-  auto *box_tube    = MakeLeakedStandalonePlacedVolume("test-bool-union-subtractions-box-tube",
-                                                       new vecgeom::GenericUnplacedTube(0., 0.8, 4., 0., vecgeom::kTwoPi),
-                                                       &box_tube_transform);
+  auto *box_tube = MakeLeakedStandalonePlacedVolume("test-bool-union-subtractions-box-tube",
+                                                    new vecgeom::GenericUnplacedTube(0., 0.8, 4., 0., vecgeom::kTwoPi),
+                                                    &box_tube_transform);
   auto *left_branch = MakeLeakedBooleanNode<vecgeom::kSubtraction>("test-bool-union-subtractions-left", box, box_tube);
 
   auto *cone = MakeLeakedStandalonePlacedVolume(
@@ -247,11 +299,11 @@ inline std::unique_ptr<vecgeom::VPlacedVolume> MakeBooleanNestedTransformedSubtr
   auto *base = MakeLeakedStandalonePlacedVolume("test-bool-nested-transformed-subtraction-base",
                                                 new vecgeom::UnplacedBox(4., 3., 3.));
 
-  constexpr vecgeom::Precision lobe_x     = 2.8;
-  constexpr vecgeom::Precision lobe_y     = 0.;
-  constexpr vecgeom::Precision rot_z      = 30.;
-  constexpr vecgeom::Precision cos_rot_z  = 0.86602540378443865;
-  constexpr vecgeom::Precision sin_rot_z  = 0.5;
+  constexpr vecgeom::Precision lobe_x    = 2.8;
+  constexpr vecgeom::Precision lobe_y    = 0.;
+  constexpr vecgeom::Precision rot_z     = 30.;
+  constexpr vecgeom::Precision cos_rot_z = 0.86602540378443865;
+  constexpr vecgeom::Precision sin_rot_z = 0.5;
   vecgeom::Transformation3D lobe_transform(lobe_x, lobe_y, 0., 0., 0., rot_z);
   auto *lobe = MakeLeakedStandalonePlacedVolume("test-bool-nested-transformed-subtraction-lobe",
                                                 new vecgeom::UnplacedBox(2., 1.2, 2.5), &lobe_transform);

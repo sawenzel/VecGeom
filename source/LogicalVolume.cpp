@@ -21,6 +21,7 @@
 #include "VecGeom/navigation/NewSimpleNavigator.h"
 #include "VecGeom/navigation/SimpleLevelLocator.h"
 #include "VecGeom/volumes/UnplacedAssembly.h"
+#include "VecGeom/volumes/UnplacedBooleanVolume.h"
 #include <climits>
 #include <stdio.h>
 #include <set>
@@ -135,6 +136,9 @@ VPlacedVolume const *LogicalVolume::PlaceDaughter(LogicalVolume *const volume,
 
 void LogicalVolume::PlaceDaughter(VPlacedVolume *const placed)
 {
+#ifndef VECCORE_CUDA
+  VECGEOM_VALIDATE(BooleanHelper::IsFiniteBody(placed), << "Volumes placed in geometry must be finite bodies");
+#endif
   int ichild = fDaughters->size();
   VECGEOM_ASSERT(
       placed->GetChildId() < 0 &&
