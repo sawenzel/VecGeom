@@ -8,7 +8,6 @@
 #include "NavViewTest.h"
 
 #include <gtest/gtest.h>
-#include <stdexcept>
 
 namespace vecgeom {
 namespace test {
@@ -26,7 +25,7 @@ TEST_F(FourLevels, InitFromRelocation)
   NavData data;
   auto view   = data.make_view();
   auto PathAt = [&](Real3 const &pos) {
-    view.Initialize(pos, {0, 0, 1});
+    view.Initialize(unknown_path, pos, {0, 0, 1});
     return this->PathStr(view);
   };
   EXPECT_EQ("/World_PV/env1/Shape1_PV/Shape2_PV", PathAt({100, 100, 100}));
