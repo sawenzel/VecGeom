@@ -320,13 +320,12 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
                         NavigationState const *in_states, CrossingSeq *crossings, int idebug, int idebug_step,
                         TestConfig const &config)
 {
-  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
-  const char *svalid[2]          = {"invalid", "valid"};
-  const char *sexiting[2]        = {"entering", "exiting"};
-  int ilast                      = config.nrays;
-  int istart                     = 0;
-  int max_cross                  = 0;
-  int max_cross_ray              = -1;
+  const char *svalid[2]   = {"invalid", "valid"};
+  const char *sexiting[2] = {"entering", "exiting"};
+  int ilast               = config.nrays;
+  int istart              = 0;
+  int max_cross           = 0;
+  int max_cross_ray       = -1;
   if (idebug >= 0) {
     std::cout << std::setprecision(16) << "PropagateRaysSolid debug ray " << idebug << " : p{" << points[idebug]
               << "} d{" << dirs[idebug] << "}\n   start :";
@@ -349,7 +348,7 @@ void PropagateRaysSolid(Vector3D<Precision> const *points, Vector3D<Precision> c
       auto step_limit = kInfLength;
       if (config.input_state.GetNavIndex() > 0 && num_cross == 0) step_limit = config.step_limit;
       // Use the ComputeStep + Relocate interface as in the MC
-      auto distance = Navigator::ComputeStepAndNextVolume(pt, dir, step_limit, start_state, out_state, kPushDistance);
+      auto distance = Navigator::ComputeStepAndNextVolume(pt, dir, step_limit, start_state, out_state);
       bool crossed  = out_state.IsOnBoundary();
       bool same_vol = true;
       if (crossed) {
@@ -422,7 +421,7 @@ void PropagateRaysSurf(Vector3D<Precision> const *points, Vector3D<Precision> co
     vgbrep::CrossedSurface
         crossed_surf; // contains highest exiting frame information and final exiting or entering frame information
     // For general handling the crossed_surf.hit_surface_data to be used, only for the relocation in the overlap
-    // detection only the highest exiting infromation crossed_surf.exit_surface_data is used
+    // detection only the highest exiting information crossed_surf.exit_surface_data is used
     auto pt         = points[i];
     auto const &dir = dirs[i];
     if (config.validate_results) crossings[i].Init(pt[0], pt[1], pt[2], dir[0], dir[1], dir[2]);
@@ -553,9 +552,10 @@ int ValidateCrossing(Vector3D<Precision> const *points, Vector3D<Precision> cons
     num_errors_dist += error_dist;
     if (config.debug && error_dist && (num_errors_dist == 1)) {
       // replay first error
-      printf("\033[1;31m=== ray %d has a propagation difference at step %d (correponding solid model step %d) dist_ref "
-             "= %.10g :  dist = %.10g\033[0m\n",
-             i, istep_err, istep_err_solid, ref_crossings[i].fSteps[istep_err_solid], crossings[i].fSteps[istep_err]);
+      printf(
+          "\033[1;31m=== ray %d has a propagation difference at step %d (corresponding solid model step %d) dist_ref "
+          "= %.10g :  dist = %.10g\033[0m\n",
+          i, istep_err, istep_err_solid, ref_crossings[i].fSteps[istep_err_solid], crossings[i].fSteps[istep_err]);
       if (((size_t)istep_err < crossings[i].GetNsteps() - 1) &&
           ((size_t)istep_err_solid < ref_crossings[i].GetNsteps() - 1) &&
           crossings[i].fStates[istep_err + 1].GetState() != ref_crossings[i].fStates[istep_err_solid + 1].GetState()) {

@@ -280,13 +280,11 @@ public:
   static Precision ComputeStepAndPropagatedState(Vector3D<Precision> const &globalpoint,
                                                  Vector3D<Precision> const &globaldir, Precision step_limit,
                                                  vecgeom::NavigationState const &in_state,
-                                                 vecgeom::NavigationState &out_state, Precision push = 0)
+                                                 vecgeom::NavigationState &out_state)
   {
     if (in_state.Top() == nullptr) return kInfLength;
-    // If we are on the boundary, push a bit more.
-    if (in_state.IsOnBoundary()) {
-      push += kBoundaryPush;
-    }
+    const Precision push = in_state.IsOnBoundary() ? kBoundaryPush : 0.;
+
     if (step_limit < push) {
       // Go as far as the step limit says, assuming there is no boundary.
       // TODO: Does this make sense?
@@ -304,11 +302,11 @@ public:
     in_state.TopMatrix(m);
     localpoint = m.Transform(globalpoint);
     localdir   = m.TransformDirection(globaldir);
-    // The user may want to move point from boundary before computing the step
-    localpoint += push * localdir;
 
     Daughter hitcandidate = nullptr;
-    Precision step        = ComputeStepAndHit(localpoint, localdir, step_limit, in_state, out_state, hitcandidate);
+    // Avoid computing the distance from boundary by pushing the point
+    Precision step =
+        ComputeStepAndHit(localpoint + push * localdir, localdir, step_limit, in_state, out_state, hitcandidate);
     step += push;
 
     if (out_state.IsOnBoundary()) {
@@ -346,13 +344,11 @@ public:
   static Precision ComputeStepAndNextVolume(Vector3D<Precision> const &globalpoint,
                                             Vector3D<Precision> const &globaldir, Precision step_limit,
                                             vecgeom::NavigationState const &in_state,
-                                            vecgeom::NavigationState &out_state, Precision push = 0)
+                                            vecgeom::NavigationState &out_state)
   {
     if (in_state.Top() == nullptr) return kInfLength;
-    // If we are on the boundary, push a bit more.
-    if (in_state.IsOnBoundary()) {
-      push += kBoundaryPush;
-    }
+    const Precision push = in_state.IsOnBoundary() ? kBoundaryPush : 0.;
+
     if (step_limit < push) {
       // Go as far as the step limit says, assuming there is no boundary.
       // TODO: Does this make sense?
@@ -375,7 +371,6 @@ public:
     // Avoid computing the distance from boundary by pushing the point
     Precision step =
         ComputeStepAndHit(localpoint + push * localdir, localdir, step_limit, in_state, out_state, hitcandidate);
-    // step correction with the push distance
     step += (step > 0.) * push;
 
     if (out_state.IsOnBoundary()) {

@@ -103,10 +103,9 @@ static void TestHost(Vector3D<Precision> pos, Vector3D<Precision> dir)
   NavigationState out;
 
   vecgeom::Precision distance, dist1, safety;
-  auto kPush = 1000 * vecgeom::kToleranceDist<vecgeom::Precision>;
-  auto *nav  = NewSimpleNavigator<>::Instance();
+  auto *nav = NewSimpleNavigator<>::Instance();
   nav->FindNextBoundaryAndStep(pos, dir, state, out, kInfLength, distance);
-  dist1  = LoopNavigator::ComputeStepAndPropagatedState(pos, dir, kInfLength, state, out, kPush);
+  dist1  = LoopNavigator::ComputeStepAndPropagatedState(pos, dir, kInfLength, state, out);
   safety = SimpleSafetyEstimator::Instance()->ComputeSafety(pos, state);
   printf("VecGeom (NewSimp, LoopNav): dists = %f %f, safety = %f\n", distance, dist1, safety);
 
