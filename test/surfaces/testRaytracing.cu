@@ -118,7 +118,6 @@ __device__ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vect
                                   NavigationState const *in_states, Precision *length_over_crossings, bool debug,
                                   TestConfig const config)
 {
-  constexpr double kPushDistance = 1000 * vecgeom::kToleranceDist<Precision>;
   if (debug) {
     printf("Device PropagateRaysSolid debug ray %d:\n", i);
     printf("   ");
@@ -131,8 +130,7 @@ __device__ void PropagateRaySolid(int i, Vector3D<Precision> const *points, Vect
   auto const &dir = dirs[i];
   auto pt         = points[i] + kTolerance * dir; // push the start and subsequent crossing points
   do {
-    auto distance =
-        Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state, kPushDistance);
+    auto distance = Navigator::ComputeStepAndPropagatedState(pt, dir, kInfLength, start_state, out_state);
     if (debug) {
       printf("     dist = %15.10f\n", distance);
       printf("   ");
