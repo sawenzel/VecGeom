@@ -9,7 +9,7 @@
 #include "VecGeom/base/Transformation3D.h"
 #include "VecGeom/volumes/PlacedBox.h"
 #include "VecGeom/volumes/utilities/VolumeUtilities.h"
-
+#include "VecGeom/volumes/kernel/TessellatedImplementation.h"
 #ifdef VECGEOM_ROOT
 #include "TGeoShape.h"
 #endif
@@ -26,6 +26,7 @@
 #include <random>
 #include <sstream>
 #include <utility>
+#include <atomic>
 
 namespace vecgeom {
 
@@ -528,6 +529,10 @@ int Benchmarker::RunBenchmark()
 {
   VECGEOM_ASSERT(fWorld != nullptr);
   int errorcode = 0;
+// erase possible overhead counter accumulations of VeGeomTesselated implemenntation
+#ifndef VECCORE_CUDA
+  reset_counters_ARGH();
+#endif // VECORE_CUDA
   errorcode += RunInsideBenchmark();
   errorcode += RunToInBenchmark();
   errorcode += RunToOutBenchmark();
@@ -582,6 +587,9 @@ int Benchmarker::RunInsideBenchmark()
 #endif
 
   // Run all benchmarks
+#ifndef VECCORE_CUDA
+  enable_counters_ARGH();
+#endif
   for (unsigned int i = 0; i < fMeasurementCount; ++i) {
 #if defined(VECGEOM_TEST_VTUNE)
     __itt_task_end(__itt_RunInsideBenchmark);
@@ -610,6 +618,9 @@ int Benchmarker::RunInsideBenchmark()
     RunInsideCuda(fPointPool->x(), fPointPool->y(), fPointPool->z(), containsCuda, insideCuda);
 #endif
   }
+#ifndef VECCORE_CUDA
+  disable_counters_ARGH();
+#endif
 
   if (fPoolMultiplier == 1 && fVerbosity > 0) {
 
@@ -807,6 +818,9 @@ int Benchmarker::RunToInBenchmark()
 #endif
 
   // Run all benchmarks
+#ifndef VECCORE_CUDA
+  enable_counters_ARGH();
+#endif
   for (unsigned int i = 0; i < fMeasurementCount; ++i) {
 #if defined(VECGEOM_TEST_VTUNE)
     __itt_task_end(__itt_RunToInBenchmark);
@@ -836,6 +850,9 @@ int Benchmarker::RunToInBenchmark()
                 fDirectionPool->z(), distancesCuda, safetiesCuda);
 #endif
   }
+#ifndef VECCORE_CUDA
+  disable_counters_ARGH();
+#endif
   int errorcode = CompareDistances(fPointPool, fDirectionPool, distancesSpecialized, distancesUnspecialized,
 #ifdef VECGEOM_ROOT
                                    distancesRoot,
@@ -959,6 +976,9 @@ int Benchmarker::RunToOutBenchmark()
 #endif
 
   // Run all benchmarks
+#ifndef VECCORE_CUDA
+  enable_counters_ARGH();
+#endif
   for (unsigned int i = 0; i < fMeasurementCount; ++i) {
 #if defined(VECGEOM_TEST_VTUNE)
     __itt_task_end(__itt_RunToOutBenchmark);
@@ -988,6 +1008,9 @@ int Benchmarker::RunToOutBenchmark()
                  fDirectionPool->z(), distancesCuda, safetiesCuda);
 #endif
   }
+#ifndef VECCORE_CUDA
+  disable_counters_ARGH();
+#endif
 
   int errorcode = CompareDistances(fPointPool, fDirectionPool, distancesSpecialized, distancesUnspecialized,
 #ifdef VECGEOM_ROOT

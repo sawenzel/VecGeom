@@ -12,9 +12,85 @@
 #include "VecGeom/volumes/TessellatedStruct.h"
 #include "VecGeom/volumes/kernel/GenericKernels.h"
 #include <VecCore/VecCore>
-
+#include <atomic>
+#include <iostream>
 #include <cstdio>
 
+// NOTE: The facet-intersection statistics below rely on host-only std::atomic
+// counters and std::cerr. They are not available in device code, so the whole
+// instrumentation block is made invisible to the CUDA compiler.
+#ifndef VECCORE_CUDA
+// NOTE: these must be C++17 "inline" variables (true single-instance
+// globals with external linkage), not anonymous-namespace statics. This
+// header is included in many translation units, and Contains/DistanceToIn/
+// DistanceToOut as well as reset/enable/disable_counters_ARGH() are all
+// `inline` functions whose duplicate per-TU bodies get folded independently
+// by the linker. With anonymous-namespace (internal-linkage) counters, the
+// folded body kept for e.g. enable_counters_ARGH() could end up baked to a
+// *different* TU's copy of the counters than the folded body kept for
+// Contains(), so toggling the flag from one call site would silently have
+// no effect on what another call site reads (ODR violation, ub) - this is
+// exactly the failure mode where the recorded counters always stayed at 0.
+inline std::atomic<unsigned long long> gfacetCounterDistToOut{0};
+inline std::atomic<unsigned long long> gfacetCounterContains{0};
+inline std::atomic<unsigned long long> gfacetCounterDistToIn{0};
+inline std::atomic<unsigned long long> gLeafDistToOut{0};
+inline std::atomic<unsigned long long> gLeafContains{0};
+inline std::atomic<unsigned long long> gLeafDistToIn{0};
+inline std::atomic<unsigned long long> gInnerDistToOut{0};
+inline std::atomic<unsigned long long> gInnerContains{0};
+inline std::atomic<unsigned long long> gInnerDistToIn{0};
+
+// Counting is off by default so that setup/point-generation calls (which also
+// go through Contains/DistanceToIn/DistanceToOut) never pollute the stats;
+// callers must explicitly enable counting around the code they want measured.
+inline std::atomic<bool> gCountingEnabledARGH{false};
+
+struct facetIntersectionStatsDumper {
+  ~facetIntersectionStatsDumper()
+  {
+    unsigned long long Contain = gfacetCounterContains.load() / 2;
+    unsigned long long toIN    = gfacetCounterDistToIn.load() / 2;
+    unsigned long long toOut   = gfacetCounterDistToOut.load() / 2;
+    unsigned long long C       = gLeafContains.load() / 2;
+    unsigned long long DI      = gLeafDistToIn.load() / 2;
+    unsigned long long DO      = gLeafDistToOut.load() / 2;
+    unsigned long long innerC  = gInnerContains.load() / 2;
+    unsigned long long innerDI = gInnerDistToIn.load() / 2;
+    unsigned long long innerDO = gInnerDistToOut.load() / 2;
+    if (Contain != 0 && toIN != 0 && toOut != 0) {
+      std::cerr << "VecGeom total facet intersections: "
+                << "Contains: " << Contain << " distToinside: " << toIN << " distToOut: " << toOut << std::endl;
+    }
+    if (C != 0 && DI != 0 && DO != 0) {
+      std::cerr << "VecGeom total leaf intersections: "
+                << "Contains: " << C << " distToinside: " << DI << " distToOut: " << DO << std::endl;
+    }
+    if (innerC != 0 && innerDI != 0 && innerDO != 0) {
+      std::cerr << "VecGeom total inner intersections: "
+                << "Contains: " << innerC << " distToinside: " << innerDI << " distToOut: " << innerDO << std::endl;
+    }
+  }
+};
+inline facetIntersectionStatsDumper gFacetIntersectionStatsDumper;
+
+inline void reset_counters_ARGH()
+{
+  gfacetCounterDistToOut.store(0, std::memory_order_relaxed);
+  gfacetCounterContains.store(0, std::memory_order_relaxed);
+  gfacetCounterDistToIn.store(0, std::memory_order_relaxed);
+  gLeafDistToOut.store(0, std::memory_order_relaxed);
+  gLeafContains.store(0, std::memory_order_relaxed);
+  gLeafDistToIn.store(0, std::memory_order_relaxed);
+  gInnerDistToOut.store(0, std::memory_order_relaxed);
+  gInnerContains.store(0, std::memory_order_relaxed);
+  gInnerDistToIn.store(0, std::memory_order_relaxed);
+}
+
+inline void enable_counters_ARGH() { gCountingEnabledARGH.store(true, std::memory_order_relaxed); }
+
+inline void disable_counters_ARGH() { gCountingEnabledARGH.store(false, std::memory_order_relaxed); }
+#endif // VECCORE_CUDA
 namespace vecgeom {
 
 VECGEOM_DEVICE_FORWARD_DECLARE(struct TessellatedImplementation;);
@@ -56,8 +132,12 @@ struct TessellatedImplementation {
     }
 
     // more expensive check involving intersection with the BVH
-    int parity_counter = 0;
-    auto userhook_bvh  = [&](BVHIntersectContext<float> &ctx) {
+    int parity_counter       = 0;
+    int intersection_counter = 0;
+    int leafCounter_1        = 0;
+    int innerCounter         = 0;
+    auto userhook_bvh        = [&](BVHIntersectContext<float> &ctx) {
+      intersection_counter += 1;
       const auto primID    = ctx.primID;
       const auto &facet    = tessellated.fFacets[primID];
       const auto this_dist = facet.Distance(point, tessellated.fTestDir /*, CAN GIVE EPSILON*/);
@@ -66,8 +146,18 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here because we might see another triangle at
     };
-    tessellated.fBVH->Intersect<false>(point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh);
+    tessellated.fBVH->Intersect<false>(
+        point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh, [&innerCounter] { innerCounter += 1; },
+        [&leafCounter_1]() { leafCounter_1 += 1; });
+
     contains = (parity_counter % 2 == 1);
+#ifndef VECCORE_CUDA
+    if (gCountingEnabledARGH.load(std::memory_order_relaxed)) {
+      gfacetCounterContains.fetch_add(intersection_counter, std::memory_order_relaxed);
+      gLeafContains.fetch_add(leafCounter_1, std::memory_order_relaxed);
+      gInnerContains.fetch_add(innerCounter, std::memory_order_relaxed);
+    }
+#endif
   }
 
   /// @brief Classify a local point as inside, outside, or surface.
@@ -141,10 +231,13 @@ struct TessellatedImplementation {
     distance                        = InfinityLength<Real_v>();
     bool found_surface_entry        = false;
     Real_v surface_entry_projection = Real_v(0.);
-
+    int intersection_counter        = 0;
+    int leaf_counter_2              = 0;
+    int innerCounter                = 0;
     // NOTE: a quick intersection check against the outer bounding box is already done as part of the BVH
     // intersection and does not need to be done in addition here
     auto userhook_bvh = [&](BVHIntersectContext<float> &ctx) {
+      intersection_counter += 1;
       const auto primID = ctx.primID;
       const auto &facet = tessellated.fFacets[primID];
       // we are checking a triangle. Rule out early by a simple normal check
@@ -172,11 +265,21 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here
     };
-    tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
+    tessellated.fBVH->Intersect<false>(
+        point, direction, stepMax, userhook_bvh, [&innerCounter]() { innerCounter += 1; },
+        [&leaf_counter_2]() { leaf_counter_2 += 1; });
+
     if (found_surface_entry &&
         (distance == InfinityLength<Real_v>() || distance * surface_entry_projection > kToleranceDist<Real_v>)) {
       distance = Real_v(0.);
     }
+#ifndef VECCORE_CUDA
+    if (gCountingEnabledARGH.load(std::memory_order_relaxed)) {
+      gfacetCounterDistToIn.fetch_add(intersection_counter, std::memory_order_relaxed);
+      gLeafDistToIn.fetch_add(leaf_counter_2, std::memory_order_relaxed);
+      gInnerDistToIn.fetch_add(innerCounter, std::memory_order_relaxed);
+    }
+#endif
   }
 
   /// @brief Compute distance from an outside or surface point to enter.
@@ -224,9 +327,12 @@ struct TessellatedImplementation {
                                                                                Vector3D<Real_v> const &direction,
                                                                                Real_v const &stepMax, Real_v &distance)
   {
-    distance = InfinityLength<Real_v>();
-
-    auto userhook_bvh = [&](BVHIntersectContext<float> &ctx) {
+    distance                 = InfinityLength<Real_v>();
+    int intersection_counter = 0;
+    int leaf_counter         = 0;
+    int innerCounter         = 0;
+    auto userhook_bvh        = [&](BVHIntersectContext<float> &ctx) {
+      intersection_counter += 1;
       const auto primID = ctx.primID;
       const auto &facet = tessellated.fFacets[primID];
       // we are checking a triangle. Rule out early by a simple normal check
@@ -255,10 +361,20 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here because we might see triangles
     };
-    tessellated.fBVH->Intersect<false>(point, direction, stepMax, userhook_bvh);
+    tessellated.fBVH->Intersect<false>(
+        point, direction, stepMax, userhook_bvh, [&innerCounter]() { innerCounter += 1; },
+        [&leaf_counter]() { leaf_counter += 1; });
+
     if (distance == InfinityLength<Real_v>() && stepMax < InfinityLength<Real_v>()) {
       distance = stepMax;
     }
+#ifndef VECCORE_CUDA
+    if (gCountingEnabledARGH.load(std::memory_order_relaxed)) {
+      gfacetCounterDistToOut.fetch_add(intersection_counter, std::memory_order_relaxed);
+      gLeafDistToOut.fetch_add(leaf_counter, std::memory_order_relaxed);
+      gInnerDistToOut.fetch_add(innerCounter, std::memory_order_relaxed);
+    }
+#endif
   }
 
   /// @brief Compute distance from an inside or surface point to leave.

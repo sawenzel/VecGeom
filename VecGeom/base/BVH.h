@@ -15,6 +15,8 @@
 // #include "VecGeom/surfaces/Model.h"
 
 #include <vector>
+#include <atomic>
+#include <iostream>
 
 // Forward-declare CPUsurfData
 namespace vgbrep {
@@ -330,9 +332,11 @@ public:
    * leaf nodes. Intersection tests is done no futher than `step` or when the user hook returns true.
    * TODO: ability to provide external stack
    */
-  template <bool check_leaf_bb = true, typename Real_i, typename leaf_function, typename inner_function = IgnoreArgs>
+  template <bool check_leaf_bb = true, typename Real_i, typename leaf_function, typename inner_function = IgnoreArgs,
+            typename leaf_count_func = IgnoreArgs>
   VECCORE_ATT_HOST_DEVICE void Intersect(const Vector3D<Real_i> &localpoint, const Vector3D<Real_i> &localdir,
-                                         Real_i step, leaf_function &&intersect_hook, inner_function &&inner = {}) const
+                                         Real_i step, leaf_function &&intersect_hook, inner_function &&inner = {},
+                                         leaf_count_func &&count = {}) const
   {
     unsigned int stack[BVH_MAX_DEPTH], *ptr = &stack[1];
     stack[0] = 0;
@@ -360,9 +364,8 @@ public:
       }
 
       if (fNChild[id] >= 0) {
-
         hitcontext.nLeafPrims = fNChild[id];
-
+        count();
         /* For leaf nodes, loop over children */
         for (int i = 0; i < fNChild[id]; ++i) {
           const int prim = fPrimId[fOffset[id] + i];
@@ -387,7 +390,6 @@ public:
       } else {
         const unsigned int childL = 2 * id + 1;
         const unsigned int childR = 2 * id + 2;
-
         inner();
 
         /* For internal nodes, check AABBs to know if we need to traverse left and right children */

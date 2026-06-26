@@ -11,6 +11,10 @@
 #endif
 #ifdef VECGEOM_ROOT
 #include "TGeoTessellated.h"
+#include "TClass.h"
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #endif
 
 #endif // VECCORE_CUDA
@@ -40,7 +44,34 @@ VPlacedVolume const *PlacedTessellated::ConvertToUnspecialized() const
 TGeoShape const *PlacedTessellated::ConvertToRoot() const
 {
   using Vertex_t = Tessellated::Vertex_t;
-  auto tsl       = new TGeoTessellated();
+
+  // Select the concrete ROOT tessellated class via the VECGEOM_ROOT_TESSELLATED
+  // environment variable, so the benchmark can compare the navigation backends:
+  //   unset / "base" -> TGeoTessellated
+  //   "embree"       -> TGeoTessellatedEmbree     (single precision triangle scene)
+  //   "embreeuser"   -> TGeoTessellatedEmbreeUser (Embree as a pure BVH provider)
+  // The Embree classes are only declared inside libGeom (guarded by R__HAS_EMBREE
+  // and not exposed to consumers), so they are instantiated through ROOT's
+  // reflection. They derive from TGeoTessellated (primary base), hence the base
+  // pointer is used to fill the mesh while navigation dispatches to the override.
+  const char *kind     = std::getenv("VECGEOM_ROOT_TESSELLATED");
+  const char *clsname  = "TGeoTessellated";
+  if (kind && std::strcmp(kind, "embree") == 0) {
+    clsname = "TGeoTessellatedEmbree";
+  } else if (kind && std::strcmp(kind, "embreeuser") == 0) {
+    clsname = "TGeoTessellatedEmbreeUser";
+  }
+
+  TGeoTessellated *tsl = nullptr;
+  if (std::strcmp(clsname, "TGeoTessellated") != 0) {
+    if (TClass *cl = TClass::GetClass(clsname))
+      tsl = static_cast<TGeoTessellated *>(cl->New());
+    if (!tsl)
+      std::printf("PlacedTessellated::ConvertToRoot: ROOT class '%s' not available, using TGeoTessellated\n", clsname);
+  }
+  if (!tsl)
+    tsl = new TGeoTessellated();
+  std::printf("PlacedTessellated::ConvertToRoot: using ROOT class %s\n", tsl->ClassName());
   for (size_t ifacet = 0; ifacet < GetUnplacedVolume()->GetNFacets(); ++ifacet) {
     TriangleFacet<double> *facet = GetUnplacedVolume()->GetFacet(ifacet);
     tsl->AddFacet(Vertex_t(facet->fVertices[0].x(), facet->fVertices[0].y(), facet->fVertices[0].z()),
