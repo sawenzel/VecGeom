@@ -103,6 +103,17 @@ template <size_t NVERT, typename T>
 class TessellatedStruct;
 class UnplacedTessellated;
 
+/// Whether the per-facet AABB pre-filter is applied during BVH traversal (the check_leaf_bb template arg
+/// of BVH::Intersect / BVH_V2::Intersect). When enabled, each facet's own conservatively rounded-outward
+/// AABB is tested before the full facet.Distance() call, rejecting candidates whose box the ray never
+/// crosses; this is a pure performance optimization (never a false negative). Tied to the same build switch
+/// as the BVH type in TessellatedStruct.h so the two configurations reproduce the historical setup.
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+static constexpr bool kCheckFacetBB = true;
+#else
+static constexpr bool kCheckFacetBB = false;
+#endif
+
 /// @brief Implements tessellated-solid navigation using BVH facet queries.
 /// @details Point classification uses a fixed test ray and parity counting.
 /// Distance and safety helpers query the runtime facet BVH and leave public
@@ -146,7 +157,7 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here because we might see another triangle at
     };
-    tessellated.fBVH->Intersect<false>(
+    tessellated.fBVH->Intersect<kCheckFacetBB>(
         point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh, [&innerCounter] { innerCounter += 1; },
         [&leafCounter_1]() { leafCounter_1 += 1; });
 
@@ -201,7 +212,7 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here because we might see another triangle at
     };
-    tessellated.fBVH->Intersect<false>(point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh);
+    tessellated.fBVH->Intersect<kCheckFacetBB>(point, tessellated.fTestDir, InfinityLength<Real_v>(), userhook_bvh);
     if (onSurface) {
       inside = kSurface;
       return;
@@ -265,7 +276,7 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here
     };
-    tessellated.fBVH->Intersect<false>(
+    tessellated.fBVH->Intersect<kCheckFacetBB>(
         point, direction, stepMax, userhook_bvh, [&innerCounter]() { innerCounter += 1; },
         [&leaf_counter_2]() { leaf_counter_2 += 1; });
 
@@ -361,7 +372,7 @@ struct TessellatedImplementation {
       }
       return false; // do not stop here because we might see triangles
     };
-    tessellated.fBVH->Intersect<false>(
+    tessellated.fBVH->Intersect<kCheckFacetBB>(
         point, direction, stepMax, userhook_bvh, [&innerCounter]() { innerCounter += 1; },
         [&leaf_counter]() { leaf_counter += 1; });
 

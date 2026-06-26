@@ -386,7 +386,13 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedExtruded::CopyToGpu(DevicePtr<cuda::VUn
   VECGEOM_VALIDATE(runtime.fNFacets > 0 && runtime.fFacets != nullptr && runtime.fBVH != nullptr,
                    << "Attempted to copy UnplacedExtruded without initialized tessellated runtime data");
 
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+  // BVH_V2 needs no LogicalVolume lookup and must not borrow the navigation dBVH symbol; allocate a
+  // dedicated device slot (size from the host cxx type, which shares layout with the device one).
+  auto gpu_bvh_ptr = AllocateOnGpu<cuda::BVH_V2<float>>(sizeof(BVH_V2<float>));
+#else
   auto gpu_bvh_ptr = cuda::AllocateDeviceBVHBuffer<float>(1);
+#endif
   runtime.fBVH->CopyToGpu(gpu_bvh_ptr);
 
   size_t nfacets      = runtime.fNFacets;
@@ -419,7 +425,11 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedExtruded>::SizeOf();
 template void DevicePtr<cuda::UnplacedExtruded>::Construct() const;
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+template void DevicePtr<cuda::UnplacedExtruded>::Construct(size_t, TriangularTile<double> *, BVH_V2<float> *, bool) const;
+#else
 template void DevicePtr<cuda::UnplacedExtruded>::Construct(size_t, TriangularTile<double> *, BVH<float> *, bool) const;
+#endif
 template void DevicePtr<cuda::UnplacedExtruded>::Construct(int, Precision *, Precision *, Precision, Precision,
                                                            bool) const;
 

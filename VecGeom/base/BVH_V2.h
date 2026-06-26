@@ -33,7 +33,59 @@
 #include <vector>
 
 namespace vecgeom {
+namespace cuda {
+template <typename Real_t>
+class BVH_V2;
+template <typename Real_t>
+struct BVH_V2Node;
+} // namespace cuda
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(class, BVH_V2, typename);
+VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE(struct, BVH_V2Node, typename);
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+/**
+ * A single BVH_V2 node. Kept as a top-level template (rather than nested in BVH_V2) so that a device
+ * pointer to it -- @c cuda::BVH_V2Node<Real_t>* -- can be named in host code where the device type is
+ * only forward-declared (a nested type of an incomplete class cannot be named), exactly as BVH does for
+ * @c cuda::AABB. BVH_V2 exposes it as the member alias @c BVH_V2::Node.
+ *
+ * Leaf node (@c count > 0): @c first is the index into @c fPrimId of this leaf's first primitive; it
+ * holds @c count primitives. Inner node (@c count == 0): its two children are always allocated as a
+ * contiguous pair, at node indices @c first and @c first + 1.
+ */
+template <typename Real_t>
+struct BVH_V2Node {
+  /// Bounds laid out as [min_x, max_x, min_y, max_y, min_z, max_z] (matches madmann91 bvh::v2's
+  /// Node layout) so IntersectOctant can pick the near/far corner per axis with a plain indexed
+  /// load (bounds[2*axis + octant_bit]) instead of a runtime branch/select on separate min/max
+  /// vectors -- see IntersectOctant for why that distinction matters.
+  Real_t bounds[6];
+  int first{0};
+  int count{0};
+
+  VECCORE_ATT_HOST_DEVICE
+  bool IsLeaf() const { return count > 0; }
+
+  VECCORE_ATT_HOST_DEVICE
+  AABB<Real_t> Bounds() const
+  {
+    return AABB<Real_t>(Vector3D<Real_t>(bounds[0], bounds[2], bounds[4]),
+                        Vector3D<Real_t>(bounds[1], bounds[3], bounds[5]));
+  }
+
+  VECCORE_ATT_HOST
+  void SetBounds(const AABB<Real_t> &b)
+  {
+    const auto lo = b.Min();
+    const auto hi = b.Max();
+    bounds[0]     = lo[0];
+    bounds[1]     = hi[0];
+    bounds[2]     = lo[1];
+    bounds[3]     = hi[1];
+    bounds[4]     = lo[2];
+    bounds[5]     = hi[2];
+  }
+};
 
 /**
  * @brief Minimal BVH over a set of primitive AABBs, using explicit child indices.
@@ -49,45 +101,8 @@ public:
   /** Maximum depth of the tree. Bounds the fixed traversal stack. */
   static constexpr int BVH_MAX_DEPTH = 32;
 
-  /**
-   * A single BVH node.
-   * Leaf node (@c count > 0): @c first is the index into @c fPrimId of this
-   * leaf's first primitive; it holds @c count primitives.
-   * Inner node (@c count == 0): its two children are always allocated as a
-   * contiguous pair, at node indices @c first and @c first + 1.
-   */
-  struct Node {
-    /// Bounds laid out as [min_x, max_x, min_y, max_y, min_z, max_z] (matches madmann91 bvh::v2's
-    /// Node layout) so IntersectOctant can pick the near/far corner per axis with a plain indexed
-    /// load (bounds[2*axis + octant_bit]) instead of a runtime branch/select on separate min/max
-    /// vectors -- see IntersectOctant for why that distinction matters.
-    Real_t bounds[6];
-    int first{0};
-    int count{0};
-
-    VECCORE_ATT_HOST_DEVICE
-    bool IsLeaf() const { return count > 0; }
-
-    VECCORE_ATT_HOST_DEVICE
-    AABB<Real_t> Bounds() const
-    {
-      return AABB<Real_t>(Vector3D<Real_t>(bounds[0], bounds[2], bounds[4]),
-                          Vector3D<Real_t>(bounds[1], bounds[3], bounds[5]));
-    }
-
-    VECCORE_ATT_HOST
-    void SetBounds(const AABB<Real_t> &b)
-    {
-      const auto lo = b.Min();
-      const auto hi = b.Max();
-      bounds[0] = lo[0];
-      bounds[1] = hi[0];
-      bounds[2] = lo[1];
-      bounds[3] = hi[1];
-      bounds[4] = lo[2];
-      bounds[5] = hi[2];
-    }
-  };
+  /// A single BVH node; see @c BVH_V2Node (kept top-level for GPU pointer naming).
+  using Node = BVH_V2Node<Real_t>;
 
   /** No-op functor used as default for the optional traversal hooks. */
   struct IgnoreArgs {
@@ -176,17 +191,40 @@ public:
     }
   }
 
+#ifdef VECGEOM_ENABLE_CUDA
+  /**
+   * Constructor for GPU residency. Takes pre-built device buffers produced by CopyToGpu() and adopts
+   * them without taking ownership: the buffers are owned by the surrounding CUDA allocation, not by this
+   * object (the host-only destructor is never run on the device copy). Mirrors the device constructor of
+   * @c BVH in base/BVH.h.
+   */
+  VECCORE_ATT_HOST_DEVICE
+  BVH_V2(int rootId, int nPrim, int nNodes, int maxDepth, Node *nodes, int *primId, AABB<Real_t> *aabbs)
+      : fRootId(rootId), fNPrim(nPrim), fNNodes(nNodes), fMaxDepth(maxDepth), fNodes(nodes), fPrimId(primId),
+        fAABBs(aabbs)
+  {
+  }
+#endif
+
+#ifdef VECGEOM_CUDA_INTERFACE
+  /** Copy this BVH_V2 (nodes, primitive ids and per-primitive AABBs) to the device and construct an
+   * instance at the device address @p addr. Unlike BVH::CopyToGpu, this needs no LogicalVolume lookup. */
+  DevicePtr<cuda::BVH_V2<Real_t>> CopyToGpu(void *addr) const;
+#endif
+
   ~BVH_V2() { Clear(); }
 
   VECCORE_ATT_HOST
   void Clear()
   {
+#ifndef VECCORE_CUDA_DEVICE_COMPILATION
     delete[] fNodes;
     fNodes = nullptr;
     delete[] fPrimId;
     fPrimId = nullptr;
     delete[] fAABBs;
     fAABBs = nullptr;
+#endif
   }
 
   int GetRootId() const { return fRootId; }

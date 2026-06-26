@@ -219,7 +219,14 @@ DevicePtr<cuda::VUnplacedVolume> UnplacedTessellated::CopyToGpu(DevicePtr<cuda::
   // tessellatedruntimestruct
 
   // (a) copy the bvh
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+  // BVH_V2 needs no LogicalVolume lookup and must not borrow the navigation dBVH symbol used by
+  // AllocateDeviceBVHBuffer; give the single facet BVH its own dedicated device slot.
+  // sizeof the host (cxx) type: the device cuda::BVH_V2 is only forward-declared here, but both share layout.
+  auto gpu_bvh_ptr = AllocateOnGpu<cuda::BVH_V2<float>>(sizeof(BVH_V2<float>));
+#else
   auto gpu_bvh_ptr = cuda::AllocateDeviceBVHBuffer<float>(1);
+#endif
   this->GetStruct().fBVH->CopyToGpu(gpu_bvh_ptr);
 
   // (b) copy the triangles
@@ -256,7 +263,11 @@ namespace cxx {
 
 template size_t DevicePtr<cuda::UnplacedTessellated>::SizeOf();
 template void DevicePtr<cuda::UnplacedTessellated>::Construct() const;
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+template void DevicePtr<cuda::UnplacedTessellated>::Construct(size_t, TriangularTile<double> *, BVH_V2<float> *) const;
+#else
 template void DevicePtr<cuda::UnplacedTessellated>::Construct(size_t, TriangularTile<double> *, BVH<float> *) const;
+#endif
 
 template void ConstructManyOnGpu<vecgeom::cuda::SpecializedVolImplHelper<vecgeom::cuda::TessellatedImplementation>>(
     unsigned long, vecgeom::cxx::DevicePtr<vecgeom::cuda::VPlacedVolume> const *,

@@ -17,7 +17,16 @@
 
 #include "VecGeom/base/Stopwatch.h"
 #include "VecGeom/management/ABBoxManager.h"
+
+// The facet acceleration structure can be switched between the production BVH (base/BVH.h) and the
+// explicit-index BVH_V2 (base/BVH_V2.h) at build time via -DVECGEOM_TESSELLATED_BVH_V2. Both expose the
+// identical subset used here (ctor(rootId, AABB*, n), Intersect<bool>(), PointQuery<bool>()), so the swap
+// is a pure type-alias change. Keep this in sync with the matching switch in kernel/TessellatedImplementation.h.
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+#include "VecGeom/base/BVH_V2.h"
+#else
 #include "VecGeom/base/BVH.h"
+#endif
 
 namespace vecgeom {
 
@@ -25,6 +34,13 @@ namespace vecgeom {
 VECGEOM_DEVICE_DECLARE_CONV_TEMPLATE_1v_1t(class, TessellatedStruct, size_t, typename);
 
 inline namespace VECGEOM_IMPL_NAMESPACE {
+
+/// Facet bounding-volume hierarchy type used by the tessellated solid; selected at build time.
+#ifdef VECGEOM_TESSELLATED_BVH_V2
+using FacetBVH_t = BVH_V2<float>;
+#else
+using FacetBVH_t = BVH<float>;
+#endif
 
 /** Templated class holding the data structures for the tessellated solid.
 
@@ -157,7 +173,7 @@ public:
   Vector3D<T> fInvExtSize;              ///< Inverse extent size
   Vector3D<T> fTestDir;                 ///< Test direction for Inside function
 
-  BVH<float> *fBVH = nullptr; ///< The BVH structure
+  FacetBVH_t *fBVH = nullptr; ///< The BVH structure
 
   vector_t<int> fCluster;                                  ///< Cluster of facets storing just the indices
   vector_t<int> fCandidates;                               ///< Candidates for the current cluster
@@ -186,7 +202,7 @@ private:
       boxcorners[2 * i]     = minExtent;
       boxcorners[2 * i + 1] = maxExtent;
     }
-    fBVH = new BVH<float>(0, boxcorners, nfacets);
+    fBVH = new FacetBVH_t(0, boxcorners, nfacets);
 
     // delete boxcorners;
   }
@@ -658,7 +674,7 @@ struct TessellatedRuntimeStruct {
   // pointers are used here for easier copy to GPU and allocation from existing buffers
   // TODO: treat compact memory layout
   VECCORE_ATT_HOST_DEVICE
-  TessellatedRuntimeStruct(size_t ntriangles, TriangularTile<double> *t, BVH<float> *b)
+  TessellatedRuntimeStruct(size_t ntriangles, TriangularTile<double> *t, FacetBVH_t *b)
       : fTestDir(1., 1., 1.), fNFacets(ntriangles), fFacets(t), fBVH(b)
   {
   }
@@ -680,7 +696,7 @@ struct TessellatedRuntimeStruct {
 
   // pointer data follows
   TriangularTile<T> *fFacets; //
-  BVH<float> *fBVH;           // the BVH acceleration structure
+  FacetBVH_t *fBVH;           // the BVH acceleration structure
 
   // fill from a TessellatedStruct
   void InitFrom(TessellatedStruct<3, T> const &tsl)

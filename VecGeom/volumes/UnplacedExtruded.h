@@ -50,7 +50,7 @@ public:
   }
 
   VECCORE_ATT_HOST_DEVICE
-  UnplacedExtruded(size_t ntriangles, TriangularTile<double> *triangle_ptr, BVH<float> *bvh, bool globalConvexity)
+  UnplacedExtruded(size_t ntriangles, TriangularTile<double> *triangle_ptr, FacetBVH_t *bvh, bool globalConvexity)
       : fXtru()
   {
     // CUDA copies use the compact tessellated runtime helper; host section data is not needed on device.

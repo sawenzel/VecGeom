@@ -175,6 +175,10 @@ else()
 endif()
 option(VECGEOM_BVH_SINGLE "Use single precision for BVH traversal" ${_default_bvh_single})
 
+# Select the facet acceleration structure used by the tessellated solid: the production BVH (base/BVH.h)
+# by default, or the explicit-index BVH_V2 (base/BVH_V2.h) when ON. See volumes/TessellatedStruct.h.
+option(VECGEOM_TESSELLATED_BVH_V2 "Use the BVH_V2 facet acceleration structure in the tessellated solid" OFF)
+
 # Precision and accuracy
 option(VECGEOM_SINGLE_PRECISION "Use single precision floating point type throughout VecGeom" OFF)
 option(VECGEOM_FAST_MATH "Enable the -ffast-math compiler option in Release builds" OFF)
@@ -703,6 +707,7 @@ set(VECGEOM_COMMON_SRCS
   source/HybridManager2.cpp
   source/FlatVoxelManager.cpp
   source/BVH.cpp
+  source/BVH_V2.cpp
   source/BVHManager.cpp
 
   source/NavigationSpecializer.cpp

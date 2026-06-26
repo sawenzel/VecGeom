@@ -69,7 +69,7 @@ public:
 
   /// Special constructor where we can inject existing tesselated data. Useful for GPU instanteation
   VECCORE_ATT_HOST_DEVICE
-  UnplacedTessellated(size_t ntriangles, TriangularTile<double> *triangle_ptr, BVH<float> *bvh)
+  UnplacedTessellated(size_t ntriangles, TriangularTile<double> *triangle_ptr, FacetBVH_t *bvh)
       : fTessellatedRuntime(ntriangles, triangle_ptr, bvh), fTessellated()
   {
   }
